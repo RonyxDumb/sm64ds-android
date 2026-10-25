@@ -80,6 +80,7 @@ struct State {
     float emission[3] = {0, 0, 0};
     struct Light { float dx, dy, dz; float r, g, b; } lights[4] = {};
     uint32_t light_mask = 0;
+    uint32_t polygon_attr = 0x001f00c0;
 
     std::vector<GxTriangle> tris;
 };
@@ -116,6 +117,8 @@ GxVertex project(int16_t x, int16_t y, int16_t z) {
 void emit_tri(const GxVertex &a, const GxVertex &b, const GxVertex &c) {
     GxTriangle t;
     t.v[0] = a; t.v[1] = b; t.v[2] = c;
+    const uint32_t alpha = ((g.polygon_attr >> 16) & 31) * 255 / 31;
+    for (auto &v : t.v) v.color = (v.color & 0x00ffffffu) | (alpha << 24);
     t.tex = g.tex_rgba; t.tw = g.tw; t.th = g.th;
     g.tris.push_back(t);
 }
@@ -297,7 +300,7 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
                    static_cast<int16_t>(p[1] & 0xFFFF));
             break;
         case 0x24: {                                             // VTX_10  (s4.6 -> 4.12)
-            auto s10 = [](uint32_t v) { return static_cast<int16_t>((static_cast<int32_t>(v << 22) >> 22) << 6); };
+            auto s10 = [](uint32_t v) { return static_cast<int16_t>((static_cast<int32_t>(v << 22) >> 22) * 64); };
             vertex(s10(p[0] & 0x3FF), s10((p[0] >> 10) & 0x3FF), s10((p[0] >> 20) & 0x3FF));
             break;
         }
@@ -311,7 +314,7 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
                    static_cast<int16_t>(g.vz + d10((p[0] >> 20) & 0x3FF)));
             break;
         }
-        case 0x29: break;                                        // POLYGON_ATTR
+        case 0x29: g.polygon_attr = p[0]; break;                  // POLYGON_ATTR
         case 0x2A: gx_teximage_param(p[0]); break;               // TEXIMAGE_PARAM
         case 0x2B: gx_pltt_base(p[0]); break;                    // PLTT_BASE
         case 0x30: {                                             // DIF_AMB

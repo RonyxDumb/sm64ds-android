@@ -24,6 +24,7 @@ namespace ntr {
 struct BmdTexture {
     std::vector<uint32_t> rgba;
     int width = 0, height = 0, format = 0;
+    uint32_t texture_param = 0;
     std::string name;
 };
 
@@ -33,7 +34,8 @@ struct BmdTexture {
 struct BmdMaterial {
     uint32_t texture = 0, palette = 0;
     uint32_t dif_amb = 0;      // +0x28 -- diffuse, ambient, set-vertex-colour
-    uint32_t spe_emi = 0;      // +0x24 -- specular, emission
+    uint32_t spe_emi = 0;      // +0x2c -- specular, emission
+    uint32_t polygon_attr = 0; // +0x24 -- lights, culling and alpha
     std::string name;
 };
 
@@ -44,7 +46,7 @@ struct BmdModel {
 
     // Display list `i` draws with material material_ids[i]; the mapping comes
     // from the bone's material-ID list at +0x34, which BMD_File.h documents.
-    struct DisplayList { uint32_t offset, size; };
+    struct DisplayList { uint32_t offset, size; uint32_t group=0; std::vector<uint16_t> matrix_ids; };
     std::vector<DisplayList> dlists;
     std::vector<uint8_t> material_ids;
 

@@ -22,6 +22,8 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <functional>
+#include <stdexcept>
 #include <string>
 
 namespace ntr {
@@ -45,10 +47,6 @@ std::string read_name(const std::vector<uint8_t> &b, uint32_t off) {
 int16_t rd16s(const std::vector<uint8_t> &b, size_t off) {
     if (off + 2 > b.size()) return 0;
     return static_cast<int16_t>(b[off] | (b[off + 1] << 8));
-}
-
-int32_t rd32s(const std::vector<uint8_t> &b, size_t off) {
-    return static_cast<int32_t>(rd32(b, off));
 }
 
 using Mat16 = std::array<float, 16>;
@@ -111,7 +109,16 @@ bool bmd_load(int32_t file_id, BmdModel &out) {
             const uint32_t data = rd32(b, sub + 0x0c);
             if (size == 0 || data == 0) continue;
             if (data + size > b.size() || (size & 3)) continue;
-            out.dlists.push_back({data, size});
+            BmdModel::DisplayList list{data, size, gi, {}};
+            const uint32_t matrices=rd32(b, sub), indices=rd32(b, sub+4);
+            const uint32_t transform_map=rd32(b, 0x2c);
+            if(matrices>32 || indices>b.size() || matrices>b.size()-indices)return false;
+            for(uint32_t j=0;j<matrices;++j){
+                const size_t map=transform_map+size_t(b[indices+j])*2;
+                if(map+2>b.size())return false;
+                list.matrix_ids.push_back(static_cast<uint16_t>(rd16s(b,map)));
+            }
+            out.dlists.push_back(std::move(list));
         }
     }
 
@@ -125,22 +132,31 @@ bool bmd_load(int32_t file_id, BmdModel &out) {
         BmdMaterial m;
         m.texture = rd32(b, o + 0x04);
         m.palette = rd32(b, o + 0x08);
-        m.spe_emi = rd32(b, o + 0x24);
+        m.spe_emi = rd32(b, o + 0x2c);
+        m.polygon_attr = rd32(b, o + 0x24);
         m.dif_amb = rd32(b, o + 0x28);
         m.name = read_name(b, rd32(b, o));
         out.materials.push_back(std::move(m));
     }
 
-    // Which material each display list uses: the bone's material-ID list.
-    out.material_ids.clear();
-    if (out.num_bones > 0) {
-        const uint32_t p_bone = rd32(b, 0x08);
-        const uint32_t ids = rd32(b, p_bone + 0x34);
-        for (size_t i = 0; i < out.dlists.size(); ++i) {
-            const size_t o = ids + i;
-            out.material_ids.push_back(o < b.size() ? b[o] : 0);
+    // ModelComponents::Render walks every bone's material/group pairing;
+    // the first bone's list does not describe all groups in a skinned model.
+    std::vector<uint8_t> group_material(groups,0);
+    const uint32_t p_bone=rd32(b,0x08);
+    if(out.num_bones>4096 || out.scale_shift>15)return false;
+    for(uint32_t i=0;i<out.num_bones;++i){
+        const size_t bone=p_bone+size_t(i)*0x40;
+        if(bone+0x40>b.size())return false;
+        const uint16_t count=static_cast<uint16_t>(rd16s(b,bone+0x30));
+        const size_t mats=rd32(b,bone+0x34), lists=rd32(b,bone+0x38);
+        if(mats>b.size() || count>b.size()-mats || lists>b.size() || count>b.size()-lists)return false;
+        for(uint16_t j=0;j<count;++j){
+            if(b[lists+j]>=groups || b[mats+j]>=out.materials.size())return false;
+            group_material[b[lists+j]]=b[mats+j];
         }
     }
+    out.material_ids.clear();
+    for(const auto &list:out.dlists)out.material_ids.push_back(group_material[list.group]);
 
     // Decode one texture per material, so binding at draw time is a lookup.
     out.textures.assign(out.materials.size(), BmdTexture{});
@@ -177,6 +193,7 @@ bool bmd_load(int32_t file_id, BmdModel &out) {
         bt.width = d.width;
         bt.height = d.height;
         bt.format = d.format;
+        bt.texture_param = tflags | rd32(b, p_mat + mi * 0x30u + 0x20);
         bt.name = read_name(b, rd32(b, to));
         if (!texture_decode(d, bt.rgba)) bt.rgba.clear();
     }
@@ -235,6 +252,8 @@ void bmd_bone_matrices(const BmdModel &m, const std::vector<uint8_t> &bca,
         tracks     = rd32(bca, 0x14);
     }
 
+    std::vector<Mat16> local_by_id(out.size(),kIdentity);
+    std::vector<int> parents(out.size(),-1);
     for (uint32_t i = 0; i < m.num_bones; ++i) {
         const size_t o = p_bone + i * 0x40u;
         if (o + 0x40 > b.size()) break;
@@ -285,13 +304,21 @@ void bmd_bone_matrices(const BmdModel &m, const std::vector<uint8_t> &bca,
             local[r * 4 + 0] *= s; local[r * 4 + 1] *= s; local[r * 4 + 2] *= s;
         }
 
-        // Parents precede children in the array, so one forward pass composes.
-        const int parent = idx + parent_delta;
-        if (parent >= 0 && parent != idx && static_cast<size_t>(parent) < out.size())
-            out[idx] = mat_mul(local, out[parent]);
-        else
-            out[idx] = local;
+        local_by_id[idx]=local;
+        const int parent=idx+parent_delta; // recovered func_02045074 indexes by bone ID
+        parents[idx]=(parent_delta && parent>=0 && size_t(parent)<out.size())?parent:-1;
     }
+    // File record order is not bone ID order, and a parent can be recorded later.
+    std::vector<uint8_t> state(out.size(),0);
+    std::function<void(size_t)> resolve=[&](size_t id){
+        if(state[id]==2)return;
+        if(state[id]==1)throw std::runtime_error("Cyclic BMD bone hierarchy.");
+        state[id]=1;
+        if(parents[id]>=0){resolve(parents[id]);out[id]=mat_mul(local_by_id[id],out[parents[id]]);}
+        else out[id]=local_by_id[id];
+        state[id]=2;
+    };
+    for(size_t id=0;id<out.size();++id)resolve(id);
 
     // Vertices are in units of 2^-scaleShift relative to bone space. The piano
     // makes this unmissable: its vertices span ~9 units while its bone
@@ -344,8 +371,11 @@ void bmd_submit(const BmdModel &m) {
         // lists carry only geometry, UVs and normals. This is what the game's
         // render path does with G3_TexImageParam / G3_TexPlttBase.
         const uint8_t mid = di < m.material_ids.size() ? m.material_ids[di] : 0;
-        if (mid < m.materials.size())
+        if (mid < m.materials.size() && (m.materials[mid].polygon_attr & 0x80000000u)) continue;
+        if (mid < m.materials.size()) {
             gx_set_material(m.materials[mid].dif_amb, m.materials[mid].spe_emi);
+            gx_write_port(0x040004a4, m.materials[mid].polygon_attr);
+        }
         if (mid < m.textures.size() && !m.textures[mid].rgba.empty()) {
             const BmdTexture &t = m.textures[mid];
             gx_bind_texture(t.rgba.data(), t.width, t.height);
@@ -354,6 +384,12 @@ void bmd_submit(const BmdModel &m) {
         }
 
         const BmdModel::DisplayList &dl = m.dlists[di];
+        // Each mesh part maps DS matrix slots through its own byte list and
+        // the BMD +0x2c transform-ID table (func_0204488c). Slot != bone ID.
+        for(size_t slot=0;slot<dl.matrix_ids.size();++slot){
+            if(dl.matrix_ids[slot]>=bones.size())throw std::runtime_error("Invalid BMD matrix ID.");
+            gx_set_matrix_slot(static_cast<int>(slot),bones[dl.matrix_ids[slot]].data());
+        }
         const uint32_t words = dl.size / 4u;
         for (uint32_t i = 0; i < words; ++i)
             gx_write_fifo(rd32(m.data, dl.offset + i * 4u));

@@ -17,12 +17,16 @@ What each piece is:
 | `fs.cpp` | FNT/FAT parsing, ROM-image and extracted-directory backends (the port's live seam is port/hal/fs.cpp over the asset catalog; this one reads ROM structures directly and serves as a harness backend) |
 | `bmd.cpp` | host-side BMD parsing for harnesses. The GAME parses BMDs itself in the real path; this exists to render a model without the game and to cross-check |
 
-KNOWN OPEN BUG (inherited, documented in the research repo's handoff):
-`bmd_bone_matrices` conflates record order with bone-index order
-(`boneIDs = [1, 2, 0]` on the piano model breaks it) and may mix
-record-space and ID-space when resolving `parent_delta`. Fix by building an
-array-position -> bone-ID map and composing in topological order. This only
-affects the harness parser, not the game-code render path.
+ARM64/native backend fixes (2026-10-25): the harness now composes bone transforms
+by bone ID independently of file record order, remaps each mesh part's matrix
+slots through its transform-ID table, and resolves material/group bindings from
+all bones. Specular/emission is read from material +0x2c; +0x24 is POLYGON_ATTR.
+Polygon alpha and texture repeat/mirror flags are retained. The title-face asset
+now renders coherently in the headless OpenGL ES regression test.
+
+`rt.cpp` also has a cooperative condition-variable/thread backend for POSIX hosts.
+Game and presentation execution alternate at VBlank; the Windows fiber backend
+is preserved. This is a scheduler seam, not proof of a linked game startup.
 
 The MMIO source transform lives at `port/tools/hostgen.py`: it rewrites
 `*(volatile T *)0x04xxxxxx` derefs in copies of `src/` files into `NTR_MMIO()`

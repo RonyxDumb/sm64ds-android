@@ -19,6 +19,7 @@
 #define NTR_GX_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include "ntr/ppu.h"
 

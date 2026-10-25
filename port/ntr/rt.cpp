@@ -3,6 +3,10 @@
 #include "ntr/mmio.h"
 
 #include <cstdio>
+#include <condition_variable>
+#include <exception>
+#include <mutex>
+#include <thread>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -17,12 +21,8 @@ constexpr uint32_t REG_IE = 0x04000210;
 constexpr uint32_t REG_IF = 0x04000214;
 constexpr uint32_t REG_VCOUNT = 0x04000006;
 
-inline volatile uint32_t &reg32(uint32_t a) {
-    return *reinterpret_cast<volatile uint32_t *>(a);
-}
-inline volatile uint16_t &reg16(uint32_t a) {
-    return *reinterpret_cast<volatile uint16_t *>(a);
-}
+inline Reg<uint32_t> reg32(uint32_t a) { return Reg<uint32_t>(a); }
+inline Reg<uint16_t> reg16(uint32_t a) { return Reg<uint16_t>(a); }
 
 struct Runtime {
     void *host_fiber = nullptr;
@@ -37,6 +37,18 @@ struct Runtime {
 };
 
 Runtime g;
+#if !defined(_WIN32)
+struct ThreadRuntime {
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool yielded=false, resume=false;
+    std::exception_ptr failure;
+};
+ThreadRuntime threaded;
+std::mutex owner;
+thread_local bool on_game_thread=false;
+struct RuntimeStopped {};
+#endif
 
 #if defined(_WIN32)
 void CALLBACK game_trampoline(void *) {
@@ -60,6 +72,14 @@ void rt_vblank_wait() {
     if (!g.game_fiber) return;   // not running under rt_run; nothing to yield to
     reg32(REG_IF) |= IRQ_VBLANK;
     SwitchToFiber(g.host_fiber);
+#else
+    if(!on_game_thread)return;
+    std::unique_lock<std::mutex> lock(threaded.mutex);
+    reg32(REG_IF) |= IRQ_VBLANK;
+    threaded.yielded=true;threaded.cv.notify_one();
+    threaded.cv.wait(lock,[]{return threaded.resume;});
+    threaded.resume=false;
+    if(g.stop)throw RuntimeStopped{};
 #endif
 }
 
@@ -87,9 +107,44 @@ bool rt_irq_masked() { return g.cpsr_i != 0; }
 
 uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames) {
 #if !defined(_WIN32)
-    (void)game; (void)hook; (void)max_frames;
-    std::fprintf(stderr, "rt_run: fiber backend is Windows-only so far\n");
-    return 0;
+    // Cooperative handoff: only the host OR the game executes between
+    // VBlanks. No ucontext/stack pointer tricks and no guest ARM execution.
+    std::unique_lock<std::mutex> ownership(owner,std::try_to_lock);
+    if(!ownership || !game || !io_init())return 0;
+    g=Runtime{};g.hook=hook;g.max_frames=max_frames;
+    threaded.yielded=false;threaded.resume=false;threaded.failure=nullptr;
+    reg32(REG_IME)=1;reg32(REG_IE)=IRQ_VBLANK;
+    std::thread game_thread([game]{
+        on_game_thread=true;
+        try{game();}catch(const RuntimeStopped&){}
+        catch(...){threaded.failure=std::current_exception();}
+        on_game_thread=false;
+        std::lock_guard<std::mutex> lock(threaded.mutex);
+        g.game_done=true;threaded.cv.notify_one();
+    });
+    std::exception_ptr host_failure;
+    try{
+        for(;;){
+            std::unique_lock<std::mutex> lock(threaded.mutex);
+            threaded.cv.wait(lock,[]{return threaded.yielded||g.game_done;});
+            if(g.game_done)break;
+            threaded.yielded=false;
+            // The game is parked in rt_vblank_wait until this handoff ends.
+            lock.unlock();run_scanlines();++g.frame;
+            if(g.hook && !g.hook(g.frame))g.stop=true;
+            if(g.max_frames && g.frame>=g.max_frames)g.stop=true;
+            reg32(REG_IF)&=~IRQ_VBLANK;
+            lock.lock();threaded.resume=true;threaded.cv.notify_one();
+        }
+    }catch(...){
+        host_failure=std::current_exception();
+        std::lock_guard<std::mutex> lock(threaded.mutex);
+        g.stop=true;threaded.resume=true;threaded.cv.notify_one();
+    }
+    game_thread.join();
+    if(host_failure)std::rethrow_exception(host_failure);
+    if(threaded.failure)std::rethrow_exception(threaded.failure);
+    return g.frame;
 #else
     if (!io_init()) {
         std::fprintf(stderr, "rt_run: io_init failed\n");
