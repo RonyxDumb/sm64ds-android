@@ -2,6 +2,7 @@
 #include "scene.h"
 #include "gles_renderer.h"
 #include "android_audio.h"
+#include "runtime/save_store.h"
 #include <memory>
 #include <mutex>
 namespace sm64ds {
@@ -32,6 +33,7 @@ private:
     Scene scene_;
     GlesRenderer renderer_;
     std::unique_ptr<AndroidAudio> audio_;
+    std::unique_ptr<SaveStore> saves_;
     uint32_t previous_ = 0, sample_ = 0;
     float yaw_ = 0, zoom_ = 1, audioRetry_ = 0;
     bool audioReady_ = false;

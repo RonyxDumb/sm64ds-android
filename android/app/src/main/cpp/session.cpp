@@ -19,6 +19,11 @@ Session::Session(const char *path) {
     if (!ntr::fs_mount_rom(path))
         throw std::runtime_error("Could not mount sound archive.");
     audio_ = std::make_unique<AndroidAudio>(load_audio_clips());
+    const std::string rom(path);
+    const auto slash = rom.find_last_of('/');
+    if (slash == std::string::npos)
+        throw std::runtime_error("The private ROM path must be absolute.");
+    saves_ = std::make_unique<SaveStore>(rom.substr(0, slash + 1) + "game.sav");
 }
 void Session::frame(int width, int height, float dt, uint32_t buttons, float x, float y, int touchX,
                     int touchY, bool audioEnabled) {

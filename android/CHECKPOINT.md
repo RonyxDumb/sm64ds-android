@@ -1,4 +1,34 @@
-# Android checkpoint — 2026-10-25, PC audio integration 0.3
+# Android checkpoint — 2026-10-25, recovered cartridge saves
+
+The APK remains a backend viewer, not a playable port. Boot, file selection and
+castle/player code are still not linked. This increment closes the save-medium
+dependency using actual recovered game code rather than a replacement save format.
+
+- `android/tools/native_sources.py` generates audited host variants of
+  `src/engine/save/SaveData{,2}.cpp`. Only the card-write source parameter and
+  its six pointer casts are adapted to native pointers. Cartridge addresses and
+  lengths stay 32 bit. The read fallback's uninitialized `ok` is initialized to
+  false. The generator rejects changed upstream patterns. Matching sources are
+  unchanged.
+- `runtime/save_store.*` provides a private 8192-byte raw cartridge image, real
+  record locking, checked reads and writes, fsync and atomic file replacement.
+  Failed persistence leaves the previous in-memory image intact. Invalid-size
+  existing images are rejected and preserved.
+- Session creation opens `game.sav` beside the private ROM and runs the original
+  minigame-record read/default logic. No fresh save is written during startup.
+- Original `ReadFileData`, `SaveFile`, minigame I/O, default values, record tag,
+  rolling checksum and primary/mirror selection are linked. These operations are
+  not yet called by a recovered menu or gameplay scene.
+- Verified: ARM64 debug/release APK builds and lint; ASan/UBSan save tests covering
+  record bytes/checksum, both copies, mirror recovery, corrupted records, reopen,
+  malformed images, write failure and bounds. No device is connected.
+
+Next dependency: native heap/resource ownership and the original scene boot;
+do not describe cartridge persistence as a working save-selection menu.
+
+---
+
+# Previous checkpoint — PC audio integration 0.3
 
 The Android APK is still not a playable game. The original boot/scene/level
 runtime is not linked. This increment replaces the incomplete PC reference with

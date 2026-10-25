@@ -28,6 +28,16 @@ javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds
 java -cp "$TEST_BUILD/java" ControllerStateTest
 
 python3 android/tests/hostgen_test.py
+python3 android/tests/native_sources_test.py
+python3 android/tools/native_sources.py --out "$TEST_BUILD/native-src"
+g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
+    -Wno-unused-parameter -Wno-sign-compare -fno-strict-aliasing -ffunction-sections \
+    -fdata-sections -Wl,--gc-sections -fsanitize=address,undefined -g \
+    -DSM64DS_PLATFORM_PC -Iinclude -Iandroid/app/src/main/cpp android/tests/save_test.cpp \
+    android/app/src/main/cpp/runtime/save_store.cpp \
+    "$TEST_BUILD/native-src/src/engine/save/SaveData.cpp" \
+    "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" -o "$TEST_BUILD/save_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/save_test"
 g++ -std=c++17 -pthread -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter -O1 -g \
     -fsanitize=address,undefined -Iport/ntr/include -Iandroid/app/src/main/cpp \
     -Iexternal/sm64ds-pc/port/hal/sdat android/tests/music_test.cpp \

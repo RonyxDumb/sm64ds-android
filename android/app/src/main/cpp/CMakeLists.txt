@@ -11,7 +11,7 @@ add_library(sm64ds_android SHARED bridge.cpp rom_probe.cpp game_math.cpp scene.c
 target_include_directories(sm64ds_android PRIVATE "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
 # Only pointer-independent seams are compiled here. Do not bypass host_abi.h
 # to pull the recovered 32-bit game layouts into an ARM64 process.
-target_link_options(sm64ds_android PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(sm64ds_android PRIVATE "-Wl,-z,max-page-size=16384" "-Wl,--gc-sections")
 
 target_link_libraries(sm64ds_android PRIVATE GLESv3 aaudio)
 
@@ -31,6 +31,21 @@ set_source_files_properties("${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp"
 # deliberately an object gate, NOT an APK link: unresolved game dependencies must
 # be implemented before an entry point can be called. Never manufacture stubs.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
+set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
+    "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp")
+add_custom_command(OUTPUT ${SAVE_SOURCES}
+    COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/native_sources.py" --out "${NATIVE_ROOT}"
+    DEPENDS "${REPO_ROOT}/android/tools/native_sources.py" "${REPO_ROOT}/port/tools/hostgen.py"
+        "${REPO_ROOT}/src/engine/save/SaveData.cpp" "${REPO_ROOT}/src/engine/save/SaveData2.cpp")
+add_library(sm64ds_save STATIC ${SAVE_SOURCES})
+target_include_directories(sm64ds_save PRIVATE "${REPO_ROOT}/include")
+target_compile_definitions(sm64ds_save PRIVATE SM64DS_PLATFORM_PC)
+target_compile_options(sm64ds_save PRIVATE -fvisibility=hidden -ffunction-sections -fdata-sections
+    -fno-strict-aliasing -Wno-unknown-pragmas)
+target_sources(sm64ds_android PRIVATE runtime/save_store.cpp)
+target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
+
 set(BOOT_HOST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/boot-host")
 set(BOOT_HOST_CPP "${BOOT_HOST_ROOT}/src/game/stages/d_s_boot_methods.cpp")
 add_custom_command(OUTPUT "${BOOT_HOST_CPP}"
