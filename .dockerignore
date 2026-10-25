@@ -1,0 +1,10 @@
+.git
+upload
+extracted
+build
+android/.gradle
+android/app/build
+android/app/.cxx
+**/*.nds
+**/*.zip
+**/*.apk

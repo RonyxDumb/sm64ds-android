@@ -1,3 +1,16 @@
+# Super Mario 64 DS Android
+
+Android fork in active development. The current APK imports a user-supplied
+European ROM and verifies native filesystem, decompression and recovered math.
+**It does not boot or play the game yet.**
+
+Build instructions and integration blockers: [android/README.md](android/README.md).
+Validated progress: [android/CHECKPOINT.md](android/CHECKPOINT.md).
+Debug APKs are produced by the [Android workflow](https://github.com/RonyxDumb/sm64ds-android/actions/workflows/android.yml).
+
+The original project's documentation and progress figures follow below. They
+refer to decompilation and the PC source-port frontier, not Android playability.
+
 # Super Mario 64 DS Decompilation
 
 [![Discord Server][discord-badge]][discord]

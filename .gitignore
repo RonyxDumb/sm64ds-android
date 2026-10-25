@@ -119,3 +119,14 @@ venv/
 .vs/
 Thumbs.db
 desktop.ini
+# Android private imports and build output. Never commit cartridge data.
+/android/.gradle/
+/android/.cxx/
+/android/app/.cxx/
+/android/app/build/
+/android/build/
+/android/local.properties
+*.apk
+*.aab
+*.nds
+*.pending

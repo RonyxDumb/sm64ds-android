@@ -39,37 +39,45 @@ uint32_t rd32(const uint8_t *p) {
            | (static_cast<uint32_t>(p[2]) << 16) | (static_cast<uint32_t>(p[3]) << 24);
 }
 
-// Walk one FNT directory subtable, naming its files and recursing into subdirs.
-void walk_dir(const uint8_t *fnt, uint32_t fnt_size, uint16_t dir_id,
-              const std::string &prefix, int depth) {
-    if (depth > 32) return;                       // malformed FNT guard
-    const uint32_t rec = (dir_id & 0x0FFFu) * 8u;
-    if (rec + 8 > fnt_size) return;
-
+// Reject malformed directory graphs before publishing a mount. File names are
+// also safe for callers that later materialize the catalog on disk.
+bool walk_dir(const uint8_t *fnt, uint32_t fnt_size, uint16_t dir_id,
+              uint16_t dirs, const std::string &prefix,
+              std::vector<bool> &visited, std::vector<bool> &named, int depth) {
+    if (depth > 32 || dir_id < 0xF000 || dir_id - 0xF000 >= dirs) return false;
+    const uint32_t index = dir_id - 0xF000;
+    if (visited[index]) return false;
+    visited[index] = true;
+    const uint32_t rec = index * 8u;
     uint32_t off = rd32(fnt + rec);
-    uint16_t file_id = rd16(fnt + rec + 4);
-
+    uint32_t file_id = rd16(fnt + rec + 4);
+    if (off < dirs * 8u || off >= fnt_size) return false;
     while (off < fnt_size) {
         const uint8_t type = fnt[off++];
-        if (type == 0) break;                     // end of this subtable
+        if (type == 0) return true;
         const uint32_t len = type & 0x7Fu;
-        if (off + len > fnt_size) break;
+        if (!len || len > fnt_size - off) return false;
         std::string name(reinterpret_cast<const char *>(fnt + off), len);
         off += len;
-
-        if (type & 0x80u) {                       // subdirectory
-            if (off + 2 > fnt_size) break;
+        if (name == "." || name == ".." ||
+            name.find_first_of("/\\:") != std::string::npos ||
+            name.find('\0') != std::string::npos || prefix.size() + len > 1024)
+            return false;
+        if (type & 0x80u) {
+            if (fnt_size - off < 2) return false;
             const uint16_t sub = rd16(fnt + off);
             off += 2;
-            walk_dir(fnt, fnt_size, sub, prefix + name + "/", depth + 1);
-        } else {                                  // file
-            if (file_id < g.files.size()) {
-                g.files[file_id].path = prefix + name;
-                g.by_path[g.files[file_id].path] = file_id;
-            }
+            if (!walk_dir(fnt, fnt_size, sub, dirs, prefix + name + "/",
+                          visited, named, depth + 1)) return false;
+        } else {
+            if (file_id >= g.files.size() || named[file_id]) return false;
+            named[file_id] = true;
+            g.files[file_id].path = prefix + name;
+            if (!g.by_path.emplace(g.files[file_id].path, file_id).second) return false;
             ++file_id;
         }
     }
+    return false; // missing subtable terminator
 }
 
 }  // namespace
@@ -82,7 +90,7 @@ bool fs_mount_rom(const char *rom_path) {
     std::fseek(f, 0, SEEK_END);
     const long size = std::ftell(f);
     std::fseek(f, 0, SEEK_SET);
-    if (size < 0x200) { std::fclose(f); return false; }
+    if (size < 0x200 || size > 128 * 1024 * 1024) { std::fclose(f); return false; }
 
     g.rom.resize(static_cast<size_t>(size));
     const size_t got = std::fread(g.rom.data(), 1, g.rom.size(), f);
@@ -91,8 +99,10 @@ bool fs_mount_rom(const char *rom_path) {
 
     const uint32_t fnt_off = rd32(&g.rom[0x40]), fnt_size = rd32(&g.rom[0x44]);
     const uint32_t fat_off = rd32(&g.rom[0x48]), fat_size = rd32(&g.rom[0x4C]);
-    if (fat_off + fat_size > g.rom.size() || fnt_off + fnt_size > g.rom.size()) {
-        g.rom.clear();
+    if (fat_size == 0 || fat_size % 8 || fnt_size < 8 ||
+        fat_off > g.rom.size() || fat_size > g.rom.size() - fat_off ||
+        fnt_off > g.rom.size() || fnt_size > g.rom.size() - fnt_off) {
+        fs_unmount();
         return false;
     }
 
@@ -100,12 +110,23 @@ bool fs_mount_rom(const char *rom_path) {
     for (size_t i = 0; i < g.files.size(); ++i) {
         g.files[i].start = rd32(&g.rom[fat_off + i * 8]);
         g.files[i].end = rd32(&g.rom[fat_off + i * 8 + 4]);
+        if (g.files[i].start > g.files[i].end || g.files[i].end > g.rom.size()) {
+            fs_unmount();
+            return false;
+        }
     }
 
     // The root record's "first file ID" is where the named filesystem begins;
     // everything below it is an overlay.
     g.overlays = rd16(&g.rom[fnt_off + 4]);
-    walk_dir(&g.rom[fnt_off], fnt_size, 0xF000, "", 0);
+    const uint16_t dirs = rd16(&g.rom[fnt_off + 6]);
+    std::vector<bool> visited(dirs, false), named(g.files.size(), false);
+    if (!dirs || dirs > 4096 || dirs * 8u > fnt_size ||
+        g.overlays > static_cast<int32_t>(g.files.size()) ||
+        !walk_dir(&g.rom[fnt_off], fnt_size, 0xF000, dirs, "", visited, named, 0)) {
+        fs_unmount();
+        return false;
+    }
 
     g.mounted = true;
     g.from_dir = false;
@@ -170,7 +191,7 @@ int32_t fs_id_by_path(const char *path) {
 
 int32_t fs_read(int32_t id, void *dst, int32_t capacity) {
     const int32_t size = fs_size(id);
-    if (size < 0 || !dst) return -1;
+    if (size < 0 || capacity < 0 || !dst) return -1;
     const int32_t n = size < capacity ? size : capacity;
 
     if (g.from_dir) {
@@ -185,8 +206,8 @@ int32_t fs_read(int32_t id, void *dst, int32_t capacity) {
     }
 
     const Entry &e = g.files[id];
-    if (e.start + static_cast<uint32_t>(n) > g.rom.size()) return -1;
-    std::memcpy(dst, &g.rom[e.start], static_cast<size_t>(n));
+    if (e.start > g.rom.size() || static_cast<size_t>(n) > g.rom.size() - e.start) return -1;
+    if (n) std::memcpy(dst, g.rom.data() + e.start, static_cast<size_t>(n));
     return n;
 }
 
