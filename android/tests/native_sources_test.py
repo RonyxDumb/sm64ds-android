@@ -24,6 +24,15 @@ class NativeSourcesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             native.save_io('int func_02060484(int a, long b);')
 
+    def test_only_typed_shared_file_functions_are_selected(self):
+        source = (root / 'src/SharedFilePtr.cpp').read_text()
+        result = native.shared_file(source)
+        self.assertIn('void SharedFilePtr::Release()', result)
+        self.assertIn('numRefs >= 0xff', result)
+        self.assertNotIn('void *SharedFilePtr::Load()', result)
+        self.assertNotIn('UpdateFileOffsets', result)
+        self.assertNotIn('(int)Memory::Allocate', result)
+
 
 if __name__ == '__main__':
     unittest.main()

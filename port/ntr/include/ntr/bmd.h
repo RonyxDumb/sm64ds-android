@@ -56,6 +56,7 @@ struct BmdModel {
 
 // Load and decompress by filesystem id or path. Returns false if absent.
 bool bmd_load(int32_t file_id, BmdModel &out);
+bool bmd_parse(std::vector<uint8_t> decoded, BmdModel &out);
 bool bmd_load_path(const char *path, BmdModel &out);
 bool bmd_load_asset(uint32_t asset_id, BmdModel &out);   // the game's own handle
 

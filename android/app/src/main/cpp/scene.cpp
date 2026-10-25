@@ -2,26 +2,33 @@
 #include "ntr/bmd.h"
 #include "ntr/fs.h"
 #include "ntr/gx.h"
+#include "runtime/resources.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 namespace sm64ds {
-Scene load_scene(const char *path) {
+Scene load_scene(const char *path, Resources *resources) {
     struct Cleanup {
+        bool ownsMount;
         ~Cleanup() {
             ntr::bmd_set_animation(nullptr);
             ntr::gx_reset();
-            ntr::fs_unmount();
+            if (ownsMount) ntr::fs_unmount();
         }
-    } cleanup;
-    if (!ntr::fs_mount_rom(path))
+    } cleanup{!resources};
+    if (!resources && !ntr::fs_mount_rom(path))
         throw std::runtime_error("Cannot mount saved ROM.");
     ntr::BmdModel model;
     std::vector<uint8_t> pose;
-    if (!ntr::bmd_load_path("data/DSMT/face_demo_mario.bmd", model) ||
-        !ntr::bca_load_path("data/DSMT/face_demo_wait_mario.bca", pose))
+    if (resources) {
+        if (!ntr::bmd_parse(resources->load("data/DSMT/face_demo_mario.bmd"), model))
+            throw std::runtime_error("Cannot parse the original Mario model.");
+        pose = resources->load("data/DSMT/face_demo_wait_mario.bca");
+    } else if (!ntr::bmd_load_path("data/DSMT/face_demo_mario.bmd", model) ||
+               !ntr::bca_load_path("data/DSMT/face_demo_wait_mario.bca", pose)) {
         throw std::runtime_error("Cannot load the original Mario model/pose.");
+    }
     ntr::gx_reset();
     ntr::gx_set_light(0, -.4f, -.6f, -.7f, 0x7fff);
     ntr::gx_enable_lights(1);

@@ -211,4 +211,26 @@ int32_t fs_read(int32_t id, void *dst, int32_t capacity) {
     return n;
 }
 
+bool fs_overlay_info(uint32_t overlayId, OverlayInfo &out) {
+    out = {};
+    if (!g.mounted || g.from_dir || g.rom.size() < 0x58) return false;
+    const uint32_t offset = rd32(g.rom.data() + 0x50), size = rd32(g.rom.data() + 0x54);
+    if (!size || size % 32 || offset > g.rom.size() || size > g.rom.size() - offset) return false;
+    for (uint32_t n = 0; n < size; n += 32) {
+        const uint8_t *record = g.rom.data() + offset + n;
+        if (rd32(record) != overlayId) continue;
+        const uint32_t file = rd32(record + 24), ram = rd32(record + 4), length = rd32(record + 8);
+        if (file >= g.files.size() || !length || length > 4 * 1024 * 1024 ||
+            ram > UINT32_MAX - length || rd32(record + 12) > UINT32_MAX - ram - length)
+            return false;
+        const uint32_t flags = rd32(record + 28);
+        const bool compressed = (flags & 0x01000000) != 0;
+        if (compressed && (flags & 0xffffff) != g.files[file].end - g.files[file].start)
+            return false;
+        out = {ram, length, rd32(record + 12), file, compressed};
+        return true;
+    }
+    return false;
+}
+
 }  // namespace ntr

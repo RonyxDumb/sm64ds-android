@@ -55,6 +55,14 @@ int32_t fs_id_by_path(const char *path);   // -1 if absent
 // Read a whole file. Returns bytes read, or -1. `dst` must hold fs_size(id).
 int32_t fs_read(int32_t id, void *dst, int32_t capacity);
 
+struct OverlayInfo {
+    uint32_t ramAddress, ramSize, bssSize, fileId;
+    bool compressed;
+};
+// Reads an ARM9 overlay descriptor from the mounted cartridge's own table.
+// This is data access; it never executes the overlay's ARM instructions.
+bool fs_overlay_info(uint32_t overlayId, OverlayInfo &out);
+
 }  // namespace ntr
 
 #endif  // NTR_FS_H

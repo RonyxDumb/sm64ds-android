@@ -24,9 +24,17 @@ public final class ControllerState {
     }
     private final Map<Integer, Pointer> pointers = new LinkedHashMap<>();
     private int joystick = -1;
+    private int hardwareButtons;
+    private float hardwareX, hardwareY, lastAspect = 1;
     public int buttons, touchX = -1, touchY = -1;
     public float x, y;
     public float deadzone = .15f, sensitivity = 1f;
+    public void hardware(int keys, float axisX, float axisY) {
+        hardwareButtons = keys;
+        hardwareX = Float.isFinite(axisX) ? Math.max(-1, Math.min(1, axisX)) : 0;
+        hardwareY = Float.isFinite(axisY) ? Math.max(-1, Math.min(1, axisY)) : 0;
+        rebuild(lastAspect);
+    }
     public void down(int id, float px, float py, float aspect) {
         pointers.put(id, new Pointer(px, py));
         if (joystick < 0 && Math.hypot((px - .16f) * aspect, py - .70f) < .23f)
@@ -48,13 +56,17 @@ public final class ControllerState {
         rebuild(aspect);
     }
     public void clear() {
+        hardwareButtons = 0;
+        hardwareX = hardwareY = 0;
+        cancelTouch();
+    }
+    public void cancelTouch() {
         pointers.clear();
         joystick = -1;
-        buttons = 0;
-        x = y = 0;
-        touchX = touchY = -1;
+        rebuild(lastAspect);
     }
     private void rebuild(float aspect) {
+        lastAspect = aspect;
         buttons = 0;
         x = y = 0;
         touchX = touchY = -1;
@@ -81,6 +93,11 @@ public final class ControllerState {
                     touchY = Math.min(191, (int)(p.y * 192));
                 }
             }
+        }
+        buttons |= hardwareButtons;
+        if (Math.hypot(hardwareX, hardwareY) > Math.hypot(x, y)) {
+            x = hardwareX;
+            y = hardwareY;
         }
         if (x > .35f)
             buttons |= RIGHT;

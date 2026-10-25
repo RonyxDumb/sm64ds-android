@@ -5,6 +5,10 @@ European ROM and offers a native OpenGL ES backend test with the original Mario
 face, multitouch input, ROM sound samples and music sequenced by the PC engine. **It does not boot or play the
 original game yet.**
 
+Recovered resource ownership, key/stylus updates and cartridge save records are
+now linked, with a native resource heap and the ROM's own asset catalog. The
+scene/actor boot chain remains the main blocker.
+
 Build instructions and integration blockers: [android/README.md](android/README.md).
 Validated progress: [android/CHECKPOINT.md](android/CHECKPOINT.md).
 Playable-PC dependency and remaining ABI work: [android/PC_PORT.md](android/PC_PORT.md).

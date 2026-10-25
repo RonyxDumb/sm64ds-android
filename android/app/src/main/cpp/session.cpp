@@ -10,14 +10,8 @@ std::mutex &platform_mutex() {
 }
 Session::Session(const char *path) {
     std::lock_guard<std::mutex> guard(platform_mutex());
-    scene_ = load_scene(path);
-    struct Unmount {
-        ~Unmount() {
-            ntr::fs_unmount();
-        }
-    } cleanup;
-    if (!ntr::fs_mount_rom(path))
-        throw std::runtime_error("Could not mount sound archive.");
+    resources_ = std::make_unique<Resources>(path);
+    scene_ = load_scene(path, resources_.get());
     audio_ = std::make_unique<AndroidAudio>(load_audio_clips());
     const std::string rom(path);
     const auto slash = rom.find_last_of('/');
@@ -30,8 +24,7 @@ void Session::frame(int width, int height, float dt, uint32_t buttons, float x, 
     // Diagnostic scene only: do not fabricate player movement before the real
     // actor/scene runtime is linked. The entire DS button/touch snapshot arrives
     // here, ready for the recovered input seam.
-    (void)touchX;
-    (void)touchY;
+    input_.update(buttons, x, y, touchX, touchY);
     dt = std::clamp(dt, 0.f, .05f);
     yaw_ += (x + ((buttons & (1u << 17)) ? 1.f : 0.f) - ((buttons & (1u << 16)) ? 1.f : 0.f)) * dt *
             1.8f;

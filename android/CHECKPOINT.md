@@ -1,4 +1,73 @@
-# Android checkpoint — 2026-10-25, recovered cartridge saves
+# Android checkpoint — 2026-10-25, native resource heap and recovered input
+
+**Not playable yet.** The APK still displays the native backend scene. Original
+boot, save-selection scene, castle, Player/actor runtime, HUD/minimap and game-driven
+sound commands are not connected. No Android device/emulator is attached.
+
+## Landed and exercised
+
+- Native game heap: a bounded 32 MiB mmap arena, external host-width metadata,
+  signed forward/backward alignment, coalescing, in-place resize, checked frees
+  and checked 32-bit arena offsets. This replaces the resource allocation seam;
+  it does NOT make the remaining fixed-layout actor/heap classes ARM64-safe.
+- Cartridge resource catalog: the supported European ROM's own overlay 0 is
+  read and BLZ-decompressed as data. All 2058 handle-to-path entries are resolved
+  against its filesystem. No ARM guest instructions are executed and no constant
+  handle/FAT bias is used by this Android resource path.
+- Six actual SharedFilePtr ownership/constructor functions are selected verbatim
+  from `src/SharedFilePtr.cpp`. The card-I/O seam follows the pinned PC port's
+  approach, using the existing filesystem/LZ77 decoder and native heap. SharedFilePtr
+  is allocated at native size; no 64-bit pointers are written into DS records.
+- The backend scene now loads its original model/animation through those recovered
+  resource functions. BMD parsing still uses immutable 32-bit file offsets. ROM
+  mounting and heap ownership last for the native session.
+- The unchanged original `func_0203bc7c.c` and `func_0203bb60.c` are linked and run
+  on each current render frame, producing the original key/stylus state. Native
+  aliases preserve the overlapping key words and touch byte lanes. Gameplay tick
+  scheduling and the Player's analog-control record still need integration.
+- Physical controller keys, sticks, hats and triggers merge with multitouch;
+  disconnect/focus-loss handling clears held input. Right-stick camera bits are
+  backend inputs, not proof that the recovered camera uses them.
+- The recovered cartridge-save implementation below remains linked. Original
+  record defaults/checksums/mirror recovery run, but no recovered menu uses them yet.
+
+## Verification
+
+- Fresh ARM64 debug and release APK builds plus lint passed (0 errors, 22 warnings).
+  A stale restored lint/dex cache initially reported obsolete resources/duplicate
+  synthetic classes; a fresh project cache and generated output resolved it.
+- ASan/UBSan: heap allocation/coalescing/resize/invalid-free and 1000 mixed
+  allocations; valid and malformed BLZ streams; synthetic catalog and actual ROM
+  catalog; SharedFilePtr's 255-reference limit, release and session recreation.
+- Actual ROM: 2058 catalog handles, face model 78736 decoded bytes and pose 2268
+  bytes; no remaining resource allocations after release. The 64-bit host test
+  used addresses above 4 GiB. This is host execution evidence, not a phone test.
+- Original input routines: opposite-direction filtering, press/release edges,
+  stylus edge/coordinates, alias addresses and reset passed. Java controller/touch
+  merge, deadzone, disconnect and reset tests passed.
+- Existing ROM/importer, scheduler, audio, BMD and PC music regression tests passed.
+  Mesa headless GLES3 rendered the original face: 1798 triangles, 27508 covered
+  pixels; no GL errors. `port_refcheck.py`: all 233 references resolve.
+- Original `src/` and `include/` are unchanged. No ROM/resources/APKs are committed.
+
+## Resume here
+
+1. The boot compile gate is still an OBJECT target only. Do not label it a game
+   boot. Its native class is 0x98 rather than DS 0x58 and native member pointers
+   are 16 bytes; those layouts still need typed scene/actor ownership and call
+   bridges before linking the whole boot path.
+2. Use `runtime/resources.*`, `game_heap.*`, `game_input.*` and `save_store.*` as
+   real dependencies, not new diagnostic replacements. Keep the matching sources
+   unchanged and extend `android/tools/native_sources.py` with audited transforms.
+3. Close the actual boot-worker, fader, scene transition and 2D scanout dependencies;
+   then link the recovered title/save-selection/castle chain. Do not add dummy
+   success-returning dependencies or fake character movement.
+4. Connect source-driven geometry/animation, HUD/minimap, camera/player controls
+   and Sound events to the existing ES3/AAudio backends, then test on Android.
+
+---
+
+# Previous checkpoint — recovered cartridge saves
 
 The APK remains a backend viewer, not a playable port. Boot, file selection and
 castle/player code are still not linked. This increment closes the save-medium

@@ -26,6 +26,16 @@ g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/bmd_test"
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/ControllerState.java android/tests/ControllerStateTest.java
 java -cp "$TEST_BUILD/java" ControllerStateTest
+javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/{ControllerState,GamepadState}.java android/tests/GamepadStateTest.java
+java -cp "$TEST_BUILD/java" GamepadStateTest
+gcc -std=c11 -Wall -Wextra -Werror -Wno-unknown-pragmas -fsanitize=address,undefined \
+    -Iinclude -c src/unnamed/arm9/0203/func_0203bb60.c -o "$TEST_BUILD/touch.o"
+gcc -std=c11 -Wall -Wextra -Werror -Wno-unknown-pragmas -fsanitize=address,undefined \
+    -Iinclude -c src/unnamed/arm9/0203/func_0203bc7c.c -o "$TEST_BUILD/keys.o"
+g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -Iinclude \
+    -Iandroid/app/src/main/cpp android/tests/input_test.cpp \
+    android/app/src/main/cpp/runtime/game_input.cpp "$TEST_BUILD/touch.o" "$TEST_BUILD/keys.o" -o "$TEST_BUILD/input_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/input_test"
 
 python3 android/tests/hostgen_test.py
 python3 android/tests/native_sources_test.py
@@ -38,6 +48,12 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
     "$TEST_BUILD/native-src/src/engine/save/SaveData.cpp" \
     "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" -o "$TEST_BUILD/save_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/save_test"
+g++ -std=c++17 -Wall -Wextra -Werror -fno-strict-aliasing -fsanitize=address,undefined -g \
+    -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp \
+    android/tests/resources_test.cpp android/app/src/main/cpp/runtime/resources.cpp \
+    android/app/src/main/cpp/runtime/game_heap.cpp port/ntr/fs.cpp port/ntr/lz77.cpp \
+    "$TEST_BUILD/native-src/src/SharedFilePtr.cpp" -o "$TEST_BUILD/resources_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/resources_test" "$@"
 g++ -std=c++17 -pthread -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter -O1 -g \
     -fsanitize=address,undefined -Iport/ntr/include -Iandroid/app/src/main/cpp \
     -Iexternal/sm64ds-pc/port/hal/sdat android/tests/music_test.cpp \

@@ -25,5 +25,6 @@ struct Scene {
 };
 // Caller serializes access to the existing ntr global filesystem/GX state.
 // Loads original ROM assets; no guest code is executed.
-Scene load_scene(const char *path);
+class Resources;
+Scene load_scene(const char *path, Resources *resources = nullptr);
 }

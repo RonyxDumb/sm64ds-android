@@ -27,9 +27,16 @@ included. Original decompilation sources and their build configuration are prese
   X plays sequence 58; Y stops. Game-driven sound commands are still pending.
 - The POSIX VBlank scheduler is compiled and host-tested; original game entry
   point integration is still pending.
+- Native resource heap and the ROM's 2058-entry asset catalog; the original
+  SharedFilePtr ownership code now loads the backend scene's model and pose.
+  Native object sizes and file-relative 32-bit offsets remain separate.
+- Original key/stylus update functions and physical controller input are linked;
+  the Player/camera gameplay runtime is still pending.
+- Original cartridge save records use a private persistent 8192-byte image with
+  checksums and mirror recovery. The original save-selection menu is not linked.
 
-This stores the cartridge privately and indexes it on verification; it does not yet
-build a GPU asset cache. It does not initialize the actor/game scene runtime.
+This stores the cartridge privately and resolves its resource catalog when opening
+the backend session. It does not initialize the actor/game scene runtime.
 
 ## Build
 
@@ -76,7 +83,8 @@ this also checks the full digest and detects an altered payload.
 
 ## Next integration work
 
-1. Recover pointer-independent layouts for the game runtime. `port/host_abi.h`
+1. Recover pointer-independent scene/actor layouts for the game runtime. The native
+   resource heap and SharedFilePtr seam are implemented, but `port/host_abi.h`
    currently rejects 64-bit pointers; bypassing it corrupts layout assumptions.
    Port files use 32-bit guest fields, fixed offsets and host constructor/vtable
    bridges. Start with heap/root memory and verify each bridge on ARM64.
@@ -87,9 +95,10 @@ this also checks the full digest and detects an altered payload.
    not an application linking the full boot, save selection and castle path.
 4. The GPU backend now consumes the geometry pipeline for the title-face asset.
    Connect scene submissions, animation, 2D scanout/HUD/minimap and touch mapping.
-5. Connect the tested multitouch state to recovered input globals; add physical
-   controllers. Complete SSEQ/SSAR/SBNK playback and connect the new sample mixer
-   and AAudio backend to game sound commands, then saves/device profiling.
+5. Key/stylus state now reaches recovered input globals and physical controllers
+   are supported. Connect the Player's analog/camera control record and game tick;
+   connect the sequencer/AAudio to game sound commands and saves to the original
+   menu, then perform device profiling.
 
 The upstream `PORTED` percentage tracks its source-port frontier; it is not an
 Android playability percentage. See [CHECKPOINT.md](CHECKPOINT.md) for evidence.

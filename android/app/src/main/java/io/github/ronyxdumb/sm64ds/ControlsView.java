@@ -38,11 +38,16 @@ final class ControlsView extends View {
         state.clear();
         publish();
     }
+    void hardware(GamepadState pad) {
+        state.hardware(pad.buttons, pad.x, pad.y);
+        publish();
+    }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked(), index = event.getActionIndex();
         if (action == MotionEvent.ACTION_CANCEL) {
-            clear();
+            state.cancelTouch();
+            publish();
             return true;
         }
         float w = areaWidth(), h = areaHeight();

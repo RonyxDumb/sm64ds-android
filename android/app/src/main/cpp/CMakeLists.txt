@@ -33,17 +33,24 @@ set_source_files_properties("${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp"
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
-    "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp")
+    "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp" "${NATIVE_ROOT}/src/SharedFilePtr.cpp")
 add_custom_command(OUTPUT ${SAVE_SOURCES}
     COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/native_sources.py" --out "${NATIVE_ROOT}"
     DEPENDS "${REPO_ROOT}/android/tools/native_sources.py" "${REPO_ROOT}/port/tools/hostgen.py"
-        "${REPO_ROOT}/src/engine/save/SaveData.cpp" "${REPO_ROOT}/src/engine/save/SaveData2.cpp")
+        "${REPO_ROOT}/src/engine/save/SaveData.cpp" "${REPO_ROOT}/src/engine/save/SaveData2.cpp"
+        "${REPO_ROOT}/src/SharedFilePtr.cpp")
 add_library(sm64ds_save STATIC ${SAVE_SOURCES})
 target_include_directories(sm64ds_save PRIVATE "${REPO_ROOT}/include")
 target_compile_definitions(sm64ds_save PRIVATE SM64DS_PLATFORM_PC)
 target_compile_options(sm64ds_save PRIVATE -fvisibility=hidden -ffunction-sections -fdata-sections
     -fno-strict-aliasing -Wno-unknown-pragmas)
-target_sources(sm64ds_android PRIVATE runtime/save_store.cpp)
+target_sources(sm64ds_android PRIVATE runtime/save_store.cpp runtime/game_heap.cpp runtime/resources.cpp)
+target_sources(sm64ds_android PRIVATE runtime/game_input.cpp
+    "${REPO_ROOT}/src/unnamed/arm9/0203/func_0203bb60.c"
+    "${REPO_ROOT}/src/unnamed/arm9/0203/func_0203bc7c.c")
+set_source_files_properties("${REPO_ROOT}/src/unnamed/arm9/0203/func_0203bc7c.c"
+    PROPERTIES COMPILE_OPTIONS -Wno-unknown-pragmas)
+set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS SM64DS_PLATFORM_PC)
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 set(BOOT_HOST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/boot-host")
