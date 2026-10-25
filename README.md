@@ -1,8 +1,9 @@
 # Super Mario 64 DS Android
 
 Android fork in active development. The current APK imports a user-supplied
-European ROM and verifies native filesystem, decompression and recovered math.
-**It does not boot or play the game yet.**
+European ROM and offers a native OpenGL ES backend test with the original Mario
+face, multitouch input and ROM sound samples. **It does not boot or play the
+original game yet.**
 
 Build instructions and integration blockers: [android/README.md](android/README.md).
 Validated progress: [android/CHECKPOINT.md](android/CHECKPOINT.md).

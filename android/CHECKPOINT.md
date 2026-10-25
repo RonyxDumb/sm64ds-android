@@ -1,55 +1,100 @@
-# Android checkpoint — 2026-10-25
+# Android checkpoint — 2026-10-25, native backends 0.2
 
-Status: phase 1 foundation; phase 2 filesystem/math slice only. Game is not playable.
+The APK now has an explicit native backend test. It is **not a playable port** and
+it does not run the original boot, title-menu state machine or actor runtime.
 
-## Validation completed
+## Implemented
 
-- Gradle 8.9 / AGP 8.7.3: `assembleDebug assembleRelease lintDebug` succeeded.
-  Debug APK signed, release APK unsigned. Lint has warnings, zero errors.
-- NDK 27.2.12479018 compiled and linked the library for `arm64-v8a`.
-- Host C++ tests passed with AddressSanitizer and UndefinedBehaviorSanitizer.
-  Leak detection disabled locally because this execution environment prevents
-  LeakSanitizer process inspection; CI keeps its normal enabled default.
-- Host Java import tests passed, including the locally supplied ZIP, exact ROM
-  SHA-256 verification and a deliberately altered payload rejection.
-- Local ROM probe: ASMP revision 0, 2,175 FAT entries, Mario model decompressed
-  to 19,460 bytes. Recovered DotVec3/CrossVec3 known-value checks passed.
-- `python tools/port_refcheck.py`: all 233 references resolve.
-- `apksigner verify --verbose`: APK v2 signature verified, one signer.
-- `aapt dump badging`: package io.github.ronyxdumb.sm64ds, min API 26, target 35.
-- APK contains only app code/resources and the ARM64 library; no cartridge assets.
+- Native ES 3.0 rendering of the ROM's `data/DSMT/face_demo_mario.bmd` with
+  `face_demo_wait_mario.bca` frame-zero pose. This is the authentic startup-face
+  asset, displayed in a diagnostic scene; it is not the original startup sequence.
+- Geometry/display-list decode and texture decode reuse `port/ntr`. GPU buffers
+  and textures are uploaded once per session/context, not regenerated per frame.
+  Perspective aspect adaptation, depth test, vertex lighting/colors, texture
+  alpha, polygon alpha, clamp/repeat/mirror texture addressing.
+- Fixed inherited BMD material/group and per-part matrix-slot bindings; hierarchy
+  composition no longer depends on bone record order. Material specular/emission
+  is read from +0x2c, not the polygon flags at +0x24.
+- Pointer-ID multitouch controls: circular deadzone joystick, A/B/X/Y/L/R,
+  START/SELECT, camera directions, and a separate original-touch coordinate state.
+  Cancel, pointer reordering, simultaneous joystick/buttons and focus-loss reset.
+- Native SDAT FAT/SWAR parsing and PCM8/PCM16/Nintendo IMA-ADPCM decoding.
+  The backend test loads 32 short non-looping samples, with a 16-voice stereo
+  mixer, linear resampling, hardware-timer-derived sample pitch, bounded SPSC
+  event queue and no allocation/locking/file I/O in the AAudio callback.
+- AAudio output, audio-focus gating, callback disconnect notification with reopen
+  on the render thread, pause/teardown and context-loss resource handling.
+- POSIX VBlank scheduler in `port/ntr/rt.cpp`: cooperative game/presentation
+  handoff using a condition variable and a thread; Windows fibers are preserved.
+  The Android library compiles this seam, but the backend scene does not yet
+  invoke a recovered game entry point through it.
 
-## Verification limits
+## What the test APK does
 
-`adb devices` lists no connected devices. No Android installation, Activity launch,
-JNI execution on Android, original game menu, rendered game frame, gameplay,
-save/load, audio, touchscreen controls or A34 performance has been verified.
-The Java importer and C++ probe were executed on the build host. No emulator
-runtime test has been performed. Docker/Windows script execution has not been
-performed in this environment. GitHub Actions results are separate from local checks.
+Import the supported ROM, then press **Test renderer, audio e controlli**.
+The original Mario face is shown. The stick/camera arrows rotate it; vertical
+stick movement changes viewing distance. A plays an original ROM sample; B
+selects the next sample. The overlay displays the current input state. Use the
+Android back gesture/button to return to the launcher.
 
-## Changed files
+These are diagnostic bindings. Controls do not yet move a recovered Player actor,
+and the samples are not yet driven by the game's Sound command queue.
 
-- `android/app/src/main/java/io/github/ronyxdumb/sm64ds/`: MainActivity.java,
-  NativeBridge.java, RomImport.java.
-- `android/app/src/main/cpp/`: CMakeLists.txt, bridge.cpp, rom_probe.cpp,
-  rom_probe.h, game_math.cpp.
-- `android/app/src/main/`: AndroidManifest.xml, res/values/styles.xml,
-  res/drawable/ic_app.xml.
-- `android/`: settings.gradle, build.gradle, gradle.properties, app/build.gradle,
-  gradlew, gradlew.bat, gradle/wrapper/gradle-wrapper.jar,
-  gradle/wrapper/gradle-wrapper.properties, Dockerfile, README.md, CHECKPOINT.md.
-- `android/tests/`: rom_probe_test.cpp, RomImportTest.java, run-host-tests.sh.
-- `port/ntr/fs.cpp`: defensive ROM filesystem validation and negative-read guard.
-- `.github/workflows/android.yml`, `.gitignore`, `.dockerignore`, README.md,
-  docker_build.bat.
+## Validation
 
-Original `src/` and `include/` files are untouched. No Nintendo bytes/assets or ROM
-are added to the repository or APK. Find the increment's exact SHA in `git log`
-under `android: add ARM64 importer and native asset verification`.
+- `assembleDebug assembleRelease lintDebug`: passed locally (ARM64 NDK 27.2,
+  Gradle 8.9, AGP 8.7.3). Debug APK signed; release APK unsigned.
+- ASan/UBSan: ROM/FS/LZ77, BMD nonsequential hierarchy, scheduler completion,
+  bounded stop, exceptions and cleanup; PCM8/16/ADPCM known values, sample bounds,
+  stereo pan, saturation, invalid notes, queue capacity and threaded queue traffic.
+- Java: import safety/digest checks and simultaneous multitouch/release/cancel tests.
+- Headless EGL/GLES3 on Mesa llvmpipe: shader compile/link, synthetic textured
+  scene, actual ROM face, GL resource teardown/recreate; zero GL errors.
+  Actual asset: 1,798 triangles, 27,508 covered pixels at 960x540 in the fixed
+  test view. The frame was visually inspected and showed a coherent textured face.
+- SDAT local read: 32 one-shots, 601,928 decoded PCM samples; nonzero mixed output.
+- `python tools/port_refcheck.py`: 233 references resolve.
+- No Nintendo assets, rendered frames or sound samples are committed or packaged.
 
-## Resume
+LeakSanitizer remains disabled locally due restricted process inspection. CI uses
+its normal enabled default. GitHub CI execution is separate from these local checks.
 
-Follow the integration blockers in android/README.md. Preserve the 32-bit ABI
-checks until each consumed game layout has an explicit ARM64-safe representation.
-Do not report asset inspection or math self-tests as an original game boot.
+## Not verified / not complete
+
+No connected Android device or emulator runtime test is available. Android Activity
+launch, GLES on an Android driver, AAudio device output, pause/resume and on-device
+multitouch are compiled implementations and still require device testing. A host
+PCM buffer test does not establish audible output on a phone.
+
+Original boot, file selection, castle gameplay, character logic, minimap/HUD,
+saves, animated texture matrices, full transparency/culling fidelity, SSEQ/SSAR
+sequencing, SBNK instruments/envelopes and game-driven music/voices remain absent.
+The BCA is sampled at frame zero; general animation playback is not implemented.
+There is no Android playability percentage or performance claim.
+
+## Concrete boot blocker and next step
+
+Compiling `src/game/stages/d_s_boot_methods.cpp` with the ARM64 NDK reports pointer
+truncation errors in its `LADR` macro, including lines 189, 200 and 206. It also
+retains direct MMIO and ROM-global dependencies. Preserve `src/` and extend the
+existing hostgen/seam path, then close the boot scene's actual link dependencies.
+Do not remove the recovered ABI guard or substitute a fake title/menu.
+
+The POSIX scheduler is cooperative: game code that never reaches VBlank cannot
+be force-stopped safely. It is not yet a general Nitro thread implementation.
+
+## Changed files this increment
+
+`port/ntr/{README.md,bmd.cpp,gx.cpp,rt.cpp,include/ntr/bmd.h,include/ntr/gx.h}`;
+`android/app/src/main/cpp/{scene.*,gles_renderer.*,audio_core.*,android_audio.*,
+session.*,bridge.cpp,rom_probe.cpp,CMakeLists.txt}`;
+`android/app/src/main/java/io/github/ronyxdumb/sm64ds/{ControllerState.java,
+ControlsView.java,GameSurface.java,RuntimeActivity.java,MainActivity.java,NativeBridge.java}`;
+`android/app/{build.gradle,src/main/AndroidManifest.xml}`;
+`android/tests/{audio_test.cpp,bmd_test.cpp,runtime_test.cpp,gles_test.cpp,
+ControllerStateTest.java,run-host-tests.sh}`;
+`.github/workflows/android.yml`, `README.md`, `android/{README.md,CHECKPOINT.md,.clang-format}`.
+
+Original `src/` and `include/` are unchanged. Published commits are discoverable in
+`git log` as `port: repair BMD mesh bindings and add portable VBlank scheduling`
+and `android: integrate GLES rendering, multitouch and ROM sample audio`.

@@ -20,8 +20,16 @@ uint16_t crc16(const uint8_t *p, size_t n) {
     }
     return crc;
 }
-struct CloseFile { void operator()(FILE *file) const { fclose(file); } };
-struct Unmount { ~Unmount() { ntr::fs_unmount(); } };
+struct CloseFile {
+    void operator()(FILE *file) const {
+        fclose(file);
+    }
+};
+struct Unmount {
+    ~Unmount() {
+        ntr::fs_unmount();
+    }
+};
 }
 std::string probe_rom(const char *path) {
     std::unique_ptr<FILE, CloseFile> file(fopen(path, "rb"));
@@ -38,7 +46,8 @@ std::string probe_rom(const char *path) {
     if (!ntr::fs_mount_rom(path))
         throw std::runtime_error("Invalid Nintendo DS filesystem tables.");
     const int32_t id = ntr::fs_id_by_path("data/player/b_mario_all.bmd");
-    if (id < 0) throw std::runtime_error("Expected Mario model is missing.");
+    if (id < 0)
+        throw std::runtime_error("Expected Mario model is missing.");
     const int32_t size = ntr::fs_size(id);
     if (size <= 0 || size > 16 * 1024 * 1024)
         throw std::runtime_error("Invalid model size.");
@@ -55,7 +64,8 @@ std::string probe_rom(const char *path) {
             throw std::runtime_error("Model decompression failed.");
     }
     return "ASMP revision 0 • " + std::to_string(ntr::fs_file_count()) +
-        " files\nNative game math verified.\nNative filesystem mounted; Mario model decoded (" +
-        std::to_string(decoded) + " bytes).\n\nGame boot, graphics, controls and audio are not integrated yet.";
+           " files\nNative game math verified.\nNative filesystem mounted; Mario model decoded (" +
+           std::to_string(decoded) +
+           " bytes).\n\nOriginal game boot/gameplay is not integrated yet. Use the native backend test for model rendering, touch input and ROM audio samples.";
 }
 }

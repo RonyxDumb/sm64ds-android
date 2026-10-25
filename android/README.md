@@ -1,7 +1,7 @@
 # Super Mario 64 DS Android
 
 Native Android port in development. **This APK is an importer and native asset
-verification build, not a playable game.** No emulator or ARM guest execution is
+verification/backend-test build, not a playable game.** No emulator or ARM guest execution is
 included. Original decompilation sources and their build configuration are preserved.
 
 ## Current build
@@ -19,7 +19,13 @@ included. Original decompilation sources and their build configuration are prese
   the unchanged `src/DotVec3.c` and `src/CrossVec3.c` game implementations.
 - Native filesystem mount, fixed-point math self-test, Mario model read/decompression.
   These operations run automatically for the saved ROM on subsequent launches.
-- No Play button until a real game boot path exists.
+- Explicit backend test: ES3 renders the authentic title-face model; virtual
+  multitouch controls feed native input; A plays a real SDAT sample and B selects
+  the next. These diagnostic bindings do not implement recovered player gameplay.
+- AAudio output with audio-focus and lifecycle handling. The mixer and SWAR
+  decoder are implemented; the SSEQ/SBNK music engine is not yet implemented.
+- The POSIX VBlank scheduler is compiled and host-tested; original game entry
+  point integration is still pending.
 
 This stores the cartridge privately and indexes it on verification; it does not yet
 build a GPU asset cache. It does not initialize the actor/game scene runtime.
@@ -71,15 +77,16 @@ this also checks the full digest and detects an altered payload.
    currently rejects 64-bit pointers; bypassing it corrupts layout assumptions.
    Port files use 32-bit guest fields, fixed offsets and host constructor/vtable
    bridges. Start with heap/root memory and verify each bridge on ARM64.
-2. Replace the Windows fiber scheduling path in `port/ntr/rt.cpp`; its non-Windows
-   `rt_run` path currently does not run the game. Add Android lifecycle/timing
-   support with simulation time independent from display refresh.
+2. Connect the new POSIX `rt_run` scheduler to the recovered boot/frame loop and
+   Android lifecycle. The backend viewer does not execute that entry point.
+   Keep simulation timing independent from display refresh.
 3. Close scene/startup dependencies: the PC CMake tree builds smoke executables,
    not an application linking the full boot, save selection and castle path.
-4. Connect an OpenGL ES GPU renderer to the existing geometry pipeline, then
-   adapt the HUD/minimap and original touchscreen interfaces to one display.
-5. Add multitouch/controller input, the sound sequencer/mixer and Android audio
-   output, saves, complete gameplay compatibility and device profiling.
+4. The GPU backend now consumes the geometry pipeline for the title-face asset.
+   Connect scene submissions, animation, 2D scanout/HUD/minimap and touch mapping.
+5. Connect the tested multitouch state to recovered input globals; add physical
+   controllers. Complete SSEQ/SSAR/SBNK playback and connect the new sample mixer
+   and AAudio backend to game sound commands, then saves/device profiling.
 
 The upstream `PORTED` percentage tracks its source-port frontier; it is not an
 Android playability percentage. See [CHECKPOINT.md](CHECKPOINT.md) for evidence.
