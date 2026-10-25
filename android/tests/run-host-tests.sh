@@ -26,3 +26,11 @@ g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/bmd_test"
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/ControllerState.java android/tests/ControllerStateTest.java
 java -cp "$TEST_BUILD/java" ControllerStateTest
+
+python3 android/tests/hostgen_test.py
+g++ -std=c++17 -pthread -Wall -Wextra -Werror -Wno-unused-function -Wno-unused-parameter -O1 -g \
+    -fsanitize=address,undefined -Iport/ntr/include -Iandroid/app/src/main/cpp \
+    -Iexternal/sm64ds-pc/port/hal/sdat android/tests/music_test.cpp \
+    android/app/src/main/cpp/pc_audio/{archive,stream}.cpp android/app/src/main/cpp/audio_core.cpp \
+    port/ntr/fs.cpp external/sm64ds-pc/port/hal/sdat/{sseq,mixer}.cpp -o "$TEST_BUILD/music_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/music_test" "$@"

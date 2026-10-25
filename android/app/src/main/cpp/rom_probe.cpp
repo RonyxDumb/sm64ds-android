@@ -66,6 +66,6 @@ std::string probe_rom(const char *path) {
     return "ASMP revision 0 • " + std::to_string(ntr::fs_file_count()) +
            " files\nNative game math verified.\nNative filesystem mounted; Mario model decoded (" +
            std::to_string(decoded) +
-           " bytes).\n\nOriginal game boot/gameplay is not integrated yet. Use the native backend test for model rendering, touch input and ROM audio samples.";
+           " bytes).\n\nOriginal game boot/gameplay is not integrated yet. Use the native backend test for model rendering, touch input, ROM samples and PC-sequenced music.";
 }
 }

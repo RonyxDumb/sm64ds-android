@@ -4,6 +4,7 @@ aaudio_data_callback_result_t AndroidAudio::callback(AAudioStream *stream, void 
                                                      int32_t frames) {
     auto &self = *static_cast<AndroidAudio *>(user);
     self.mixer_.render(static_cast<float *>(data), frames, AAudioStream_getSampleRate(stream));
+    self.music_.mix(static_cast<float *>(data), frames, AAudioStream_getSampleRate(stream));
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 void AndroidAudio::error(AAudioStream *, void *user, aaudio_result_t) {
@@ -40,6 +41,7 @@ bool AndroidAudio::start() {
         close();
         return false;
     }
+    music_.pause(false);
     return true;
 }
 void AndroidAudio::close() {
@@ -48,6 +50,7 @@ void AndroidAudio::close() {
         AAudioStream_close(stream_);
         stream_ = nullptr;
     }
+    music_.pause(true);
     mixer_.reset();
 }
 }

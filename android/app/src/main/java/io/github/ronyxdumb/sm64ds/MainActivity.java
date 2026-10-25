@@ -52,7 +52,7 @@ public final class MainActivity extends Activity {
         title.setTextColor(Color.WHITE);
         root.addView(title);
         TextView phase = new TextView(this);
-        phase.setText("Native port • development build 0.2\nBy Francesco Pio Pipino");
+        phase.setText("Native port • development build 0.3\nBy Francesco Pio Pipino");
         phase.setTextSize(14);
         phase.setTextColor(0xff8db5ff);
         root.addView(phase);

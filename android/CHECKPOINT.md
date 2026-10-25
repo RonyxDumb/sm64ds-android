@@ -1,3 +1,67 @@
+# Android checkpoint — 2026-10-25, PC audio integration 0.3
+
+The Android APK is still not a playable game. The original boot/scene/level
+runtime is not linked. This increment replaces the incomplete PC reference with
+a pinned dependency on the actual playable PC release. See [PC_PORT.md](PC_PORT.md).
+
+## New work
+
+- Pinned upstream `port/release-0.4.0` at
+  `6230b2996636e3fd0e03cb178161c94cb4b73cc9` in `external/sm64ds-pc`.
+- Reused that release's original SSEQ sequencer and 16-channel mixer on ARM64.
+- Added checked SDAT/INFO/FAT and SBNK/SWAR adapter with host pointer side tables,
+  eager sample decoding, a producer thread and bounded callback-safe PCM ring.
+- Connected sequenced music to AAudio alongside existing sample playback:
+  X starts BGM 58; Y stops it. The existing A/B sample test is retained.
+- Extended hostgen only for the exact pointer-truncating LADR macro. The original
+  boot methods now compile as an ARM64 object gate in the APK build. That object
+  is not linked/called; its 58 external references still need real link closure.
+- Android boot-class layout measured at 0x98 bytes vs DS 0x58; member-function
+  pointer size 16 vs the PC's explicitly selected 8. This is an ABI porting task,
+  not just a missing startup function call.
+
+## Verified locally
+
+- Debug/release ARM64 APK builds and Android Lint pass, including the recovered
+  boot object compile gate. The release APK is unsigned; the debug APK is signed.
+- ASan/UBSan host tests: BGM 58 rendered for five seconds with peak magnitude
+  32768 and nonzero energy; SSAR archive 0 entry 3 produced peak 29261.
+- Resampled PCM ring produced nonzero output; pause/resume and instance teardown
+  followed by a second instance passed. An initial underrun callback was counted
+  in the host startup test; this is not a measured Android latency result.
+- Public CI also exercises a synthetic SDAT archive generated from a square wave
+  and a single note; it uses no game data and produces nonzero PCM.
+- Three hostgen tests passed: LADR preservation, non-widening of guest offsets,
+  existing MMIO routing. Earlier host regression suites remain available.
+- Original game/decomp `src/` and `include/` are unchanged.
+
+## Runtime limits
+
+No connected Android device or emulator runtime has been available. On-device
+AAudio output, rendering, startup, controls and lifecycle remain unverified.
+The test view still shows the original face asset in its frame-zero pose; it is
+not the original menu. Full boot, file selection, levels, player logic, saves,
+minimap/HUD, general animation and sound-command integration remain unfinished.
+Do not present compilation of the recovered boot TU as a successful game boot.
+
+## Changed files
+
+`.gitmodules`, `external/sm64ds-pc` (pinned gitlink),
+`android/app/src/main/cpp/pc_audio/{archive.h,archive.cpp,stream.h,stream.cpp}`,
+`android/app/src/main/cpp/{CMakeLists.txt,android_audio.h,android_audio.cpp,session.cpp,rom_probe.cpp}`,
+`android/app/src/main/java/io/github/ronyxdumb/sm64ds/{ControlsView.java,MainActivity.java}`,
+`android/{app/build.gradle,Dockerfile,README.md,PC_PORT.md,CHECKPOINT.md}`,
+`android/tests/{hostgen_test.py,music_test.cpp,run-host-tests.sh}`,
+`.github/workflows/android.yml`, `port/tools/hostgen.py`, root `README.md`,
+`android/app/src/main/assets/THIRD_PARTY_NOTICES.txt`.
+
+Find the published increment in git log under
+`android: reuse pinned PC sequencer and compile recovered boot on ARM64`.
+
+---
+
+Previous checkpoint (historical evidence, superseded where noted above):
+
 # Android checkpoint — 2026-10-25, native backends 0.2
 
 The APK now has an explicit native backend test. It is **not a playable port** and

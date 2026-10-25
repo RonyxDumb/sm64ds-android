@@ -1,0 +1,3 @@
+[submodule "external/sm64ds-pc"]
+	path = external/sm64ds-pc
+	url = https://github.com/tangosdev/sm64ds-decomp.git

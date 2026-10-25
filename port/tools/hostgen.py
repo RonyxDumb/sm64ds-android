@@ -58,12 +58,19 @@ VOIDPP_ARITH = re.compile(r"\(\s*\*\s*\(\s*\(\s*void\s*\*\*\s*\)\s*([^()]+?)\s*\
 ATTRIBUTE = re.compile(r"__attribute__\s*\(\((?:[^()]|\([^()]*\))*\)\)")
 
 
+# This macro's intermediate unsigned-int cast exists only to reproduce mwccarm
+# instruction selection. It truncates an actual host member pointer on ARM64.
+# Remove only that exact round-trip, leaving ROM addresses and stored u32s alone.
+LADR_ROUNDTRIP = re.compile(r"(#define\s+LADR\(p\)\s+)\(\(void\s*\*\)\(unsigned int\)\(p\)\)")
+
+
 def transform(text):
     """Return (new_text, n_rewrites)."""
+    text, n4 = LADR_ROUNDTRIP.subn(r"\1((void *)(p))", text)
     text, n3 = ATTRIBUTE.subn("", text)
     text, n2 = VOIDPP_ARITH.subn(r"((*((char **) \1))) +", text)
     text, n1 = MMIO_DEREF.subn(lambda m: f"NTR_MMIO({m.group(2).strip()}, {m.group(3)})", text)
-    return text, n1 + n2 + n3
+    return text, n1 + n2 + n3 + n4
 
 
 # ~110 files in the decomp are ARM assembly blocks -- CP15 cache ops, the CRT0,
@@ -147,7 +154,7 @@ def main():
         out, n = emit(path, out_dir, decomp)
         total += n
         if not args.all:
-            print(f"{path.name:<44} {n:>3} MMIO rewrite(s) -> {out}")
+            print(f"{path.name:<44} {n:>3} host rewrite(s) -> {out}")
 
     if args.all:
         print(f"{len(targets) - len(skipped):,} files transformed, "

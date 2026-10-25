@@ -46,6 +46,13 @@ void Session::frame(int width, int height, float dt, uint32_t buttons, float x, 
         if (audioReady_)
             audio_->sample(sample_);
     }
+    if (audioEnabled && (pressed & 1024)) {
+        audioReady_ = audio_->start();
+        if (audioReady_)
+            audio_->music();
+    }
+    if (pressed & 2048)
+        audio_->stop_music();
     audioRetry_ -= dt;
     if (audioEnabled && audio_->disconnected() && audioRetry_ <= 0) {
         audioReady_ = audio_->start();

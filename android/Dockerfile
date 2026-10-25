@@ -1,5 +1,5 @@
 FROM eclipse-temurin:17-jdk-jammy
-RUN apt-get update && apt-get install -y --no-install-recommends curl unzip g++ ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip g++ python3 ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \

@@ -22,8 +22,9 @@ included. Original decompilation sources and their build configuration are prese
 - Explicit backend test: ES3 renders the authentic title-face model; virtual
   multitouch controls feed native input; A plays a real SDAT sample and B selects
   the next. These diagnostic bindings do not implement recovered player gameplay.
-- AAudio output with audio-focus and lifecycle handling. The mixer and SWAR
-  decoder are implemented; the SSEQ/SBNK music engine is not yet implemented.
+- AAudio output with audio-focus and lifecycle handling. The pinned PC
+  SSEQ sequencer/mixer and a pointer-safe SBNK/SWAR adapter are integrated.
+  X plays sequence 58; Y stops. Game-driven sound commands are still pending.
 - The POSIX VBlank scheduler is compiled and host-tested; original game entry
   point integration is still pending.
 
@@ -32,7 +33,9 @@ build a GPU asset cache. It does not initialize the actor/game scene runtime.
 
 ## Build
 
-Use JDK 17, Android SDK platform/build-tools 35, NDK 27.2.12479018 and CMake 3.22.1.
+First run `git submodule update --init --recursive` (or clone with `--recurse-submodules`).
+See [PC_PORT.md](PC_PORT.md) for the pinned playable PC release and integration status.
+Use Python 3, JDK 17, Android SDK platform/build-tools 35, NDK 27.2.12479018 and CMake 3.22.1.
 Set `ANDROID_HOME` (or create ignored `android/local.properties` with `sdk.dir=...`).
 
 ```sh

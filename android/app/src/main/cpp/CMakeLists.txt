@@ -14,3 +14,33 @@ target_include_directories(sm64ds_android PRIVATE "${REPO_ROOT}/port/ntr/include
 target_link_options(sm64ds_android PRIVATE "-Wl,-z,max-page-size=16384")
 
 target_link_libraries(sm64ds_android PRIVATE GLESv3 aaudio)
+
+set(PC_SDAT "${REPO_ROOT}/external/sm64ds-pc/port/hal/sdat")
+if(NOT EXISTS "${PC_SDAT}/sseq.cpp")
+    message(FATAL_ERROR "Initialize pinned PC sources: git submodule update --init --recursive")
+endif()
+target_sources(sm64ds_android PRIVATE pc_audio/archive.cpp pc_audio/stream.cpp
+    "${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp")
+target_include_directories(sm64ds_android PRIVATE "${PC_SDAT}" "${CMAKE_CURRENT_SOURCE_DIR}")
+# These upstream files also compile as standalone host tools; preserve their
+# implementation and silence only the unused diagnostic helpers on Clang.
+set_source_files_properties("${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp"
+    PROPERTIES COMPILE_OPTIONS "-Wno-unused-function;-Wno-unused-parameter")
+
+# Compile the recovered boot TU through the existing host-source seam. This is
+# deliberately an object gate, NOT an APK link: unresolved game dependencies must
+# be implemented before an entry point can be called. Never manufacture stubs.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(BOOT_HOST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/boot-host")
+set(BOOT_HOST_CPP "${BOOT_HOST_ROOT}/src/game/stages/d_s_boot_methods.cpp")
+add_custom_command(OUTPUT "${BOOT_HOST_CPP}"
+    COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/port/tools/hostgen.py"
+        --out "${BOOT_HOST_ROOT}" _ZN9dScBoot_c13InitResourcesEv
+    DEPENDS "${REPO_ROOT}/port/tools/hostgen.py"
+        "${REPO_ROOT}/src/game/stages/d_s_boot_methods.cpp"
+    WORKING_DIRECTORY "${REPO_ROOT}")
+add_library(sm64ds_boot_frontier OBJECT "${BOOT_HOST_CPP}")
+target_include_directories(sm64ds_boot_frontier PRIVATE "${REPO_ROOT}/include" "${REPO_ROOT}/port/ntr/include")
+target_compile_definitions(sm64ds_boot_frontier PRIVATE SM64DS_PLATFORM_PC)
+target_compile_options(sm64ds_boot_frontier PRIVATE -Wno-unknown-pragmas -Wno-int-to-pointer-cast -Wno-int-to-void-pointer-cast)
+add_dependencies(sm64ds_android sm64ds_boot_frontier)
