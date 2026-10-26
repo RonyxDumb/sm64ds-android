@@ -24,8 +24,16 @@ public class ControllerStateTest {
         check(s.buttons == 0);
         s.up(7, aspect);
         check(s.x == 0);
-        s.down(128, .5f, .5f, aspect);
+        // The game's physical bottom/right 4:3 viewport is the sole
+        // touchscreen. The left screen and black letterbox must be inert.
+        s.down(128, .25f, .5f, aspect);
+        check(s.touchX == -1 && s.touchY == -1);
+        s.move(128, .75f, .5f, aspect);
         check(s.touchX == 128 && s.touchY == 96);
+        s.move(128, .51f, .125f, aspect);
+        check(s.touchX >= 4 && s.touchX <= 6 && s.touchY == 0);
+        s.move(128, .75f, .05f, aspect);
+        check(s.touchX == -1 && s.touchY == -1);
         s.clear();
         check(s.buttons == 0 && s.touchX == -1 && s.y == 0);
         s.down(4, .90f, .70f, aspect);
