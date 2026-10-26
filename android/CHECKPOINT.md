@@ -1,3 +1,55 @@
+# Android checkpoint — 2026-10-26, native frontend record core
+
+**Not playable.** Production boot now initializes the original frontend root's
+first builder with its 19 allocations. Menu dispatch and rendering, scene 3,
+actors and Player are still unlinked. Android reports that boundary explicitly.
+
+## Implemented
+
+- 25 recovered translation units execute as native code using four-byte data
+  and code handles. Full-width native pointers live in separate registries;
+  cartridge bytes are never interpreted or called as ARM instructions.
+- All original size/offset assertions remain active. Partial views share the
+  original root and overlay data. Each translation unit has its own namespace,
+  avoiding ODR collisions between unrelated recovered record names.
+- Genuine allocator setters/forwarders and root construction initialize menu
+  states, cameras, lights, scalar/vector tweens, settings, pad and touch. The
+  actual recovered normalizer uses the native arithmetic-register backend.
+- The native adapters implement bulk fill, matrices, integer arithmetic,
+  owner language and touch sampling. Unregistered data/code handles fail; no
+  missing game dependency is filled by a successful stub.
+- The checked manifest is tied to source SHA-256 values. Only developer
+  regeneration needs the pinned parser; Android builds use the Python stdlib.
+  Projected POD headers are private to the generated-source target.
+- Runtime memory maps preserve sanitizer stack instrumentation, including
+  ASan's fake stack, rather than turning off use-after-return checks.
+
+## Verification
+
+- Host ASan/UBSan with use-after-return: root aliases, camera matrices/aspect,
+  lights, language, state updates, input, high native pointers, invalid handles
+  and three complete heap lifetimes pass.
+- Private-ROM production path: four full boot/frontend/launch lifetimes pass,
+  with 19 frontend allocations and correct heap recovery. The launch result is
+  still supplied by the execution check, not an interactive menu.
+- Native ARM64 Linux frontend execution passes in CI. Android APK build and
+  lint validation are in progress on the work/frontend-native-20261026 branch.
+  No Android device is attached; no gameplay is claimed.
+
+## Resume here
+
+1. Finish the other root builders from b68e8: texture records, palette state,
+   24 item views and display/BG/OAM ownership. Then the complete b7138 entry,
+   b7090 update and aed98 dispatcher can drive actual frontend results.
+2. Keep record assertions. C++ polymorphic actor/model layouts and member
+   function pointers need explicit native ABI projections; raw native vptrs
+   cannot enter packed records. Ptr rejects polymorphic pointee dereferences.
+3. Scene 3 lifecycle, actor dispatch, Player/collision/camera, level actors,
+   source-driven complete 3D rendering/animation, HUD/minimap and game sound
+   remain unfinished. Preserve the established StartFile and controller path.
+
+---
+
 # Android checkpoint — 2026-10-26, recovered file launch and stage controls
 
 **Not playable.** The normal Android session completes boot and the original

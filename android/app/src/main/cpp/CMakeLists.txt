@@ -44,7 +44,8 @@ target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
 target_compile_options(sm64ds_frontend PRIVATE -fwrapv -fsigned-char -fno-strict-aliasing
     -fvisibility=hidden -ffunction-sections -fdata-sections
-    -Wno-unknown-pragmas -Wno-return-type-c-linkage)
+    -Wno-unknown-pragmas -Wno-return-type-c-linkage -Wno-unused-parameter
+    -Wno-unused-variable -Wno-sign-compare)
 set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
     runtime/packed_memory.cpp)
