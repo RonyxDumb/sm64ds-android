@@ -4,6 +4,19 @@
 #include <vector>
 
 namespace sm64ds::packed {
+// ARM/Itanium pointer-to-member-function representation used by the DS:
+// a code handle or virtual-table byte offset, followed by a signed
+// this-adjustment whose low bit selects virtual dispatch.
+struct MemberCall {
+    uint32_t entry;
+    int32_t adjustment;
+};
+static_assert(sizeof(MemberCall) == 8);
+struct MemberTarget {
+    uint32_t object; // adjusted packed handle, never a truncated host pointer
+    uintptr_t code;  // resolved native function address
+};
+
 class Space {
 public:
     explicit Space(GameHeap &heap);
@@ -26,6 +39,9 @@ public:
         bind_code(address, bits);
     }
     uintptr_t code(uint32_t address) const;
+    // Resolve original DS virtual/member calls through checked 32-bit
+    // records and the native function table. Never execute guest code.
+    MemberTarget resolve_member(uint32_t object, MemberCall member) const;
     uint32_t code_address(uintptr_t native);
     static Space &current();
     class Scope {
