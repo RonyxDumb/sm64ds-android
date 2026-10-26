@@ -178,7 +178,7 @@ void *map_fixed(uintptr_t base, size_t size) {
 
 bool io_init() {
     if (g_io) return true;
-    struct Region { uintptr_t base; size_t size; void *mapping; };
+    struct Region { uintptr_t base; size_t size; void *mapping = nullptr; };
     constexpr Region regions[] = {
         {MAIN_BASE, MAIN_SIZE}, {IO_BASE, IO_SIZE}, {PLTT_BASE, PLTT_SIZE},
         {VRAM_BASE, VRAM_SIZE}, {OAM_BASE, OAM_SIZE},
