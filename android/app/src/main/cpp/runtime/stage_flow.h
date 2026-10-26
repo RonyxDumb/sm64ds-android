@@ -20,6 +20,7 @@ public:
     const ControllerInput &controller(unsigned slot) const;
     const StageAssets *assets() const { return assets_.get(); }
     packed::Space *address_space() const { return addressSpace_.get(); }
+    void prepare_scene();
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
 
