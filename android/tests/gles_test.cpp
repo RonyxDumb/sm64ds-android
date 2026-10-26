@@ -98,6 +98,13 @@ int main(int argc, char **argv) {
                   "bottom row orientation/color");
             glReadPixels(720, 270, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
             check(sample[0] == 0 && sample[1] == 255 && sample[2] == 0, "sub-screen scanout");
+            screens.draw(top, bottom, 960, 540, false);
+            glReadPixels(240, 270, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
+            check(sample[0] == 0 && sample[1] == 255 && sample[2] == 0,
+                  "POWCNT1 swaps engine B onto the physical upper screen");
+            glReadPixels(720, 400, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
+            check(sample[0] == 255 && sample[1] == 0 && sample[2] == 0,
+                  "POWCNT1 swaps engine A onto the lower touch screen");
             screens.release();
         }
         check(glGetError() == GL_NO_ERROR, "native screen GL lifecycle error");
