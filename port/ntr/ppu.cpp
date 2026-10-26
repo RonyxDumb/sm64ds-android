@@ -16,6 +16,8 @@
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
+#include <array>
+#include <stdexcept>
 
 namespace ntr {
 namespace {
@@ -59,6 +61,10 @@ struct BgConfig {
     bool bpp8;
     int tiles_w, tiles_h;
     int hofs, vofs;
+    enum Kind { Text, Affine, Extended, Bitmap, Large } kind=Text;
+    bool direct=false,wrap=false;
+    int pa=0,pb=0,pc=0,pd=0,refx=0,refy=0;
+    int width=0,height=0;
 };
 
 BgConfig read_bg(const EngineMap &em, int bg, uint32_t dispcnt) {
@@ -77,6 +83,32 @@ BgConfig read_bg(const EngineMap &em, int bg, uint32_t dispcnt) {
     c.chars = em.vram_base + char_off + (((cnt >> 2) & 15) << 14);
 
     text_size((cnt >> 14) & 3, c.tiles_w, c.tiles_h);
+    const unsigned mode=dispcnt&7,size=cnt>>14;
+    if ((bg==3 && (mode==1 || mode==2)) || (bg==2 && (mode==2 || mode==4))) c.kind=BgConfig::Affine;
+    if ((bg==3 && mode>=3 && mode<=5) || (bg==2 && mode==5)) c.kind=BgConfig::Extended;
+    if (c.kind==BgConfig::Extended && (cnt&0x80)) c.kind=BgConfig::Bitmap;
+    if (mode==6) {
+        if (bg!=2 || !em.has_base_offset) { c.enabled=false; return c; }
+        c.kind=BgConfig::Large;
+    }
+    if (c.kind!=BgConfig::Text) {
+        c.width=c.height=128<<size;
+        if (c.kind==BgConfig::Bitmap) {
+            constexpr int widths[]={128,256,512,512},heights[]={128,256,256,512};
+            c.width=widths[size]; c.height=heights[size]; c.direct=cnt&4;
+            c.screen=em.vram_base+(((cnt>>8)&31)<<14);
+        } else if (c.kind==BgConfig::Large) {
+            c.width=(cnt&0x4000)?1024:512; c.height=(cnt&0x4000)?512:1024;
+            c.screen=em.vram_base;
+        }
+        c.tiles_w=c.width/8; c.tiles_h=c.height/8; c.wrap=cnt&0x2000;
+        const unsigned matrix=em.reg_base+0x20+(bg-2)*16;
+        c.pa=static_cast<int16_t>(rd16(matrix)); c.pb=static_cast<int16_t>(rd16(matrix+2));
+        c.pc=static_cast<int16_t>(rd16(matrix+4)); c.pd=static_cast<int16_t>(rd16(matrix+6));
+        c.refx=static_cast<int32_t>(rd32(matrix+8)<<4)>>4;
+        c.refy=static_cast<int32_t>(rd32(matrix+12)<<4)>>4;
+        c.bpp8=true;
+    }
 
     // BGxHOFS/BGxVOFS are write-only 9-bit scroll registers, 4 bytes per BG.
     c.hofs = rd16(em.reg_base + 0x10 + bg * 4) & 0x1FF;
@@ -95,10 +127,33 @@ inline uint32_t screen_entry_addr(const BgConfig &c, int tx, int ty) {
 
 // Returns false where the background is transparent at this pixel.
 bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &out) {
-    const int px = (x + c.hofs) & (c.tiles_w * 8 - 1);
-    const int py = (y + c.vofs) & (c.tiles_h * 8 - 1);
+    int px=(x+c.hofs)&(c.tiles_w*8-1),py=(y+c.vofs)&(c.tiles_h*8-1);
+    if (c.kind!=BgConfig::Text) {
+        px=static_cast<int>((int64_t(c.refx)+c.pa*x+c.pb*y)>>8);
+        py=static_cast<int>((int64_t(c.refy)+c.pc*x+c.pd*y)>>8);
+        if (c.wrap) { px&=c.width-1; py&=c.height-1; }
+        else if (px<0 || px>=c.width || py<0 || py>=c.height) return false;
+        if (c.kind==BgConfig::Bitmap || c.kind==BgConfig::Large) {
+            const unsigned pixel=unsigned(py*c.width+px);
+            if (c.direct) {
+                const uint16_t value=rd16(c.screen+pixel*2);
+                if (!(value&0x8000)) return false;
+                out=bgr555(value);
+            } else {
+                const uint8_t index=*reinterpret_cast<volatile uint8_t *>(c.screen+pixel);
+                if (!index) return false;
+                out=bgr555(rd16(em.pltt_base+index*2));
+            }
+            return true;
+        }
+    }
 
-    const uint16_t se = rd16(screen_entry_addr(c, px >> 3, py >> 3));
+    uint16_t se;
+    if (c.kind==BgConfig::Affine)
+        se=*reinterpret_cast<volatile uint8_t *>(c.screen+(py>>3)*c.tiles_w+(px>>3));
+    else if (c.kind==BgConfig::Extended)
+        se=rd16(c.screen+((py>>3)*c.tiles_w+(px>>3))*2);
+    else se=rd16(screen_entry_addr(c,px>>3,py>>3));
     const int tile = se & 0x3FF;
     int fx = px & 7, fy = py & 7;
     if (se & 0x400) fx = 7 - fx;
@@ -276,6 +331,42 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
             }
         }
     }
+}
+
+void ppu_capture(const Framebuffer &composited,const Framebuffer &geometry) {
+    const uint32_t control=static_cast<uint32_t>(io_read(0x04000064,4));
+    if (!(control&0x80000000u)) return;
+    const unsigned bank=(control>>16)&3,mode=(control>>29)&3;
+    if ((io_read(0x04000240+bank,1)&0x87)!=0x80) return;
+    if (mode && (control&(1u<<25))) throw std::runtime_error("Display FIFO capture is not linked");
+    constexpr unsigned widths[]={128,256,256,256},heights[]={128,64,128,192};
+    const unsigned size=(control>>20)&3,width=widths[size],height=heights[size];
+    const unsigned writeOffset=((control>>18)&3)*0x8000;
+    const uint32_t display=static_cast<uint32_t>(io_read(0x04000000,4));
+    const unsigned readBank=(display>>18)&3;
+    const unsigned readOffset=((display>>16)&3)==2?0:((control>>26)&3)*0x8000;
+    const unsigned eva=std::min(16u,control&31),evb=std::min(16u,(control>>8)&31);
+    auto convert=[](uint32_t pixel) {
+        return uint16_t(((pixel>>19)&31)|(((pixel>>11)&31)<<5)|(((pixel>>3)&31)<<10)|
+                        ((pixel>>24)?0x8000:0));
+    };
+    std::array<uint16_t,256*192> sourceB{};
+    if (mode) for (unsigned i=0;i<width*height;++i)
+        sourceB[i]=rd16(0x06800000+readBank*0x20000+((readOffset+i*2)&0x1ffff));
+    for (unsigned y=0;y<height;++y) for (unsigned x=0;x<width;++x) {
+        const unsigned i=y*width+x;
+        const uint16_t a=convert((control&(1u<<24))?geometry.px[y][x]:composited.px[y][x]);
+        const uint16_t b=sourceB[i];
+        uint16_t result=mode==1?b:a;
+        if (mode>=2) {
+            const unsigned aa=(a>>15)*eva,bb=(b>>15)*evb;
+            result=aa || bb?0x8000:0;
+            for (unsigned shift=0;shift<15;shift+=5)
+                result|=std::min(31u,(((a>>shift)&31)*aa+((b>>shift)&31)*bb)/16)<<shift;
+        }
+        *reinterpret_cast<uint16_t *>(0x06800000+bank*0x20000+((writeOffset+i*2)&0x1ffff))=result;
+    }
+    io_write(0x04000064,control&~0x80000000u,4);
 }
 
 bool ppu_write_bmp(const char *path, const Framebuffer &fb) {

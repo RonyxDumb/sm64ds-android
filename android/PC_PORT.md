@@ -53,23 +53,16 @@ leaf consumes its owner's actual flags; it does not allocate a fake DS camera.
 Native divider/sqrt seams preserve hardware integer rounding, and atan2 uses the
 original ROM table and quadrant logic with its soft-float sign test adapted.
 
-The private-ROM execution check supplies a frontend return code to exercise this
-handoff through the production classes. The interactive frontend has not emitted
-that code on Android, and scene 3 reports its missing actor lifecycle explicitly.
-APK symbol inspection shows live file-preparation and stage-input code; the
-unreachable launch/`ResetInput` code is still removed by section garbage collection
-until the frontend caller is linked.
+The production frontend now executes its actual update, render and graph
+callbacks and passes their result to this launch branch. Native four-byte
+handles preserve original POD layouts while full-width host data/code pointers
+remain in checked tables. 617 recovered source units are selected in
+`frontend_execution_profile.json`; the checked manifest is consumed by Android.
 
 ## Remaining frontier
 
-The recovered boot requests scene 1 (`dScDSMT_c`, overlay 7). Its frontend's work
-records mix native pointers with fixed DS offsets, including `Ov007Work` in
-`func_ov007_020aed98.cpp`. All consumers must share an audited native layout;
-suppressing its offset assertion or narrowing pointers cannot make it safe.
-
-Start with `d_s_dsmt.cpp`, `func_ov007_020b7138.c` (frontend setup),
-`func_ov007_020b7090.c` (input/update), and `func_ov007_020aed98.cpp` (menu dispatch).
-Preserve actual initialization, callbacks, OAM/model submissions and the original
-save-slot-to-`StartFile` handoff to the already linked launch branch. Then connect
-scene 3's stage/Player lifecycle.
+Scene 3 needs the stage/actor lifecycle and explicit packed virtual/member-call
+ABI before Player, collision, camera, HUD and level actors can run. Preserve
+all record assertions. A host frame loop and an Android build do not establish
+on-device gameplay or rendering fidelity.
 No missing dependency should be replaced with a successful dummy return.

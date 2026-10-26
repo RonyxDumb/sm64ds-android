@@ -46,6 +46,8 @@ target_compile_options(sm64ds_frontend PRIVATE -fwrapv -fsigned-char -fno-strict
     -fvisibility=hidden -ffunction-sections -fdata-sections
     -Wno-unknown-pragmas -Wno-return-type-c-linkage -Wno-unused-parameter
     -Wno-unused-variable -Wno-sign-compare)
+target_compile_options(sm64ds_frontend PRIVATE -Wno-comment -Wno-implicit-fallthrough
+    -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-value)
 set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
     runtime/packed_memory.cpp)

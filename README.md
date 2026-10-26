@@ -1,16 +1,11 @@
 # Super Mario 64 DS Android
 
-The Android session executes recovered boot logic and the title's original
-three-file read/summary loop. **It stops before the interactive title scene.
-It is not a playable port.**
-
-Boot methods are generated from the matching sources onto native-owned scalar
-state. The recovered file-launch branch, `StartFile` and stage controller routines
-also run natively in the private-ROM execution check. That check supplies the
-frontend result; the title dispatcher does not produce it on Android yet.
-The frontend renderer, actor manager and stage/Player lifecycle still need ARM64 work.
-Debug/release APK builds and host execution are verified; no Android device test
-has been performed for this checkpoint.
+The Android session runs recovered boot logic and the original title's
+initialization, input dispatcher, model/particle rendering and graph callbacks.
+617 recovered source units compile as native code with checked four-byte data
+handles. Title commands reach the real save records and native sequencer.
+The stage, actor and Player lifecycle is the next integration boundary.
+Android device execution and gameplay have not yet been verified.
 
 Build: [android/README.md](android/README.md). Current execution boundary and next
 source dependencies: [android/CHECKPOINT.md](android/CHECKPOINT.md).

@@ -1,6 +1,7 @@
 #include "runtime/game_program.h"
 #include "runtime/resources.h"
 #include "runtime/save_store.h"
+#include "pc_audio/stream.h"
 #include "runtime/boot_seams.h"
 #include <cassert>
 #include <climits>
@@ -207,12 +208,13 @@ int main(int argc, char **argv) {
                 assert(store.save_file(slot, expected[slot]));
             }
         }
+        sm64ds::MusicStream music; music.pause(false);
         std::vector<std::pair<uint32_t, uint32_t>> sounds;
         {
             sm64ds::GameProgram game(argv[1], [&](uint32_t a, uint32_t b) {
                 sounds.emplace_back(a, b);
-                return true;
-            });
+                return music.effect(static_cast<int>(a),static_cast<int>(b));
+            },[&](const sm64ds::SoundRequest &request){ return music.native(request); });
             assert(game.boot().mFadeTimer == 60 && game.boot().mState == 0);
             assert(game.requested_scene() == 0x187);
             bool secondRejected = false;
@@ -225,29 +227,17 @@ int main(int argc, char **argv) {
             assert(sounds.size() == 1 && sounds[0] == std::make_pair(4u, 0u));
             game.frame(1.0 / 120, 1, 0, 0, -1, -1);
             assert(game.ticks() == 0);
-            bool reached = false, drew = false;
-            try {
-                for (int frame = 0; frame < 240; ++frame) {
-                    game.tick();
-                    if (frame == 50 && std::getenv("SM64DS_BOOT_CAPTURE")) {
-                        assert(ntr::ppu_write_bmp("/tmp/sm64ds-boot-main.bmp", game.main_screen()));
-                        assert(ntr::ppu_write_bmp("/tmp/sm64ds-boot-sub.bmp", game.sub_screen()));
-                    }
-                    if (frame > 32 && frame < 80) {
-                        const auto *pixels = &game.main_screen().px[0][0];
-                        for (size_t i = 0; i < 256u * 192; ++i)
-                            if (pixels[i] != 0xffffffff)
-                                drew = true;
-                    }
+            bool drew = false;
+            for (int frame=0;frame<160;++frame) {
+                game.tick();
+                float pcm[1024]{}; music.mix(pcm,512,32768);
+                if (frame>32 && frame<80) {
+                    const auto *pixels=&game.main_screen().px[0][0];
+                    for (size_t i=0;i<256u*192;++i) if (pixels[i]!=0xffffffff) drew=true;
                 }
-            } catch (const std::runtime_error &e) {
-                assert(std::string(e.what()).find("dScDSMT_c") != std::string::npos);
-                reached = true;
-                std::cout << "Recovered boot reached scene " << game.requested_scene() << " after "
-                          << game.ticks() << " ticks.\n";
             }
-            assert(reached && drew && game.requested_scene() == 1);
-            assert(game.ticks() == 120); // 60-frame boot hold and two 30-frame source fades
+            assert(drew && game.active_scene()==1 && game.requested_scene()==0x187);
+            assert(game.ticks()==160);
             assert(game.title_files() && data_0209b33c);
             assert(reinterpret_cast<uintptr_t>(data_0209b33c) > UINT32_MAX);
             for (unsigned slot = 0; slot < expected.size(); ++slot) {
@@ -306,8 +296,8 @@ int main(int argc, char **argv) {
             assert(resources.heap().allocations() == 1 + game.frontend_core()->allocations());
             auto *active = reinterpret_cast<uint8_t *>(data_0209caa0);
             std::vector<uint8_t> minigames(active + 0x44, active + 0x328);
-            assert(!game.accept_title_result(2) && game.requested_scene() == 1);
-            assert(!game.accept_title_result(INT_MIN) && game.requested_scene() == 1);
+            assert(!game.accept_title_result(2) && game.requested_scene() == 0x187);
+            assert(!game.accept_title_result(INT_MIN) && game.requested_scene() == 0x187);
             const unsigned selected = repeat < 3 ? repeat : 0;
             assert(game.accept_title_result(3 + selected));
             assert(std::memcmp(active, expected[selected].data(), 0x44) == 0);

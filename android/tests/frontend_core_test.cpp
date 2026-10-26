@@ -151,7 +151,7 @@ int main() {
         for (auto name : {0x28,0x30,0x38}) assert(c.word_at(btp+name)==btp+0x48);
         memory.release(btp);
         bool bad=false;
-        try { packed::Ptr<void()>(0x020b7138)(); } catch (const std::runtime_error &) { bad=true; }
+        try { packed::Ptr<void()>(0x021ffffc)(); } catch (const std::runtime_error &) { bad=true; }
         assert(bad);
         bad=false;
         try { (void)*packed::Ptr<int>(0xfffffff0); } catch (const std::runtime_error &) { bad=true; }

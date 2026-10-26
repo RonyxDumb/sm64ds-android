@@ -33,6 +33,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry=nullptr
 // tiles, 1D mapping; bitmap OBJs, mosaic, windows and blending are not
 // implemented. Transparent color-0 texels leave fb untouched.
 void ppu_scanout_obj(Engine eng, Framebuffer &fb);
+void ppu_capture(const Framebuffer &composited,const Framebuffer &geometry);
 
 // Debug output, so a frame can be inspected without a window yet.
 bool ppu_write_bmp(const char *path, const Framebuffer &fb);

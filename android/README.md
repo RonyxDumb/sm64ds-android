@@ -1,10 +1,8 @@
 # Super Mario 64 DS Android
 
-Native port in development. **Version 0.4.1 runs recovered boot, title-file
-preparation and complete original title initialization, then stops at the unlinked
-interactive title. It is not playable.**
-The old face/sample test is no
-longer the Android session. No emulator or ARM guest execution is used.
+Native port in development. The Android session runs the recovered boot and
+original title update/render loop. No emulator or ARM guest execution is used.
+Stage/Player integration is still in progress.
 
 ## Current execution
 
@@ -28,29 +26,26 @@ star/coin/character summaries. The file buffer has native ownership, and the
 message-bank pointer is a native-width member outside the fixed scalar settings.
 The original `b7138` initialization calls the `b68e8` factory to construct shared records, all
 24 item views, texture/palette records and the two-screen OAM/BG display lists.
-Its 133 recovered translation units use checked four-byte handles to full-width
+Its 617 recovered translation units use checked four-byte handles to full-width
 native addresses; their original record assertions remain active. It then sets up models,
 texture/palette VRAM uploads, particle resources, sprite groups and visit state. No ARM
 instructions from the cartridge are callable through these data records.
 
-The runtime then reports the unlinked `dScDSMT_c` dispatcher/rendering and releases
-the session. The interactive title, file-selection UI, castle, Player,
-level actors, 3D gameplay, HUD/minimap and game-wide sound integration remain
-unfinished. Boot uses a two-screen interface; it is not the future fullscreen
-stage renderer/minimap layout. No on-device compatibility or performance claim
-is made. See [CHECKPOINT.md](CHECKPOINT.md) for the exact frontier.
+The scene now pumps the actual `b7090`/`aed98` dispatcher, `b7040` rendering
+and `b6eb4` graph callbacks each frame. Original button/stylus state drives the
+intro and title transitions. Geometry FIFO aliases, banked textures/palettes,
+OBJ tile mapping, affine/bitmap backgrounds and display capture feed the two
+screen buffers. Audio requests use real SSAR/SSEQ players, stop/fade operations
+and playback status. Some SDK modulation/tempo controls remain unsupported by
+the pinned sequencer.
 
-The recovered title launch implementation maps results 3/4/5 to slots 0/1/2 and calls the
-recovered `StartFile`, `LoadLevel`, player-global and controller-mode functions.
-The resulting request is castle grounds, entrance 0, star 1, scene 3. Original
-stage camera/input routines use native ROM button maps and integer analog math.
-Android stick axes preserve partial magnitude in the Player controller
-record while respecting the original input gate and active stylus gesture.
-The private-ROM execution check supplies the frontend result and camera
-flags directly; it does not establish an interactive menu, a running stage or
-Player movement. No code selects a file on the player's behalf in the launcher.
-The APK currently discards the unreachable launch functions; the native execution
-check retains and calls them. Connecting the frontend caller remains necessary.
+Private-ROM execution with stylus/button input reaches the actual save menu
+and emits a launch result. It is passed to the original file-launch branch;
+results 3/4/5 map to slots 0/1/2 and call `StartFile`/`LoadLevel`. No launcher
+code selects a file. Scene 3, actor/Player execution, collision/camera/HUD and
+complete rendering fidelity remain under development. The current title uses
+two screens; fullscreen gameplay/minimap composition is pending. No phone
+compatibility or performance claim is made.
 
 ## Build
 
@@ -96,7 +91,7 @@ title file preparation and the recovered launch branch. It checks distinct slots
 blank-file Yoshi defaults, native pointers, summary counts, unchanged minigame data,
 stage request, controller modes/touch/camera regions and repeated teardown under
 ASan/UBSan. The corrected original divider rounding gives 30-frame fades and a
-120-tick boot boundary. It requires the user's ROM for execution; without
+120-tick boot fade followed by an active title. It requires the user's ROM for execution; without
 a ROM public CI checks malformed NARC bounds only. Existing importer, heap, save,
 input and audio tests remain. Mesa tests check screen orientation, color lanes,
 sub-screen presentation and GL recreation. Host checks do not establish phone

@@ -414,6 +414,7 @@ void GameProgram::scanout() {
     if (activeScene_==1) {
         ntr::ppu_scanout_obj(ntr::ENGINE_A,main_);
         ntr::ppu_scanout_obj(ntr::ENGINE_B,sub_);
+        ntr::ppu_capture(main_,geometry);
     }
     if (!data_0208ee3c) {
         std::fill(&main_.px[0][0],&main_.px[0][0]+256*192,0xff000000u);

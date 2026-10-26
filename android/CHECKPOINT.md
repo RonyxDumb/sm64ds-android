@@ -1,52 +1,38 @@
-# Android checkpoint — 2026-10-26, complete native title initialization
+# Android checkpoint — 2026-10-26, native title execution
 
-Production now calls the original `func_ov007_020b7138`, including all five root
-builders, model setup and texture/palette VRAM uploads, particle manager/resource
-parsing, sound-record initialization, sprite groups and the per-visit reset.
-The European cartridge executes this path through 589 owned allocations. The
-next boundary is the interactive update/render loop, followed by scene 3 and
-actor/Player dispatch.
+Production connects original `b7138` initialization, `b7090`/`aed98` input and
+menu dispatch, `b7040` model/particle drawing and `b6eb4` graph callbacks.
+617 recovered source units and 789 ARM/Thumb identifiers bind to compiled native
+functions. The original source and layout assertions are unchanged.
 
-## Native runtime
+- Native private-ROM execution survives 1,200 frames, the blank-save intro star,
+  Mario title and stylus/button-driven transitions under ASan/UBSan, including
+  use-after-return checks. The ROM-free source fixture and teardown pass.
+- Full ModelComponents and particle update/draw helpers execute. ARM register
+  liveness in pooled BX veneers, localized character loading, material indices
+  and cursor mode forwarding is explicit in reviewed source views.
+- Title save/backlight/sound commands reach native owners. Native SSAR players
+  retain handle identity, priority, stop/fade and sequencer playback status.
+  Tempo and some modulation controls remain unsupported in the pinned engine.
+- LCDC/BG/OBJ bank aliases share physical storage on Linux/Android. Texture and
+  palette slot routing, FIFO aliases, texture transforms, perspective UVs,
+  alpha/culling, OBJ 2D mapping, affine/bitmap BGs and display capture are wired.
+  Rendering fidelity still needs work; no phone performance is established.
+- Actual stylus selection of Adventure and button confirmation in the source
+  save menu emitted a launch result, ran `StartFile` and requested scene 3.
+  Stage 3 still needs
+  a packed actor/vtable/member-call ABI, then original Player/collision/camera,
+  levels, HUD/minimap and full gameplay. No device is connected.
 
-- 133 recovered source units are linked into the application's source manifest.
-  The initialization profile reproduces that manifest with the pinned parser;
-  Android builds consume the checked projection with Python's standard library.
-- The actual ARM9 image/BSS and overlay data are mapped separately through
-  checked four-byte handles. Native pointers and callable addresses retain full
-  width in native tables. Cartridge instructions are never executed/interpreted.
-- Static Model4 methods and existing POD model records preserve their assertions.
-  Size-only null-base expressions become logical offset arithmetic. A palette
-  without a texture is rejected before the recovered unset-format read.
-- Particle constructor, resource parser and six real behavior callbacks execute
-  as native code. Original bitfield widths and effect-record assertions remain
-  active. SDK namespace/static methods retain their distinct symbol identities.
-- Title settings copy only the original 0x9c scalar bytes into the packed record;
-  its message-bank field receives a checked handle to the existing native buffer.
-- Volatile register pointers dispatch writes to the geometry/arithmetic backend,
-  including matrix streams. Native DMA counterparts copy/fill actual memory and
-  invoke real completion callbacks only after synchronous completion. Cache and
-  DMA waits use native coherence; no ARM privileged instruction is emitted.
-
-## Verification and continuation
-
-The private-ROM production boot/initialization/file-launch lifetimes execute
-under ASan/UBSan with use-after-return and halt-on-UB. All record assertions are
-active. Native teardown restores the heap. The source units also compile at
--O2. Android/native ARM64 CI must be checked for each published revision; no
-Android device is attached to this workspace.
-
-Connect the original b7090/aed98 dispatcher, b7040 rendering and b6eb4 graph
-callback to the active scene lifecycle. Route real 3/4/5 results to the existing
-StartFile path. Then complete scene 3, native actor dispatch, Player/collision/
-camera, animation, HUD/minimap and sound. Do not replace missing bodies with
-success stubs or synthesize a file-selection result.
-
-Regeneration:
+Regeneration (pinned tree-sitter 0.25.2 and tree-sitter-cpp 0.23.4):
 
 ```sh
-python3 android/tools/lift_frontend.py --profile android/tools/frontend_init_profile.json --out android/tools/frontend_manifest.json
+python3 android/tools/lift_frontend.py --profile android/tools/frontend_execution_profile.json --out android/tools/frontend_manifest.json
 ```
+
+Android/ARM64 builds must be checked for the final published revision. Continue
+through actual user input into the save selection and stage; do not synthesize
+menu results or replace missing game code with successful stubs.
 
 
 ---
