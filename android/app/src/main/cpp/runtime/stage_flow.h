@@ -1,7 +1,9 @@
 #pragma once
 #include "cartridge.h"
+#include "stage_assets.h"
 #include "runtime/controller_input.h"
 #include "types.h"
+#include <memory>
 
 // The pointer-free controller record shared by the stage and Player. Unlike a
 // DS actor, this record has the same size and offsets in a native ARM64 process.
@@ -12,13 +14,16 @@ struct StageRequest {
 
 class StageFlow {
 public:
-    explicit StageFlow(const Cartridge &cartridge);
+    explicit StageFlow(Cartridge &cartridge);
     StageRequest request() const;
     const ControllerInput &controller(unsigned slot) const;
+    const StageAssets *assets() const { return assets_.get(); }
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
 
 private:
+    Cartridge &cartridge_;
+    std::unique_ptr<StageAssets> assets_;
     void reset_input();
     void check_camera_input(u32 cameraFlags);
     void check_input();
