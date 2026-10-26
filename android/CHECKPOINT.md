@@ -1,52 +1,56 @@
-# Android checkpoint — 2026-10-26, native frontend record core
+# Android checkpoint — 2026-10-26, native frontend items and texture records
 
-**Not playable.** Production boot now initializes the original frontend root's
-first builder with its 19 allocations. Menu dispatch and rendering, scene 3,
-actors and Player are still unlinked. Android reports that boundary explicitly.
+**Not playable.** Production boot now executes four of the five original root
+builders: core state, texture records, palette state and all 24 item views.
+The display builder and interactive dispatcher, scene 3, actors and Player
+remain unlinked. Android still reports that boundary explicitly.
 
 ## Implemented
 
-- 25 recovered translation units execute as native code using four-byte data
-  and code handles. Full-width native pointers live in separate registries;
-  cartridge bytes are never interpreted or called as ARM instructions.
-- All original size/offset assertions remain active. Partial views share the
-  original root and overlay data. Each translation unit has its own namespace,
-  avoiding ODR collisions between unrelated recovered record names.
-- Genuine allocator setters/forwarders and root construction initialize menu
-  states, cameras, lights, scalar/vector tweens, settings, pad and touch. The
-  actual recovered normalizer uses the native arithmetic-register backend.
-- The native adapters implement bulk fill, matrices, integer arithmetic,
-  owner language and touch sampling. Unregistered data/code handles fail; no
-  missing game dependency is filled by a successful stub.
-- The checked manifest is tied to source SHA-256 values. Only developer
-  regeneration needs the pinned parser; Android builds use the Python stdlib.
-  Projected POD headers are private to the generated-source target.
-- Runtime memory maps preserve sanitizer stack instrumentation, including
-  ASan's fake stack, rather than turning off use-after-return checks.
+- 43 recovered translation units compile as native code with four-byte data
+  and code handles. Native addresses remain full width in separate registries;
+  no ARM instruction bytes are interpreted, compiled at runtime or called.
+- Original record size/offset assertions remain active. Distinct translation
+  units have independent namespaces and share the same root/overlay data.
+- Genuine builders allocate core records, load the original menu BMD through
+  the cartridge callback, run its original offset fixup, derive 11 texture
+  records, connect palette buffers and initialize all 24 item views, sprites,
+  item states and output-bound tweens. Production owns 179 allocations.
+- The BMD/BCA/BTP static offset loaders are projected independently of their
+  polymorphic model classes. Only the selected static method body and its
+  original records enter this profile; required headers are hash guarded.
+- Array symbols denote an address without first binding a possibly misaligned
+  array reference. This preserves the original byte casts of wider aliases,
+  including the odd-address menu height table, under UBSan.
+- Source hashes gate all generated code. Builds need only Python's stdlib;
+  developer regeneration uses the pinned parser. Projected POD headers remain
+  private to the generated target. Unknown data/code handles fail explicitly.
 
 ## Verification
 
-- Host ASan/UBSan with use-after-return: root aliases, camera matrices/aspect,
-  lights, language, state updates, input, high native pointers, invalid handles
-  and three complete heap lifetimes pass.
-- Private-ROM production path: four full boot/frontend/launch lifetimes pass,
-  with 19 frontend allocations and correct heap recovery. The launch result is
-  still supplied by the execution check, not an interactive menu.
-- Native ARM64 Linux frontend execution passes in CI. Android APK build and
-  lint validation are in progress on the work/frontend-native-20261026 branch.
-  No Android device is attached; no gameplay is claimed.
+- Private-ROM ASan/UBSan with use-after-return and halt-on-UB: four complete
+  production boot/frontend/launch lifetimes pass. Every original item ID,
+  texture link and tween output target is checked, along with 179 allocations,
+  high native pointers, saved-slot selection, scene-3 request and full teardown.
+- The launch result is supplied by the execution check. It is not evidence
+  that the interactive title dispatcher or a game stage runs.
+- The preceding 25-unit core passed native ARM64 execution, ARM64 debug/release
+  APK builds and Lint in run 40299953081. The expanded profile is queued for the
+  same CI checks before it reaches main. No Android device is attached.
 
 ## Resume here
 
-1. Finish the other root builders from b68e8: texture records, palette state,
-   24 item views and display/BG/OAM ownership. Then the complete b7138 entry,
-   b7090 update and aed98 dispatcher can drive actual frontend results.
-2. Keep record assertions. C++ polymorphic actor/model layouts and member
-   function pointers need explicit native ABI projections; raw native vptrs
-   cannot enter packed records. Ptr rejects polymorphic pointee dereferences.
-3. Scene 3 lifecycle, actor dispatch, Player/collision/camera, level actors,
-   source-driven complete 3D rendering/animation, HUD/minimap and game sound
-   remain unfinished. Preserve the established StartFile and controller path.
+1. Complete b6d40's display/OAM/BG builder. Its actual direct-call closure is
+   38 functions, not the 491 names mentioned in comments and declarations.
+   Audit c3550/c99d8: the recovered C omits the returned character-record
+   pointer, but the original ARM preserves it in r0 through both returns.
+2. Connect b7138 initialization, b7090 update, aed98 dispatch and source
+   rendering; deliver only the actual frontend result to accept_title_result.
+3. Polymorphic model/actor layouts and member-function pointers require an
+   explicit ABI projection. Raw native vptrs cannot enter packed records.
+   Scene 3, actor dispatch, Player/collision/camera, complete 3D/animation,
+   HUD/minimap and game sound remain unfinished.
+
 
 ---
 

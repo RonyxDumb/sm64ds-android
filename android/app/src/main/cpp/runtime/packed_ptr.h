@@ -71,6 +71,15 @@ public:
 };
 static_assert(sizeof(Ptr<void>) == 4 && alignof(Ptr<void>) == 4);
 static_assert(std::is_trivially_copyable_v<Ptr<void>>);
+// A declared array denotes an address without first forming a T[] reference.
+// Recovered declarations sometimes give a byte alias (even an odd address)
+// a wider element type and cast it before the first access.
+template<class T> class ArrayRef : public Ptr<T> {
+public:
+    explicit constexpr ArrayRef(uint32_t address) : Ptr<T>(address) {}
+    Ptr<T[]> operator&() const { return Ptr<T[]>(this->address()); }
+};
+static_assert(sizeof(ArrayRef<int>)==4);
 template<class T> uint32_t uword(T value) {
     if constexpr (std::is_pointer_v<T>) return Ptr<std::remove_pointer_t<T>>(value).address();
     else return static_cast<uint32_t>(value);

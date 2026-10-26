@@ -20,6 +20,26 @@ ROOT = Path(__file__).resolve().parents[2]
 PARSER = Parser(Language(tree_sitter_cpp.language()))
 
 
+def method_view(raw, qualified, symbol, record, prefix):
+    """Project one static loader, not the model's native polymorphic class."""
+    matches = []
+    def visit(node):
+        if node.type == 'function_definition':
+            decl = node.child_by_field_name('declarator')
+            if qualified in raw[decl.start_byte:decl.end_byte]:
+                matches.append(node)
+        for child in node.named_children:
+            visit(child)
+    visit(PARSER.parse(raw.encode()).root_node)
+    if len(matches) != 1:
+        raise ValueError('static loader definition changed: ' + qualified)
+    node = matches[0].child_by_field_name('body')
+    body = raw[node.start_byte:node.end_byte]
+    body = re.sub(r'\bfile\.', 'file->', body)
+    body = re.sub(r'&\s*file\b', 'file', body)
+    return prefix + '\nvoid ' + symbol + '(' + record + ' *file) ' + body + '\n'
+
+
 def normalize(text):
     return re.sub(r'\((?:int|u32|unsigned int)\)\s*&\s*\(\((\w+(?:\s+\w+)?)\s*\*\)\s*0\)->(\w+)',
                   r'offsetof(\1, \2)', text)
@@ -158,7 +178,11 @@ class Lift:
                     if name.startswith(('data_', 'IDENTITY_')) and 'extern' in storage and not is_function:
                         address = self.address(name)
                         self.globals[name] = address
-                        rendered.append('\n#define ' + name + ' (*Ptr<' + self.typename(value) + '>(0x%08xu))\n' % address)
+                        if isinstance(value, tuple) and value[0] == 'array':
+                            expression = 'ArrayRef<' + self.typename(value[1]) + '>(0x%08xu)' % address
+                        else:
+                            expression = '(*Ptr<' + self.typename(value) + '>(0x%08xu))' % address
+                        rendered.append('\n#define ' + name + ' ' + expression + '\n')
                     else:
                         prefix = 'typedef ' if kind == 'type_definition' else ' '.join(storage) + (' ' if storage else '')
                         if is_function:
@@ -221,9 +245,41 @@ def main():
     for rel in args.sources + args.headers:
         raw = (ROOT/rel).read_text()
         view = raw
+        dependencies = {}
         if rel == 'include/types.h':
             view = subprocess.check_output(['gcc','-x','c','-E','-P','-Iinclude',rel], cwd=ROOT, text=True)
             view = view.replace('typedef int bool;', '')
+        if rel == 'include/decl_common.h':
+            # c44e4 only imports this declaration. Preserve the actual shared
+            # spelling without importing unrelated game globals or actor ABIs.
+            lines = re.findall(r'^extern int func_ov007_020c3df4\(int, int\);$', raw, re.M)
+            if len(lines) != 1:
+                raise ValueError('frontend allocator declaration changed')
+            view = '#include "common.h"\n' + lines[0] + '\n'
+        if rel == 'src/engine/model/Model4.cpp':
+            view = method_view(raw, 'dExtSimpleModel_c::UpdateFileOffsets',
+                               '_ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File', 'BMD_File',
+                               '#include "BMD_File.h"\n#define REBASE(p) ((char *)(p) + base)')
+        if rel == 'src/engine/animation/dExtFrameCtrl_c_UpdateFileOffsets.cpp':
+            record = re.search(r'struct BCA_File \{.*?\n\};', raw, re.S)
+            if not record:
+                raise ValueError('BCA loader record changed')
+            view = method_view(raw, 'dExtFrameCtrl_c::UpdateFileOffsets',
+                               '_ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File', 'BCA_File',
+                               '#include "types.h"\n' + record.group())
+        if rel == 'src/engine/model/dExtAnmTexPat_c_UpdateFileOffsets.cpp':
+            header = 'include/dExtAnmTexPat_c.h'
+            text = (ROOT/header).read_text()
+            dependencies[header] = hashlib.sha256(text.encode()).hexdigest()
+            record = re.search(r'struct BTP_File \{.*?\n\};', text, re.S)
+            locals_ = re.findall(r'struct BTP(?:Name|Seq)Record \{.*?\n\};', raw, re.S)
+            assertions = re.findall(r'^typedef char BTP.*?;', raw, re.M)
+            if not record or len(locals_) != 2 or len(assertions) != 2:
+                raise ValueError('BTP loader records changed')
+            view = method_view(raw, 'dExtAnmTexPat_c::UpdateFileOffsets',
+                               '_ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File', 'BTP_File',
+                               '#include "types.h"\n#define REBASE(p) ((char *)(p) + base)\n' +
+                               '\n'.join([record.group(), *locals_, *assertions]))
         if rel.startswith('src/'):
             view = hostgen.transform(view)[0]
         if rel == 'src/NormalizeVec3.c':
@@ -233,7 +289,14 @@ def main():
         lift = Lift(normalize(view))
         source = lift.result()
         entries.append(dict(path=rel, sha256=hashlib.sha256(raw.encode()).hexdigest(), source=source,
-                            globals=lift.globals, functions=sorted(lift.functions), header=rel in args.headers))
+                            dependencies=dependencies, globals=lift.globals,
+                            functions=sorted(lift.functions), header=rel in args.headers))
+    # A call may import its declaration from a projected header. Give it the
+    # same native spelling even when the TU itself has no local extern.
+    functions = {name for row in entries for name in row['functions']}
+    for row in entries:
+        for name in sorted(functions, key=len, reverse=True):
+            row['source'] = re.sub(r'\b' + re.escape(name) + r'\b', 'pk_' + name, row['source'])
     args.out.write_text(json.dumps(dict(version=1,entries=entries), indent=2) + '\n')
 
 if __name__ == '__main__':

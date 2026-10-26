@@ -108,6 +108,11 @@ void Space::release(uint32_t a) {
     if (at==allocations_.end()) throw std::runtime_error("Unowned frontend allocation release.");
     heap_.deallocate(at->second); allocations_.erase(at);
 }
+uint32_t Space::allocation_size(uint32_t a) const {
+    auto at=allocations_.find(a);
+    if (at==allocations_.end()) throw std::runtime_error("Unowned frontend allocation size.");
+    return heap_.size_of(at->second);
+}
 void Space::bind_code(uint32_t a, uintptr_t p) {
     if (!a || !p || (code_.count(a) && code_.at(a)!=p))
         throw std::runtime_error("Invalid/conflicting native code binding.");

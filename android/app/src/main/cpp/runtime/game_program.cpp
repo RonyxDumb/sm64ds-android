@@ -341,7 +341,8 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                     title_ = std::make_unique<TitleFiles>(data_0209d6fc);
                 if (!frontend_)
                     frontend_ = std::make_unique<FrontendCore>(Resources::active().heap(),
-                                                               cartridge_.overlay_data(7), GetOwnerLanguage());
+                                                               cartridge_.overlay_data(7), GetOwnerLanguage(),
+                        [this](uint16_t handle) { return cartridge_.file(handle); });
                 frontend_->sample(input_.raw_buttons(), tx, ty);
                 throw std::runtime_error(
                     "Il core originale del frontend è inizializzato. Il dispatcher e il rendering di "

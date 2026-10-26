@@ -12,10 +12,16 @@ def generate(out, manifest=None):
     if data['version'] != 1:
         raise ValueError('unsupported frontend manifest')
     sources = []
+    inputs = set()
     for row in data['entries']:
         source = ROOT/row['path']
+        inputs.add(source)
         if hashlib.sha256(source.read_text().encode()).hexdigest() != row['sha256']:
             raise ValueError('frontend source changed; regenerate/review projection: ' + row['path'])
+        for path, digest in row.get('dependencies', {}).items():
+            inputs.add(ROOT/path)
+            if hashlib.sha256((ROOT/path).read_text().encode()).hexdigest() != digest:
+                raise ValueError('frontend dependency changed; regenerate/review projection: ' + path)
         if row['header']:
             dest = out/'include'/source.relative_to(ROOT/'include')
             text = '#pragma once\n' + row['source']
@@ -32,7 +38,7 @@ def generate(out, manifest=None):
     (out/'sources.cmake').write_text('set(PACKED_FRONTEND_SOURCES\n' +
                                     ''.join('    "' + str(p) + '"\n' for p in sources) + ')\n')
     (out/'inputs.cmake').write_text('set(PACKED_FRONTEND_INPUTS\n' +
-                                   ''.join('    "' + str(ROOT/r['path']) + '"\n' for r in data['entries']) + ')\n')
+                                   ''.join('    "' + str(p) + '"\n' for p in sorted(inputs)) + ')\n')
     return sources
 
 if __name__ == '__main__':

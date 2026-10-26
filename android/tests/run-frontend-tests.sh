@@ -17,5 +17,5 @@ g++ -std=c++17 -pthread -Wall -Wextra -Werror -Wno-unknown-pragmas \
     -Iandroid/app/src/main/cpp -Iport/ntr/include -Iinclude \
     android/tests/frontend_core_test.cpp \
     android/app/src/main/cpp/runtime/{frontend_core,frontend_primitives,packed_memory,game_heap,native_math}.cpp \
-    port/ntr/{io,gx,texture}.cpp "$FRONTEND_BUILD"/*.o -ldl -o "$FRONTEND_BUILD/frontend_test"
+    port/ntr/{io,gx,texture,lz77}.cpp "$FRONTEND_BUILD"/*.o -ldl -o "$FRONTEND_BUILD/frontend_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$FRONTEND_BUILD/frontend_test"

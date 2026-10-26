@@ -267,7 +267,24 @@ int main(int argc, char **argv) {
             assert(game.title_files()->config().bytes[8] == 0);
             assert(data_0209d6fc && data_0209d708 == data_0209d6fc + 0x30 &&
                    data_0209d6e8 == data_0209d6fc);
-            assert(game.frontend_core() && game.frontend_core()->allocations() == 19);
+            assert(game.frontend_core() && game.frontend_core()->has_items());
+            assert(game.frontend_core()->allocations() == 179);
+            const auto &front = *game.frontend_core();
+            const auto root = front.root_address();
+            for (unsigned i = 0; i < 24; ++i) {
+                auto view = front.word_at(root + 0x114 + i * 4);
+                auto item = front.word_at(view);
+                uint16_t id;
+                std::memcpy(&id, front.data_at(item, 2), 2);
+                assert(id == i);
+                auto sprite = front.word_at(view + 4);
+                auto frames = front.word_at(sprite + 0x5c);
+                bool originalTexture = false;
+                for (unsigned j = 0; j < 11; ++j)
+                    originalTexture |= front.word_at(frames) == front.word_at(root + 0x78 + j * 4);
+                assert(originalTexture);
+                assert(front.word_at(front.word_at(view + 0x10) + 0x10) == view + 0xc);
+            }
             assert(resources.heap().allocations() == 1 + game.frontend_core()->allocations());
             auto *active = reinterpret_cast<uint8_t *>(data_0209caa0);
             std::vector<uint8_t> minigames(active + 0x44, active + 0x328);

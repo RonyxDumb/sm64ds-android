@@ -16,12 +16,14 @@ int main() {
         int one=4096;
         std::memcpy(image.bytes.data()+0x7db4,&one,4);
         FrontendCore c(heap,std::move(image),4);
-        assert(c.allocations()==19);
+        assert(c.allocations()==23 && !c.has_items());
         uint32_t root=c.root_address();
         assert(c.word_at(0x0210342c)==root);
         assert(reinterpret_cast<uintptr_t>(c.data_at(root,0x188))>UINT32_MAX);
         assert(reinterpret_cast<uintptr_t>(c.data_at(root,0x188))!=root);
         assert(at<uint8_t>(c,c.word_at(root+0x28)+0x3a)==5);
+        assert(c.word_at(c.word_at(root+0x44))==c.word_at(root+0x4c)+4);
+        assert(c.word_at(c.word_at(root+0x48))==c.word_at(root+0x44)+4);
         for (unsigned i=0;i<3;++i) {
             auto state=c.word_at(root+4+i*4);
             assert(at<int16_t>(c,state)==(i==0?0:i==1?-1:1));
@@ -56,6 +58,10 @@ int main() {
         auto p=packed::Ptr<int>(root);
         assert((p+1).address()==root+4);
         assert(packed::Ptr<int>(p.get()).address()==root);
+        // An odd-address byte alias must not bind a misaligned u16[] reference
+        // before the source casts it to its real byte view.
+        auto alias=packed::ArrayRef<uint16_t>(root+1);
+        assert(packed::Ptr<uint8_t>(alias).address()==root+1);
         bool bad=false;
         try { packed::Ptr<void()>(0x020b7138)(); } catch (const std::runtime_error &) { bad=true; }
         assert(bad);
