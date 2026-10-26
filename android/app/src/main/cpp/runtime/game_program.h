@@ -42,6 +42,9 @@ public:
     StageRequest stage_request() const {
         return stage_.request();
     }
+    // Original LVL_Overlay and cartridge-backed model/KCL, held across scene
+    // activation for the native dScStage_c actor loader.
+    const StageAssets *stage_assets() const { return stage_.assets(); }
     // Receives the real frontend's return code (3..5), never raw UI coordinates.
     // The title dispatcher and stage actor scene still need native link closure.
     bool accept_title_result(int result);
