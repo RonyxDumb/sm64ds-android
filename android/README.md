@@ -1,7 +1,8 @@
 # Super Mario 64 DS Android
 
-Native port in development. **Version 0.4.1 runs recovered boot and title-file
-preparation, then stops at the unlinked interactive title. It is not playable.**
+Native port in development. **Version 0.4.1 runs recovered boot, title-file
+preparation and all five frontend root builders, then stops at the unlinked
+interactive title. It is not playable.**
 The old face/sample test is no
 longer the Android session. No emulator or ARM guest execution is used.
 
@@ -25,6 +26,12 @@ At the completed fade to scene 1, command 20's recovered loop reads all three
 files, activates each through the original copy helper and computes the title's
 star/coin/character summaries. The file buffer has native ownership, and the
 message-bank pointer is a native-width member outside the fixed scalar settings.
+The original `b68e8` factory then constructs the frontend's shared records, all
+24 item views, texture/palette records and the two-screen OAM/BG display lists.
+Its 77 recovered translation units use checked four-byte handles to full-width
+native addresses; their original record assertions remain active. No ARM
+instructions from the cartridge are callable through these data records.
+
 The runtime then reports the unlinked `dScDSMT_c` dispatcher/rendering and releases
 the session. The interactive title, file-selection UI, castle, Player,
 level actors, 3D gameplay, HUD/minimap and game-wide sound integration remain
@@ -46,7 +53,7 @@ check retains and calls them. Connecting the frontend caller remains necessary.
 
 ## Build
 
-Initialize the pinned playable-PC dependency:
+Initialize the pinned PC sources:
 
 ```sh
 git submodule update --init --recursive
@@ -77,6 +84,7 @@ GitHub Actions: [Android workflow](../.github/workflows/android.yml), artifact
 ```sh
 bash android/tests/run-host-tests.sh
 bash android/tests/run-game-tests.sh
+bash android/tests/run-frontend-tests.sh
 # Private-ROM execution of the production native boot:
 bash android/tests/run-game-tests.sh /absolute/path/to/game.nds
 python tools/port_refcheck.py

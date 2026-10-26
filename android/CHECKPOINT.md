@@ -15,6 +15,7 @@ reports the actual missing frontend boundary rather than simulating success.
   two-screen display/OAM/BG lists, 4 character resources, 6 palettes, 6 sprite
   banks, 9 item nodes and 8 BG-layer slots. All original layout assertions stay
   active; unrelated partial record views live in separate TU namespaces.
+  The private European cartridge's complete root owns 381 heap allocations.
 - Native cartridge callbacks load the actual menu BMD; original BMD/BCA/BTP
   static offset loaders are projected without importing polymorphic classes.
 - Explicitly recover the live character-record return through c3550/c99d8.
@@ -24,6 +25,11 @@ reports the actual missing frontend boundary rather than simulating success.
 - Wider array aliases preserve their address without binding misaligned array
   references before byte casts. Source and selected-header hashes guard all
   projections. Android builds need only the Python stdlib.
+- Each execution scope registers its current native thread stack. A renderer
+  thread replacement can therefore encode genuine stack-local source arguments;
+  the original constructor thread is not assumed to live forever. Heap state
+  persists across this sequential migration. Address encoding takes a full-width
+  integer key and never reads the output buffer being passed by address.
 
 ## Verification
 
@@ -35,10 +41,11 @@ reports the actual missing frontend boundary rather than simulating success.
   all five actual builders, including character return forwarding. It also
   checks BCA/BTP fixups and state/input behavior. This is native-code validation,
   not a resource-viewer product or evidence of an interactive title.
-- The previous 43-unit increment passed native ARM64 execution, debug/release
-  ARM64 APK builds and Lint in run 40301539866 and is on main. The expanded
-  77-unit profile runs the same checks on work/frontend-native-20261026 before
-  main advances. No Android device is attached.
+- All 77 units and the five-builder fixture passed native ARM64 execution,
+  debug/release ARM64 APK builds and Lint in run 40302755568 and are on main.
+  The thread-migration change also passes host ASan/UBSan with optimized source
+  execution (-O2); CI repeats it on native ARM64. Undefined-behavior diagnostics
+  now fail the frontend and game checks immediately. No Android device is attached.
 
 ## Resume here
 

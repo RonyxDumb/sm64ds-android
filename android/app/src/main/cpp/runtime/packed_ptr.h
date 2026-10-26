@@ -9,7 +9,8 @@ namespace sm64ds::packed {
 // Stored words are handles. All native data/code addresses remain full width
 // in Space; a cartridge instruction address is never callable by itself.
 void *resolve(uint32_t address, size_t bytes);
-uint32_t encode(const void *pointer);
+// An address-only lookup; it never reads a source output buffer's contents.
+uint32_t encode(uintptr_t native_address);
 uintptr_t resolve_code(uint32_t address);
 uint32_t encode_code(uintptr_t pointer);
 template<class T, class = void> struct Extent { static constexpr size_t value = 1; };
@@ -31,7 +32,8 @@ public:
             std::memcpy(&bits, &value, sizeof bits);
             address_ = value ? encode_code(bits) : 0;
         } else {
-            address_ = value ? encode(const_cast<const void *>(static_cast<const volatile void *>(value))) : 0;
+            static_assert(sizeof(uintptr_t)>=sizeof(value));
+            address_ = value ? encode(reinterpret_cast<uintptr_t>(value)) : 0;
         }
     }
     constexpr uint32_t address() const { return address_; }

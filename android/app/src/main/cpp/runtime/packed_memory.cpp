@@ -20,13 +20,19 @@ Space &Space::current() {
     return *threadSpace;
 }
 void *resolve(uint32_t a, size_t n) { return Space::current().data(a,n); }
-uint32_t encode(const void *p) { return Space::current().address(p); }
+uint32_t encode(uintptr_t p) { return Space::current().address(reinterpret_cast<const void *>(p)); }
 uintptr_t resolve_code(uint32_t a) { return Space::current().code(a); }
 uint32_t encode_code(uintptr_t p) { return Space::current().code_address(p); }
-Space::Scope::Scope(Space &next) : previous_(threadSpace) { threadSpace = &next; }
+Space::Scope::Scope(Space &next) : previous_(threadSpace) {
+    next.map_thread_stack();
+    threadSpace = &next;
+}
 Space::Scope::~Scope() { threadSpace = previous_; }
 Space::Space(GameHeap &heap) : heap_(heap) {
     map(0x10000000, heap.at(0,heap.capacity()), heap.capacity());
+    map_thread_stack();
+}
+void Space::map_thread_stack() {
     pthread_attr_t attr;
     if (pthread_getattr_np(pthread_self(), &attr))
         throw std::runtime_error("Cannot resolve native game thread stack.");
@@ -35,7 +41,12 @@ Space::Space(GameHeap &heap) : heap_(heap) {
     int result = pthread_attr_getstack(&attr, &stack, &size);
     pthread_attr_destroy(&attr);
     if (result || size > 0x08000000) throw std::runtime_error("Invalid native stack extent.");
-    map(0x70000000, stack, size);
+    for (const auto &region : regions_)
+        if (region.memory==stack && region.size==size) return;
+    if (uint64_t(nextStack_)+size>0x80000000u)
+        throw std::runtime_error("Native frontend stack handle space exhausted.");
+    map(nextStack_,stack,size);
+    nextStack_+=static_cast<uint32_t>((size+4095)&~size_t(4095));
 }
 Space::~Space() { for (const auto &a : allocations_) heap_.deallocate(a.second); }
 size_t Space::largest_free_span() const { return heap_.largest_free_span(); }

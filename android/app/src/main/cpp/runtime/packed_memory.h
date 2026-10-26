@@ -41,6 +41,8 @@ private:
     std::map<uint32_t, void *> allocations_;
     std::map<uint32_t, uintptr_t> code_;
     uint32_t external_ = 0x30000000, nextCode_ = 0x60000000;
+    uint32_t nextStack_ = 0x70000000;
+    void map_thread_stack();
     bool map_native_segment(const void *pointer);
 };
 }

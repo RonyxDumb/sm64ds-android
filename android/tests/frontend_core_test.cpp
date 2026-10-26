@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
+#include <thread>
 
 using namespace sm64ds;
 extern "C" void abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(uint32_t);
@@ -11,6 +12,15 @@ template<class T> T at(const FrontendCore &c, uint32_t a) {
     T v; std::memcpy(&v,c.data_at(a,sizeof v),sizeof v); return v;
 }
 namespace {
+// Force a real new-thread stack object so ASan's automatically mapped fake
+// stack cannot hide a stale constructor-thread mapping in this check.
+__attribute__((no_sanitize("address"))) void migrate_thread(FrontendCore &core) {
+    FrontendCore::Scope scope(core);
+    uint32_t local=0x12345678;
+    packed::Ptr<uint32_t> handle(&local);
+    assert(handle.get()==&local && *handle==0x12345678);
+    core.sample(0x41,7,9);
+}
 void put(std::vector<uint8_t> &v, size_t a, uint32_t value, unsigned bytes=4) {
     assert(a+bytes<=v.size());
     for (unsigned i=0;i<bytes;++i) v[a+i]=uint8_t(value>>(8*i));
@@ -160,6 +170,9 @@ int main() {
             assert(at<uint16_t>(full,sprite+0xc)==16 && at<uint16_t>(full,sprite+0xe)==16);
         }
         assert(full.word_at(root+0x184)==0);
+        std::thread migrated([&] { migrate_thread(full); });
+        migrated.join();
+        assert(at<uint16_t>(full,full.word_at(root+0x54))==0x41);
     }
     assert(heap.allocations()==0 && heap.memory_left()==available);
     std::puts("Native frontend: original five root builders, state/input, model fixups and teardown passed.");
