@@ -69,7 +69,7 @@ void main() { color = texture(screen, uv).bgra; }
     }
 }
 void ScreenRenderer::draw(const ntr::Framebuffer &main, const ntr::Framebuffer &sub, int width,
-                          int height) {
+                          int height, bool mainOnTop) {
     if (width <= 0 || height <= 0)
         return;
     glDisable(GL_DEPTH_TEST);
@@ -84,7 +84,13 @@ void ScreenRenderer::draw(const ntr::Framebuffer &main, const ntr::Framebuffer &
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(glGetUniformLocation(program_, "screen"), 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    const ntr::Framebuffer *frames[] = {&main, &sub};
+    // The DS routes engines to PHYSICAL LCDs with POWCNT1 bit 15. Engine A
+    // is NOT inherently the top screen. Earlier builds always showed A on
+    // the left, so when the game placed B on top it displayed the menu on
+    // the wrong side and mapped the stylus onto the wrong image.
+    const ntr::Framebuffer *frames[] = {
+        mainOnTop ? &main : &sub, mainOnTop ? &sub : &main
+    };
     // Boot has two interface cards. Stage rendering will own the full-screen
     // viewport and minimap policy once that scene is linked.
     for (int i = 0; i < 2; ++i) {
