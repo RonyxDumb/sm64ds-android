@@ -181,6 +181,34 @@ uintptr_t Space::code(uint32_t a) const {
     if (at==code_.end()) throw std::runtime_error("Unlinked native code handle: " + std::to_string(a));
     return at->second;
 }
+MemberTarget Space::resolve_member(uint32_t object, MemberCall method) const {
+    // The ROM stores its C++ member pointer as {ptr, adjust}. The low bit
+    // of adjust signals virtual dispatch; the remaining signed bits are the
+    // byte adjustment to this (arithmetic right-shift by one).
+    if (!object || (!method.entry && !method.adjustment))
+        throw std::runtime_error("Null native actor/member call.");
+    const int64_t adjusted = int64_t(object) + (method.adjustment >> 1);
+    if (adjusted <= 0 || adjusted > UINT32_MAX)
+        throw std::runtime_error("Native actor this-adjustment is outside packed address space.");
+    const auto at = static_cast<uint32_t>(adjusted);
+    // Even a direct function pointer must reference a registered actor.
+    data(at, 4);
+    uint32_t entry = method.entry;
+    if (method.adjustment & 1) {
+        // DS vtables are arrays of four-byte code handles, not host-sized
+        // function pointers. The descriptor contains a byte offset.
+        if ((entry & 3) || entry > 0x10000u)
+            throw std::runtime_error("Invalid native actor virtual slot.");
+        uint32_t vtable = 0;
+        std::memcpy(&vtable, data(at, sizeof vtable), sizeof vtable);
+        if (uint64_t(vtable) + entry > UINT32_MAX)
+            throw std::runtime_error("Native actor vtable slot overflows packed address space.");
+        std::memcpy(&entry, data(vtable + entry, sizeof entry), sizeof entry);
+    }
+    // Space::code() checks that this points to actual linked host machine
+    // code. ROM instructions and stale 32-bit addresses are never callable.
+    return {at, code(entry)};
+}
 uint32_t Space::code_address(uintptr_t p) {
     if (!p) return 0;
     for (const auto &entry : code_) if (entry.second==p) return entry.first;
