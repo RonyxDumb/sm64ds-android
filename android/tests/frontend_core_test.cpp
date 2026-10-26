@@ -11,6 +11,9 @@
 using namespace sm64ds;
 extern "C" void abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(uint32_t);
 extern "C" void abi__ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(uint32_t);
+extern "C" uint32_t native_member_probe(uint32_t object, uint32_t value) {
+    return object ^ value;
+}
 template<class T> T at(const FrontendCore &c, uint32_t a) {
     T v; std::memcpy(&v,c.data_at(a,sizeof v),sizeof v); return v;
 }
@@ -155,6 +158,38 @@ int main() {
         auto alias=packed::ArrayRef<uint16_t>(root+1);
         assert(packed::Ptr<uint8_t>(alias).address()==root+1);
         auto &memory=packed::Space::current();
+        // The original Player::State uses {function_or_vtable_offset,
+        // signed_this_adjustment_with_virtual_bit}. Check both paths against
+        // actual native code, never a cartridge instruction address.
+        constexpr uint32_t nativeEntry = 0x62000000;
+        memory.bind(nativeEntry, &native_member_probe);
+        auto actor = memory.allocate(64);
+        auto vtable = memory.allocate(32);
+        *packed::Ptr<uint32_t>(actor+8) = vtable;
+        *packed::Ptr<uint32_t>(vtable+12) = nativeEntry;
+        const auto direct = memory.resolve_member(actor+8, {nativeEntry, -16});
+        assert(direct.object == actor);
+        const auto virtualCall = memory.resolve_member(actor, {12, 17});
+        assert(virtualCall.object == actor+8 && virtualCall.code == direct.code);
+        using MemberBody = uint32_t (*)(uint32_t, uint32_t);
+        MemberBody invoke = nullptr;
+        static_assert(sizeof(invoke) == sizeof(virtualCall.code));
+        std::memcpy(&invoke, &virtualCall.code, sizeof invoke);
+        assert(invoke(virtualCall.object, 0x1337) == (virtualCall.object ^ 0x1337));
+        bool badMethod = false;
+        try { (void)memory.resolve_member(actor, {0, 0}); }
+        catch (const std::runtime_error &) { badMethod = true; }
+        assert(badMethod);
+        badMethod = false;
+        try { (void)memory.resolve_member(actor, {3, 17}); }
+        catch (const std::runtime_error &) { badMethod = true; }
+        assert(badMethod);
+        badMethod = false;
+        try { (void)memory.resolve_member(actor, {0x02020000, 0}); }
+        catch (const std::runtime_error &) { badMethod = true; }
+        assert(badMethod);
+        memory.release(vtable);
+        memory.release(actor);
         auto bca=memory.allocate(0x40);
         for (unsigned i=0;i<4;++i) *packed::Ptr<uint32_t>(bca+8+i*4)=0x18+i*4;
         abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(bca);
