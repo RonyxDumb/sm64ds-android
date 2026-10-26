@@ -1,11 +1,14 @@
 #include "frontend_core.h"
 #include "packed_ptr.h"
+#include "title_config.h"
 #include "ntr/mmio.h"
 #include <stdexcept>
 
 extern "C" {
 void abi_func_ov007_020b6a84();
 void abi_func_ov007_020b68e8();
+uint32_t abi_func_ov007_020b7138(uint32_t,uint32_t);
+void abi_GX_DispOn();
 void abi_func_ov007_020b697c();
 void abi_func_ov007_020b69c4();
 void abi_func_ov007_020b693c();
@@ -29,11 +32,16 @@ FrontendCore &FrontendCore::current() {
 }
 FrontendCore::Scope::Scope(FrontendCore &next) : address_(next.space_), previous_(core) { core=&next; }
 FrontendCore::Scope::~Scope() { core=previous_; }
-FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerLanguage, FileLoader loader)
-    : space_(heap), image_(std::move(data)), ownerLanguage_(ownerLanguage), loader_(std::move(loader)) {
+FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerLanguage, FileLoader loader,
+                           Cartridge::DataImage arm9, const TitleConfig *config)
+    : space_(heap), image_(std::move(data)), arm9_(std::move(arm9)), ownerLanguage_(ownerLanguage), loader_(std::move(loader)) {
     if (ownerLanguage<0 || ownerLanguage>5) throw std::runtime_error("Invalid owner language.");
     if (!ntr::io_init()) throw std::runtime_error("Cannot map native hardware latches.");
     space_.map(ntr::IO_BASE,ntr::host_ptr(ntr::IO_BASE),ntr::IO_SIZE);
+    space_.map(ntr::PLTT_BASE,ntr::host_ptr(ntr::PLTT_BASE),ntr::PLTT_SIZE);
+    space_.map(ntr::VRAM_BASE,ntr::host_ptr(ntr::VRAM_BASE),ntr::VRAM_SIZE);
+    space_.map(ntr::OAM_BASE,ntr::host_ptr(ntr::OAM_BASE),ntr::OAM_SIZE);
+    if (!arm9_.bytes.empty()) space_.map(arm9_.base,arm9_.bytes.data(),arm9_.bytes.size());
     space_.map(image_.base,image_.bytes.data(),image_.bytes.size());
     space_.bind(0x020ccab4,pk_frontend_allocate);
     space_.bind(0x020cca98,pk_frontend_deallocate);
@@ -46,7 +54,19 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
     abi_func_ov007_020c3e2c(0x020cca98);
     abi_func_ov007_020c3e1c(0x020cca80);
     abi_func_ov007_020b4100(0x020cca74,0x020cca68);
-    if (loader_) {
+    if (config) {
+        if (!loader_ || arm9_.bytes.empty() || !config->messageBank)
+            throw std::runtime_error("Incomplete native title configuration.");
+        auto record=space_.allocate(0xa0);
+        std::memcpy(space_.data(record,0x9c),config->bytes.data(),0x9c);
+        *packed::Ptr<uint32_t>(record+0x9c)=packed::Ptr<const uint8_t>(config->messageBank).address();
+        ntr::io_write(0x04000304,(ntr::io_read(0x04000304,2)&~0x20eu)|0x20e,2);
+        abi_GX_DispOn();
+        ntr::io_write(0x04001000,ntr::io_read(0x04001000,4)|0x10000,4);
+        if (abi_func_ov007_020b7138(0x02103290,record)!=1)
+            throw std::runtime_error("Original title scene initialization failed.");
+        root_=word_at(0x0210342c);
+    } else if (loader_) {
         // Execute all five genuine builders in the original root factory.
         abi_func_ov007_020b68e8();
         root_=word_at(0x0210342c);

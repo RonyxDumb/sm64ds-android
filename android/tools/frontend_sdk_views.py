@@ -1,8 +1,9 @@
 """Source-only views of stateless SDK APIs; never flatten game/actor classes."""
+import re
 SDK = {'GX', 'GXS', 'G2x', 'G3X', 'G3i', 'CP15'}
 
 
-def flatten(text, parser):
+def flatten(text, parser, aliases=None):
     """Give static SDK functions distinct C names across recovered namespaces.
 
     The source uses both struct GX static declarations and namespace GX
@@ -51,6 +52,15 @@ def flatten(text, parser):
                 edits.extend([(node.start_byte, body.start_byte + 1, ''),
                               (body.end_byte - 1, node.end_byte, '')])
                 scope = key
+        if node.type == 'function_definition' and aliases is not None:
+            definition = name_of(node.child_by_field_name('declarator'))
+            if definition:
+                value = spelling(definition)
+                parts = value.split('::')
+                key = scope+'_'+value if scope else '_'.join(parts) if len(parts)==2 and parts[0] in SDK else None
+                tags = re.findall(r'// @symbol (\S+)',raw[:node.start_byte].decode())
+                if key and tags and tags[-1].startswith('_ZN'):
+                    aliases[tags[-1]] = key
         if scope and node.type == 'function_declarator':
             name = name_of(node.child_by_field_name('declarator'))
             if name:

@@ -5,12 +5,14 @@
 #include <functional>
 
 namespace sm64ds {
-// Owns the original frontend root and its five builders. The complete scene
-// initialization, interactive dispatcher and rendering still need link closure.
+struct TitleConfig;
+// Owns the original frontend root and complete title initialization. Interactive
+// dispatcher/render entry points share this checked native address space.
 class FrontendCore {
 public:
     using FileLoader = std::function<std::vector<uint8_t>(uint16_t)>;
-    FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerLanguage, FileLoader loader = {});
+    FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerLanguage, FileLoader loader = {},
+                 Cartridge::DataImage arm9 = {}, const TitleConfig *config = nullptr);
     ~FrontendCore();
     void sample(uint16_t keys, int x, int y);
     void step_state(unsigned index);
@@ -34,6 +36,7 @@ public:
 private:
     packed::Space space_;
     Cartridge::DataImage image_;
+    Cartridge::DataImage arm9_;
     uint32_t root_=0;
     int ownerLanguage_;
     FileLoader loader_;

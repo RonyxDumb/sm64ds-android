@@ -1,88 +1,52 @@
-# Android checkpoint — 2026-10-26, all five native frontend root builders
+# Android checkpoint — 2026-10-26, complete native title initialization
 
-**Not playable.** Production boot executes the original b68e8 factory and all
-five root builders. Full b7138 initialization, interactive b7090/aed98 dispatch
-and rendering, scene 3, actors and Player are still unlinked. The application
-reports the actual missing frontend boundary rather than simulating success.
+Production now calls the original `func_ov007_020b7138`, including all five root
+builders, model setup and texture/palette VRAM uploads, particle manager/resource
+parsing, sound-record initialization, sprite groups and the per-visit reset.
+The European cartridge executes this path through 589 owned allocations. The
+next boundary is the interactive update/render loop, followed by scene 3 and
+actor/Player dispatch.
 
-## Implemented
+## Native runtime
 
-- 77 recovered translation units compile as native code through checked
-  four-byte data/code handles. Native addresses stay full width in side tables;
-  no cartridge instruction bytes are executed or interpreted.
-- The original factory allocates shared state, cameras, lights, tweens, input,
-  settings, 11 texture records, palette-state buffers, all 24 item views, the
-  two-screen display/OAM/BG lists, 4 character resources, 6 palettes, 6 sprite
-  banks, 9 item nodes and 8 BG-layer slots. All original layout assertions stay
-  active; unrelated partial record views live in separate TU namespaces.
-  The private European cartridge's complete root owns 381 heap allocations.
-- Native cartridge callbacks load the actual menu BMD; original BMD/BCA/BTP
-  static offset loaders are projected without importing polymorphic classes.
-- Explicitly recover the live character-record return through c3550/c99d8.
-  Their original ARM epilogues preserve the allocated pointer in r0, whereas
-  the recovered C void/missing-return spelling loses it on native targets.
-  The runtime projection forwards that value; matching sources are untouched.
-- Wider array aliases preserve their address without binding misaligned array
-  references before byte casts. Source and selected-header hashes guard all
-  projections. Android builds need only the Python stdlib.
-- Each execution scope registers its current native thread stack. A renderer
-  thread replacement can therefore encode genuine stack-local source arguments;
-  the original constructor thread is not assumed to live forever. Heap state
-  persists across this sequential migration. Address encoding takes a full-width
-  integer key and never reads the output buffer being passed by address.
+- 133 recovered source units are linked into the application's source manifest.
+  The initialization profile reproduces that manifest with the pinned parser;
+  Android builds consume the checked projection with Python's standard library.
+- The actual ARM9 image/BSS and overlay data are mapped separately through
+  checked four-byte handles. Native pointers and callable addresses retain full
+  width in native tables. Cartridge instructions are never executed/interpreted.
+- Static Model4 methods and existing POD model records preserve their assertions.
+  Size-only null-base expressions become logical offset arithmetic. A palette
+  without a texture is rejected before the recovered unset-format read.
+- Particle constructor, resource parser and six real behavior callbacks execute
+  as native code. Original bitfield widths and effect-record assertions remain
+  active. SDK namespace/static methods retain their distinct symbol identities.
+- Title settings copy only the original 0x9c scalar bytes into the packed record;
+  its message-bank field receives a checked handle to the existing native buffer.
+- Volatile register pointers dispatch writes to the geometry/arithmetic backend,
+  including matrix streams. Native DMA counterparts copy/fill actual memory and
+  invoke real completion callbacks only after synchronous completion. Cache and
+  DMA waits use native coherence; no ARM privileged instruction is emitted.
 
-## Verification
+## Verification and continuation
 
-- Private-ROM production boot/root/launch lifetimes pass ASan/UBSan with
-  use-after-return and halt-on-UB. Checks include all original item IDs, texture
-  and tween links, character pointers, BG slot IDs/list counts, high native
-  pointers, saved-file launch requests and full heap recovery.
-- A ROM-free fixture with invented model and binary-screen records executes
-  all five actual builders, including character return forwarding. It also
-  checks BCA/BTP fixups and state/input behavior. This is native-code validation,
-  not a resource-viewer product or evidence of an interactive title.
-- All 77 units and the five-builder fixture passed native ARM64 execution,
-  debug/release ARM64 APK builds and Lint in run 40302755568 and are on main.
-  The thread-migration change also passes host ASan/UBSan with optimized source
-  execution (-O2); CI repeats it on native ARM64. Undefined-behavior diagnostics
-  now fail the frontend and game checks immediately. No Android device is attached.
+The private-ROM production boot/initialization/file-launch lifetimes execute
+under ASan/UBSan with use-after-return and halt-on-UB. All record assertions are
+active. Native teardown restores the heap. The source units also compile at
+-O2. Android/native ARM64 CI must be checked for each published revision; no
+Android device is attached to this workspace.
 
+Connect the original b7090/aed98 dispatcher, b7040 rendering and b6eb4 graph
+callback to the active scene lifecycle. Route real 3/4/5 results to the existing
+StartFile path. Then complete scene 3, native actor dispatch, Player/collision/
+camera, animation, HUD/minimap and sound. Do not replace missing bodies with
+success stubs or synthesize a file-selection result.
 
-## Full-initialization development profile
-
-`frontend_init_profile.json` is a developer-only, compile-only profile. It is
-not the application's manifest. With the pinned parser installed:
+Regeneration:
 
 ```sh
-python3 android/tools/lift_frontend.py --profile android/tools/frontend_init_profile.json --out /tmp/frontend-init.json
-python3 android/tools/packed_sources.py --manifest /tmp/frontend-init.json --out /tmp/frontend-init-src
+python3 android/tools/lift_frontend.py --profile android/tools/frontend_init_profile.json --out android/tools/frontend_manifest.json
 ```
-
-All 112 generated source units compile with record assertions active. This does
-not establish native link closure or execution of b7138. The remaining 21 native
-callees include model construction/upload helpers from Model4, graphics-mode
-entry points, inverse/vector/camera math, particle manager setup and two sound
-record initializers. Do not substitute success stubs for them.
-
-The stateless SDK projection keeps GX and GXS names distinct, and uses existing
-C record views for model data rather than native polymorphic class layouts.
-Multiword MMIO types use mmio.h's exact macro expansion before syntax parsing.
-The register proxy now preserves C compound-assignment promotions and copies a
-source register's value instead of accidentally assigning its proxy address.
-The five-builder native execution check and private-ROM production lifetimes
-pass with these register semantics.
-
-## Resume here
-
-1. Complete b7138 initialization and its model/particle/audio/display setup;
-   map the title settings and message bank through a correct packed/native
-   boundary. Then connect b7090 update, aed98 dispatch, source rendering and
-   the actual result to GameProgram::accept_title_result.
-2. ModelComponents is a nonpolymorphic five-pointer record; it can be projected
-   independently. Native C++ model/actor vptrs and member-function pointers
-   cannot be placed into packed records. Ptr rejects polymorphic dereferences.
-3. Scene 3 lifecycle, native actor dispatch, Player/collision/camera, complete
-   3D/animation, HUD/minimap and game sound still remain unfinished.
 
 
 ---

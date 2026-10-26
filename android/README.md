@@ -1,7 +1,7 @@
 # Super Mario 64 DS Android
 
 Native port in development. **Version 0.4.1 runs recovered boot, title-file
-preparation and all five frontend root builders, then stops at the unlinked
+preparation and complete original title initialization, then stops at the unlinked
 interactive title. It is not playable.**
 The old face/sample test is no
 longer the Android session. No emulator or ARM guest execution is used.
@@ -26,10 +26,11 @@ At the completed fade to scene 1, command 20's recovered loop reads all three
 files, activates each through the original copy helper and computes the title's
 star/coin/character summaries. The file buffer has native ownership, and the
 message-bank pointer is a native-width member outside the fixed scalar settings.
-The original `b68e8` factory then constructs the frontend's shared records, all
+The original `b7138` initialization calls the `b68e8` factory to construct shared records, all
 24 item views, texture/palette records and the two-screen OAM/BG display lists.
-Its 77 recovered translation units use checked four-byte handles to full-width
-native addresses; their original record assertions remain active. No ARM
+Its 133 recovered translation units use checked four-byte handles to full-width
+native addresses; their original record assertions remain active. It then sets up models,
+texture/palette VRAM uploads, particle resources, sprite groups and visit state. No ARM
 instructions from the cartridge are callable through these data records.
 
 The runtime then reports the unlinked `dScDSMT_c` dispatcher/rendering and releases

@@ -36,6 +36,13 @@ std::vector<uint8_t> read_file(int32_t id) {
 }
 }
 namespace sm64ds {
+Cartridge::DataImage Cartridge::arm9_data(uint32_t end) const {
+    require(end>=uint64_t(base_)+image_.size() && end<=0x02400000,
+            "Invalid native ARM9 data/BSS boundary.");
+    auto bytes=image_;
+    bytes.resize(end-base_,0);
+    return {base_,std::move(bytes)};
+}
 Cartridge::DataImage Cartridge::overlay_data(uint32_t id) const {
     ntr::OverlayInfo info{};
     require(ntr::fs_overlay_info(id, info), "Missing frontend overlay descriptor.");

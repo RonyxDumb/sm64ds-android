@@ -4,6 +4,7 @@
 #include <cstring>
 #include <type_traits>
 #include <utility>
+#include "ntr/mmio.h"
 
 namespace sm64ds::packed {
 // Stored words are handles. All native data/code addresses remain full width
@@ -16,6 +17,28 @@ uint32_t encode_code(uintptr_t pointer);
 template<class T, class = void> struct Extent { static constexpr size_t value = 1; };
 template<class T> struct Extent<T, std::void_t<decltype(sizeof(T))>> {
     static constexpr size_t value = sizeof(T);
+};
+// Recovered SDK code also keeps a volatile register pointer in a local.
+// Those writes must reach the same command/arithmetic ports as literal MMIO.
+template<class T> class VolatileRef {
+    uint32_t address_;
+    using Value = std::remove_cv_t<T>;
+    bool port() const { return address_>=ntr::IO_BASE && address_<ntr::IO_BASE+ntr::IO_SIZE; }
+public:
+    explicit VolatileRef(uint32_t address) : address_(address) {}
+    VolatileRef(const VolatileRef &) = default;
+    operator Value() const {
+        if (port()) return static_cast<Value>(ntr::io_read(address_,sizeof(Value)));
+        return *static_cast<T *>(resolve(address_,sizeof(Value)));
+    }
+    VolatileRef &operator=(Value value) {
+        if (port()) ntr::io_write(address_,static_cast<uint64_t>(value),sizeof(Value));
+        else *static_cast<T *>(resolve(address_,sizeof(Value)))=value;
+        return *this;
+    }
+    VolatileRef &operator=(const VolatileRef &other) { return *this=static_cast<Value>(other); }
+    template<class U> VolatileRef &operator|=(U value) { return *this=static_cast<Value>(*this)|value; }
+    template<class U> VolatileRef &operator&=(U value) { return *this=static_cast<Value>(*this)&value; }
 };
 template<class T> class Ptr {
     uint32_t address_;
@@ -46,9 +69,14 @@ public:
     }
     T *operator->() const { return get(); }
     template<class U=T, std::enable_if_t<!std::is_void_v<U> && !std::is_function_v<U>, int> = 0>
-    U &operator*() const { return *get(); }
+    decltype(auto) operator*() const {
+        if constexpr (std::is_volatile_v<U>) return VolatileRef<U>(address_);
+        else return *get();
+    }
     template<class U=T, std::enable_if_t<!std::is_void_v<U> && !std::is_function_v<U>, int> = 0>
-    U &operator[](ptrdiff_t index) const { return *((*this + index).get()); }
+    decltype(auto) operator[](ptrdiff_t index) const { return *(*this + index); }
+    template<class U> bool operator==(U *other) const { return address_==Ptr<U>(other).address(); }
+    template<class U> bool operator!=(U *other) const { return !(*this==other); }
     template<class I, std::enable_if_t<std::is_integral_v<I>, int> = 0>
     Ptr operator+(I count) const { return Ptr(address_ + uint32_t(count * Extent<T>::value)); }
     template<class I, std::enable_if_t<std::is_integral_v<I>, int> = 0>

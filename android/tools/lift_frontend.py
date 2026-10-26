@@ -19,6 +19,24 @@ import tree_sitter_cpp
 from frontend_sdk_views import flatten as flatten_sdk
 ROOT = Path(__file__).resolve().parents[2]
 PARSER = Parser(Language(tree_sitter_cpp.language()))
+BEHAVIORS = {name: '_ZN8Particle' + str(len(name)) + name + '4FuncERNS_10EffectDataEPcR7Vector3'
+             for name in ('Acceleration','Jitter','Converge','Turn','LimitPlane','RadiusConverge')}
+
+
+def definitions(raw, symbols):
+    """Select actual tagged bodies from a TU, retaining its hash as input."""
+    found = {}
+    def visit(node):
+        if node.type == 'function_definition':
+            tags = re.findall(r'// @symbol (\S+)',raw[:node.start_byte])
+            if tags and tags[-1] in symbols:
+                found[tags[-1]] = raw[node.start_byte:node.end_byte]
+        for child in node.named_children:
+            visit(child)
+    visit(PARSER.parse(raw.encode()).root_node)
+    if set(found) != set(symbols):
+        raise ValueError('selected native definitions changed: ' + str(set(symbols)-set(found)))
+    return '\n'.join(found[name] for name in symbols) + '\n'
 
 
 def method_view(raw, qualified, symbol, record, prefix):
@@ -189,7 +207,11 @@ class Lift:
                         if is_function:
                             self.functions.add(name)
                             prefix = 'extern "C" '
-                        rendered.append(prefix + self.named(name, value) + (' = ' + self.rewrite(init) if init else '') +
+                        bitfields = [c for c in node.named_children if c.type == 'bitfield_clause']
+                        if bitfields and len(decls)!=1:
+                            raise ValueError('multiple bitfield declarators need an explicit view')
+                        bits = ' ' + self.text(bitfields[0]) if bitfields else ''
+                        rendered.append(prefix + self.named(name, value) + bits + (' = ' + self.rewrite(init) if init else '') +
                                         ('' if kind in ('parameter_declaration', 'type_descriptor') else ';'))
                 return '\n'.join(rendered)
             if kind == 'type_descriptor' and base:
@@ -241,6 +263,7 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--headers', nargs='*', default=[])
     parser.add_argument('--profile', type=Path)
+    parser.add_argument('--full-model', action='store_true')
     parser.add_argument('sources', nargs='*')
     args = parser.parse_args()
     if args.profile:
@@ -248,13 +271,60 @@ def main():
             parser.error('profile cannot be combined with explicit sources/headers')
         profile = json.loads(args.profile.read_text())
         args.sources, args.headers = profile['sources'], profile['headers']
+        args.full_model = args.full_model or profile.get('full_model',False)
     if not args.sources:
         parser.error('sources or --profile are required')
     entries = []
+    sdk_aliases = {}
     for rel in args.sources + args.headers:
         raw = (ROOT/rel).read_text()
         view = raw
         dependencies = {}
+        if rel == 'src/cstd.cpp':
+            selected = {'_ZN4cstd16reciprocal_asyncEi':'reciprocal_async',
+                        '_ZN4cstd11fdiv_resultEv':'fdiv_result',
+                        '_ZN4cstd11ldiv_resultEv':'ldiv_result', 'func_02053200':'func_02053200'}
+            view = definitions(raw,selected)
+            for symbol,name in selected.items():
+                view = view.replace('cstd::'+name,symbol)
+                view = re.sub(r'\b'+name+r'\b',symbol,view)
+            view = ('#include "types.h"\nextern void _ZN4cstd16reciprocal_asyncEi(int);\n'
+                    'extern int _ZN4cstd11fdiv_resultEv(void);\n' + view)
+        if rel == 'src/engine/sound/SoundEngine.cpp':
+            view = definitions(raw,['func_0204f94c'])
+        if rel == 'src/engine/particle/Particle_Manager.cpp':
+            # The constructor/parser own POD records and stored callbacks. Keep
+            # their genuine bodies; the instance update/draw methods are separate.
+            prefix = raw[:raw.index('namespace Particle {\nstruct EffectData;')]
+            prefix = prefix.replace('#include "Particle__System.h"','')
+            records = raw[raw.index('typedef void (*BehaviorFunc)'):raw.index('extern "C" {',raw.index('struct Flags2'))]
+            records = records.replace('Particle::EffectData &','Particle::EffectData *').replace('Vector3 &','Vector3 *')
+            callbacks = 'namespace Particle { union EffectData;\n' + ''.join(
+                'extern void '+symbol+'(EffectData *, char *, Vector3 *);\n' for symbol in BEHAVIORS.values())+'}\n'
+            view = prefix + callbacks + records + definitions(raw,['func_0204a4c8','func_0204a17c'])
+            for name,symbol in BEHAVIORS.items():
+                view = view.replace('Particle::'+name+'::Func','Particle::'+symbol)
+        if rel == 'include/Particle__Behavior.h':
+            for name,symbol in BEHAVIORS.items():
+                expression = r'struct '+name+r' \{\s*static void Func\(EffectData& effect, char\* particle, Vector3& velocity\);\s*\};'
+                view,n = re.subn(expression,'extern void '+symbol+'(EffectData *effect, char *particle, Vector3 *velocity);',view)
+                if n!=1: raise ValueError('particle callback declaration changed: '+name)
+        if rel == 'src/engine/particle/Particle_Behavior.cpp':
+            view = raw.replace('#include "decl_common.h"','#include "types.h"\nextern unsigned int data_020a4d30;')
+            for name,symbol in sorted(BEHAVIORS.items(),key=lambda item:len(item[0]),reverse=True):
+                view = re.sub(r'\b'+name+r'::Func\b',symbol,view)
+            view = view.replace('EffectData& effect','EffectData *effect').replace('Vector3&','Vector3 *')
+            view = view.replace('Element& state = *(Element*)particle;','Element *state = (Element*)particle;')
+            for name in ('effect','velocity','acceleration','state'):
+                view = re.sub(r'(?<![.>])\b'+name+r'\.',name+'->',view)
+            view = view.replace('namespace Particle {','using Particle::EffectData;\nusing Particle::Element;')
+            view = view.replace('} // namespace Particle','')
+            view = view.replace('include/math/*.h','the math headers')
+        if rel == 'src/engine/gx/G3X.cpp':
+            # The matching compiler widened this bool's stack slot to a word.
+            # Read the native bool value without a four-byte out-of-bounds load.
+            if view.count('if (*(int *)&e)')!=1: raise ValueError('SDK bool-slot idiom changed')
+            view = view.replace('if (*(int *)&e)','if (e)')
         if rel == 'src/unnamed/ov007/func_ov007_020c3550.c':
             # Original ARM 020c3570..020c3594 keeps the allocated p in r0
             # through bx lr. The recovered void spelling loses that live result
@@ -312,7 +382,42 @@ def main():
                 raise ValueError('SDK VRAM state declaration changed')
             view = raw.replace(declaration, 'extern GXVRamCnt data_020a6088;')
         if rel == 'src/engine/model/Model4.cpp':
-            view = method_view(raw, 'dExtSimpleModel_c::UpdateFileOffsets',
+            if args.full_model:
+                # Static methods have no actor/vptr ABI. Retain the complete
+                # original model construction and VRAM allocation/upload code.
+                names={}
+                def collect(node):
+                    if node.type=='function_definition':
+                        decl=node.child_by_field_name('declarator')
+                        text=raw[decl.start_byte:decl.end_byte]
+                        match=re.search(r'dExtSimpleModel_c::(\w+)\(',text)
+                        if match:
+                            tags=re.findall(r'// @symbol (\S+)',raw[:node.start_byte])
+                            if not tags: raise ValueError('model static symbol missing')
+                            names[match.group(1)]=tags[-1]
+                    for child in node.named_children: collect(child)
+                collect(PARSER.parse(raw.encode()).root_node)
+                if len(names)!=5: raise ValueError('model static method set changed')
+                view=raw.replace('#include "dExtSimpleModel_c.h"','#include "BMD_File.h"')
+                # The recovered palette-only path reads an unset texture format.
+                # Reject that invalid material rather than inventing a format.
+                guard='        if (idx2 != -1) {\n            u32 v2;'
+                if view.count(guard)!=1: raise ValueError('material format dependency changed')
+                view=view.replace(guard,guard+'\n            if (c1 == -1) { Crash(); return; }')
+                for name,symbol in names.items():
+                    view=view.replace('dExtSimpleModel_c::'+name,symbol)
+                    view=re.sub(r'\b'+name+r'\b',symbol,view)
+                if view.count('BMD_File &file')!=2: raise ValueError('model file reference projection changed')
+                view=view.replace('BMD_File &file','BMD_File *file')
+                view=re.sub(r'\bfile\.', 'file->',view)
+                view=re.sub(r'&\s*file\b','file',view)
+                # These expressions compute sizes, not memory references.
+                for expression,replacement in [('&((struct A *)0)[a + b]','((char *)0 + sizeof(struct A) * (a + b))'),
+                                               ('&((struct E *)0)[p[1]]','((char *)0 + sizeof(struct E) * p[1])')]:
+                    if view.count(expression)!=1: raise ValueError('model offset idiom changed')
+                    view=view.replace(expression,replacement)
+            else:
+                view = method_view(raw, 'dExtSimpleModel_c::UpdateFileOffsets',
                                '_ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File', 'BMD_File',
                                '#include "BMD_File.h"\n#define REBASE(p) ((char *)(p) + base)')
         if rel == 'src/engine/animation/dExtFrameCtrl_c_UpdateFileOffsets.cpp':
@@ -337,15 +442,15 @@ def main():
                                '\n'.join([record.group(), *locals_, *assertions]))
         if rel.startswith('src/'):
             view = hostgen.transform(view)[0]
-            # Multiword C type arguments are not expressions in the C++ parser.
+            # Type arguments in a macro assignment can parse as declarations.
             # Spell the exact mmio.h macro expansion before the syntax walk.
-            view = re.sub(r'\bNTR_MMIO\(((?:unsigned|signed)\s+(?:char|short|int|long(?: long)?)),\s*([^()]+)\)',
+            view = re.sub(r'\bNTR_MMIO\(((?:(?:unsigned|signed)\s+)?(?:char|short|int|long(?: long)?|[su](?:8|16|32|64))),\s*([^()]+)\)',
                           r'(::ntr::Reg<\1>((\2)))',view)
         if rel == 'src/NormalizeVec3.c':
             if view.count('    *ime;') != 1:
                 raise ValueError('normalizer volatile read changed')
             view = view.replace('    *ime;', '    (void)static_cast<u16>(*ime);')
-        lift = Lift(normalize(flatten_sdk(view, PARSER)))
+        lift = Lift(normalize(flatten_sdk(view, PARSER, sdk_aliases)))
         try:
             source = lift.result()
         except ValueError as error:
@@ -359,6 +464,8 @@ def main():
     for row in entries:
         for name in sorted(functions, key=len, reverse=True):
             row['source'] = re.sub(r'\b' + re.escape(name) + r'\b', 'pk_' + name, row['source'])
+        for original,alias in sdk_aliases.items():
+            row['source']=re.sub(r'\bpk_'+re.escape(original)+r'\b','pk_'+alias,row['source'])
     args.out.write_text(json.dumps(dict(version=1,entries=entries), indent=2) + '\n')
 
 if __name__ == '__main__':

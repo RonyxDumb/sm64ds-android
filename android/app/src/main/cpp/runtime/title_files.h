@@ -1,17 +1,10 @@
 #pragma once
 #include "runtime/title_records.h"
+#include "title_config.h"
 #include <array>
 #include <cstddef>
 
 namespace sm64ds {
-// The first 0x9c bytes contain only scalars. The message-bank pointer formerly
-// stored at DS +0x9c is a separate native-width member, aligned by C++.
-struct TitleConfig {
-    std::array<u8, 0x9c> bytes{};
-    const u8 *messageBank = nullptr;
-};
-static_assert(offsetof(TitleConfig, messageBank) >= 0x9c);
-static_assert(offsetof(TitleConfig, bytes) == 0);
 struct FileSummary {
     bool used;
     u8 characters, secretStars;
