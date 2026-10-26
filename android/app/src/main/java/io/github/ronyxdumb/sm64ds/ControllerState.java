@@ -88,9 +88,20 @@ public final class ControllerState {
                         buttons |= BITS[i];
                         button = true;
                     }
-                if (!button && touchX < 0 && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1) {
-                    touchX = Math.min(255, (int)(p.x * 256));
-                    touchY = Math.min(191, (int)(p.y * 192));
+                if (!button && touchX < 0) {
+                    // Only the right-hand LCD is the physical DS touch surface.
+                    // Match the letterboxed 4:3 viewport in ScreenRenderer:
+                    // mapping against the entire Android view caused presses
+                    // on the upper, non-touch LCD to select a save file.
+                    final float viewportWidth = Math.min(.5f, 4f / (3f * aspect));
+                    final float viewportHeight = viewportWidth * aspect * .75f;
+                    final float left = .75f - viewportWidth * .5f;
+                    final float top = (1f - viewportHeight) * .5f;
+                    if (p.x >= left && p.x < left + viewportWidth &&
+                        p.y >= top && p.y < top + viewportHeight) {
+                        touchX = Math.min(255, (int)((p.x - left) / viewportWidth * 256));
+                        touchY = Math.min(191, (int)((p.y - top) / viewportHeight * 192));
+                    }
                 }
             }
         }
