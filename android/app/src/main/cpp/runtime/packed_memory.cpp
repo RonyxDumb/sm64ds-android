@@ -1,6 +1,8 @@
 #include "packed_memory.h"
 #include <link.h>
 #include <pthread.h>
+#include <cstdio>
+#include <sstream>
 #include <stdexcept>
 #if defined(__SANITIZE_ADDRESS__)
 #define SM64DS_PACKED_ASAN 1
@@ -66,14 +68,23 @@ void *Space::data(uint32_t a, size_t n) const {
     throw std::runtime_error("Packed data handle outside registered span: " + std::to_string(a));
 }
 bool Space::map_native_segment(const void *pointer) {
+    // A native pointer can live in a shared object's PT_LOAD, an ASan fake
+    // stack frame, or a C++ heap/anonymous allocator mapping. Never narrow the
+    // host address: register its backing span and return an independent handle.
+    auto register_span = [this](const void *begin, size_t bytes) {
+        constexpr uint64_t End = 0x60000000u;
+        const uint64_t aligned = (uint64_t(bytes) + 4095u) & ~uint64_t(4095u);
+        if (!bytes || !begin || external_ >= End || aligned > End - external_)
+            return false;
+        map(external_, const_cast<void *>(begin), bytes);
+        external_ += static_cast<uint32_t>(aligned);
+        return true;
+    };
 #ifdef SM64DS_PACKED_ASAN
     void *begin = nullptr, *end = nullptr;
-    if (__asan_addr_is_in_fake_stack(__asan_get_current_fake_stack(), const_cast<void *>(pointer), &begin, &end)) {
-        size_t n = static_cast<uint8_t *>(end)-static_cast<uint8_t *>(begin);
-        if (!n || n > 0x60000000u-external_) return false;
-        map(external_,begin,n);
-        external_ += static_cast<uint32_t>((n+4095)&~size_t(4095));
-        return true;
+    if (__asan_addr_is_in_fake_stack(__asan_get_current_fake_stack(), const_cast<void *>(pointer),
+                                    &begin, &end)) {
+        return register_span(begin, static_cast<uint8_t *>(end) - static_cast<uint8_t *>(begin));
     }
 #endif
     struct Find { uintptr_t pointer, start=0; size_t size=0; } find{reinterpret_cast<uintptr_t>(pointer)};
@@ -88,10 +99,42 @@ bool Space::map_native_segment(const void *pointer) {
         }
         return 0;
     }, &find);
-    if (!find.size || find.size>0x60000000u-external_) return false;
-    map(external_,reinterpret_cast<void *>(find.start),find.size);
-    external_ += static_cast<uint32_t>((find.size+4095)&~size_t(4095));
-    return true;
+    if (find.size)
+        return register_span(reinterpret_cast<void *>(find.start), find.size);
+
+    // dl_iterate_phdr does not describe malloc/new buffers. Resolve only a
+    // currently mapped, readable/writable anonymous allocator VMA. Do not
+    // auto-register file mappings, devices, other threads' stacks or guards.
+    // Android bionic commonly labels allocator VMAs [anon:libc_malloc] or
+    // [anon:scudo:primary]; glibc also uses [heap] and unnamed VMAs.
+    FILE *maps = std::fopen("/proc/self/maps", "r");
+    if (!maps) return false;
+    char line[2048];
+    uintptr_t base = 0;
+    size_t length = 0;
+    const uint64_t at = reinterpret_cast<uintptr_t>(pointer);
+    while (std::fgets(line, sizeof line, maps)) {
+        unsigned long long low = 0, high = 0;
+        char permissions[5] = {};
+        int afterInode = 0;
+        if (std::sscanf(line, "%llx-%llx %4s %*s %*s %*s %n",
+                        &low, &high, permissions, &afterInode) != 3)
+            continue;
+        if (permissions[0] != 'r' || permissions[1] != 'w' ||
+            at < low || at >= high || high <= low)
+            continue;
+        const char *label = line + afterInode;
+        while (*label == ' ' || *label == '\t') ++label;
+        const bool anonymous = *label == '\n' || *label == 0 ||
+            !std::strncmp(label, "[heap]", 6) || !std::strncmp(label, "[anon:", 6);
+        if (!anonymous || high > UINTPTR_MAX || high - low > SIZE_MAX)
+            break;
+        base = static_cast<uintptr_t>(low);
+        length = static_cast<size_t>(high - low);
+        break;
+    }
+    std::fclose(maps);
+    return length && register_span(reinterpret_cast<void *>(base), length);
 }
 uint32_t Space::address(const void *p) {
     if (!p) return 0;
@@ -103,7 +146,11 @@ uint32_t Space::address(const void *p) {
         }
         if (attempt || !map_native_segment(p)) break;
     }
-    throw std::runtime_error("Native pointer has no packed data mapping.");
+    std::ostringstream message;
+    message << "Native pointer has no packed data mapping: 0x" << std::hex
+            << reinterpret_cast<uintptr_t>(p)
+            << " (not in a registered span or a readable/writable native allocator mapping)";
+    throw std::runtime_error(message.str());
 }
 uint32_t Space::allocate(uint32_t n) {
     void *p=heap_.allocate(n,4);
