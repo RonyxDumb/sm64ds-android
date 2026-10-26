@@ -34,7 +34,7 @@ constexpr uintptr_t OAM_BASE  = 0x07000000u, OAM_SIZE  = 0x00000800u;  // sprite
 bool io_init();
 
 // Host pointer to a DS address. Valid only inside a mapped region.
-inline void *host_ptr(uint32_t addr) { return reinterpret_cast<void *>(addr); }
+void *host_ptr(uint32_t addr);
 
 uint64_t io_read(uint32_t addr, unsigned width);
 void     io_write(uint32_t addr, uint64_t value, unsigned width);
