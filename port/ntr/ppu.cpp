@@ -224,7 +224,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             uint32_t c = bgr555(pixels[i]);
             if (master_mode == 1 || master_mode == 2)
                 c = brightness(c, master_mode, master_level);
-            fb.px[0][i] = c;
+            fb.px[i / SCREEN_W][i % SCREEN_W] = c;
         }
         return;
     }
