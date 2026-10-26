@@ -307,6 +307,12 @@ int main(int argc, char **argv) {
             assert(std::memcmp(active + 0x44, minigames.data(), minigames.size()) == 0);
             auto request = game.stage_request();
             assert(request.level == 1 && request.entrance == 0 && request.star == 1);
+            const auto *assets = game.stage_assets();
+            assert(assets && assets->descriptor().level == 1);
+            assert(assets->descriptor().overlayId == 9);
+            assert(assets->descriptor().levelAddress == 0x02112bdc);
+            assert(!assets->model().empty() && !assets->collision().empty());
+            assert(assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
             assert(request.players == 1 && request.character == expected[selected][0x41]);
             assert(request.controllerMode == expected[selected][0x42]);
             assert(game.requested_scene() == 3 && data_0209f5e8.color == 0x7fff);
