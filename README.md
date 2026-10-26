@@ -1,21 +1,22 @@
 # Super Mario 64 DS Android
 
-Android fork in active development. The current APK imports a user-supplied
-European ROM and offers a native OpenGL ES backend test with the original Mario
-face, multitouch input, ROM sound samples and music sequenced by the PC engine. **It does not boot or play the
-original game yet.**
+The Android session now executes the recovered boot logic: Nintendo logo,
+original countdown, fades and the request for scene 1. **It stops before the title
+and save-selection scene. It is not a playable port.**
 
-Recovered resource ownership, key/stylus updates and cartridge save records are
-now linked, with a native resource heap and the ROM's own asset catalog. The
-scene/actor boot chain remains the main blocker.
+Boot methods are generated from the matching sources onto native-owned scalar
+state. Font/message loading, game-tick input and boot sound requests are connected.
+The fixed-layout actor manager and title/frontend runtime still need ARM64 work.
+Debug/release APK builds and host execution are verified; no Android device test
+has been performed for this checkpoint.
 
-Build instructions and integration blockers: [android/README.md](android/README.md).
-Validated progress: [android/CHECKPOINT.md](android/CHECKPOINT.md).
-Playable-PC dependency and remaining ABI work: [android/PC_PORT.md](android/PC_PORT.md).
-Debug APKs are produced by the [Android workflow](https://github.com/RonyxDumb/sm64ds-android/actions/workflows/android.yml).
+Build: [android/README.md](android/README.md). Current execution boundary and next
+source dependencies: [android/CHECKPOINT.md](android/CHECKPOINT.md).
+PC dependency: [android/PC_PORT.md](android/PC_PORT.md).
+[Android builds](https://github.com/RonyxDumb/sm64ds-android/actions/workflows/android.yml).
 
-The original project's documentation and progress figures follow below. They
-refer to decompilation and the PC source-port frontier, not Android playability.
+The upstream documentation and figures below refer to decompilation and the PC
+port. They do not measure Android playability.
 
 # Super Mario 64 DS Decompilation
 

@@ -14,6 +14,7 @@
 #include "ntr/mmio.h"
 
 #include <cstdio>
+#include <algorithm>
 #include <cstring>
 
 namespace ntr {
@@ -73,7 +74,7 @@ BgConfig read_bg(const EngineMap &em, int bg, uint32_t dispcnt) {
     const uint32_t scr_off = em.has_base_offset ? ((dispcnt >> 27) & 7) << 16 : 0;
 
     c.screen = em.vram_base + scr_off + (((cnt >> 8) & 0x1F) << 11);
-    c.chars = em.vram_base + char_off + (((cnt >> 2) & 3) << 14);
+    c.chars = em.vram_base + char_off + (((cnt >> 2) & 15) << 14);
 
     text_size((cnt >> 14) & 3, c.tiles_w, c.tiles_h);
 
@@ -137,19 +138,37 @@ void ppu_scanout(Engine eng, Framebuffer &fb) {
     for (int i = 0; i < 4; ++i) bgs[i] = read_bg(em, i, dispcnt);
 
     const uint32_t backdrop = bgr555(rd16(em.pltt_base));
+    const uint16_t blend = rd16(em.reg_base + 0x50), master = rd16(em.reg_base + 0x6c);
+    const unsigned blend_mode = (blend >> 6) & 3, master_mode = (master >> 14) & 3;
+    const unsigned blend_level = std::min(16u, unsigned(rd16(em.reg_base + 0x54) & 31));
+    const unsigned master_level = std::min(16u, unsigned(master & 31));
+    auto brightness = [](uint32_t color, unsigned mode, unsigned level) {
+        uint32_t result = 0xff000000;
+        for (unsigned shift = 0; shift < 24; shift += 8) {
+            unsigned value = (color >> shift) & 255;
+            if (mode == 1) value += ((255 - value) * level) / 16;
+            if (mode == 2) value -= (value * level) / 16;
+            result |= value << shift;
+        }
+        return result;
+    };
 
     for (int y = 0; y < SCREEN_H; ++y) {
         for (int x = 0; x < SCREEN_W; ++x) {
             uint32_t c = backdrop;
+            unsigned layer = 5;
             // Lower priority value wins; ties break toward the lower BG number,
             // so walk priorities 3..0 and let later writes overwrite.
             for (int prio = 3; prio >= 0; --prio) {
                 for (int bg = 3; bg >= 0; --bg) {
                     if (!bgs[bg].enabled || bgs[bg].priority != prio) continue;
                     uint32_t s;
-                    if (sample_bg(em, bgs[bg], x, y, s)) c = s;
+                    if (sample_bg(em, bgs[bg], x, y, s)) { c = s; layer = unsigned(bg); }
                 }
             }
+            if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
+                c = brightness(c, blend_mode == 2 ? 1 : 2, blend_level);
+            if (master_mode == 1 || master_mode == 2) c = brightness(c, master_mode, master_level);
             fb.px[y][x] = c;
         }
     }

@@ -1,104 +1,74 @@
 # Super Mario 64 DS Android
 
-Native Android port in development. **This APK is an importer and native asset
-verification/backend-test build, not a playable game.** No emulator or ARM guest execution is
-included. Original decompilation sources and their build configuration are preserved.
+Native port in development. **Version 0.4 runs recovered boot logic and stops at
+the unlinked title scene. It is not playable.** The old face/sample test is no
+longer the Android session. No emulator or ARM guest execution is used.
 
-## Current build
+## Current execution
 
-- Java launcher, landscape immersive layout, Android Storage Access Framework.
-- One `.nds` file or one ROM inside a ZIP. Archive paths are never written to disk.
-- Bounded background import (128 MiB including ignored ZIP entries), progress,
-  ZIP CRC checks, staged writes and atomic replacement of the previous ROM.
-- Full SHA-256 validation against the tested European ASMP revision 0 dump:
-  `ce5829aaa79f06c67140ed1f45cbca738b0a9d0180538c8c1498472d859db032`.
-  Modified, trimmed and other revision dumps are currently rejected.
-- Private ROM copy survives process restarts without the original document URI;
-  persistent URI permissions are released after copying, so they do not accumulate.
-- JNI ARM64 library using the existing `port/ntr/fs.cpp` and `lz77.cpp`, plus
-  the unchanged `src/DotVec3.c` and `src/CrossVec3.c` game implementations.
-- Native filesystem mount, fixed-point math self-test, Mario model read/decompression.
-  These operations run automatically for the saved ROM on subsequent launches.
-- Explicit backend test: ES3 renders the authentic title-face model; virtual
-  multitouch controls feed native input; A plays a real SDAT sample and B selects
-  the next. These diagnostic bindings do not implement recovered player gameplay.
-- AAudio output with audio-focus and lifecycle handling. The pinned PC
-  SSEQ sequencer/mixer and a pointer-safe SBNK/SWAR adapter are integrated.
-  X plays sequence 58; Y stops. Game-driven sound commands are still pending.
-- The POSIX VBlank scheduler is compiled and host-tested; original game entry
-  point integration is still pending.
-- Native resource heap and the ROM's 2058-entry asset catalog; the original
-  SharedFilePtr ownership code now loads the backend scene's model and pose.
-  Native object sizes and file-relative 32-bit offsets remain separate.
-- Original key/stylus update functions and physical controller input are linked;
-  the Player/camera gameplay runtime is still pending.
-- Original cartridge save records use a private persistent 8192-byte image with
-  checksums and mirror recovery. The original save-selection menu is not linked.
+The launcher imports the European ASMP revision 0 ROM (`.nds` or one ROM in a
+ZIP), validates its SHA-256 and keeps a private copy for subsequent launches.
+The accepted dump is `ce5829aaa79f06c67140ed1f45cbca738b0a9d0180538c8c1498472d859db032`.
 
-This stores the cartridge privately and resolves its resource catalog when opening
-the backend session. It does not initialize the actor/game scene runtime.
+`Avvia boot originale` invokes recovered `dScBoot_c` method bodies on native-owned
+leaf state. The matching `src/` and `include/` remain unchanged. This projection
+does not instantiate the unported DS actor manager or copy its vtable.
+
+The session draws the original Nintendo logo and copyright, loads the real font
+and message bank, advances source faders, processes original key/stylus updates
+at 59.8261 Hz and forwards boot sound archive 4 / entry 0 to the PC sequencer.
+Read-only ARM9 constants and the cartridge's NARC mount table are read at runtime.
+No Nintendo data is packaged in the APK or repository.
+
+At the completed fade to scene 1, the runtime reports that `dScDSMT_c` is not yet
+linked and releases the session. The title, file-selection UI, castle, Player,
+level actors, 3D gameplay, HUD/minimap and game-wide sound integration remain
+unfinished. Boot uses a two-screen interface; it is not the future fullscreen
+stage renderer/minimap layout. No on-device compatibility or performance claim
+is made. See [CHECKPOINT.md](CHECKPOINT.md) for the exact frontier.
 
 ## Build
 
-First run `git submodule update --init --recursive` (or clone with `--recurse-submodules`).
-See [PC_PORT.md](PC_PORT.md) for the pinned playable PC release and integration status.
-Use Python 3, JDK 17, Android SDK platform/build-tools 35, NDK 27.2.12479018 and CMake 3.22.1.
-Set `ANDROID_HOME` (or create ignored `android/local.properties` with `sdk.dir=...`).
+Initialize the pinned playable-PC dependency:
+
+```sh
+git submodule update --init --recursive
+```
+
+Use Python 3, JDK 17, SDK platform/build-tools 35, NDK 27.2.12479018 and CMake
+3.22.1. Set `ANDROID_HOME` or ignored `android/local.properties`.
 
 ```sh
 cd android
-./gradlew assembleDebug lintDebug
-./gradlew assembleRelease
+./gradlew --no-daemon assembleDebug assembleRelease lintDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-On Windows, use `gradlew.bat` inside `android`, or run `docker_build.bat` from the
-repository root with Docker Desktop in Linux container mode. Docker installs the
-pinned SDK/NDK/CMake packages, runs host tests and builds/lints the debug APK.
-The Gradle wrapper pins and verifies the Gradle distribution SHA-256.
+Windows: `gradlew.bat` in `android`, or `docker_build.bat` from the repository root
+with Docker Desktop. Debug is development-signed; release is unsigned. No ROM is
+needed for compilation or public CI.
 
-Debug output: `android/app/build/outputs/apk/debug/app-debug.apk`.
-Release output: `android/app/build/outputs/apk/release/app-release-unsigned.apk`;
-release signing is intentionally left to the owner. The debug APK is signed with
-a development key. No ROM is needed for either build or public CI.
+Outputs:
+- `android/app/build/outputs/apk/debug/app-debug.apk`
+- `android/app/build/outputs/apk/release/app-release-unsigned.apk`
 
 GitHub Actions: [Android workflow](../.github/workflows/android.yml), artifact
-`sm64ds-android-debug`. A workflow build does not establish device compatibility.
+`sm64ds-android-debug`.
 
-## Tests
+## Verification
 
 ```sh
 bash android/tests/run-host-tests.sh
-# Optionally exercise native reads on your own supported ROM:
-bash android/tests/run-host-tests.sh /absolute/path/to/game.nds
+bash android/tests/run-game-tests.sh
+# Private-ROM execution of the production native boot:
+bash android/tests/run-game-tests.sh /absolute/path/to/game.nds
 python tools/port_refcheck.py
 ```
 
-Host tests cover recovered game math, LZ77 bounds, filesystem offset overflow,
-FAT extent validation, truncated name tables, unsafe names, cyclic directory
-graphs, failed-mount state, raw/ZIP imports, duplicate ROM entries, decompression
-bomb limits and interrupted provider reads. ASan/UBSan are enabled. To test the
-provided archive locally, pass it to `RomImportTest` after compiling the Java test;
-this also checks the full digest and detects an altered payload.
-
-## Next integration work
-
-1. Recover pointer-independent scene/actor layouts for the game runtime. The native
-   resource heap and SharedFilePtr seam are implemented, but `port/host_abi.h`
-   currently rejects 64-bit pointers; bypassing it corrupts layout assumptions.
-   Port files use 32-bit guest fields, fixed offsets and host constructor/vtable
-   bridges. Start with heap/root memory and verify each bridge on ARM64.
-2. Connect the new POSIX `rt_run` scheduler to the recovered boot/frame loop and
-   Android lifecycle. The backend viewer does not execute that entry point.
-   Keep simulation timing independent from display refresh.
-3. Close scene/startup dependencies: the PC CMake tree builds smoke executables,
-   not an application linking the full boot, save selection and castle path.
-4. The GPU backend now consumes the geometry pipeline for the title-face asset.
-   Connect scene submissions, animation, 2D scanout/HUD/minimap and touch mapping.
-5. Key/stylus state now reaches recovered input globals and physical controllers
-   are supported. Connect the Player's analog/camera control record and game tick;
-   connect the sequencer/AAudio to game sound commands and saves to the original
-   menu, then perform device profiling.
-
-The upstream `PORTED` percentage tracks its source-port frontier; it is not an
-Android playability percentage. See [CHECKPOINT.md](CHECKPOINT.md) for evidence.
+The native game test runs the actual production boot, font/message dependencies,
+fader and transition, checks native file ownership and repeats teardown/recreation
+under ASan/UBSan. It requires the user's ROM to establish boot execution; without
+a ROM public CI checks malformed NARC bounds only. Existing importer, heap, save,
+input and audio tests remain. Mesa tests check screen orientation, color lanes,
+sub-screen presentation and GL recreation. Host checks do not establish phone
+startup, audio output or Android-driver rendering.

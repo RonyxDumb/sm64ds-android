@@ -63,9 +63,7 @@ std::string probe_rom(const char *path) {
         if (ntr::lz77_unpack(packed.data(), size, unpacked.data(), decoded) != decoded)
             throw std::runtime_error("Model decompression failed.");
     }
-    return "ASMP revision 0 • " + std::to_string(ntr::fs_file_count()) +
-           " files\nNative game math verified.\nNative filesystem mounted; Mario model decoded (" +
-           std::to_string(decoded) +
-           " bytes).\n\nOriginal game boot/gameplay is not integrated yet. Use the native backend test for model rendering, touch input, ROM samples and PC-sequenced music.";
+    return "ROM europea verificata.\n\nIl boot originale viene eseguito dal runtime nativo. "
+           "Titolo, selezione salvataggi e gameplay sono ancora in sviluppo.";
 }
 }

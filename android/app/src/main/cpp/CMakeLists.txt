@@ -3,7 +3,7 @@ project(sm64ds_android LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../../.." ABSOLUTE)
-add_library(sm64ds_android SHARED bridge.cpp rom_probe.cpp game_math.cpp scene.cpp gles_renderer.cpp audio_core.cpp android_audio.cpp session.cpp
+add_library(sm64ds_android SHARED bridge.cpp rom_probe.cpp game_math.cpp screen_renderer.cpp audio_core.cpp android_audio.cpp session.cpp
     "${REPO_ROOT}/src/DotVec3.c" "${REPO_ROOT}/src/CrossVec3.c"
     "${REPO_ROOT}/port/ntr/rt.cpp" "${REPO_ROOT}/port/ntr/io.cpp"
     "${REPO_ROOT}/port/ntr/bmd.cpp" "${REPO_ROOT}/port/ntr/gx.cpp" "${REPO_ROOT}/port/ntr/texture.cpp"
@@ -27,18 +27,24 @@ target_include_directories(sm64ds_android PRIVATE "${PC_SDAT}" "${CMAKE_CURRENT_
 set_source_files_properties("${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp"
     PROPERTIES COMPILE_OPTIONS "-Wno-unused-function;-Wno-unused-parameter")
 
-# Compile the recovered boot TU through the existing host-source seam. This is
-# deliberately an object gate, NOT an APK link: unresolved game dependencies must
-# be implemented before an entry point can be called. Never manufacture stubs.
+# Link recovered boot methods on native-owned leaf state; never instantiate
+# the unported DS actor layout on ARM64 or fill missing dependencies with stubs.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
     "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp" "${NATIVE_ROOT}/src/SharedFilePtr.cpp")
-add_custom_command(OUTPUT ${SAVE_SOURCES}
+set(GAME_SOURCES "${NATIVE_ROOT}/runtime/boot.cpp" "${NATIVE_ROOT}/runtime/faders.cpp"
+    "${NATIVE_ROOT}/runtime/transitions.cpp" "${NATIVE_ROOT}/runtime/font.cpp"
+    "${NATIVE_ROOT}/runtime/bg.cpp" "${NATIVE_ROOT}/runtime/message_parser.cpp" "${NATIVE_ROOT}/runtime/approach.cpp")
+add_custom_command(OUTPUT ${SAVE_SOURCES} ${GAME_SOURCES} "${NATIVE_ROOT}/runtime/boot_state.h"
     COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/native_sources.py" --out "${NATIVE_ROOT}"
     DEPENDS "${REPO_ROOT}/android/tools/native_sources.py" "${REPO_ROOT}/port/tools/hostgen.py"
         "${REPO_ROOT}/src/engine/save/SaveData.cpp" "${REPO_ROOT}/src/engine/save/SaveData2.cpp"
-        "${REPO_ROOT}/src/SharedFilePtr.cpp")
+        "${REPO_ROOT}/src/SharedFilePtr.cpp" "${REPO_ROOT}/include/dScBoot_c.h"
+        "${REPO_ROOT}/src/game/stages/d_s_boot_methods.cpp" "${REPO_ROOT}/src/game/stages/d_scene.cpp"
+        "${REPO_ROOT}/src/runtime/graphics/fader/d_fader.cpp" "${REPO_ROOT}/src/LoadFont.cpp"
+        "${REPO_ROOT}/src/engine/gx/G2.cpp" "${REPO_ROOT}/src/ApproachAngle.cpp"
+        "${REPO_ROOT}/src/ui/messages/func_0201cb2c.c")
 add_library(sm64ds_save STATIC ${SAVE_SOURCES})
 target_include_directories(sm64ds_save PRIVATE "${REPO_ROOT}/include")
 target_compile_definitions(sm64ds_save PRIVATE SM64DS_PLATFORM_PC)
@@ -53,16 +59,15 @@ set_source_files_properties("${REPO_ROOT}/src/unnamed/arm9/0203/func_0203bc7c.c"
 set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS SM64DS_PLATFORM_PC)
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
-set(BOOT_HOST_ROOT "${CMAKE_CURRENT_BINARY_DIR}/boot-host")
-set(BOOT_HOST_CPP "${BOOT_HOST_ROOT}/src/game/stages/d_s_boot_methods.cpp")
-add_custom_command(OUTPUT "${BOOT_HOST_CPP}"
-    COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/port/tools/hostgen.py"
-        --out "${BOOT_HOST_ROOT}" _ZN9dScBoot_c13InitResourcesEv
-    DEPENDS "${REPO_ROOT}/port/tools/hostgen.py"
-        "${REPO_ROOT}/src/game/stages/d_s_boot_methods.cpp"
-    WORKING_DIRECTORY "${REPO_ROOT}")
-add_library(sm64ds_boot_frontier OBJECT "${BOOT_HOST_CPP}")
-target_include_directories(sm64ds_boot_frontier PRIVATE "${REPO_ROOT}/include" "${REPO_ROOT}/port/ntr/include")
-target_compile_definitions(sm64ds_boot_frontier PRIVATE SM64DS_PLATFORM_PC)
-target_compile_options(sm64ds_boot_frontier PRIVATE -Wno-unknown-pragmas -Wno-int-to-pointer-cast -Wno-int-to-void-pointer-cast)
-add_dependencies(sm64ds_android sm64ds_boot_frontier)
+target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
+    "${REPO_ROOT}/port/ntr/ppu.cpp"
+    "${REPO_ROOT}/src/ui/messages/func_0201fe08.c" "${REPO_ROOT}/src/GetOwnerLanguage.c"
+    "${REPO_ROOT}/src/SetBg0Offset.c" "${REPO_ROOT}/src/SetSubBg0Offset.c"
+    "${REPO_ROOT}/src/SetSubBg1Offset.c" "${REPO_ROOT}/src/SetSubBg2Offset.c"
+    "${REPO_ROOT}/src/unnamed/arm9/0202/func_020233f4.c")
+target_include_directories(sm64ds_android PRIVATE "${NATIVE_ROOT}")
+target_compile_definitions(sm64ds_android PRIVATE SM64DS_PLATFORM_PC)
+target_compile_options(sm64ds_android PRIVATE -fvisibility=hidden -ffunction-sections -fdata-sections -fno-strict-aliasing)
+target_link_options(sm64ds_android PRIVATE -Wl,--no-undefined)
+set_source_files_properties(${GAME_SOURCES} runtime/game_program.cpp "${REPO_ROOT}/port/ntr/ppu.cpp"
+    PROPERTIES COMPILE_OPTIONS "-Wno-int-to-pointer-cast;-Wno-int-to-void-pointer-cast;-Wno-unknown-pragmas")

@@ -1,63 +1,48 @@
 # PC runtime integration
 
-The playable PC port is on upstream `port/release-0.4.0`, pinned here as the
-`external/sm64ds-pc` submodule at `6230b2996636e3fd0e03cb178161c94cb4b73cc9`.
-The upstream main branch's `port/` smoke suite is not that playable build.
-The previous Android checkpoints used the main-branch suite as their reference;
-that was an incomplete reference for reproducing PC startup.
+The playable upstream dependency is pinned at `port/release-0.4.0`, commit
+`6230b2996636e3fd0e03cb178161c94cb4b73cc9`, in `external/sm64ds-pc`.
+Initialize it with `git submodule update --init --recursive`. The MIT source and
+attribution remain intact; ROM data and executables are not packaged.
 
-Initialize the dependency before building:
+## Reused on Android
 
-```sh
-git submodule update --init --recursive
-```
+- The pinned `port/hal/sdat/sseq.cpp` and `mixer.cpp` compile unchanged. The native
+  archive adapter keeps SBNK/SWAR pointers outside the cartridge's 32-bit records.
+- A producer thread feeds a bounded PCM ring. AAudio only reads/resamples PCM;
+  the callback performs no sequencer work, file reads or allocation.
+- The recovered boot's `Sound::Play2D(4, 0)` request now reaches that sequencer.
+  The old manual X/Y music and A/B sample controls have been removed from the
+  production session. This does not establish complete game-wide audio.
 
-The pinned source and MIT attribution remain intact in the submodule. No ROM,
-extracted resources or prebuilt PC executables are included or packaged.
+## Native boot
 
-## Integrated in Android
+The previous OBJECT-only boot gate has been replaced with linked source methods.
+`android/tools/native_sources.py` selects the recovered boot methods, faders,
+scene-request functions and font/message dependencies. Only audited native-pointer
+and hardware seams change; the matching source tree is untouched.
 
-- The release's actual `port/hal/sdat/sseq.cpp` and `mixer.cpp` compile unchanged
-  in the Android library: sequence events, multiple tracks/players, instrument
-  envelopes, priorities, looping and the 192 Hz sequencer clock.
-- `pc_audio/archive.cpp` supplies a checked, pointer-width-independent SDAT,
-  INFO/FAT, SBNK and SWAR adapter using the privately imported ROM. Instrument
-  wave links are held in host side tables; no 64-bit pointers are stored in
-  cartridge records. All waves are decoded before playback.
-- `pc_audio/stream.cpp` drives the PC engine on a producer thread. A bounded
-  stereo PCM ring connects its 32768 Hz output to AAudio's actual device rate.
-  The audio callback only reads/resamples PCM; it performs no sequencer work,
-  file reads, allocation, mutex locking or condition-variable notification.
-- Existing raw sample diagnostics remain available. X starts BGM sequence 58;
-  Y stops sequences. These bindings are explicit backend tests, not game events.
+`GameProgram` owns the boot leaf's scalar state separately from the fixed-layout
+`fBase_c` actor manager. It does not instantiate the original boot class/factory
+or run the original top-level game entry. This closes execution of boot logic,
+not the complete scene/actor lifecycle. A native tick queue performs real font
+initialization before reporting worker completion. The resource catalog and
+sequencer are already initialized by the session. It is a native replacement for
+the platform-dependent card/font worker, not execution of the DS worker body.
 
-The adapter is separate from the PC ARM9 command consumer. The recovered game's
-Sound front doors and ARM9/ARM7 command queue are not yet connected to Android.
-The engine also inherits the PC mixer's approximated volume curve and any
-upstream unimplemented sequence opcodes; this is not a claim of hardware-exact
-sound for every event.
+The PC's `hal/scene_link100_boot.cpp` explicitly refuses that DS worker and the
+playable PC default enters the title separately. Copying that refusal into Android
+would not close the original boot dependency.
 
-## Original boot compilation
+## Remaining frontier
 
-The original `d_s_boot_methods.cpp` now passes the ARM64 compile gate generated
-through `port/tools/hostgen.py`. The only additional pointer transformation
-removes the exact `LADR(p)` intermediate cast to `unsigned int`; actual ROM
-32-bit offsets are left intact. The matching source itself is unchanged.
+The recovered boot requests scene 1 (`dScDSMT_c`, overlay 7). Its frontend's work
+records mix native pointers with fixed DS offsets, including `Ov007Work` in
+`func_ov007_020aed98.cpp`. All consumers must share an audited native layout;
+suppressing its offset assertion or narrowing pointers cannot make it safe.
 
-The gate is an OBJECT target dependent on the normal Android build. It is NOT
-linked into the APK and is NOT called. The compiled object has 58 external
-symbol references (functions and data, including some already present in the
-Android backend). That number is an object-file inventory, not a count of
-unimplemented functions or a linked-game completion percentage.
-
-Compiling is insufficient because layout assumptions differ. The ARM64 NDK
-measures `sizeof(dScBoot_c)==0x98`, versus the recovered DS `0x58`; a native
-pointer is 8 bytes and a pointer-to-member function is 16 bytes. The PC build's
-explicit MSVC x86 layout is different again. Bypassing an ABI assertion or
-silencing narrowing warnings does not make these objects interchangeable.
-
-Next: port the recovered scene/heap ownership and bridge actual boot link
-dependencies with typed host state. Then connect level mounting, actor registry,
-input, GPU submission/2D scanout, saves and the sound command consumer from the
-pinned playable source. Preserve the source/host separation and do not replace
-missing dependencies with success-returning stubs.
+Start with `d_s_dsmt.cpp`, `func_ov007_020b7138.c` (frontend setup),
+`func_ov007_020b7090.c` (input/update), and `func_ov007_020aed98.cpp` (menu dispatch).
+Preserve actual initialization, callbacks, OAM/model submissions and the original
+save-slot-to-`StartFile` handoff. Then connect scene 3's stage/Player lifecycle.
+No missing dependency should be replaced with a successful dummy return.

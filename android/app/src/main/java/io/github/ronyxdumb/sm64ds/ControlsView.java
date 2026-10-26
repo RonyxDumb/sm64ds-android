@@ -92,15 +92,6 @@ final class ControlsView extends View {
             canvas.drawText(ControllerState.LABELS[i], w * ControllerState.CX[i],
                             h * ControllerState.CY[i] + h * .014f, paint);
         }
-        paint.setTextAlign(Paint.Align.LEFT);
-        paint.setTextSize(h * .032f);
-        paint.setColor(0xffdddddd);
-        canvas.drawText(
-            "Sviluppo: modello originale • stick: ruota • A: campione • B: successivo • X: musica • Y: stop",
-            h * .04f, h * .055f, paint);
-        canvas.drawText(String.format(java.util.Locale.ROOT, "Input %04X · stick %.2f, %.2f",
-                                      state.buttons, state.x, state.y),
-                        h * .04f, h * .105f, paint);
         canvas.restore();
     }
 }

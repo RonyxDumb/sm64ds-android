@@ -1,3 +1,65 @@
+# Android checkpoint — 2026-10-26, recovered boot execution
+
+**Not playable.** The production Android session now calls recovered boot logic
+instead of the model/sample test. It reaches the request for scene 1; title,
+save selection, castle and gameplay are not linked. No Android device is attached.
+
+## Implemented
+
+- `GameProgram` owns a native projection of the boot leaf's scalar fields. Three
+  recovered `dScBoot_c` method bodies run through audited generation; no fixed
+  DS actor allocation, manual vtable or native member-pointer copy is used.
+- Recovered color/brightness faders and `dScene_c` request functions are linked.
+  Input updates run at game-tick frequency, independently of display refresh.
+- Runtime ARM9 data access supplies the original boot constants. The ROM's own
+  13-row NARC mount table resolves archive-interior handles with checked bounds.
+- The actual recovered `LoadFont(0)` and language message loader/parser execute,
+  with resident pointer types adapted to native width. The native boot worker
+  queue runs this real preparation before reporting completion. It does not run
+  the original DS worker's thread/card/overlay body; resources and the sequencer
+  are already initialized by Session.
+- Source boot sound request 4:0 reaches the pinned PC sequencer and AAudio path.
+  Manual sample/music diagnostic controls and the rotating-face session are gone.
+- Two-screen ES3 scanout presents the actual game-written framebuffers. Fixed
+  four-bit BG character bases and target/master brightness allow the original
+  Nintendo logo and copyright to render and fade correctly.
+- The missing title transition becomes a caught Java failure with session/audio
+  cleanup, rather than an uncaught C++ exception or fake successful scene.
+
+## Verified
+
+- ARM64 native library link with `--no-undefined`; debug and release APKs plus
+  Lint pass (0 errors, 22 warnings). Debug is signed; release is unsigned.
+- ASan/UBSan with the private European ROM: recovered boot reaches scene 1 after
+  122 ticks; actual font, message pointers, file ownership and repeat session
+  teardown pass. Boot logo/copyright frames were inspected locally.
+- Native/importer/input/save/heap/BLZ/resource/audio regressions pass. Boot SSAR
+  archive 4 entry 0 produces nonzero PCM (peak 8151) in the pinned engine.
+- Mesa GLES3 checks texture orientation, RGBA lanes, both screens and resource
+  recreation. This is host rendering evidence, not an Android-driver test.
+- `port_refcheck.py`: all 233 references resolve. Matching `src/` and `include/`
+  remain unchanged. No ROM, extracted data or APK is committed.
+
+## Resume here
+
+1. Port the actual scene-1 frontend (`dScDSMT_c`, overlay 7). Entry points:
+   `src/game/stages/d_s_dsmt.cpp`, `src/unnamed/ov007/func_ov007_020b7138.c`,
+   `func_ov007_020b7090.c`, `func_ov007_020aed98.cpp`.
+2. Unify the pointer-bearing frontend work records across all their consumers.
+   `Ov007Work` still has DS-relative padding, pointer arrays and an asserted
+   `chosenItemId` at 0x180; widening pointers changes that layout. Its callers
+   also retain raw offsets and `int` pointer arguments. Do not disable that
+   assertion and label the resulting native compile safe.
+3. Connect the real title state machine, callback/OAM/model rendering and file
+   pick through recovered `StartFile`, then the scene-3 stage/actor/Player chain.
+4. Fullscreen 3D stage rendering, small minimap, game-wide sounds and Android
+   runtime/lifecycle/performance testing remain. The boot's native leaf state
+   does not solve the general actor ABI or the original main loop.
+
+---
+
+Historical checkpoints below are superseded by the current execution status.
+
 # Android checkpoint — 2026-10-25, native resource heap and recovered input
 
 **Not playable yet.** The APK still displays the native backend scene. Original

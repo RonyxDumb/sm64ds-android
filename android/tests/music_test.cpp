@@ -133,6 +133,17 @@ int main(int argc, char **argv) {
         }
         check(peak > 100, "SSAR PCM is silent");
         printf("PC SSAR0:3: peak %d\n", peak);
+        sd_seq_reset();
+        sd_mix_reset();
+        check(pc_start_effect(0, 4, 0), "boot SSAR4:0 start");
+        peak = 0;
+        for (int i = 0; i < 128; ++i) {
+            sd_mix_render(pcm, 512);
+            for (short s : pcm)
+                peak = std::max(peak, std::abs(int(s)));
+        }
+        check(peak > 100, "boot sound PCM is silent");
+        printf("PC boot SSAR4:0: peak %d\n", peak);
         pc_archive_close();
         {
             sm64ds::MusicStream stream;

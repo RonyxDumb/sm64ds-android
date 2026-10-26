@@ -1,9 +1,10 @@
 #include "android_audio.h"
+#include <algorithm>
 namespace sm64ds {
 aaudio_data_callback_result_t AndroidAudio::callback(AAudioStream *stream, void *user, void *data,
                                                      int32_t frames) {
     auto &self = *static_cast<AndroidAudio *>(user);
-    self.mixer_.render(static_cast<float *>(data), frames, AAudioStream_getSampleRate(stream));
+    std::fill_n(static_cast<float *>(data), size_t(frames) * 2, 0.f);
     self.music_.mix(static_cast<float *>(data), frames, AAudioStream_getSampleRate(stream));
     return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
@@ -51,6 +52,5 @@ void AndroidAudio::close() {
         stream_ = nullptr;
     }
     music_.pause(true);
-    mixer_.reset();
 }
 }

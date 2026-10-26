@@ -1,10 +1,9 @@
 #pragma once
-#include "scene.h"
-#include "gles_renderer.h"
+#include "screen_renderer.h"
 #include "android_audio.h"
 #include "runtime/save_store.h"
 #include "runtime/resources.h"
-#include "runtime/game_input.h"
+#include "runtime/game_program.h"
 #include <memory>
 #include <mutex>
 namespace sm64ds {
@@ -12,7 +11,7 @@ class Session {
 public:
     explicit Session(const char *path);
     void surface() {
-        renderer_.create(scene_);
+        renderer_.create();
     }
     void frame(int width, int height, float dt, uint32_t buttons, float x, float y, int touchX,
                int touchY, bool audioEnabled);
@@ -21,25 +20,17 @@ public:
         if (contextValid)
             renderer_.release();
     }
-    size_t triangles() const {
-        return scene_.vertices.size() / 3;
-    }
-    size_t sounds() const {
-        return audio_->clip_count();
-    }
     bool audio_running() const {
         return audioReady_;
     }
 
 private:
     std::unique_ptr<Resources> resources_;
-    Scene scene_;
-    GlesRenderer renderer_;
+    ScreenRenderer renderer_;
     std::unique_ptr<AndroidAudio> audio_;
     std::unique_ptr<SaveStore> saves_;
-    GameInput input_;
-    uint32_t previous_ = 0, sample_ = 0;
-    float yaw_ = 0, zoom_ = 1, audioRetry_ = 0;
+    std::unique_ptr<GameProgram> game_;
+    float audioRetry_ = 0;
     bool audioReady_ = false;
 };
 std::mutex &platform_mutex();
