@@ -3,6 +3,8 @@
 #include "ntr/mmio.h"
 #include <cassert>
 #include <cstdio>
+#include <memory>
+#include <sys/mman.h>
 #include <stdexcept>
 #include <thread>
 
@@ -130,6 +132,24 @@ int main() {
         auto p=packed::Ptr<int>(root);
         assert((p+1).address()==root+4);
         assert(packed::Ptr<int>(p.get()).address()==root);
+        // Native new/malloc buffers are outside the DS game heap and ELF PT_LOAD.
+        // Their handles must retain identity and never truncate ARM64 pointers.
+        auto nativeBuffer=std::make_unique<uint32_t[]>(32);
+        nativeBuffer[7]=0x12481248;
+        auto nativeCell=packed::Ptr<uint32_t>(&nativeBuffer[7]);
+        assert(*nativeCell==0x12481248);
+        assert(nativeCell.get()==&nativeBuffer[7]);
+        assert(packed::Ptr<uint32_t>(&nativeBuffer[8]).address()==nativeCell.address()+4);
+        *nativeCell=0xaabbccdd;
+        assert(nativeBuffer[7]==0xaabbccdd);
+        // An inaccessible anonymous mapping must not become a data handle.
+        void *guard=mmap(nullptr,4096,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
+        assert(guard!=MAP_FAILED);
+        bool inaccessible=false;
+        try { (void)packed::Ptr<uint8_t>(static_cast<uint8_t *>(guard)); }
+        catch (const std::runtime_error &) { inaccessible=true; }
+        assert(inaccessible);
+        assert(munmap(guard,4096)==0);
         // An odd-address byte alias must not bind a misaligned u16[] reference
         // before the source casts it to its real byte view.
         auto alias=packed::ArrayRef<uint16_t>(root+1);
