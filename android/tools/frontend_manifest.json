@@ -1,0 +1,349 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b6a84.c",
+      "sha256": "9551e48d790e68ca9488a7dc3944e80c67cc348a1d98f428144182fb7ccb440d",
+      "source": "extern \"C\" Ptr<void> pk_func_ov007_020c9388(int initialState);\nextern \"C\" Ptr<char> pk_func_ov007_020c023c(void);\nextern \"C\" int pk_func_ov007_020c241c(int a);\nextern \"C\" Ptr<char> pk_func_ov007_020c2068(void);\nextern \"C\" Ptr<char> pk_func_ov007_020c2304(void);\nextern \"C\" Ptr<void> pk_func_ov007_020c908c(Ptr<void> r5);\nextern \"C\" int pk_func_ov007_020c3df4(int a, Ptr<void> b);\nextern \"C\" void pk_func_02059eb0(Ptr<unsigned char> dst);\n\n#define data_ov007_0210342c (*Ptr<Ptr<char>>(0x0210342cu))\n\n\n/* The 0x3c-byte record allocated below; only the slot this file seeds. */\ntypedef struct Ov007Settings {\n    char pad_00[0x3a];\n    unsigned char language; /* 0x3a: seeded below from the owner-info language */\n} Ov007Settings;\n\n/* data_ov007_0210342c: the overlay's manager, names as in func_ov007_020afc44,\n * func_ov007_020b1718 and func_ov007_020b1cf0. This function builds every\n * slot spelled here. Left raw: +0xe8, cleared here and tested by\n * func_ov007_020b283c/func_ov007_020be850 with no role evidenced yet. */\ntypedef struct Ov007Work {\n    char pad_00[4];\n    Ptr<void> states[3]; /* 0x04: pk_func_ov007_020c9388(0 / -1 / 1) */\n    char pad_10[0x18];\n    Ptr<Ov007Settings> settings; /* 0x28 */\n    char pad_2c[4];\n    Ptr<char> cameras[2]; /* 0x30: pk_func_ov007_020c023c */\n    int lights[2];    /* 0x38: pk_func_ov007_020c241c(0/1) */\n    char pad_40[0x10];\n    Ptr<char> touch; /* 0x50: pk_func_ov007_020c2068 */\n    Ptr<char> pad;   /* 0x54: pk_func_ov007_020c2304 */\n    char pad_58[0xc];\n    int tweenOut[2]; /* 0x64: bound as tweens[i]->out */\n    Ptr<void> tweens[2]; /* 0x6c: pk_func_ov007_020c908c */\n} Ov007Work;\n\ntypedef char Ov007Work_size_must_be_0x74[sizeof(Ov007Work) == 0x74 ? 1 : -1];\n\n/* The extern keeps the tree's char * spelling (the declaration-agreement\n * gate); the typed view is reached through a cast macro. */\n#define WORK ((Ptr<Ov007Work>)(data_ov007_0210342c))\n\nextern \"C\" void pk_func_ov007_020b6a84(void) {\n    unsigned char buf[0x54];\n    int v;\n\n    WORK->states[0] = pk_func_ov007_020c9388(0);\n    WORK->states[1] = pk_func_ov007_020c9388(-1);\n    WORK->states[2] = pk_func_ov007_020c9388(1);\n    WORK->cameras[0] = pk_func_ov007_020c023c();\n    WORK->cameras[1] = pk_func_ov007_020c023c();\n    WORK->lights[0] = pk_func_ov007_020c241c(0);\n    WORK->lights[1] = pk_func_ov007_020c241c(1);\n    WORK->touch = pk_func_ov007_020c2068();\n\n    WORK->pad = pk_func_ov007_020c2304();\n    WORK->tweens[0] = pk_func_ov007_020c908c((Ptr<void>)(&WORK->tweenOut[0]));\n    WORK->tweens[1] = pk_func_ov007_020c908c((Ptr<void>)(&WORK->tweenOut[1]));\n\n    WORK->settings = (Ptr<Ov007Settings>)(pk_func_ov007_020c3df4(0, (Ptr<void>)(0x3c)));\n\n    /* The owner-info language (0 Japanese ... 5 Spanish) to the menu's own\n     * numbering. */\n    pk_func_02059eb0(buf);\n    v = buf[0];\n    switch (v) {\n    case 0:\n    case 1:\n        WORK->settings->language = 1;\n        break;\n    case 2:\n        WORK->settings->language = 2;\n        break;\n    case 3:\n        WORK->settings->language = 3;\n        break;\n    case 4:\n        WORK->settings->language = 5;\n        break;\n    case 5:\n        WORK->settings->language = 4;\n        break;\n    default:\n        WORK->settings->language = 0;\n        break;\n    }\n    *(Ptr<int>)((data_ov007_0210342c + 0xe8)) = 0;\n}\n\nextern \"C\" void abi_func_ov007_020b6a84() { pk_func_ov007_020b6a84(); }\n",
+      "globals": {
+        "data_ov007_0210342c": 34616364
+      },
+      "functions": [
+        "func_02059eb0",
+        "func_ov007_020b6a84",
+        "func_ov007_020c023c",
+        "func_ov007_020c2068",
+        "func_ov007_020c2304",
+        "func_ov007_020c241c",
+        "func_ov007_020c3df4",
+        "func_ov007_020c908c",
+        "func_ov007_020c9388"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3df4.cpp",
+      "sha256": "3b8fc81ff6fa8426521e43cdf2756694baf618f58e01e7340c556c417f77ec11",
+      "source": "//cpp\n\ntypedef Ptr<int(Ptr<void>)> FP;\n\n#define data_ov007_02103258 (*Ptr<FP>(0x02103258u))\n\nextern \"C\" int pk_func_ov007_020c3df4(int a, Ptr<void> b) {\n  return data_ov007_02103258(b);\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020c3df4(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020c3df4((int)(a0), (Ptr<void>)(a1))); }\n",
+      "globals": {
+        "data_ov007_02103258": 34615896
+      },
+      "functions": [
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3d40.cpp",
+      "sha256": "8c27bb18408023e4701fc754ca6e776edffc66b0dcd2403abe9a8c865b2b9dfc",
+      "source": "//cpp\n\n\nextern \"C\" int pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_MultiStore32Bytes(unsigned val, Ptr<int> dst, int len);\nextern \"C\" void pk_MultiStore_Int(int val, Ptr<int> dst, int len);\nextern \"C\" void pk_MultiStore16(unsigned short val, Ptr<char> dst, int nbytes);\nextern \"C\" void pk_func_0205a588(int a, int b, int c);\n\nextern \"C\" int pk_func_ov007_020c3d40(int a, int n) {\n    Ptr<int> r = (Ptr<int>)(pk_func_ov007_020c3df4(a, n));\n    volatile unsigned short v16;\n    volatile unsigned v32;\n    volatile int vint;\n    switch (n - (n & ~3)) {\n    case 0:\n        if (n - (n & ~0x1f) != 0) {\n            v32 = 0;\n            pk_MultiStore32Bytes(v32, r, n);\n        } else {\n            vint = 0;\n            pk_MultiStore_Int(vint, r, n);\n        }\n        break;\n    case 2:\n        v16 = 0;\n        pk_MultiStore16(v16, (Ptr<char>)(r), n);\n        break;\n    case 1:\n    case 3:\n        pk_func_0205a588(word(r), 0, n);\n        break;\n    }\n    return word(r);\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020c3d40(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020c3d40((int)(a0), (int)(a1))); }\n",
+      "globals": {},
+      "functions": [
+        "MultiStore16",
+        "MultiStore32Bytes",
+        "MultiStore_Int",
+        "func_0205a588",
+        "func_ov007_020c3d40",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3e3c.cpp",
+      "sha256": "e849dc0a427fe0879a059dfa40feacb84ff13232d9ba360547108677c0d9ee1f",
+      "source": "//cpp\n\n\ntypedef Ptr<int(Ptr<void>)> FP;\n\n#define data_ov007_02103258 (*Ptr<FP>(0x02103258u))\n\nextern \"C\" void pk_func_ov007_020c3e3c(int v) {\n    data_ov007_02103258 = (FP)(v);\n}\n\n\nextern \"C\" void abi_func_ov007_020c3e3c(unsigned int a0) { pk_func_ov007_020c3e3c((int)(a0)); }\n",
+      "globals": {
+        "data_ov007_02103258": 34615896
+      },
+      "functions": [
+        "func_ov007_020c3e3c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3e2c.cpp",
+      "sha256": "69e16de99f4af8b9e179a8511f9d7936a8a75984cbef817c4f84d9c8ffb005ba",
+      "source": "//cpp\n\n\ntypedef Ptr<void(Ptr<void>)> FP;\n\n#define data_ov007_02103254 (*Ptr<FP>(0x02103254u))\n\nextern \"C\" void pk_func_ov007_020c3e2c(int v) {\n    data_ov007_02103254 = (FP)(v);\n}\n\n\nextern \"C\" void abi_func_ov007_020c3e2c(unsigned int a0) { pk_func_ov007_020c3e2c((int)(a0)); }\n",
+      "globals": {
+        "data_ov007_02103254": 34615892
+      },
+      "functions": [
+        "func_ov007_020c3e2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3e1c.cpp",
+      "sha256": "380b3356e920226614d63c5bbc6e9731fd7a6c063f5cd3f43791b3464cee5290",
+      "source": "//cpp\n\n\ntypedef Ptr<int(void)> FP;\n\n#define data_ov007_02104c14 (*Ptr<FP>(0x02104c14u))\n\nextern \"C\" void pk_func_ov007_020c3e1c(int v) {\n    data_ov007_02104c14 = (FP)(v);\n}\n\n\nextern \"C\" void abi_func_ov007_020c3e1c(unsigned int a0) { pk_func_ov007_020c3e1c((int)(a0)); }\n",
+      "globals": {
+        "data_ov007_02104c14": 34622484
+      },
+      "functions": [
+        "func_ov007_020c3e1c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c9388.cpp",
+      "sha256": "39cd0dfe8f86cd31e13f008656c4447cf065447ac55fb5281bb8b0eb5bbc4491",
+      "source": "//cpp\n#include \"Ov007MenuState.h\"\n\n\n\n/* The generic allocation bridge still has its legacy integer/pointer ABI\n * declaration. Its second word is a byte count; the returned word is a pointer. */\nextern \"C\" int pk_func_ov007_020c3df4(int unused, Ptr<void> byteCount);\nextern \"C\" void pk_func_ov007_020c934c(Ptr<char> record, int initialState);\n\nextern \"C\" Ptr<void> pk_func_ov007_020c9388(int initialState) {\n    Ptr<char> state = (Ptr<char>)(pk_func_ov007_020c3df4(0, (Ptr<void>)(sizeof(Ov007MenuState))));\n    pk_func_ov007_020c934c(state, initialState);\n    return state;\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020c9388(unsigned int a0) { return uword(pk_func_ov007_020c9388((int)(a0))); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3df4",
+        "func_ov007_020c934c",
+        "func_ov007_020c9388"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c934c.cpp",
+      "sha256": "c7adc0026c40afa871a3676643919d8f422fa6c369f110091656883e52ecdb6d",
+      "source": "//cpp\n#include \"Ov007MenuState.h\"\n\n\n\n/* Seed a different last-tick state so the first update performs state entry.\n * State IDs are signed halfwords; initialState is narrowed on storage. */\nextern \"C\" void pk_func_ov007_020c934c(Ptr<char> record, int initialState) {\n    Ptr<Ov007MenuState> state = (Ptr<Ov007MenuState>)(record);\n    s16 beforeInitialState = (s16)(initialState - 1);\n    state->currentState = (s16)(initialState);\n    state->lastTickState = beforeInitialState;\n    state->stateWork = 0;\n    state->previousState = beforeInitialState;\n    state->stateTicks = 0;\n    state->requestedState = -1;\n}\n\n\nextern \"C\" void abi_func_ov007_020c934c(unsigned int a0, unsigned int a1) { pk_func_ov007_020c934c((Ptr<char>)(a0), (int)(a1)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c934c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c92d0.cpp",
+      "sha256": "839040b11ac5f503a2408fc8f5fa319f6fc0a2bab0410357b72bdb1f586dad27",
+      "source": "//cpp\n#include \"Ov007MenuState.h\"\n\n\n\n/* Consume a pending request, detect entry (including direct state changes),\n * then advance the saturating state timer. Requesting the current state does\n * not restart it. The previous entered state survives subsequent ticks. */\nextern \"C\" void pk_func_ov007_020c92d0(Ptr<char> record) {\n    Ptr<Ov007MenuState> state = (Ptr<Ov007MenuState>)(record);\n    s16 pending = state->requestedState;\n\n    if (pending != -1) {\n        s16 current = state->currentState;\n\n        if (pending != current) {\n            state->lastTickState = current;\n            state->currentState = state->requestedState;\n        }\n        state->requestedState = -1;\n    }\n\n    if (state->currentState != state->lastTickState) {\n        state->stateTicks = 0;\n        state->previousState = state->lastTickState;\n        state->stateWork = 0;\n    } else if (state->stateTicks < 0xffffffffU) {\n        ++state->stateTicks;\n    }\n\n    state->lastTickState = state->currentState;\n}\n\n\nextern \"C\" void abi_func_ov007_020c92d0(unsigned int a0) { pk_func_ov007_020c92d0((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c92d0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c023c.c",
+      "sha256": "46c648dfde250605cf826a55666d73c4240d721c71ba40d9206cd0b5e8b3a742",
+      "source": "#include \"Ov007Tween.h\"\n\nextern \"C\" Ptr<char> pk_func_ov007_020c3df4(int, int);\nextern \"C\" int pk_func_ov007_020c8f64(Ptr<void>);\nextern \"C\" int pk_func_ov007_020c908c(Ptr<void>);\nextern \"C\" void pk_func_ov007_020c0128(Ptr<void>);\n\n/* The 0xd8-byte camera allocated below; eye/target/distance as in\n * pk_func_ov007_020c0128, the tweens as in func_ov007_020b1718. Each tween is\n * bound here to the field it drives; func_ov007_020bff38 runs the three\n * while their `tweening` bits (0 eye, 1 target, 2 distance) are set. */\ntypedef struct Ov007Camera {\n    char pad_00[8];\n    Vector3 eye;    /* 0x08 */\n    Vector3 target; /* 0x14 */\n    char pad_20[0xc];\n    int distance; /* 0x2c */\n    char pad_30[8];\n    Ptr<void> eyeTween;            /* 0x38: pk_func_ov007_020c8f64's vector tween */\n    Ptr<void> targetTween;         /* 0x3c: pk_func_ov007_020c8f64's vector tween */\n    Ptr<Ov007Tween> distanceTween; /* 0x40: pk_func_ov007_020c908c's */\n} Ov007Camera;\n\ntypedef char Ov007Camera_size_must_be_0x44[sizeof(Ov007Camera) == 0x44 ? 1 : -1];\n\n/* r4 keeps the char * spelling of the allocator; `cam` is the typed view. */\nextern \"C\" Ptr<char> pk_func_ov007_020c023c(void) {\n    Ptr<char> r4 = pk_func_ov007_020c3df4(0, 0xd8);\n    Ptr<Ov007Camera> cam = (Ptr<Ov007Camera>)(r4);\n    cam->eyeTween = (Ptr<void>)(pk_func_ov007_020c8f64(&cam->eye));\n    cam->targetTween = (Ptr<void>)(pk_func_ov007_020c8f64(&cam->target));\n    cam->distanceTween = (Ptr<Ov007Tween>)(pk_func_ov007_020c908c(&cam->distance));\n    pk_func_ov007_020c0128(r4);\n    return r4;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c023c() { return uword(pk_func_ov007_020c023c()); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0128",
+        "func_ov007_020c023c",
+        "func_ov007_020c3df4",
+        "func_ov007_020c8f64",
+        "func_ov007_020c908c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0128.cpp",
+      "sha256": "8340ba7794ee09dbb62d974b8542aea0b6d8489bceb3d2036a9eff19dbe8e39a",
+      "source": "//cpp\n#include \"types.h\"\n\nextern \"C\" int pk__ZN4cstd3divEii(int a, int b);\nextern \"C\" long long pk__ZN4cstd4ldivEii(int a, int b);\n\nextern \"C\" void pk_Matrix4x3_LoadIdentity(Ptr<void> m);\nextern \"C\" void pk_func_02052ec8(Ptr<void> p);\n\n/* The 0xd8-byte camera func_ov007_020c023c allocates and this function\n * resets. func_ov007_020b2160 passes eye/up/target to G3i::LookAt_ (into\n * viewMatrix) and fovy/aspect/nearZ/farZ/scaleW to G3i::PerspectiveW_ (into\n * projMatrix); func_ov007_020bffb8 places the eye `distance` from the target\n * at elevation/azimuth; func_ov007_020bff38 runs the three tweens while their\n * `tweening` bits are set. Only the slots spelled here have a reader.\n *\n * Left raw, on the char * `c`: +0x00, the u16 at +0x34 (zeroed beside the\n * two angles) and the ints at +0xcc and +0xd0; no reader names them. */\nstruct Ov007Camera {\n    char pad_00[4];\n    unsigned int tweening;    /* 0x04: bit 0 eye, bit 1 target, bit 2 distance */\n    Vector3 eye;              /* 0x08 */\n    Vector3 target;           /* 0x14 */\n    Vector3 up;               /* 0x20 */\n    int distance;             /* 0x2c */\n    unsigned short elevation; /* 0x30 */\n    unsigned short azimuth;   /* 0x32 */\n    char pad_34[0x10];\n    int viewMatrix[12]; /* 0x44: Matrix4x3 */\n    int projMatrix[16]; /* 0x74: Matrix4x4 */\n    int scaleW;         /* 0xb4 */\n    /* 0xb8..0xbb: the screen rectangle in pixels, the whole 256x192 screen\n     * here; func_ov007_020c510c unprojects its corners */\n    unsigned char viewportMinX;\n    unsigned char viewportMaxX;\n    unsigned char viewportMinY;\n    unsigned char viewportMaxY;\n    long long aspect; /* 0xbc: PerspectiveW_ takes it >> 0x14 */\n    int nearZ;        /* 0xc4 */\n    int farZ;         /* 0xc8 */\n    char pad_cc[8];\n    /* 0xd4: a u16 angle; func_ov007_020b2160 indexes the sine table with it >> 4 */\n    short fovy;\n};\n\n/* aspect at 0xbc relies on long long taking 4-byte alignment here. */\ntypedef char Ov007Camera_aspect_must_be_at_0xbc[offsetof(Ov007Camera, aspect) == 0xbc ? 1 : -1];\ntypedef char Ov007Camera_size_must_be_0xd8[sizeof(Ov007Camera) == 0xd8 ? 1 : -1];\n\nextern \"C\" void pk_func_ov007_020c0128(Ptr<char> c) {\n    Ptr<Ov007Camera> cam = (Ptr<Ov007Camera>)(c);\n    cam->eye.y = 0;\n    cam->eye.x = cam->eye.y;\n    cam->eye.z = 0x1000;\n    cam->target.z = 0;\n    cam->target.y = cam->target.z;\n    cam->target.x = cam->target.y;\n    cam->distance = 0;\n    *(Ptr<unsigned short>)((c + 0x34)) = 0;\n    cam->azimuth = *(Ptr<unsigned short>)((c + 0x34));\n    cam->elevation = cam->azimuth;\n    cam->up.z = 0;\n    cam->up.x = cam->up.z;\n    cam->up.y = 0x1000;\n    cam->nearZ = 0x1000;\n    cam->farZ = 0x190000;\n    cam->fovy = (short)(pk__ZN4cstd3divEii(0x1e0000, 0x168));\n    long long l = pk__ZN4cstd4ldivEii(0x4000, 0x3000);\n    cam->aspect = l;\n    cam->viewportMinX = 0;\n    cam->viewportMaxX = 0xff;\n    cam->viewportMinY = 0;\n    cam->viewportMaxY = 0xbf;\n    *(Ptr<int>)((c + 0xcc)) = 0x1000;\n    *(Ptr<int>)((c + 0xd0)) = 0xc00;\n    pk_Matrix4x3_LoadIdentity(cam->viewMatrix);\n    pk_func_02052ec8(cam->projMatrix);\n    cam->scaleW = 0x1000;\n    *(Ptr<int>)((c + 0)) = 0;\n    cam->tweening = 0;\n}\n\nextern \"C\" void abi_func_ov007_020c0128(unsigned int a0) { pk_func_ov007_020c0128((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "Matrix4x3_LoadIdentity",
+        "_ZN4cstd3divEii",
+        "_ZN4cstd4ldivEii",
+        "func_02052ec8",
+        "func_ov007_020c0128"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c241c.c",
+      "sha256": "2c7d99a883ac58ea4df5bf3b1127ab6572d0403c06856bd4d1e8bb386f40691a",
+      "source": "#include \"types.h\"\n\n\n#define data_ov007_020d7dac (*Ptr<Vector3>(0x020d7dacu))\n\nextern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_func_ov007_020c2390(Ptr<char> t);\n\ntypedef struct Obj {\n    Ptr<void> f00;      // 0x00\n    Vector3 v04;    // 0x04\n    Vector3 v10;    // 0x10\n    int f1c;        // 0x1c\n    short f20;      // 0x20\n    short f22;      // 0x22\n    int f24;        // 0x24\n} Obj;\n\nextern \"C\" Ptr<Obj> pk_func_ov007_020c241c(Ptr<void> a) {\n    Ptr<Obj> o = (Ptr<Obj>)(pk_func_ov007_020c3df4(0, 0x28));\n    o->f00 = a;\n    o->v10 = data_ov007_020d7dac;\n    {\n        Vector3 zero = {0, 0, 0};\n        o->v04 = zero;\n    }\n    o->f22 = 0x7fff;\n    o->f24 = 1;\n    pk_func_ov007_020c2390((Ptr<char>)(o));\n    return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c241c(unsigned int a0) { return uword(pk_func_ov007_020c241c((Ptr<void>)(a0))); }\n",
+      "globals": {
+        "data_ov007_020d7dac": 34438572
+      },
+      "functions": [
+        "func_ov007_020c2390",
+        "func_ov007_020c241c",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c2390.c",
+      "sha256": "5b9e0ca47b98c06e07843debe24d7a5eb16f401c4155cf016d79d2e3fc971893",
+      "source": "// @symbol pk_func_ov007_020c2390\n/* recovered: shared common types */\n#include \"common.h\"\nextern \"C\" void pk_SubVec3(Ptr<struct Vector3> a, Ptr<struct Vector3> b, Ptr<struct Vector3> c);\nextern \"C\" void pk_NormalizeVec3(Ptr<struct Vector3> a, Ptr<struct Vector3> b);\n\n/* The 0x28-byte light func_ov007_020c241c builds; dirX/dirY/dirZ as in\n * func_ov007_020c232c, only the slots this function touches. */\ntypedef struct Ov007Light {\n    char pad_00[4];\n    /* 0x04/0x10, medium confidence: the light shines from `source` towards\n     * `target` (this function's direction is target - source).\n     * func_ov007_020c241c seeds target at the origin and source at\n     * data_ov007_020d7dac, (0, 0, 1.0); nothing else writes them. */\n    struct Vector3 target;\n    struct Vector3 source;\n    /* 0x1c: the s16 unit direction, each axis clamped to 0xfff */\n    s16 dirX;\n    s16 dirY;\n    s16 dirZ;\n} Ov007Light;\n\ntypedef char Ov007Light_dirZ_must_be_at_0x20[offsetof(Ov007Light, dirZ) == 0x20 ? 1 : -1];\n\n/* Rederives the light's direction from its two points. t keeps the char *\n * spelling of func_ov007_020c241c's declaration; `light` is the typed view. */\nextern \"C\" void pk_func_ov007_020c2390(Ptr<char> t) {\n    Ptr<Ov007Light> light = (Ptr<Ov007Light>)(t);\n    struct Vector3 v;\n    pk_SubVec3(&light->target, &light->source, &v);\n    pk_NormalizeVec3(&v, &v);\n    light->dirX = v.x;\n    light->dirY = v.y;\n    light->dirZ = v.z;\n    if (light->dirX > 0xfff)\n        light->dirX = 0xfff;\n    if (light->dirY > 0xfff)\n        light->dirY = 0xfff;\n    if (light->dirZ > 0xfff)\n        light->dirZ = 0xfff;\n}\n\nextern \"C\" void abi_func_ov007_020c2390(unsigned int a0) { pk_func_ov007_020c2390((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "NormalizeVec3",
+        "SubVec3",
+        "func_ov007_020c2390"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c2068.c",
+      "sha256": "cdcb9704416e8d8ec5ffd1e9ccab99f1ea73d2eab99141d3c8d7ee6e8454d998",
+      "source": "\n#define data_ov007_02103240 (*Ptr<int[]>(0x02103240u))\n\nextern \"C\" Ptr<char> pk_func_ov007_020c3df4(int, int);\nextern \"C\" void pk_func_ov007_020c2024(Ptr<char>);\nextern \"C\" Ptr<char> pk_func_ov007_020c2068(void) {\n  Ptr<char> p = pk_func_ov007_020c3df4(word(data_ov007_02103240),0x44);\n  pk_func_ov007_020c2024(p);\n  return p;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c2068() { return uword(pk_func_ov007_020c2068()); }\n",
+      "globals": {
+        "data_ov007_02103240": 34615872
+      },
+      "functions": [
+        "func_ov007_020c2024",
+        "func_ov007_020c2068",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c2024.c",
+      "sha256": "cdcbbf3342dec40f3188aae0eadbeae70a577e7247605b1de10d592ab0e82207",
+      "source": "extern \"C\" void pk_func_ov007_020c2024(Ptr<char> c) {\n  Ptr<unsigned short> s = (Ptr<unsigned short>)(c);\n  *(Ptr<int>)((c+0x20))=0;\n  *(Ptr<int>)((c+0x24))=0;\n  *(Ptr<int>)((c+0x28))=0;\n  s[0x19]=0;\n  s[0x18]=s[0x19];\n  s[0x1b]=0;\n  s[0x1a]=s[0x1b];\n  *(Ptr<short>)((c+0x3a))=0;\n  *(Ptr<short>)((c+0x38))=*(Ptr<short>)((c+0x3a));\n  *(Ptr<int>)((c+0x2c))=0;\n  *(Ptr<int>)((c+0x40))=-1;\n}\n\nextern \"C\" void abi_func_ov007_020c2024(unsigned int a0) { pk_func_ov007_020c2024((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c2024"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c2304.c",
+      "sha256": "d124fcb57d51be3e5a2963696b210d69ff987aa2cc18e2858d46c6fe4418fd28",
+      "source": "\n#define data_ov007_0210324c (*Ptr<int[]>(0x0210324cu))\n\nextern \"C\" Ptr<char> pk_func_ov007_020c3df4(int, int);\nextern \"C\" void pk_func_ov007_020c22a0(Ptr<char>);\nextern \"C\" Ptr<char> pk_func_ov007_020c2304(void) {\n  Ptr<char> p = pk_func_ov007_020c3df4(word(data_ov007_0210324c),0x70);\n  pk_func_ov007_020c22a0(p);\n  return p;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c2304() { return uword(pk_func_ov007_020c2304()); }\n",
+      "globals": {
+        "data_ov007_0210324c": 34615884
+      },
+      "functions": [
+        "func_ov007_020c22a0",
+        "func_ov007_020c2304",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c22a0.c",
+      "sha256": "c271bf73c7ab78bbf4cfd0383e160b8689833ab3315cc56f7672d600eb81f5db",
+      "source": "struct S {\n    unsigned short f0;        /* 0x00 */\n    unsigned short f2;        /* 0x02 */\n    int a[12];       /* 0x04 .. 0x33 */\n    int b[12];       /* 0x34 .. 0x63 */\n    int f64;         /* 0x64 */\n    unsigned char pad68;  /* 0x68 */\n    char f69;        /* 0x69 */\n    unsigned char pad6a;  /* 0x6a */\n    char f6b;        /* 0x6b */\n    unsigned char pad6c;  /* 0x6c */\n    char f6d;        /* 0x6d */\n};\nextern \"C\" void pk_func_ov007_020c22a0(Ptr<struct S> s) {\n    int i;\n    s->f2 = 0;\n    s->f0 = s->f2;\n    s->f69 = 0;\n    *(Ptr<signed char>)(&s->pad68) = s->f69;\n    s->f6b = 0;\n    *(Ptr<signed char>)(&s->pad6a) = s->f6b;\n    s->f6d = 0;\n    *(Ptr<signed char>)(&s->pad6c) = s->f6d;\n    for (i = 0; i < 12; i++) {\n        s->a[i] = 0;\n        s->b[i] = 0;\n    }\n    s->f64 = 0;\n}\n\nextern \"C\" void abi_func_ov007_020c22a0(unsigned int a0) { pk_func_ov007_020c22a0((Ptr<struct S>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c22a0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c908c.c",
+      "sha256": "a213379755762bc701fe949652fe1130d7ab753c454e8db0d93c8cf3d9a7720a",
+      "source": "#include \"Ov007Tween.h\"\nextern \"C\" Ptr<void> pk_func_ov007_020c3d40(int a, int sz);\nextern \"C\" void pk_func_ov007_020c90f8(Ptr<void> p);\nextern \"C\" Ptr<void> pk_func_ov007_020c908c(Ptr<void> r5) {\n    Ptr<Ov007Tween> o = (Ptr<Ov007Tween>)(pk_func_ov007_020c3d40(0, sizeof(Ov007Tween)));\n    o->out = (Ptr<s32>)(r5);\n    pk_func_ov007_020c90f8(o);\n    return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c908c(unsigned int a0) { return uword(pk_func_ov007_020c908c((Ptr<void>)(a0))); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3d40",
+        "func_ov007_020c908c",
+        "func_ov007_020c90f8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c8f64.c",
+      "sha256": "496eee9884ce56ca55aa095bcd846eafb8c706e67e543be5424260c7d923e40d",
+      "source": "/* The 0x2c-byte vector tween: Ov007Tween's prefix (include/Ov007Tween.h),\n * then the from/to vectors func_ov007_020c8de0 blends (as in\n * func_ov007_020b1718). Only the slot this file writes is spelled. */\ntypedef struct Ov007VecTween {\n    char pad_00[0x10];\n    Ptr<void> out; /* 0x10: Ov007Tween's out; the Vector3 func_ov007_020c8de0 writes */\n    char pad_14[0x18];\n} Ov007VecTween;\n\ntypedef char Ov007VecTween_size_must_be_0x2c[sizeof(Ov007VecTween) == 0x2c ? 1 : -1];\n\nextern \"C\" Ptr<void> pk_func_ov007_020c3d40(int a, int sz);\nextern \"C\" void pk_func_ov007_020c90f8(Ptr<void> p);\n/* Allocates a vector tween bound to r5, as func_ov007_020c908c does a scalar one. */\nextern \"C\" Ptr<void> pk_func_ov007_020c8f64(Ptr<void> r5) {\n    Ptr<Ov007VecTween> o = (Ptr<Ov007VecTween>)(pk_func_ov007_020c3d40(0, sizeof(Ov007VecTween)));\n    o->out = r5;\n    pk_func_ov007_020c90f8(o);\n    return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c8f64(unsigned int a0) { return uword(pk_func_ov007_020c8f64((Ptr<void>)(a0))); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3d40",
+        "func_ov007_020c8f64",
+        "func_ov007_020c90f8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c90f8.c",
+      "sha256": "b1b56271b3766570ceea71dc94ced37ad5dcbdd1542a4c6474f0763d64c11b8b",
+      "source": "#include \"Ov007Tween.h\"\n\nextern \"C\" void pk_func_ov007_020c90f8(Ptr<char> p) {\n    Ptr<Ov007Tween> tw = (Ptr<Ov007Tween>)(p);\n    tw->state = 0;\n    tw->mode = 0;\n    tw->step = 0;\n    tw->t = 0;\n}\n\nextern \"C\" void abi_func_ov007_020c90f8(unsigned int a0) { pk_func_ov007_020c90f8((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c90f8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c8f98.c",
+      "sha256": "41d2c75b949423a44456b4cfc340e8e1c4a99d41f0d4175570494eb98562f6fc",
+      "source": "#include \"Ov007Tween.h\"\n\nextern \"C\" void pk_func_ov007_020c90c0(Ptr<void> c);\n\nstatic int keep(int x) {\n    return x;\n}\n\nextern \"C\" int pk_func_ov007_020c8f98(Ptr<int> thiz) {\n    Ptr<Ov007Tween> tw = (Ptr<Ov007Tween>)(thiz);\n    s16 t;\n    int a;\n    int b;\n    Ptr<s32> slot;\n\n    if (tw->state == 2) {\n        tw->state = 3;\n    } else if (tw->state == 1) {\n        switch (tw->mode) {\n        case 0:\n            t = tw->t;\n            a = tw->to;\n            b = tw->from;\n            if (t < 0x1000) {\n                if (t <= 0)\n                    a = b;\n                else\n                    a = word(((((s64)(t)) * keep(a) + ((s64)(0x1000 - t)) * b) >> 12));\n            }\n            slot = tw->out;\n            *slot = a;\n            pk_func_ov007_020c90c0(tw);\n            break;\n        case 1: {\n            int c;\n            int target;\n            int st;\n            int d;\n            int ad;\n            int sg;\n            int dn; /* stays a flag: setting tw->state inside the arm shrinks it (0xdc) */\n\n            c = *tw->out;\n            target = tw->to;\n            st = tw->step;\n            d = target - c;\n            if (d >= 0)\n                ad = d;\n            else\n                ad = -d;\n            if (ad <= st) {\n                *tw->out = target;\n                dn = 1;\n            } else {\n                if (d >= 0)\n                    sg = 1;\n                else\n                    sg = -1;\n                *tw->out = st * sg + c;\n                dn = 0;\n            }\n            if (dn != 0)\n                tw->state = 2;\n            break;\n        }\n        default:\n            break;\n        }\n    }\n\n    if (tw->state == 3)\n        return 1;\n    return 0;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c8f98(unsigned int a0) { return uword(pk_func_ov007_020c8f98((Ptr<int>)(a0))); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c8f98",
+        "func_ov007_020c90c0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c90c0.c",
+      "sha256": "6381e413882a16c03c5239e8426ad7512dc605325c2385fdcc562e0708039338",
+      "source": "#include \"Ov007Tween.h\"\n\nextern \"C\" void pk_func_ov007_020c90c0(Ptr<char> c) {\n    Ptr<Ov007Tween> tw = (Ptr<Ov007Tween>)(c);\n    short value = tw->t;\n\n    if (value >= 0x1000) {\n        tw->t = 0x1000;\n        tw->state = 2;\n        return;\n    }\n\n    {\n        int speed = tw->step;\n        Ptr<short> pos = &tw->t;\n        short old = *pos;\n\n        speed <<= 16;\n        *pos = old + (speed >> 16);\n    }\n}\n\nextern \"C\" void abi_func_ov007_020c90c0(unsigned int a0) { pk_func_ov007_020c90c0((Ptr<char>)(a0)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c90c0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c1db0.c",
+      "sha256": "b4921ad12b3de32a3daa9ab3827a1ffed9bab058dd15f2b6b9a37f12e9564312",
+      "source": "#include \"types.h\"\n#include \"Ov007Touch.h\"\n\nextern \"C\" void pk_func_0205f040(void);\nextern \"C\" void pk_func_0205efc0(Ptr<void> c);\n\n/* Updates the touch record once a frame from a stylus reading (b, or a\n * fresh calibrated sample when b is null): patches invalid axes from the\n * previous frame, then tracks press/release positions, held/idle frame\n * counts and the drag and per-frame deltas. */\nextern \"C\" void pk_func_ov007_020c1db0(Ptr<Ov007Touch> a, Ptr<Ov007TouchSample> b) {\n    a->prev = a->cur;\n    a->cur = a->raw;\n    if (b == 0) {\n        u16 tmp[4];\n        pk_func_0205f040();\n        pk_func_0205efc0(tmp);\n        a->raw.x = tmp[0];\n        a->raw.y = tmp[1];\n        a->raw.touch = tmp[2];\n        a->raw.validity = tmp[3];\n    } else {\n        a->raw = *b;\n    }\n    a->cur = a->raw;\n\n    if (*(Ptr<volatile unsigned int>)(&a->flags) & 1) {\n        if (a->cur.touch == 0)\n            a->flags = ((Ptr<const Ov007Touch>)(a))->flags & ~1;\n        else\n            a->cur.touch = 0;\n    }\n\n    if (a->cur.touch != 0) {\n        if (a->cur.validity & 1) {\n            if (a->prev.touch != 0)\n                a->cur.x = a->prev.x;\n            else\n                a->cur.touch = 0;\n        }\n        if (a->cur.validity & 2) {\n            if (a->prev.touch != 0)\n                a->cur.y = a->prev.y;\n            else\n                a->cur.touch = 0;\n        }\n    }\n\n    if (a->cur.touch != 0) {\n        a->lastDown = a->cur;\n        if (a->prev.touch == 0) {\n            a->pressX = a->cur.x;\n            a->pressY = a->cur.y;\n            a->heldFrames = 0;\n            a->dragY = 0;\n            a->dragX = a->dragY;\n            a->pad_40 = -1;\n            a->deltaY = 0;\n            a->deltaX = a->deltaY;\n        } else {\n            a->heldFrames += 1;\n            a->dragX = a->cur.x - a->pressX;\n            a->dragY = a->cur.y - a->pressY;\n            a->deltaX = a->cur.x - a->prev.x;\n            a->deltaY = a->cur.y - a->prev.y;\n        }\n    } else {\n        if (a->prev.touch == 0) {\n            a->releasedFrames += 1;\n        } else {\n            a->releasedFrames = 0;\n            a->releaseX = a->cur.x;\n            a->releaseY = a->cur.y;\n        }\n    }\n\n    a->countdown -= 1;\n    if (a->countdown < 0)\n        a->countdown = 0;\n}\n\nextern \"C\" void abi_func_ov007_020c1db0(unsigned int a0, unsigned int a1) { pk_func_ov007_020c1db0((Ptr<Ov007Touch>)(a0), (Ptr<Ov007TouchSample>)(a1)); }\n",
+      "globals": {},
+      "functions": [
+        "func_0205efc0",
+        "func_0205f040",
+        "func_ov007_020c1db0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c20b8.c",
+      "sha256": "e8a9ba02aae99a52e61465ccee19edd9275e1e4fde88e2d09b5441d115bf795e",
+      "source": "#include \"types.h\"\n\n/* The 0x70-byte pad record func_ov007_020c2304 allocates and\n * func_ov007_020c22a0 clears; names as in func_ov007_020b2e64 and\n * func_ov007_020b3360. The buttons run up, down, right, left, A, B, START,\n * SELECT, L, R, X, Y. */\ntypedef struct Ov007Pad {\n    u16 keys;     /* 0x00: held this frame */\n    u16 prevKeys; /* 0x02: held last frame */\n    /* 0x04: frames each button has been held, 1 on the press frame; 0 while\n     * it is up */\n    u32 heldFrames[12];\n    /* 0x34: frames each button has been up, 1 on the release frame; 0 while\n     * it is held */\n    u32 releasedFrames[12];\n    /* 0x64: bit 0 makes this function read no keys until every key is\n     * released, then clears it */\n    int inputLock;\n    /* 0x68..0x6d: this frame's d-pad x (right 1, left -1), d-pad y (up 1,\n     * down -1) and shoulder (L 1, R -1), each beside last frame's */\n    s8 dirX;\n    s8 prevDirX;\n    s8 dirY;\n    s8 prevDirY;\n    s8 shoulder;\n    s8 prevShoulder;\n    char pad_6e[2];\n} Ov007Pad;\n\ntypedef char Ov007Pad_size_must_be_0x70[sizeof(Ov007Pad) == 0x70 ? 1 : -1];\n\n#pragma opt_strength_reduction off\n/* Reads the keys (KEYINPUT and the ARM7's X/Y, or *src when given) into the\n * pad, honours inputLock, sets the three axes and steps each button's held\n * and released frame counts. p keeps its u16 * spelling; `pad` is the typed\n * view. */\nextern \"C\" void pk_func_ov007_020c20b8(Ptr<u16> p, Ptr<u16> src) {\n    Ptr<Ov007Pad> pad = (Ptr<Ov007Pad>)(p);\n    int flags[13];\n    int i;\n    u16 keys;\n    int za;\n    int zb;\n\n    i = 0;\n    do { flags[i] = 0; i = i + 1; } while (i < 0xc);\n    pad->prevKeys = pad->keys;\n    if (src == 0) {\n        pad->keys = ((NTR_MMIO(u16, 0x4000130) | *(Ptr<volatile u16>)(0x27fffa8)) ^ 0x2fff) & 0x2fff;\n    } else {\n        pad->keys = *src;\n    }\n    if ((pad->inputLock & 1) != 0) {\n        if (pad->keys == 0) {\n            u32 w = *(Ptr<volatile u32>)(&pad->inputLock);\n            pad->inputLock = w & ~1u;\n        } else {\n            pad->keys = 0;\n        }\n    }\n    i = 0;\n    pad->prevDirX = pad->dirX;\n    pad->prevDirY = pad->dirY;\n    pad->prevShoulder = pad->shoulder;\n    pad->shoulder = (s8)(i);\n    pad->dirY = pad->shoulder;\n    pad->dirX = pad->dirY;\n    if ((pad->keys & 0x40) != 0) {\n        pad->dirY = 1;\n        flags[0] = 1;\n    }\n    if ((pad->keys & 0x80) != 0) {\n        pad->dirY = -1;\n        flags[1] = 1;\n    }\n    if ((pad->keys & 0x10) != 0) {\n        pad->dirX = 1;\n        flags[2] = 1;\n    }\n    if ((pad->keys & 0x20) != 0) {\n        pad->dirX = -1;\n        flags[3] = 1;\n    }\n    if ((pad->keys & 0x200) != 0) {\n        pad->shoulder = 1;\n        flags[8] = 1;\n    }\n    if ((pad->keys & 0x100) != 0) {\n        pad->shoulder = -1;\n        flags[9] = 1;\n    }\n    keys = pad->keys;\n    i = 0;\n    flags[4] = keys & 1; flags[5] = keys & 2; flags[6] = keys & 0x400;\n    flags[7] = keys & 0x800; flags[10] = keys & 8; flags[11] = keys & 4;\n    za = i; zb = i;\n    do {\n        if (flags[i] != 0) {\n            pad->heldFrames[i]++;\n            pad->releasedFrames[i] = zb;\n        } else {\n            pad->heldFrames[i] = za;\n            pad->releasedFrames[i]++;\n        }\n        i = i + 1;\n    } while (i < 0xc);\n}\n\nextern \"C\" void abi_func_ov007_020c20b8(unsigned int a0, unsigned int a1) { pk_func_ov007_020c20b8((Ptr<u16>)(a0), (Ptr<u16>)(a1)); }\n",
+      "globals": {},
+      "functions": [
+        "func_ov007_020c20b8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/NormalizeVec3.c",
+      "sha256": "c02bf9420d01f0ebe8b5b92ec9abd46c534e6dfaad66662098fc1e10b55a26d5",
+      "source": "#include \"types.h\"\nextern \"C\" void pk_NormalizeVec3(Ptr<int> v, Ptr<int> out) {\n    s64 sq;\n    Ptr<volatile u16> ime;\n    u16 saved;\n    int len;\n    s64 recip;\n    s64 scale;\n    s64 prod;\n\n    sq = (s64)(v[0]) * v[0];\n    sq += (s64)(v[1]) * v[1];\n    sq += (s64)(v[2]) * v[2];\n\n    NTR_MMIO(u16, 0x4000280) = 2;\n    NTR_MMIO(u64, 0x4000290) = (u64)(0x1000000) << 32;\n    NTR_MMIO(u64, 0x4000298) = sq;\n\n    ime = (Ptr<volatile u16>)(0x4000208);\n    saved = *ime;\n    *ime = 0;\n    NTR_MMIO(u16, 0x40002b0) = 1;\n    NTR_MMIO(u64, 0x40002b8) = (u64)(sq) << 2;\n    (void)((u16)(*ime));\n    *ime = saved;\n\n    while (NTR_MMIO(u16, 0x40002b0) & 0x8000) {}\n    len = NTR_MMIO(int, 0x40002b4);\n    while (NTR_MMIO(u16, 0x4000280) & 0x8000) {}\n    recip = NTR_MMIO(s64, 0x40002a0);\n\n    scale = recip * (s64)(len);\n\n    prod = scale * (s64)(v[0]);\n    out[0] = word(((prod + (1LL << 44)) >> 45));\n    prod = scale * (s64)(v[1]);\n    out[1] = word(((prod + (1LL << 44)) >> 45));\n    prod = scale * (s64)(v[2]);\n    out[2] = word(((prod + (1LL << 44)) >> 45));\n}\n\nextern \"C\" void abi_NormalizeVec3(unsigned int a0, unsigned int a1) { pk_NormalizeVec3((Ptr<int>)(a0), (Ptr<int>)(a1)); }\n",
+      "globals": {},
+      "functions": [
+        "NormalizeVec3"
+      ],
+      "header": false
+    },
+    {
+      "path": "include/types.h",
+      "sha256": "d02733a5530459ca5cd8da02c6c5b2e5ddc380a38ebe36b985df363977a6f434",
+      "source": "typedef unsigned char u8;\ntypedef unsigned short u16;\ntypedef unsigned int u32;\ntypedef signed char s8;\ntypedef signed short s16;\ntypedef signed int s32;\ntypedef unsigned long long u64;\ntypedef signed long long s64;\ntypedef unsigned int size_t;\ntypedef s32 Fix12i;\ntypedef struct Vector3 {\n    Fix12i x;\nFix12i y;\nFix12i z;\n} Vector3;\ntypedef struct Vector3s {\n    s16 x;\ns16 y;\ns16 z;\n} Vector3s;\ntypedef float f32;\ntypedef double f64;\ntypedef volatile unsigned char vu8;\ntypedef volatile signed char vs8;\ntypedef volatile unsigned short vu16;\ntypedef volatile signed short vs16;\ntypedef volatile unsigned int vu32;\ntypedef volatile signed int vs32;\ntypedef int OnYoshiEatReturnVal;\n\n",
+      "globals": {},
+      "functions": [],
+      "header": true
+    },
+    {
+      "path": "include/common.h",
+      "sha256": "68abc7f23916f4d124efc82b58d3dc11a69e63206ebca4538b40d04efb4db1e4",
+      "source": "/* Shared value types, consolidated from thousands of duplicate inline\n * declarations across the loose function files. */\n#ifndef COMMON_H\n#define COMMON_H\n#include \"types.h\"\n\n/* Guarded on the same principle as Vector3_16 below: math/Matrix.h defines this\n * type too, structured as `Matrix3x3 r; Vector3 t;` rather than flat, and any\n * header reaching dExtSimpleModel_c.h -> dExtModel_c.h -> math/Matrix.h brings it in. Both\n * spellings are 0x30 bytes and both are in real use -- Matrix4x3_ApplyInPlace*\n * wants `m[i]`, the model headers want `.r`/`.t` -- so neither can simply win.\n * Whichever is seen FIRST in a translation unit stands, and the other stands\n * down. Without this a TU that reaches both fails outright, which is what blocked\n * typing dExtSimpleModel_c/dExtAnmModel_c members into the actor headers. */\n#ifndef MATRIX4X3_DEFINED\n#define MATRIX4X3_DEFINED\nstruct Matrix4x3 { s32 m[12]; };\n#endif\n/* Vector3 lives in types.h (as {Fix12i x,y,z}); not redefined here. */\n/* Guarded so dBgW.h, which needs this type and cannot assume common.h\n * was included first, can define it too without colliding. Both spell the guard\n * VECTOR3_16_DEFINED; whichever is seen first wins and the other stands down. */\n#ifndef VECTOR3_16_DEFINED\n#define VECTOR3_16_DEFINED\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n#endif\n\ntypedef struct Matrix4x3 Matrix4x3;\ntypedef struct Vector3_16 Vector3_16;\n\n#endif\n",
+      "globals": {},
+      "functions": [],
+      "header": true
+    },
+    {
+      "path": "include/Ov007MenuState.h",
+      "sha256": "0dcaf2c2a05d26f1ca4e18b9bb515ec1a44c067a955641cb6d2629ecd72062bc",
+      "source": "#ifndef OV007_MENU_STATE_H\n#define OV007_MENU_STATE_H\n\n#include \"types.h\"\n\n/* Reconstructed layout and name, not recovered class identity. The four\n * controller helpers and their menu callers agree on this 16-byte record. */\ntypedef struct Ov007MenuState {\n    s16 currentState;\n    s16 requestedState; /* -1: no pending request */\n    s32 stateWork;      /* caller-owned phase/flags, cleared on state entry */\n    s16 lastTickState;\n    s16 previousState; /* reset seeds initialState - 1 */\n    u32 stateTicks;    /* saturates; some effect callers also seed this */\n} Ov007MenuState;\n\ntypedef char Ov007MenuState_size_must_be_16[sizeof(Ov007MenuState) == 16 ? 1 : -1];\n\n#endif\n",
+      "globals": {},
+      "functions": [],
+      "header": true
+    },
+    {
+      "path": "include/Ov007Tween.h",
+      "sha256": "a1a35ba0b9b476cda60e91ef755c3b6249ed2cb91775b55402650ba6bdd80b67",
+      "source": "#ifndef OV007_TWEEN_H\n#define OV007_TWEEN_H\n\n#include \"types.h\"\n\n/* Reconstructed layout and name, not recovered class identity. A scalar tween\n * that drives one s32 through `out`: func_ov007_020c908c allocates the 0x1c\n * bytes and binds `out`, func_ov007_020c90f8 clears the first four fields, and\n * func_ov007_020c8f98 updates it once per frame. The 0x2c-byte vector tween\n * that func_ov007_020c8f64 allocates (updated by func_ov007_020c8de0) shares\n * this prefix through func_ov007_020c90f8 and func_ov007_020c90c0. */\ntypedef struct Ov007Tween {\n    s32 state; /* 0x00 -- 0 idle (c90f8); callers set 1 to start; c90c0 and c8f98's\n                *         mode 1 set 2 on arrival; c8f98 turns 2 into 3 and returns 1 */\n    s32 mode;  /* 0x04 -- c8f98: 0 blends from->to by t, 1 steps *out toward `to` */\n    s32 step;  /* 0x08 -- mode 0: c90c0 adds it to t; mode 1: c8f98's largest move */\n    s16 t;     /* 0x0c -- mode 0 blend fraction, 0..0x1000; c90c0 clamps at 0x1000 */\n    Ptr<s32> out;  /* 0x10 -- c908c binds it; c8f98 writes the tweened value through it */\n    s32 from;  /* 0x14 -- mode 0 start value; callers also seed *out with it */\n    s32 to;    /* 0x18 -- target: mode 0 end value, mode 1 destination */\n} Ov007Tween;\n\ntypedef char Ov007Tween_size_must_be_0x1c[sizeof(Ov007Tween) == 0x1c ? 1 : -1];\n\n#endif\n",
+      "globals": {},
+      "functions": [],
+      "header": true
+    },
+    {
+      "path": "include/Ov007Touch.h",
+      "sha256": "97b4594015182350f09e9b2e3967b9ab465bbd22f9ff3d7cd98ae62cb3f2a947",
+      "source": "#ifndef OV007_TOUCH_H\n#define OV007_TOUCH_H\n\n#include \"types.h\"\n\n/* Reconstructed layouts and names, not recovered class identity.\n *\n * Ov007TouchSample is one stylus reading in the shape func_0205efc0 fills\n * (the SDK's x/y/touch/validity record): func_ov007_020c1db0 patches an axis\n * from the previous frame when validity bit 0 (x) or bit 1 (y) is set. */\ntypedef struct Ov007TouchSample {\n    u16 x;        /* 0x0 */\n    u16 y;        /* 0x2 */\n    u16 touch;    /* 0x4: nonzero while the stylus is down */\n    u16 validity; /* 0x6: bit 0 x invalid, bit 1 y invalid */\n} Ov007TouchSample;\n\n/* The 0x44-byte touch-panel record func_ov007_020c2068 allocates (cleared by\n * func_ov007_020c2024), stored at the ov007 manager's +0x50 and updated once\n * a frame by func_ov007_020c1db0. Every role below is from c1db0's own\n * reads and writes. */\ntypedef struct Ov007Touch {\n    Ov007TouchSample raw;      /* 0x00: this frame's reading, before patching */\n    Ov007TouchSample cur;      /* 0x08: raw with invalid axes patched */\n    Ov007TouchSample prev;     /* 0x10: last frame's cur */\n    Ov007TouchSample lastDown; /* 0x18: the latest cur with the stylus down */\n    u32 heldFrames;            /* 0x20: 0 on the press frame, +1 per held frame */\n    u32 releasedFrames;        /* 0x24: 0 on the release frame, +1 per idle frame */\n    s32 countdown;             /* 0x28: c1db0 counts it down to 0 every frame */\n    u32 flags;                 /* 0x2c: bit 0: c1db0 reports the stylus up until it lifts */\n    u16 pressX;                /* 0x30: cur.x on the press frame */\n    u16 pressY;                /* 0x32 */\n    u16 releaseX;              /* 0x34: cur.x on the release frame */\n    u16 releaseY;              /* 0x36 */\n    s16 dragX;                 /* 0x38: cur - press while held */\n    s16 dragY;                 /* 0x3a */\n    s16 deltaX;                /* 0x3c: cur - prev while held */\n    s16 deltaY;                /* 0x3e */\n    s32 pad_40;                /* 0x40: -1 at init and on each press; no reader found */\n} Ov007Touch;\n\ntypedef char Ov007Touch_size_must_be_0x44[sizeof(Ov007Touch) == 0x44 ? 1 : -1];\n\n#endif\n",
+      "globals": {},
+      "functions": [],
+      "header": true
+    }
+  ]
+}

@@ -267,7 +267,8 @@ int main(int argc, char **argv) {
             assert(game.title_files()->config().bytes[8] == 0);
             assert(data_0209d6fc && data_0209d708 == data_0209d6fc + 0x30 &&
                    data_0209d6e8 == data_0209d6fc);
-            assert(resources.heap().allocations() == 1);
+            assert(game.frontend_core() && game.frontend_core()->allocations() == 19);
+            assert(resources.heap().allocations() == 1 + game.frontend_core()->allocations());
             auto *active = reinterpret_cast<uint8_t *>(data_0209caa0);
             std::vector<uint8_t> minigames(active + 0x44, active + 0x328);
             assert(!game.accept_title_result(2) && game.requested_scene() == 1);

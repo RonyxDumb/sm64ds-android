@@ -36,6 +36,15 @@ std::vector<uint8_t> read_file(int32_t id) {
 }
 }
 namespace sm64ds {
+Cartridge::DataImage Cartridge::overlay_data(uint32_t id) const {
+    ntr::OverlayInfo info{};
+    require(ntr::fs_overlay_info(id, info), "Missing frontend overlay descriptor.");
+    require(info.ramSize && uint64_t(info.ramSize) + info.bssSize <= 4 * 1024 * 1024,
+            "Invalid frontend overlay data size.");
+    auto bytes = unpack_overlay(read_file(info.fileId), info.ramSize, info.compressed);
+    bytes.resize(size_t(info.ramSize) + info.bssSize, 0);
+    return {info.ramAddress, std::move(bytes)};
+}
 Cartridge::Cartridge(const char *path) {
     std::unique_ptr<FILE, Close> rom(std::fopen(path, "rb"));
     std::array<uint8_t, 0x160> header{};

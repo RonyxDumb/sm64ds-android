@@ -31,6 +31,8 @@ jobs:
         run: bash android/tests/run-host-tests.sh
       - name: Native game dependency bounds (no ROM)
         run: bash android/tests/run-game-tests.sh
+      - name: Execute recovered frontend core (no ROM)
+        run: bash android/tests/run-frontend-tests.sh
       - name: Test GLES3 renderer without ROM assets
         run: |
           python3 android/tools/native_sources.py --out /tmp/native-src
@@ -44,3 +46,9 @@ jobs:
           name: sm64ds-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+  frontend-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute recovered frontend on native ARM64 (no ROM)
+        run: bash android/tests/run-frontend-tests.sh

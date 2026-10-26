@@ -1,5 +1,6 @@
 #pragma once
 #include "cartridge.h"
+#include "frontend_core.h"
 #include "game_input.h"
 #include "stage_flow.h"
 #include "title_files.h"
@@ -36,6 +37,7 @@ public:
     const TitleFiles *title_files() const {
         return title_.get();
     }
+    const FrontendCore *frontend_core() const { return frontend_.get(); }
     StageRequest stage_request() const {
         return stage_.request();
     }
@@ -59,6 +61,7 @@ private:
     Cartridge cartridge_;
     StageFlow stage_;
     std::unique_ptr<TitleFiles> title_;
+    std::unique_ptr<FrontendCore> frontend_;
     BootState boot_{};
     GameInput input_;
     Sound sound_;

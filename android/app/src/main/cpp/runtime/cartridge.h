@@ -7,7 +7,9 @@ namespace sm64ds {
 // Cartridge offsets are checked data spans, never native code or objects.
 class Cartridge {
 public:
+    struct DataImage { uint32_t base; std::vector<uint8_t> bytes; };
     explicit Cartridge(const char *path);
+    DataImage overlay_data(uint32_t id) const;
     std::vector<uint8_t> arm9(uint32_t address, uint32_t size) const;
     std::vector<uint8_t> file(uint32_t handle, bool decompress = true);
     static std::vector<uint8_t> narc_member(const std::vector<uint8_t> &, uint32_t index);

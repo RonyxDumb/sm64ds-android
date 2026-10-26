@@ -5,6 +5,11 @@
 #include <sys/mman.h>
 
 namespace sm64ds {
+size_t GameHeap::largest_free_span() const {
+    size_t result = 0;
+    for (const auto &span : free_) if (span.second > result) result = span.second;
+    return result;
+}
 GameHeap::GameHeap(size_t capacity) : base_(nullptr), capacity_(capacity) {
     if (capacity < 64 || capacity > 512u * 1024 * 1024)
         throw std::invalid_argument("Invalid native game heap capacity.");

@@ -9,6 +9,7 @@ public:
     void update(uint32_t buttons, float x, float y, int touchX, int touchY,
                 bool stickAsButtons = true);
     void clear();
+    uint16_t raw_buttons() const;
     uint16_t held(unsigned slot = 0) const;
     uint16_t pressed(unsigned slot = 0) const;
     uint16_t released(unsigned slot = 0) const;

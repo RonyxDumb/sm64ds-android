@@ -18,6 +18,8 @@ public:
     uint32_t size_of(const void *pointer) const;
     size_t memory_left() const;
     size_t allocations() const { return used_.size(); }
+    uint32_t capacity() const { return static_cast<uint32_t>(capacity_); }
+    size_t largest_free_span() const;
     uint32_t offset_of(const void *pointer) const;
     void *at(uint32_t offset, uint32_t size) const;
 

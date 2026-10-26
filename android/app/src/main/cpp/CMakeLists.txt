@@ -9,8 +9,8 @@ add_library(sm64ds_android SHARED bridge.cpp rom_probe.cpp game_math.cpp screen_
     "${REPO_ROOT}/port/ntr/bmd.cpp" "${REPO_ROOT}/port/ntr/gx.cpp" "${REPO_ROOT}/port/ntr/texture.cpp"
     "${REPO_ROOT}/port/ntr/fs.cpp" "${REPO_ROOT}/port/ntr/lz77.cpp")
 target_include_directories(sm64ds_android PRIVATE "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
-# Only pointer-independent seams are compiled here. Do not bypass host_abi.h
-# to pull the recovered 32-bit game layouts into an ARM64 process.
+# Matching sources keep their cartridge ABI. Native-owned seams and the checked
+# handle projection below are the only ways they enter the ARM64 process.
 target_link_options(sm64ds_android PRIVATE "-Wl,-z,max-page-size=16384" "-Wl,--gc-sections")
 
 target_link_libraries(sm64ds_android PRIVATE GLESv3 aaudio)
@@ -30,6 +30,25 @@ set_source_files_properties("${PC_SDAT}/sseq.cpp" "${PC_SDAT}/mixer.cpp"
 # Link recovered boot methods on native-owned leaf state; never instantiate
 # the unported DS actor layout on ARM64 or fill missing dependencies with stubs.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(PACKED_ROOT "${CMAKE_CURRENT_BINARY_DIR}/packed-src")
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/packed_sources.py"
+    --out "${PACKED_ROOT}" COMMAND_ERROR_IS_FATAL ANY)
+include("${PACKED_ROOT}/sources.cmake")
+include("${PACKED_ROOT}/inputs.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${REPO_ROOT}/android/tools/packed_sources.py"
+    "${REPO_ROOT}/android/tools/frontend_manifest.json" ${PACKED_FRONTEND_INPUTS})
+add_library(sm64ds_frontend STATIC ${PACKED_FRONTEND_SOURCES})
+# Projected POD headers must never enter native runtime includes.
+target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
+target_compile_options(sm64ds_frontend PRIVATE -fwrapv -fsigned-char -fno-strict-aliasing
+    -fvisibility=hidden -ffunction-sections -fdata-sections
+    -Wno-unknown-pragmas -Wno-return-type-c-linkage)
+set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
+    runtime/packed_memory.cpp)
+target_link_libraries(sm64ds_android PRIVATE sm64ds_frontend dl)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
     "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp" "${NATIVE_ROOT}/src/SharedFilePtr.cpp")

@@ -235,6 +235,7 @@ GameProgram::GameProgram(const char *path, Sound sound)
 }
 GameProgram::~GameProgram() {
     job_ = nullptr;
+    frontend_.reset();
     title_.reset();
     while (!files_.empty())
         release(files_.begin()->first);
@@ -338,8 +339,12 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             if (data_02092664 == 1) {
                 if (!title_)
                     title_ = std::make_unique<TitleFiles>(data_0209d6fc);
+                if (!frontend_)
+                    frontend_ = std::make_unique<FrontendCore>(Resources::active().heap(),
+                                                               cartridge_.overlay_data(7), GetOwnerLanguage());
+                frontend_->sample(input_.raw_buttons(), tx, ty);
                 throw std::runtime_error(
-                    "I file del titolo sono pronti. Il dispatcher e il rendering originali di "
+                    "Il core originale del frontend è inizializzato. Il dispatcher e il rendering di "
                     "dScDSMT_c non sono ancora collegati.");
             }
             if (data_02092664 == 3)

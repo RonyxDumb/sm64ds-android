@@ -88,6 +88,7 @@ uint16_t GameInput::held(unsigned slot) const {
         throw std::out_of_range("Invalid input player slot.");
     return data_020a0e58[slot * 2];
 }
+uint16_t GameInput::raw_buttons() const { return keys[0]; }
 uint16_t GameInput::pressed(unsigned slot) const {
     if (slot >= 4)
         throw std::out_of_range("Invalid input player slot.");
