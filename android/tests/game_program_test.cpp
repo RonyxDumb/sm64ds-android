@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <unistd.h>
+extern "C" void MultiCopy_Int(int *, int *, int);
 namespace cstd {
 s16 atan2(s32, s32);
 int sqrt(unsigned long long);
@@ -354,7 +355,6 @@ int main(int argc, char **argv) {
             }
             assert(invalidDestination);
             constexpr uint32_t plttTarget = ntr::PLTT_BASE + 0x780u;
-            extern void MultiCopy_Int(int *, int *, int);
             MultiCopy_Int(reinterpret_cast<int *>(data_020914e0),
                           reinterpret_cast<int *>(static_cast<uintptr_t>(plttTarget)), 16);
             assert(std::memcmp(ntr::host_ptr(plttTarget), data_020914e0, 16) == 0);
