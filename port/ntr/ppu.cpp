@@ -85,7 +85,10 @@ BgConfig read_bg(const EngineMap &em, int bg, uint32_t dispcnt) {
 
     text_size((cnt >> 14) & 3, c.tiles_w, c.tiles_h);
     const unsigned mode=dispcnt&7,size=cnt>>14;
-    if ((bg==3 && (mode==1 || mode==2)) || (bg==2 && (mode==2 || mode==4))) c.kind=BgConfig::Affine;
+    // In modes 3 and 4 BG2 is an affine background; only mode 5
+    // upgrades it to an extended-rotation background.
+    if ((bg==3 && (mode==1 || mode==2)) ||
+        (bg==2 && (mode==2 || mode==3 || mode==4))) c.kind=BgConfig::Affine;
     if ((bg==3 && mode>=3 && mode<=5) || (bg==2 && mode==5)) c.kind=BgConfig::Extended;
     if (c.kind==BgConfig::Extended && (cnt&0x80)) c.kind=BgConfig::Bitmap;
     if (mode==6) {
@@ -209,6 +212,22 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
         }
         return result;
     };
+
+    // DISPCNT mode 2 bypasses ALL background, OBJ and 3D layers. The
+    // selected LCDC VRAM A-D bank is a direct 256x192 BGR555 bitmap.
+    // Previously this path decoded the bitmap as BG tile maps, producing
+    // the narrow repeated vertical stripes seen in the Android title.
+    if (eng == ENGINE_A && disp_mode == 2) {
+        const uint32_t base = 0x06800000u + ((dispcnt >> 18) & 3u) * 0x20000u;
+        const uint16_t *pixels = static_cast<const uint16_t *>(host_ptr(base));
+        for (unsigned i = 0; i < SCREEN_W * SCREEN_H; ++i) {
+            uint32_t c = bgr555(pixels[i]);
+            if (master_mode == 1 || master_mode == 2)
+                c = brightness(c, master_mode, master_level);
+            fb.px[0][i] = c;
+        }
+        return;
+    }
 
     for (int y = 0; y < SCREEN_H; ++y) {
         for (int x = 0; x < SCREEN_W; ++x) {
