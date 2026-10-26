@@ -338,8 +338,10 @@ uint16_t GameProgram::requested_scene() const {
 bool GameProgram::accept_title_result(int result) {
     require(title_ != nullptr, "Title file records have not been prepared.");
     const bool started = title_->start_selected(result);
-    if (started)
+    if (started) {
+        stage_.prepare_scene();
         stage_.prepare_input();
+    }
     return started;
 }
 int GameProgram::native_audio(const SoundRequest &request) {
