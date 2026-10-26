@@ -1,6 +1,7 @@
 #pragma once
 #include "cartridge.h"
 #include "stage_assets.h"
+#include "packed_memory.h"
 #include "runtime/controller_input.h"
 #include "types.h"
 #include <memory>
@@ -18,12 +19,17 @@ public:
     StageRequest request() const;
     const ControllerInput &controller(unsigned slot) const;
     const StageAssets *assets() const { return assets_.get(); }
+    packed::Space *address_space() const { return addressSpace_.get(); }
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
 
 private:
     Cartridge &cartridge_;
     std::unique_ptr<StageAssets> assets_;
+    // Original ARM9 + level overlay data, exposed at unchanged DS addresses
+    // through checked native handles (not raw ARM64 pointer narrowing).
+    std::unique_ptr<Cartridge::DataImage> arm9Image_;
+    std::unique_ptr<packed::Space> addressSpace_;
     void reset_input();
     void check_camera_input(u32 cameraFlags);
     void check_input();
