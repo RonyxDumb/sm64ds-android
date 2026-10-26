@@ -44,7 +44,7 @@ u8 data_ov002_02111180 = 0;
 }
 
 namespace sm64ds {
-StageFlow::StageFlow(const Cartridge &cartridge) {
+StageFlow::StageFlow(Cartridge &cartridge) : cartridge_(cartridge) {
     auto table = cartridge.arm9(0x02075298, sizeof SUBLEVEL_LEVEL_TABLE);
     std::memcpy(SUBLEVEL_LEVEL_TABLE, table.data(), table.size());
     for (auto span : {std::make_pair(0x020756b0u, std::make_pair(static_cast<void *>(data_020756b0),
@@ -92,6 +92,13 @@ const ControllerInput &StageFlow::controller(unsigned slot) const {
 void StageFlow::prepare_input() {
     if (data_0208a0e0 > 4)
         throw std::runtime_error("Invalid native player count.");
+    // The game's StartFile has already set the level/entrance and requested
+    // dScStage_c. Mount the same overlay and level model/KCL the original
+    // InitResources reads. The class lifecycle and actor spawn must consume
+    // these data; this does NOT substitute for them.
+    auto nextAssets = std::make_unique<StageAssets>(
+        StageAssets::load(cartridge_, static_cast<uint8_t>(data_02092110)));
+    assets_ = std::move(nextAssets);
     data_0209f21c = data_0208a0e0;
     reset_input();
 }
