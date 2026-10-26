@@ -1,3 +1,80 @@
+# Android checkpoint — 2026-10-26, recovered file launch and stage controls
+
+**Not playable.** The normal Android session completes boot and the original
+title-file preparation, then reports the missing interactive frontend. No device
+is attached. Supplying a frontend result in the native execution check now runs
+the genuine file selection/`StartFile` path through to the scene-3 request; it
+does not execute a stage, actor manager or Player.
+
+## Implemented
+
+- Command 20's actual read/activate/summary loop, slot lookup/buffer installer and
+  summary function are generated from `d_s_dsmt.cpp`. Native ownership replaces
+  only its 0xcc-byte allocation. Each slot retains read-failure status and the
+  original save defaults, character count, coin records and star counts.
+- The title's actual result-3/4/5 launch branch calls the recovered `StartFile`,
+  `LoadLevel{,NoReturn}`, `SetNextStar`, `SetPlayerGlobals`, controller-mode and
+  player-count functions. Distinct files select the correct active slot,
+  character and mode; the request is castle grounds / entrance 0 / star 1 / scene 3.
+- Fixed save/star/coin/minigame and settings byte lanes alias their true native
+  storage. The title message-bank pointer lives in a native-width member beyond
+  the 0x9c scalar settings, not inside a DS integer slot. `CpuCopy8` follows the
+  actual source-first primitive, not its misleading parameter names.
+- Stage `CheckCameraInput`, `CheckInput` and `ResetInput` execute on a generated,
+  checked pointer-free 0x18 controller record. The camera leaf takes a flags
+  value; no fixed-layout camera or Player is instantiated. ROM button tables use
+  native pointer cells. Original touch delay/clamp, button maps and camera hit
+  regions are preserved; invalid native counts/modes are rejected.
+- Android stick axes reach that same Q12 record with partial magnitude and radial
+  clamping. Menu stick-to-button conversion is disabled for stage input to avoid
+  accidental camera buttons in alternate controller modes. The original input
+  gate and active stylus gesture retain priority. Raw touch samples include the
+  fourth validity halfword required by the frontend's input entry point.
+- The integer arithmetic seam now follows original divider/sqrt rounding. The
+  earlier truncated divider made 30-frame fades take 31 ticks; corrected source
+  fades bring the boot boundary to 120 ticks rather than 122. Source atan2's ROM
+  table/quadrants are retained; its integer-to-soft-float sign comparison is
+  represented as the equivalent integer sign test on AArch64.
+- A second `GameProgram` is rejected before its members can reset an active
+  session's game globals. File/metadata/font state is released on teardown.
+
+## Verification
+
+- Private ROM, ASan/UBSan: all three distinct saved slots and a blank Yoshi file;
+  summary stars/coins/unlocks; high native pointers; preserved minigame bytes;
+  original scene-3 request; controller/button/touch/camera/quadrant checks; four
+  complete boot/session lifetimes. No sanitizer errors.
+- ARM64 debug/release APKs and Lint pass. The linked game code uses
+  `--no-undefined`. Host/save/input/audio regressions and source-reference checks
+  remain part of validation. No matching source/header changes or ROM data.
+- The execution check **supplies** the title result and camera flags. It is not
+  evidence that the title dispatcher, camera, stage or Player runs interactively.
+- APK symbol inspection confirms live `TitleFiles::load`, `CheckCameraInput`,
+  `CheckInput` and atan2. The frontend's missing caller means `StartFile`, its
+  launch chain and `ResetInput` are still discarded from the APK by section GC;
+  the host execution check retains and executes those same implementations.
+
+## Resume here
+
+1. The 124 consumers of `data_ov007_0210342c` still need one coherent native
+   frontend work layout. Start with `func_ov007_020b7138.c`,
+   `func_ov007_020b7090.c`, `func_ov007_020aed98.cpp`, root allocation
+   `func_ov007_020b68e8.c` and its five builders. Keep source assertions intact.
+2. Port frontend rendering, OAM/model callbacks and its update dispatcher, then
+   deliver its real return value to `GameProgram::accept_title_result`. The
+   existing preparation/launch path is reusable; do not replace the menu with
+   guessed button regions or select a file automatically.
+3. Scene 3's lifecycle, native actor ownership/dispatch, Player/collision/camera,
+   level actors, source-driven 3D/animation, HUD/minimap, game-wide sounds and
+   Android device/lifecycle/performance verification remain unfinished.
+4. ARM64 remains the required target. The Windows x86 upstream depends on its
+   32-bit layouts and MSVC bridges. No ARM32 fallback, emulation or unsafe
+   pointer-narrowing workaround was introduced.
+
+---
+
+Historical checkpoints below are superseded by the current status.
+
 # Android checkpoint — 2026-10-26, recovered boot execution
 
 **Not playable.** The production Android session now calls recovered boot logic

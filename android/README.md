@@ -1,7 +1,8 @@
 # Super Mario 64 DS Android
 
-Native port in development. **Version 0.4 runs recovered boot logic and stops at
-the unlinked title scene. It is not playable.** The old face/sample test is no
+Native port in development. **Version 0.4.1 runs recovered boot and title-file
+preparation, then stops at the unlinked interactive title. It is not playable.**
+The old face/sample test is no
 longer the Android session. No emulator or ARM guest execution is used.
 
 ## Current execution
@@ -20,12 +21,28 @@ at 59.8261 Hz and forwards boot sound archive 4 / entry 0 to the PC sequencer.
 Read-only ARM9 constants and the cartridge's NARC mount table are read at runtime.
 No Nintendo data is packaged in the APK or repository.
 
-At the completed fade to scene 1, the runtime reports that `dScDSMT_c` is not yet
-linked and releases the session. The title, file-selection UI, castle, Player,
+At the completed fade to scene 1, command 20's recovered loop reads all three
+files, activates each through the original copy helper and computes the title's
+star/coin/character summaries. The file buffer has native ownership, and the
+message-bank pointer is a native-width member outside the fixed scalar settings.
+The runtime then reports the unlinked `dScDSMT_c` dispatcher/rendering and releases
+the session. The interactive title, file-selection UI, castle, Player,
 level actors, 3D gameplay, HUD/minimap and game-wide sound integration remain
 unfinished. Boot uses a two-screen interface; it is not the future fullscreen
 stage renderer/minimap layout. No on-device compatibility or performance claim
 is made. See [CHECKPOINT.md](CHECKPOINT.md) for the exact frontier.
+
+The recovered title launch implementation maps results 3/4/5 to slots 0/1/2 and calls the
+recovered `StartFile`, `LoadLevel`, player-global and controller-mode functions.
+The resulting request is castle grounds, entrance 0, star 1, scene 3. Original
+stage camera/input routines use native ROM button maps and integer analog math.
+Android stick axes preserve partial magnitude in the Player controller
+record while respecting the original input gate and active stylus gesture.
+The private-ROM execution check supplies the frontend result and camera
+flags directly; it does not establish an interactive menu, a running stage or
+Player movement. No code selects a file on the player's behalf in the launcher.
+The APK currently discards the unreachable launch functions; the native execution
+check retains and calls them. Connecting the frontend caller remains necessary.
 
 ## Build
 
@@ -65,9 +82,12 @@ bash android/tests/run-game-tests.sh /absolute/path/to/game.nds
 python tools/port_refcheck.py
 ```
 
-The native game test runs the actual production boot, font/message dependencies,
-fader and transition, checks native file ownership and repeats teardown/recreation
-under ASan/UBSan. It requires the user's ROM to establish boot execution; without
+The native game check runs production boot, font/message dependencies, faders,
+title file preparation and the recovered launch branch. It checks distinct slots,
+blank-file Yoshi defaults, native pointers, summary counts, unchanged minigame data,
+stage request, controller modes/touch/camera regions and repeated teardown under
+ASan/UBSan. The corrected original divider rounding gives 30-frame fades and a
+120-tick boot boundary. It requires the user's ROM for execution; without
 a ROM public CI checks malformed NARC bounds only. Existing importer, heap, save,
 input and audio tests remain. Mesa tests check screen orientation, color lanes,
 sub-screen presentation and GL recreation. Host checks do not establish phone

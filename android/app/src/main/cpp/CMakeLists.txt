@@ -35,8 +35,13 @@ set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
     "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp" "${NATIVE_ROOT}/src/SharedFilePtr.cpp")
 set(GAME_SOURCES "${NATIVE_ROOT}/runtime/boot.cpp" "${NATIVE_ROOT}/runtime/faders.cpp"
     "${NATIVE_ROOT}/runtime/transitions.cpp" "${NATIVE_ROOT}/runtime/font.cpp"
-    "${NATIVE_ROOT}/runtime/bg.cpp" "${NATIVE_ROOT}/runtime/message_parser.cpp" "${NATIVE_ROOT}/runtime/approach.cpp")
+    "${NATIVE_ROOT}/runtime/bg.cpp" "${NATIVE_ROOT}/runtime/message_parser.cpp" "${NATIVE_ROOT}/runtime/approach.cpp"
+    "${NATIVE_ROOT}/runtime/stage_flow.cpp" "${NATIVE_ROOT}/runtime/title_selection.cpp"
+    "${NATIVE_ROOT}/runtime/stage_input.cpp" "${NATIVE_ROOT}/runtime/input_atan2.cpp"
+    "${NATIVE_ROOT}/runtime/title_files.cpp")
 add_custom_command(OUTPUT ${SAVE_SOURCES} ${GAME_SOURCES} "${NATIVE_ROOT}/runtime/boot_state.h"
+    "${NATIVE_ROOT}/runtime/title_records.h"
+    "${NATIVE_ROOT}/runtime/controller_input.h"
     COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/native_sources.py" --out "${NATIVE_ROOT}"
     DEPENDS "${REPO_ROOT}/android/tools/native_sources.py" "${REPO_ROOT}/port/tools/hostgen.py"
         "${REPO_ROOT}/src/engine/save/SaveData.cpp" "${REPO_ROOT}/src/engine/save/SaveData2.cpp"
@@ -44,7 +49,9 @@ add_custom_command(OUTPUT ${SAVE_SOURCES} ${GAME_SOURCES} "${NATIVE_ROOT}/runtim
         "${REPO_ROOT}/src/game/stages/d_s_boot_methods.cpp" "${REPO_ROOT}/src/game/stages/d_scene.cpp"
         "${REPO_ROOT}/src/runtime/graphics/fader/d_fader.cpp" "${REPO_ROOT}/src/LoadFont.cpp"
         "${REPO_ROOT}/src/engine/gx/G2.cpp" "${REPO_ROOT}/src/ApproachAngle.cpp"
-        "${REPO_ROOT}/src/ui/messages/func_0201cb2c.c")
+        "${REPO_ROOT}/src/ui/messages/func_0201cb2c.c"
+        "${REPO_ROOT}/src/game/stages/d_s_stage_methods.cpp" "${REPO_ROOT}/src/game/stages/d_s_dsmt.cpp"
+        "${REPO_ROOT}/src/cstd_atan2.cpp")
 add_library(sm64ds_save STATIC ${SAVE_SOURCES})
 target_include_directories(sm64ds_save PRIVATE "${REPO_ROOT}/include")
 target_compile_definitions(sm64ds_save PRIVATE SM64DS_PLATFORM_PC)
@@ -60,6 +67,12 @@ set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
+    runtime/stage_flow.cpp runtime/title_files.cpp runtime/native_math.cpp
+    "${REPO_ROOT}/src/SetNumPlayers.c" "${REPO_ROOT}/src/SublevelToLevel.c"
+    "${REPO_ROOT}/src/unnamed/arm9/0203/func_020308d0.c"
+    "${REPO_ROOT}/src/DecIfAbove0_Byte.c" "${REPO_ROOT}/src/GetControllerMode.c"
+    "${REPO_ROOT}/src/GetPlayerFlagByte.c"
+    "${REPO_ROOT}/src/GetSoundMode.c"
     "${REPO_ROOT}/port/ntr/ppu.cpp"
     "${REPO_ROOT}/src/ui/messages/func_0201fe08.c" "${REPO_ROOT}/src/GetOwnerLanguage.c"
     "${REPO_ROOT}/src/SetBg0Offset.c" "${REPO_ROOT}/src/SetSubBg0Offset.c"

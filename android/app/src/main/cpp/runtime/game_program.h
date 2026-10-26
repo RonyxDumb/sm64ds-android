@@ -1,12 +1,15 @@
 #pragma once
 #include "cartridge.h"
 #include "game_input.h"
+#include "stage_flow.h"
+#include "title_files.h"
 #include "runtime/boot_state.h"
 #include "ntr/ppu.h"
 #include <functional>
 #include <map>
+#include <memory>
 namespace sm64ds {
-// Native owner of recovered boot state. Scene requests come from recovered
+// Native owner of recovered boot, title-file and stage-flow state. Requests come from recovered
 // dScene_c methods; an unlinked destination is reported explicitly.
 class GameProgram {
 public:
@@ -30,6 +33,15 @@ public:
     const BootState &boot() const {
         return boot_;
     }
+    const TitleFiles *title_files() const {
+        return title_.get();
+    }
+    StageRequest stage_request() const {
+        return stage_.request();
+    }
+    // Receives the real frontend's return code (3..5), never raw UI coordinates.
+    // The title dispatcher and stage actor scene still need native link closure.
+    bool accept_title_result(int result);
     void *load(uint32_t handle);
     void release(void *pointer);
     size_t bytes_at(const void *pointer) const;
@@ -45,6 +57,8 @@ public:
 
 private:
     Cartridge cartridge_;
+    StageFlow stage_;
+    std::unique_ptr<TitleFiles> title_;
     BootState boot_{};
     GameInput input_;
     Sound sound_;

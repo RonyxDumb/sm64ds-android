@@ -19,17 +19,38 @@ bool span(uint32_t offset, uint32_t size) {
 // kept verbatim; native pointers are never written into these buffers.
 extern "C" {
 alignas(16) int data_0209caa0[0x32c / 4]{};
+asm(".global data_0209cab4\n.set data_0209cab4, data_0209caa0 + 0x14\n"
+    ".global data_0209cad2\n.set data_0209cad2, data_0209caa0 + 0x32\n"
+    ".global data_0209cae4\n.set data_0209cae4, data_0209caa0 + 0x44\n");
 uint8_t data_020a4b40[8] = {'d', 's', ' ', 'm', 'a', 'r', 'i', 'o'};
+// CpuCopy8.c reads r0 and writes r1. Some recovered declarations call the
+// parameters dst/src in the opposite order; preserve the primitive's behavior.
+void CpuCopy8(const void *source, void *target, uint32_t size) {
+    if (size && (!source || !target))
+        throw std::runtime_error("Invalid recovered save copy.");
+    if (size)
+        std::memcpy(target, source, size);
+}
 void func_0205a588(void *dest, int value, int size) {
     if (size < 0 || (!dest && size))
         throw std::runtime_error("Invalid recovered save clear.");
     std::memset(dest, value, static_cast<size_t>(size));
 }
-int func_0203da3c() { return 0; } // local cartridge, no wireless peer session
-uint32_t func_0206045c() { return sm64ds::SaveStore::Size; }
-int func_02057020() { return sm64ds::SaveStore::active().take_lock(); }
-void func_02057078(uint16_t id) { sm64ds::SaveStore::active().release_lock(id); }
-void func_0205ff80(uint16_t id) { sm64ds::SaveStore::active().claim(id); }
+int func_0203da3c() {
+    return 0;
+} // local cartridge, no wireless peer session
+uint32_t func_0206045c() {
+    return sm64ds::SaveStore::Size;
+}
+int func_02057020() {
+    return sm64ds::SaveStore::active().take_lock();
+}
+void func_02057078(uint16_t id) {
+    sm64ds::SaveStore::active().release_lock(id);
+}
+void func_0205ff80(uint16_t id) {
+    sm64ds::SaveStore::active().claim(id);
+}
 void func_0205ff70(uint16_t id) { sm64ds::SaveStore::active().unclaim(id); }
 int func_02060558(uint32_t offset, void *data, uint32_t size, int, int, int) {
     return sm64ds::SaveStore::active().read(offset, data, size) ? 1 : 0;

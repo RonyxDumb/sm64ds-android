@@ -156,6 +156,160 @@ def message_parser(text):
     return text
 
 
+def title_records(text):
+    record = re.search(r'struct FileSaveData \{.*?\n\};', text, re.S)
+    if record is None:
+        raise ValueError('title file record changed')
+    return ('#pragma once\n#include "types.h"\n' + record.group() +
+            '\nstatic_assert(sizeof(FileSaveData) == 0x44, "cartridge file record");\n')
+
+
+def title_selection(text):
+    # This is the actual file-launch branch of dScDSMT_c::Behavior. Its UI
+    # dispatcher is a separate dependency; do not replace it with guessed
+    # button coordinates or claim that the whole title scene is running.
+    behavior = function(text, 's32 dScDSMT_c::Behavior() {')
+    branch = function(behavior, 'if ((unsigned int)(result - 3) <= 2) {')
+    branch = replace_once(branch, '(unsigned int)(result - 3)',
+                          '(static_cast<unsigned int>(result) - 3u)')
+    branch = replace_once(branch, 'data_0209caa0);',
+                          'reinterpret_cast<FileSaveData *>(data_0209caa0));')
+    branch = branch[:-1] + '    return true;\n}'
+    return ('#include "runtime/title_files.h"\n#include "runtime/stage_flow.h"\n'
+            'bool sm64ds::TitleFiles::start_selected(int result) {\n' + branch +
+            '\nreturn false;\n}\n')
+
+
+def title_files(text):
+    output = ('#include "runtime/title_files.h"\n#include "runtime/stage_flow.h"\n'
+              '#include "SaveData.h"\n')
+    for signature in (
+        'extern "C" FileSaveData *func_ov007_020cc0cc(int idx) {',
+        'extern "C" void func_ov007_020cc0e4(FileSaveData *files) {',
+        'extern "C" void func_ov007_020cc168(u32 saveSlot) {',
+    ):
+        method = function(text, signature)
+        if 'void func_ov007_020cc168' in signature:
+            method = replace_once(method, 'data_0208ee3c[0]', 'data_0208ee3c')
+        output += method + '\n'
+    command = function(text, 'extern "C" u8 func_ov007_020cc600(s32 command) {')
+    load = function(command, 'if (command == 20) {')
+    body = load[load.index('{') + 1:-1]
+    body = replace_once(body, '(u8 *)_ZN6Memory13operator_new2Ej(0xcc)',
+                         'reinterpret_cast<u8 *>(files_.data())')
+    body = replace_once(body,
+        'SaveData::ReadFileData(saveSlot, (FileSaveData *)fileBytes) == 0',
+        '!(readOk_[saveSlot] = SaveData::ReadFileData(saveSlot, (FileSaveData *)fileBytes) != 0)')
+    body = replace_once(body, 'func_02013c84(saveSlot, fileBytes, -1, data_0209caa0);',
+        'func_02013c84(saveSlot, reinterpret_cast<FileSaveData *>(fileBytes), -1, '
+        'reinterpret_cast<FileSaveData *>(data_0209caa0));')
+    output += 'bool sm64ds::TitleFiles::load() {\nu8 failed = 0;\n' + body + '\nreturn failed == 0;\n}\n'
+    return output
+
+
+def stage_flow(text):
+    signatures = (
+        'extern "C" void SetNextStar(void) {',
+        'extern "C" void InitControllerMode(int idx, u8 val) {',
+        'extern "C" void SetControllerMode(unsigned char mode) {',
+        'extern "C" void SetPlayerGlobals(void) {',
+        'extern "C" void LoadLevel(int levelID, u32 entranceID, int starID, u32 arg3, s8 returnState) {',
+        'extern "C" void LoadLevelNoReturn(int levelID, u32 arg1, u32 arg2, u32 arg3) {',
+        'extern "C" void StartFile(s8 levelID, u8 entranceID) {',
+    )
+    output = '#include "runtime/stage_flow.h"\n#include "runtime/boot_seams.h"\n'
+    for signature in signatures:
+        method = function(text, signature)
+        # The active save is an actual 0x32c-byte record owned by SaveStore.
+        # This TU views it in bytes; SaveData.cpp views the same storage in words.
+        if any(name in signature for name in ('void InitControllerMode(',
+                                               'void SetControllerMode(',
+                                               'void SetPlayerGlobals(')):
+            method = replace_once(method, 'data_0209caa0[0x42]',
+                                   'reinterpret_cast<u8 *>(data_0209caa0)[0x42]')
+        if 'void StartFile(' in signature:
+            method = replace_once(method, 'data_0209caa0[0x41]',
+                                   'reinterpret_cast<u8 *>(data_0209caa0)[0x41]')
+        if 'data_0209caa0[' in method:
+            raise ValueError('new active-save view in stage entry; audit byte/word units')
+        if 'void LoadLevel(' in signature:
+            # dFdColor_c is a genuine native C++ object: its vptr is eight
+            # bytes, so the DS +0xc field access must name the actual member.
+            method = replace_once(method,
+                '*(unsigned short *)((char *)&data_0209f5e8 + 0xc) = 0;',
+                'data_0209f5e8.color = 0;')
+        output += method + '\n\n'
+    return output
+
+
+def controller_header(text):
+    record = re.search(r'struct CamInput \{.*?\n\};', text, re.S)
+    if record is None:
+        raise ValueError('stage controller record changed')
+    fields = re.findall(r'^\s*(s16|u16|u8)\s+(\w+);', record.group(), re.M)
+    expected = [('s16', name) for name in ('dx', 'dy')]
+    expected += [('u16', name) for name in ('held', 'pressed')]
+    expected += [('s16', name) for name in ('mag', 'nx', 'ny', 'ang')]
+    expected += [('u8', name) for name in ('tx', 'ty', 'delay', 'cnt', 'touching', 'pad15', 'mode', 'pad17')]
+    if fields != expected:
+        raise ValueError('stage controller fields changed; audit native ownership')
+    return ('#pragma once\n#include "types.h"\n#include <cstddef>\nnamespace sm64ds {\n' +
+            record.group().replace('struct CamInput', 'struct ControllerInput') +
+            '\nstatic_assert(sizeof(ControllerInput) == 0x18);\n'
+            'static_assert(offsetof(ControllerInput, mode) == 0x16);\n}\n')
+
+
+def stage_input(text):
+    output = ('#include "runtime/stage_flow.h"\n#include "runtime/boot_seams.h"\n'
+              '#include "nitro/fx/fx.h"\nusing CamInput = sm64ds::ControllerInput;\n'
+              'struct TouchInfo { u8 held, edge, x, y; };\n'
+              '#define TOUCH_DATA ((TouchInfo *)gTouchHeld)\n'
+              'namespace cstd { int sqrt(unsigned long long); s16 atan2(s32, s32); '
+              'Fix12i fdiv(Fix12i, Fix12i); }\n')
+    reset = function(text, 'extern "C" void ResetInput(void) {')
+    reset = replace_once(reset, 'extern "C" void ResetInput(void)',
+                         'void sm64ds::StageFlow::reset_input()')
+    output += reset + '\n'
+    camera = function(text, 'void dScStage_c::CheckCameraInput() {')
+    camera = replace_once(camera, 'void dScStage_c::CheckCameraInput()',
+                          'void sm64ds::StageFlow::check_camera_input(u32 cameraFlags)')
+    # The recovered camera-input logic only reads this one field from the
+    # camera. Its owner passes the actual flags, not a fake DS camera object.
+    camera = replace_once(camera, '((dCamera_c *)data_0209f318)->mFlags', 'cameraFlags')
+    output += camera + '\n'
+    controls = function(text, 'void dScStage_c::CheckInput() {')
+    controls = replace_once(controls, 'void dScStage_c::CheckInput()',
+                            'void sm64ds::StageFlow::check_input()')
+    controls = replace_once(controls, '    u8 mode = data_0209f2d8;',
+                            '    inputEnabled_ = false;\n    u8 mode = data_0209f2d8;')
+    controls = replace_once(controls, '    }\n    CamInput *control = (CamInput *)data_0209f498;',
+                            '    }\n    inputEnabled_ = true;\n'
+                            '    CamInput *control = (CamInput *)data_0209f498;')
+    for old, new, count in (
+        ('data_020a0e58[playerIndex].held', 'data_020a0e58[playerIndex * 2]', 2),
+        ('data_020a0e58[playerIndex].pressed', 'data_020a0e58[playerIndex * 2 + 1]', 1),
+        # DS shifts negative signed deltas; multiplication has the same result
+        # in these bounded Q12 coordinates without native C++ shift UB.
+        ('(deltaX << 12)', '(deltaX * 4096)', 1),
+        ('(deltaY << 12)', '(deltaY * 4096)', 1),
+    ):
+        if controls.count(old) != count:
+            raise ValueError(f'stage input changed: {old!r}')
+        controls = controls.replace(old, new)
+    return output + controls + '\n'
+
+
+def input_atan2(text):
+    method = function(text, 's16 atan2(s32 y, s32 x) {')
+    # ITCM 01ffa4bc converts the integer to a float and 01ff98f4 tests <.
+    # The old int prototypes describe the soft-float register ABI, not native
+    # AArch64 FP delivery. Conversion to finite float preserves an int's sign.
+    method = replace_once(method, 'func_01ff98f4(func_01ffa4bc(x), 0)', 'x < 0')
+    return ('#include "runtime/stage_flow.h"\nnamespace cstd {\n'
+            's32 fdiv(s32, s32);\n' +
+            method.replace('_ZN4cstd4fdivEii(', 'fdiv(') + '\n}\n')
+
+
 def generate(out):
     sources = ("src/engine/save/SaveData.cpp", "src/engine/save/SaveData2.cpp")
     for rel in sources:
@@ -181,6 +335,13 @@ def generate(out):
         'runtime/bg.cpp': '#include "ntr/mmio.h"\n' + hostgen.transform((ROOT / 'src/engine/gx/G2.cpp').read_text())[0],
         'runtime/approach.cpp': function((ROOT / 'src/ApproachAngle.cpp').read_text(), 'int ApproachLinear(int &ref, int target, int step)'),
         'runtime/message_parser.cpp': 'extern "C" {\n' + message_parser((ROOT / 'src/ui/messages/func_0201cb2c.c').read_text()) + '\n}\n',
+        'runtime/title_records.h': title_records((ROOT / 'src/game/stages/d_s_dsmt.cpp').read_text()),
+        'runtime/title_selection.cpp': title_selection((ROOT / 'src/game/stages/d_s_dsmt.cpp').read_text()),
+        'runtime/title_files.cpp': title_files((ROOT / 'src/game/stages/d_s_dsmt.cpp').read_text()),
+        'runtime/stage_flow.cpp': stage_flow((ROOT / 'src/game/stages/d_s_stage_methods.cpp').read_text()),
+        'runtime/stage_input.cpp': stage_input((ROOT / 'src/game/stages/d_s_stage_methods.cpp').read_text()),
+        'runtime/controller_input.h': controller_header((ROOT / 'src/game/stages/d_s_stage_methods.cpp').read_text()),
+        'runtime/input_atan2.cpp': input_atan2((ROOT / 'src/cstd_atan2.cpp').read_text()),
     }
     for rel, text in generated.items():
         target = out / rel

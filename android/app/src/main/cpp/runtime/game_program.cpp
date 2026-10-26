@@ -13,6 +13,12 @@ void require(bool ok, const char *why) {
     if (!ok)
         throw std::runtime_error(why);
 }
+const char *single_program_path(const char *path) {
+    // Reject a second session before member constructors reset shared game
+    // globals belonging to the live session.
+    require(!program, "A native game program is already running.");
+    return path;
+}
 uint32_t word(const uint8_t *p) {
     return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
 }
@@ -182,12 +188,6 @@ void LoadBGPltt(const void *p, u32 offset, u32 size) {
     copy_video(p, ntr::host_ptr(0x05000400 + offset), size);
 }
 }
-namespace cstd {
-Fix12i fdiv(Fix12i a, Fix12i b) {
-    require(b != 0, "Fixed-point divide by zero.");
-    return static_cast<Fix12i>((int64_t(a) * 4096) / b);
-}
-}
 extern "C" void LoadFont(u8);
 namespace sm64ds {
 GameProgram &GameProgram::active() {
@@ -195,7 +195,7 @@ GameProgram &GameProgram::active() {
     return *program;
 }
 GameProgram::GameProgram(const char *path, Sound sound)
-    : cartridge_(path), sound_(std::move(sound)) {
+    : cartridge_(single_program_path(path)), stage_(cartridge_), sound_(std::move(sound)) {
     require(!program && bool(sound_), "A native game program is already running.");
     require(ntr::io_init(), "Cannot map native video registers.");
     program = this;
@@ -235,6 +235,7 @@ GameProgram::GameProgram(const char *path, Sound sound)
 }
 GameProgram::~GameProgram() {
     job_ = nullptr;
+    title_.reset();
     while (!files_.empty())
         release(files_.begin()->first);
     data_0209d6e8 = data_0209d6ec = data_0209d6fc = data_0209d708 = data_0209d70c = nullptr;
@@ -303,6 +304,13 @@ size_t GameProgram::bytes_at(const void *p) const {
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;
 }
+bool GameProgram::accept_title_result(int result) {
+    require(title_ != nullptr, "Title file records have not been prepared.");
+    const bool started = title_->start_selected(result);
+    if (started)
+        stage_.prepare_input();
+    return started;
+}
 void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx, int ty) {
     require(std::isfinite(seconds) && seconds >= 0, "Invalid native frame interval.");
     constexpr double Step = 1.0 / 59.8261;
@@ -314,7 +322,9 @@ void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx,
     }
 }
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
-    input_.update(keys, x, y, tx, ty);
+    input_.update(keys, x, y, tx, ty, data_02092664 != 3);
+    if (data_02092664 == 3)
+        stage_.update_input(0, input_.x(), input_.y());
     if (job_) {
         auto callback = job_;
         job_ = nullptr;
@@ -324,10 +334,21 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     if (data_02092664 != NoScene) {
         if (data_0209f5bc->IsAtStart())
             data_0209f5bc->SetForwardTime(30);
-        if (data_0209f5bc->IsAtEnd())
-            throw std::runtime_error(
-                "Il boot originale ha richiesto la scena " + std::to_string(data_02092664) +
-                ". Il runtime di dScDSMT_c (titolo e selezione salvataggi) non è ancora collegato.");
+        if (data_0209f5bc->IsAtEnd()) {
+            if (data_02092664 == 1) {
+                if (!title_)
+                    title_ = std::make_unique<TitleFiles>(data_0209d6fc);
+                throw std::runtime_error(
+                    "I file del titolo sono pronti. Il dispatcher e il rendering originali di "
+                    "dScDSMT_c non sono ancora collegati.");
+            }
+            if (data_02092664 == 3)
+                throw std::runtime_error(
+                    "StartFile originale completato. La scena di gioco dScStage_c e il runtime "
+                    "degli attori non sono ancora collegati.");
+            throw std::runtime_error("Scena originale non collegata: " +
+                                     std::to_string(data_02092664));
+        }
     }
     boot_.Behavior();
     data_0209f5bc->AdvanceFade();
