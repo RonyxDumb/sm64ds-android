@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'port/tools'))
 import hostgen
 from tree_sitter import Language, Parser
 import tree_sitter_cpp
+from frontend_sdk_views import flatten as flatten_sdk
 ROOT = Path(__file__).resolve().parents[2]
 PARSER = Parser(Language(tree_sitter_cpp.language()))
 
@@ -239,8 +240,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--headers', nargs='*', default=[])
-    parser.add_argument('sources', nargs='+')
+    parser.add_argument('--profile', type=Path)
+    parser.add_argument('sources', nargs='*')
     args = parser.parse_args()
+    if args.profile:
+        if args.sources or args.headers:
+            parser.error('profile cannot be combined with explicit sources/headers')
+        profile = json.loads(args.profile.read_text())
+        args.sources, args.headers = profile['sources'], profile['headers']
+    if not args.sources:
+        parser.error('sources or --profile are required')
     entries = []
     for rel in args.sources + args.headers:
         raw = (ROOT/rel).read_text()
@@ -274,6 +283,34 @@ def main():
             if len(lines) != 1:
                 raise ValueError('frontend allocator declaration changed')
             view = '#include "common.h"\n' + lines[0] + '\n'
+        if rel in ('include/dExtModel_c.h', 'include/dExtSimpleModel_c.h'):
+            # These headers already provide an explicit C record view. Use it
+            # for frontend data; do not instantiate a native polymorphic class.
+            marker = '/* The same object' if 'Simple' in rel else '/* The same objects'
+            start = raw.index(marker)
+            end = raw.index('#endif /* __cplusplus */', start)
+            assertions = re.findall(r'typedef char (?:ModelComponents|dExtModel_c|dExtSimpleModel_c)_size.*?;',raw,re.S)
+            view = '#include "types.h"\n#include "BMD_File.h"\n#include "math/Matrix.h"\n'
+            if 'Simple' in rel:
+                view += '#include "dExtModel_c.h"\n'
+            view += raw[start:end] + '\n' + '\n'.join(assertions) + '\n'
+            if 'Simple' in rel:
+                view += 'extern void _ZN17dExtSimpleModel_c13LoadTexAndPalER8BMD_File(BMD_File *file);\n'
+        if rel == 'include/Particle__Manager.h':
+            declaration = '    System *AddSystem(int definitionID, Vector3 &position);'
+            if raw.count(declaration) != 1:
+                raise ValueError('particle manager data view changed')
+            view = raw.replace(declaration, '')
+        if rel == 'src/unnamed/ov007/func_ov007_020bc47c.cpp':
+            call = 'dExtSimpleModel_c::LoadTexAndPal(*m->modelFile)'
+            if raw.count(call) != 1:
+                raise ValueError('frontend static model loader call changed')
+            view = raw.replace(call, '_ZN17dExtSimpleModel_c13LoadTexAndPalER8BMD_File(m->modelFile)')
+        if rel == 'src/engine/gx/GX_VramCnt.cpp':
+            declaration = 'extern "C" GXVRamCnt data_020a6088;'
+            if raw.count(declaration) != 1:
+                raise ValueError('SDK VRAM state declaration changed')
+            view = raw.replace(declaration, 'extern GXVRamCnt data_020a6088;')
         if rel == 'src/engine/model/Model4.cpp':
             view = method_view(raw, 'dExtSimpleModel_c::UpdateFileOffsets',
                                '_ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File', 'BMD_File',
@@ -300,12 +337,19 @@ def main():
                                '\n'.join([record.group(), *locals_, *assertions]))
         if rel.startswith('src/'):
             view = hostgen.transform(view)[0]
+            # Multiword C type arguments are not expressions in the C++ parser.
+            # Spell the exact mmio.h macro expansion before the syntax walk.
+            view = re.sub(r'\bNTR_MMIO\(((?:unsigned|signed)\s+(?:char|short|int|long(?: long)?)),\s*([^()]+)\)',
+                          r'(::ntr::Reg<\1>((\2)))',view)
         if rel == 'src/NormalizeVec3.c':
             if view.count('    *ime;') != 1:
                 raise ValueError('normalizer volatile read changed')
             view = view.replace('    *ime;', '    (void)static_cast<u16>(*ime);')
-        lift = Lift(normalize(view))
-        source = lift.result()
+        lift = Lift(normalize(flatten_sdk(view, PARSER)))
+        try:
+            source = lift.result()
+        except ValueError as error:
+            raise ValueError(rel + ': ' + str(error)) from None
         entries.append(dict(path=rel, sha256=hashlib.sha256(raw.encode()).hexdigest(), source=source,
                             dependencies=dependencies, globals=lift.globals,
                             functions=sorted(lift.functions), header=rel in args.headers))

@@ -47,6 +47,31 @@ reports the actual missing frontend boundary rather than simulating success.
   execution (-O2); CI repeats it on native ARM64. Undefined-behavior diagnostics
   now fail the frontend and game checks immediately. No Android device is attached.
 
+
+## Full-initialization development profile
+
+`frontend_init_profile.json` is a developer-only, compile-only profile. It is
+not the application's manifest. With the pinned parser installed:
+
+```sh
+python3 android/tools/lift_frontend.py --profile android/tools/frontend_init_profile.json --out /tmp/frontend-init.json
+python3 android/tools/packed_sources.py --manifest /tmp/frontend-init.json --out /tmp/frontend-init-src
+```
+
+All 112 generated source units compile with record assertions active. This does
+not establish native link closure or execution of b7138. The remaining 21 native
+callees include model construction/upload helpers from Model4, graphics-mode
+entry points, inverse/vector/camera math, particle manager setup and two sound
+record initializers. Do not substitute success stubs for them.
+
+The stateless SDK projection keeps GX and GXS names distinct, and uses existing
+C record views for model data rather than native polymorphic class layouts.
+Multiword MMIO types use mmio.h's exact macro expansion before syntax parsing.
+The register proxy now preserves C compound-assignment promotions and copies a
+source register's value instead of accidentally assigning its proxy address.
+The five-builder native execution check and private-ROM production lifetimes
+pass with these register semantics.
+
 ## Resume here
 
 1. Complete b7138 initialization and its model/particle/audio/display setup;

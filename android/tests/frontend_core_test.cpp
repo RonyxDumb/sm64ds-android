@@ -1,5 +1,6 @@
 #include "runtime/frontend_core.h"
 #include "runtime/packed_ptr.h"
+#include "ntr/mmio.h"
 #include <cassert>
 #include <cstdio>
 #include <stdexcept>
@@ -81,6 +82,12 @@ int main() {
         int one=4096;
         std::memcpy(image.bytes.data()+0x7db4,&one,4);
         FrontendCore c(heap,std::move(image),4);
+        NTR_MMIO(uint16_t,0x04000304)=0xffff;
+        NTR_MMIO(uint16_t,0x04000304)&=~0x8000;
+        assert(ntr::io_read(0x04000304,2)==0x7fff);
+        NTR_MMIO(uint16_t,0x04000306)=0x1234;
+        NTR_MMIO(uint16_t,0x04000304)=NTR_MMIO(uint16_t,0x04000306);
+        assert(ntr::io_read(0x04000304,2)==0x1234);
         assert(c.allocations()==23 && !c.has_items());
         uint32_t root=c.root_address();
         assert(c.word_at(0x0210342c)==root);

@@ -45,14 +45,16 @@ template <class T>
 struct Reg {
     uint32_t addr;
     explicit Reg(uint32_t a) : addr(a) {}
+    Reg(const Reg &) = default;
 
     operator T() const { return static_cast<T>(io_read(addr, sizeof(T))); }
 
     // Non-const on purpose: these are called on temporaries produced by the macro.
     Reg &operator=(T v) { io_write(addr, static_cast<uint64_t>(v), sizeof(T)); return *this; }
-    Reg &operator|=(T v) { return *this = static_cast<T>(static_cast<T>(*this) | v); }
-    Reg &operator&=(T v) { return *this = static_cast<T>(static_cast<T>(*this) & v); }
-    Reg &operator^=(T v) { return *this = static_cast<T>(static_cast<T>(*this) ^ v); }
+    Reg &operator=(const Reg &other) { return *this = static_cast<T>(other); }
+    template<class U> Reg &operator|=(U v) { return *this = static_cast<T>(static_cast<T>(*this) | v); }
+    template<class U> Reg &operator&=(U v) { return *this = static_cast<T>(static_cast<T>(*this) & v); }
+    template<class U> Reg &operator^=(U v) { return *this = static_cast<T>(static_cast<T>(*this) ^ v); }
 };
 
 }  // namespace ntr
