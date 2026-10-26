@@ -356,10 +356,26 @@ void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx,
     require(std::isfinite(seconds) && seconds >= 0, "Invalid native frame interval.");
     constexpr double Step = 1.0 / 59.8261;
     accumulated_ += std::min(seconds, .25);
+    // A slow phone can accumulate several simulation steps per Android
+    // callback. Do not rasterise/upload both 256x192 LCDs for every catch-up
+    // step: only the final state is visible. Also cap debt so one slow frame
+    // does not trigger an endless catch-up/rasterisation feedback loop.
     unsigned count = 0;
-    while (accumulated_ >= Step && count++ < 8) {
-        accumulated_ -= Step;
-        tick(keys, x, y, tx, ty);
+    batchFrame_ = true;
+    try {
+        while (accumulated_ >= Step && count < 4) {
+            accumulated_ -= Step;
+            ++count;
+            tick(keys, x, y, tx, ty);
+        }
+    } catch (...) {
+        batchFrame_ = false;
+        throw;
+    }
+    batchFrame_ = false;
+    if (count) {
+        accumulated_ = std::min(accumulated_, Step * 2);
+        scanout();
     }
 }
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
@@ -379,7 +395,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         const int result=frontend_->update(input_.raw_buttons(),tx,ty);
         frontend_->render();
         accept_title_result(result);
-        ++ticks_; scanout(); return;
+        ++ticks_; if (!batchFrame_) scanout(); return;
     }
     if (data_02092664 != NoScene) {
         if (data_0209f5bc->IsAtStart())
@@ -400,7 +416,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 activeScene_=1; data_02092664=NoScene;
                 const int result=frontend_->update(input_.raw_buttons(),tx,ty);
                 frontend_->render(); accept_title_result(result);
-                ++ticks_; scanout(); return;
+                ++ticks_; if (!batchFrame_) scanout(); return;
             }
             if (data_02092664 == 3)
                 throw std::runtime_error(
@@ -413,7 +429,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     boot_.Behavior();
     data_0209f5bc->AdvanceFade();
     ++ticks_;
-    scanout();
+    if (!batchFrame_) scanout();
 }
 void GameProgram::scanout() {
     if (activeScene_==0) {
