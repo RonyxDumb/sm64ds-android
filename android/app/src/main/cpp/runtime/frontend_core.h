@@ -26,6 +26,7 @@ public:
     int start_sound(uint32_t handle, unsigned archive, int entry);
     int control_sound(uint32_t handle, SoundOp op, int a=0, int b=0, int c=0);
     void sound_priority(uint32_t handle, uint8_t priority);
+    void detach_sound(uint32_t handle);
     uint32_t root_address() const { return root_; }
     const void *data_at(uint32_t address, size_t bytes) const { return space_.data(address,bytes); }
     uint32_t word_at(uint32_t address) const;

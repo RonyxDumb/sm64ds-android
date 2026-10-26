@@ -7,8 +7,10 @@
 #include "ntr/gx.h"
 
 #include "ntr/texture.h"
+#include "ntr/mmio.h"
 
 #include <cmath>
+#include <algorithm>
 #include <cstring>
 #include <map>
 #include <vector>
@@ -66,6 +68,7 @@ struct State {
 
     uint32_t color = 0xFFFFFFFFu;
     float u = 0, v = 0;                 // current TEXCOORD, in texels
+    float raw_u=0,raw_v=0;
     const uint32_t *tex_rgba = nullptr; // bound texture (Mat tex above is the
     int tw = 0, th = 0;                 // texture *matrix* -- different thing)
     int prim = -1;                 // BEGIN_VTXS type, -1 when not inside a primitive
@@ -81,6 +84,7 @@ struct State {
     struct Light { float dx, dy, dz; float r, g, b; } lights[4] = {};
     uint32_t light_mask = 0;
     uint32_t polygon_attr = 0x001f00c0;
+    uint32_t texture_param=0;
 
     std::vector<GxTriangle> tris;
 };
@@ -95,6 +99,19 @@ uint32_t bgr555_to_argb(uint16_t c) {
 }
 
 Mat &current_pos() { return g.pos; }
+
+// GBATEK, DS 3D Texture Coordinates. The result is latched on the selected
+// TEXCOORD/NORMAL/VTX command; texture-source translation uses 1/16 constants.
+float texture_coord(float value) {
+    double bits=std::fmod(std::floor(static_cast<double>(value)*16),65536.0);
+    if (bits<0) bits+=65536;
+    return static_cast<float>(bits>=32768?bits-65536:bits)/16;
+}
+void transform_texcoord(float x,float y,float z,bool texcoord) {
+    const auto &m=g.tex.m;
+    g.u=texture_coord(x*m[0]+y*m[4]+z*m[8]+(texcoord?m[12]/16:g.raw_u));
+    g.v=texture_coord(x*m[1]+y*m[5]+z*m[9]+(texcoord?m[13]/16:g.raw_v));
+}
 
 // Project a model-space vertex all the way to screen space.
 GxVertex project(int16_t x, int16_t y, int16_t z) {
@@ -120,6 +137,7 @@ void emit_tri(const GxVertex &a, const GxVertex &b, const GxVertex &c) {
     const uint32_t alpha = ((g.polygon_attr >> 16) & 31) * 255 / 31;
     for (auto &v : t.v) v.color = (v.color & 0x00ffffffu) | (alpha << 24);
     t.tex = g.tex_rgba; t.tw = g.tw; t.th = g.th;
+    t.polygon_attr=g.polygon_attr; t.texture_param=g.texture_param;
     g.tris.push_back(t);
 }
 
@@ -159,6 +177,7 @@ void push_vertex(const GxVertex &v) {
 
 void vertex(int16_t x, int16_t y, int16_t z) {
     g.vx = x; g.vy = y; g.vz = z;
+    if ((g.texture_param>>30)==3) transform_texcoord(x*FX12,y*FX12,z*FX12,false);
     if (g.prim >= 0) push_vertex(project(x, y, z));
 }
 
@@ -262,6 +281,7 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             float nx = n10(p[0] & 0x3FF);
             float ny = n10((p[0] >> 10) & 0x3FF);
             float nz = n10((p[0] >> 20) & 0x3FF);
+            if ((g.texture_param>>30)==2) transform_texcoord(nx,ny,nz,false);
 
             // Normals are transformed by the directional matrix, not position.
             const Mat &v = g.vec;
@@ -292,8 +312,10 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             break;
         }
         case 0x22:                                               // TEXCOORD (1.4 fx)
-            g.u = static_cast<int16_t>(p[0] & 0xFFFF) / 16.0f;
-            g.v = static_cast<int16_t>(p[0] >> 16) / 16.0f;
+            g.raw_u=static_cast<int16_t>(p[0]&0xffff)/16.0f;
+            g.raw_v=static_cast<int16_t>(p[0]>>16)/16.0f;
+            if ((g.texture_param>>30)==1) transform_texcoord(g.raw_u,g.raw_v,1.0f/16,true);
+            else if ((g.texture_param>>30)==0) { g.u=g.raw_u; g.v=g.raw_v; }
             break;
         case 0x23:                                               // VTX_16
             vertex(static_cast<int16_t>(p[0] & 0xFFFF), static_cast<int16_t>(p[0] >> 16),
@@ -314,7 +336,7 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
                    static_cast<int16_t>(g.vz + d10((p[0] >> 20) & 0x3FF)));
             break;
         }
-        case 0x29: g.polygon_attr = p[0]; break;                  // POLYGON_ATTR
+        case 0x29: g.polygon_attr = p[0]; g.light_mask=p[0]&15; break; // POLYGON_ATTR
         case 0x2A: gx_teximage_param(p[0]); break;               // TEXIMAGE_PARAM
         case 0x2B: gx_pltt_base(p[0]); break;                    // PLTT_BASE
         case 0x30: {                                             // DIF_AMB
@@ -477,8 +499,36 @@ constexpr uintptr_t PLTT_SLOT_BASE = 0x06880000u;   // palette slots, mapped
 
 uint32_t g_teximage, g_plttbase;
 std::map<uint64_t, std::vector<uint32_t>> g_vram_tex_cache;
+std::vector<uint8_t> g_texture_bytes(0x80000),g_palette_bytes(0x18000);
+bool g_vram_snapshot=false;
+
+void snapshot_vram() {
+    bool textures=false,palettes=false;
+    std::fill(g_texture_bytes.begin(),g_texture_bytes.end(),0);
+    std::fill(g_palette_bytes.begin(),g_palette_bytes.end(),0);
+    for (unsigned bank=0;bank<4;++bank) {
+        const unsigned config=static_cast<unsigned>(io_read(0x04000240+bank,1));
+        if ((config&0x87)!=0x83) continue;
+        const unsigned offset=((config>>3)&3)*0x20000;
+        std::memcpy(g_texture_bytes.data()+offset,host_ptr(0x06800000+bank*0x20000),0x20000);
+        textures=true;
+    }
+    for (unsigned bank=0;bank<3;++bank) {
+        const unsigned config=static_cast<unsigned>(io_read(0x04000244+bank,1));
+        if ((config&0x87)!=0x83) continue;
+        const unsigned offset=bank?((config>>3)&1)*0x4000+((config>>4)&1)*0x10000:0;
+        const unsigned size=bank?0x4000:0x10000;
+        const unsigned physical=bank?0x06890000+(bank-1)*0x4000:0x06880000;
+        std::memcpy(g_palette_bytes.data()+offset,host_ptr(physical),size);
+        palettes=true;
+    }
+    if (!textures) std::memcpy(g_texture_bytes.data(),host_ptr(TEX_SLOT_BASE),g_texture_bytes.size());
+    if (!palettes) std::memcpy(g_palette_bytes.data(),host_ptr(PLTT_SLOT_BASE),g_palette_bytes.size());
+    g_vram_snapshot=true;
+}
 
 void bind_from_vram() {
+    if (!g_vram_snapshot) snapshot_vram();
     const uint32_t fmt = (g_teximage >> 26) & 7;
     if (fmt == 0) { gx_bind_texture(nullptr, 0, 0); return; }
     const uint64_t key = (static_cast<uint64_t>(g_plttbase) << 32) | g_teximage;
@@ -490,16 +540,18 @@ void bind_from_vram() {
         d.height = 8 << ((g_teximage >> 23) & 7);
         d.format = static_cast<int>(fmt);
         d.color0_transparent = (g_teximage >> 29) & 1;
-        d.data = reinterpret_cast<const uint8_t *>(TEX_SLOT_BASE + off);
+        d.data = g_texture_bytes.data()+off;
         d.data_len = 0x80000 - static_cast<int32_t>(off);
         // Format 5 keeps its 4x4 palette-index words in slot 1, at half the
         // block offset (GBATEK); the game uploads them right after the blocks.
         if (fmt == 5) {
-            d.index = reinterpret_cast<const uint8_t *>(TEX_SLOT_BASE + 0x20000 + off / 2);
-            d.index_len = 0x20000 - static_cast<int32_t>(off / 2);
+            const uint32_t index_off=0x20000+((off&0x1ffff)/2)+((off&0x40000)?0x10000:0);
+            d.index=g_texture_bytes.data()+index_off;
+            d.index_len=0x40000-static_cast<int32_t>(index_off);
         }
         const uint32_t pal_off = g_plttbase * (fmt == 2 ? 8u : 16u);
-        d.pal = reinterpret_cast<const uint8_t *>(PLTT_SLOT_BASE + pal_off);
+        if (pal_off>=g_palette_bytes.size()) { gx_bind_texture(nullptr,0,0); return; }
+        d.pal = g_palette_bytes.data()+pal_off;
         d.pal_len = 0x18000 - static_cast<int32_t>(pal_off);
         std::vector<uint32_t> rgba;
         if (!texture_decode(d, rgba)) { gx_bind_texture(nullptr, 0, 0); return; }
@@ -511,7 +563,7 @@ void bind_from_vram() {
 
 }  // namespace
 
-void gx_teximage_param(uint32_t v) { g_teximage = v; bind_from_vram(); }
+void gx_teximage_param(uint32_t v) { g_teximage = g.texture_param = v; bind_from_vram(); }
 void gx_pltt_base(uint32_t v) { g_plttbase = v; bind_from_vram(); }
 
 // Diagnostic: a running hash of every word entering the engine, so a smoke
@@ -561,6 +613,7 @@ void gx_reset() {
     // VRAM-decoded texture cache: uploads can be replaced between scenes
     // (the soak reuses slot offsets per model), so stale entries must go.
     g_vram_tex_cache.clear();
+    g_vram_snapshot=false;
     g_teximage = g_plttbase = 0;
     // The stack slots must start as identity, not zero. dExtSimpleModel_c display lists open
     // with MTX_RESTORE against a slot the *scene* filled in earlier; rendering a
@@ -573,6 +626,17 @@ void gx_reset() {
     g.proj_stack[0] = g.proj_stack[1] = Mat::identity();
     g_queued = g_qpos = g_have = 0;
     g_port_cmd = 0; g_port_have = 0;
+}
+
+void gx_begin_frame() {
+    g.tris.clear(); g.strip.clear(); g.prim=-1;
+    g.tex_rgba=nullptr;
+    g_vram_tex_cache.clear(); g_vram_snapshot=false;
+    bind_from_vram();
+}
+uint32_t gx_status() {
+    return 0x06000000u|(static_cast<uint32_t>(g.pos_sp&31)<<8)|
+           (static_cast<uint32_t>(g.proj_sp&1)<<13);
 }
 
 const GxTriangle *gx_polygons(size_t &count) {
@@ -596,7 +660,8 @@ void gx_render(Framebuffer &fb) {
         // face. The ? block's question mark read backwards until this existed.
         // Screen Y is flipped relative to DS space, so a front face is clockwise
         // here. POLYGON_ATTR selects the mode per polygon; this is the default.
-        if (area > 0.0f) continue;
+        if (area>0 ? !(t.polygon_attr&(1u<<6)) : !(t.polygon_attr&(1u<<7))) continue;
+        if (a.w<=0 || b.w<=0 || c.w<=0 || !std::isfinite(area)) continue;
 
         int minx = static_cast<int>(std::floor(std::fmin(a.x, std::fmin(b.x, c.x))));
         int maxx = static_cast<int>(std::ceil(std::fmax(a.x, std::fmax(b.x, c.x))));
@@ -627,12 +692,18 @@ void gx_render(Framebuffer &fb) {
                 // a real perspective matrix.
                 uint32_t texel = 0xFFFFFFFFu;
                 if (t.tex && t.tw > 0 && t.th > 0) {
-                    const float uu = l0 * a.u + l1 * b.u + l2 * c.u;
-                    const float vv = l0 * a.v + l1 * b.v + l2 * c.v;
-                    int ui = static_cast<int>(std::floor(uu)) % t.tw;
-                    int vi = static_cast<int>(std::floor(vv)) % t.th;
-                    if (ui < 0) ui += t.tw;
-                    if (vi < 0) vi += t.th;
+                    const float iw=l0/a.w+l1/b.w+l2/c.w;
+                    if (iw<=0 || !std::isfinite(iw)) continue;
+                    const float uu=(l0*a.u/a.w+l1*b.u/b.w+l2*c.u/c.w)/iw;
+                    const float vv=(l0*a.v/a.w+l1*b.v/b.w+l2*c.v/c.w)/iw;
+                    auto coordinate=[](float v,int size,bool repeat,bool mirror) {
+                        if (!repeat) return static_cast<int>(std::clamp(std::floor(v),0.f,float(size-1)));
+                        int p=static_cast<int>(std::floor(v))%(size*(mirror?2:1));
+                        if (p<0) p+=size*(mirror?2:1);
+                        return p<size?p:2*size-1-p;
+                    };
+                    const int ui=coordinate(uu,t.tw,t.texture_param&(1u<<16),t.texture_param&(1u<<18));
+                    const int vi=coordinate(vv,t.th,t.texture_param&(1u<<17),t.texture_param&(1u<<19));
                     texel = t.tex[vi * t.tw + ui];
                     if ((texel >> 24) == 0) continue;      // transparent texel
                 }
@@ -647,8 +718,19 @@ void gx_render(Framebuffer &fb) {
                     const int i = static_cast<int>(v * m + 0.5f);
                     return static_cast<uint32_t>(i < 0 ? 0 : (i > 255 ? 255 : i));
                 };
-                depth[y][x] = z;
-                fb.px[y][x] = 0xFF000000u | (ch(16) << 16) | (ch(8) << 8) | ch(0);
+                const unsigned alpha=ch(24);
+                if (!alpha) continue;
+                if (alpha==255 || (t.polygon_attr&(1u<<11))) depth[y][x]=z;
+                const uint32_t old=fb.px[y][x];
+                const unsigned oldAlpha=old>>24;
+                const unsigned outAlpha=alpha+(oldAlpha*(255-alpha)+127)/255;
+                uint32_t result=outAlpha<<24;
+                for (unsigned shift=0;shift<24;shift+=8) {
+                    const unsigned mixed=ch(static_cast<int>(shift))*alpha+
+                        ((((old>>shift)&255)*oldAlpha*(255-alpha)+127)/255);
+                    result|=((mixed+outAlpha/2)/outAlpha)<<shift;
+                }
+                fb.px[y][x]=result;
             }
         }
     }

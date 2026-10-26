@@ -114,8 +114,10 @@ void FrontendCore::render() {
 void FrontendCore::retire_sound(uint32_t token) {
     auto found=voices_.find(token);
     if (found==voices_.end()) return;
-    auto handle=packed::Ptr<uint32_t>(found->second.handle);
-    if (*handle==token) *handle=0;
+    if (found->second.handle) {
+        auto handle=packed::Ptr<uint32_t>(found->second.handle);
+        if (*handle==token) *handle=0;
+    }
     voices_.erase(found);
 }
 void FrontendCore::update_sounds() {
@@ -159,6 +161,11 @@ int FrontendCore::control_sound(uint32_t handle,SoundOp op,int a,int b,int c) {
 void FrontendCore::sound_priority(uint32_t handle,uint8_t priority) {
     auto found=voices_.find(word_at(handle));
     if (found!=voices_.end()) found->second.priority=priority;
+}
+void FrontendCore::detach_sound(uint32_t handle) {
+    auto found=voices_.find(word_at(handle));
+    if (found!=voices_.end()) found->second.handle=0;
+    *packed::Ptr<uint32_t>(handle)=0;
 }
 uint32_t FrontendCore::load_file(uint16_t handle) {
     if (!loader_) throw std::runtime_error("No native frontend file loader.");

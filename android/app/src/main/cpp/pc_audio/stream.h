@@ -1,5 +1,6 @@
 #pragma once
 #include "archive.h"
+#include "runtime/sound_request.h"
 #include <array>
 #include <atomic>
 #include <condition_variable>
@@ -15,6 +16,7 @@ public:
     bool sequence(int id);
     bool effect(int archive, int entry);
     bool stop();
+    int native(const SoundRequest &request);
     void pause(bool value);
     void mix(float *stereo, size_t frames, uint32_t outputRate); // callback consumer
     uint32_t underruns() const {
@@ -24,8 +26,12 @@ public:
 private:
     struct Command {
         int kind, a, b;
+        SoundRequest native{};
     };
-    std::array<Command, 32> commands_{};
+    std::array<Command, 128> commands_{};
+    std::array<std::atomic<uint32_t>,16> acknowledged_{};
+    std::atomic<uint32_t> active_{0};
+    std::atomic<int> mode_{0};
     std::atomic<uint32_t> commandRead_{0}, commandWrite_{0};
     static constexpr uint32_t Capacity = 2048;
     std::array<sd_s16, Capacity * 2> pcm_{};

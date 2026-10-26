@@ -8,18 +8,78 @@
 #include "ntr/gx.h"
 
 #include <cstring>
+#include <array>
+#include <stdexcept>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
 #include <sys/mman.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #endif
 
 namespace ntr {
 namespace {
 
 uint8_t *g_io = nullptr;
+#if !defined(_WIN32)
+int g_vram_fd=-1;
+struct VramAlias { uintptr_t base; size_t size; };
+std::array<VramAlias,9> g_vram_aliases{};
+size_t g_vram_alias_count=0;
+
+bool init_vram_banks() {
+    const int fd=static_cast<int>(syscall(SYS_memfd_create,"sm64ds-vram",1u));
+    if (fd<0) return false;
+    if (ftruncate(fd,0xa4000)!=0 || mmap(reinterpret_cast<void *>(0x06800000u),0xa4000,
+        PROT_READ|PROT_WRITE,MAP_SHARED|MAP_FIXED,fd,0)==MAP_FAILED) { close(fd); return false; }
+    g_vram_fd=fd; return true;
+}
+void update_vram_banks() {
+    // LCDC, BG and OBJ windows alias the same physical bank. SDK clears and
+    // uploads through one window before selecting another; no copies are due.
+    for (size_t i=0;i<g_vram_alias_count;++i) {
+        const auto &old=g_vram_aliases[i];
+        if (mmap(reinterpret_cast<void *>(old.base),old.size,PROT_READ|PROT_WRITE,
+            MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0)==MAP_FAILED)
+            throw std::runtime_error("Cannot remove native VRAM alias");
+    }
+    g_vram_alias_count=0;
+    constexpr size_t offsets[]={0,0x20000,0x40000,0x60000,0x80000,0x90000,0x94000,0x98000,0xa0000};
+    constexpr size_t sizes[]={0x20000,0x20000,0x20000,0x20000,0x10000,0x4000,0x4000,0x8000,0x4000};
+    for (unsigned bank=0;bank<9;++bank) {
+        const unsigned control=g_io[0x240+bank+(bank>=7?1:0)];
+        if (!(control&0x80)) continue;
+        const unsigned mst=control&7,ofs=(control>>3)&3;
+        uintptr_t base=0;
+        if (bank<4) {
+            if (mst==1) base=0x06000000u+ofs*0x20000u;
+            else if (bank<2 && mst==2) base=0x06400000u+(ofs&1)*0x20000u;
+            else if (bank==2 && mst==4) base=0x06200000u;
+            else if (bank==3 && mst==4) base=0x06600000u;
+        } else if (bank==4) {
+            if (mst==1) base=0x06000000u;
+            else if (mst==2) base=0x06400000u;
+        } else if (bank<7) {
+            const unsigned offset=(ofs&1)*0x4000u+(ofs>>1)*0x10000u;
+            if (mst==1) base=0x06000000u+offset;
+            else if (mst==2) base=0x06400000u+offset;
+        } else if (bank==7) {
+            if (mst==1) base=0x06200000u;
+        } else {
+            if (mst==1) base=0x06208000u;
+            else if (mst==2) base=0x06600000u;
+        }
+        if (!base) continue;
+        if (mmap(reinterpret_cast<void *>(base),sizes[bank],PROT_READ|PROT_WRITE,
+            MAP_SHARED|MAP_FIXED,g_vram_fd,offsets[bank])==MAP_FAILED)
+            throw std::runtime_error("Cannot route native VRAM bank");
+        g_vram_aliases[g_vram_alias_count++]={base,sizes[bank]};
+    }
+}
+#endif
 
 inline uint8_t *slot(uint32_t addr) { return g_io + (addr - IO_BASE); }
 
@@ -130,6 +190,9 @@ bool io_init() {
         if (!p && r.base != MAIN_BASE) return false;
         if (r.base == IO_BASE) io = p;
     }
+#if !defined(_WIN32)
+    if (!init_vram_banks()) return false;
+#endif
     g_io = static_cast<uint8_t *>(io);
     // Reset state: the geometry FIFO starts empty. GXSTAT bit 26 (empty) and
     // bit 25 (less than half full) are set on hardware at boot; the game's
@@ -141,12 +204,16 @@ bool io_init() {
 
 uint64_t io_read(uint32_t addr, unsigned width) {
     if (!g_io && !io_init()) return 0;
+    if (addr==0x04000600u && width==4) return gx_status()|(raw_read(addr,4)&0xc0000000u);
     return raw_read(addr, width);
 }
 
 void io_write(uint32_t addr, uint64_t value, unsigned width) {
     if (!g_io && !io_init()) return;
     raw_write(addr, value, width);
+#if !defined(_WIN32)
+    if (addr<0x0400024au && addr+width>0x04000240u) update_vram_banks();
+#endif
 
     // Writing the low half of the operand is what starts the unit on hardware.
     if (addr == DIV_DENOM || addr == DIV_NUMER || addr == DIVCNT) run_divide();
@@ -154,7 +221,7 @@ void io_write(uint32_t addr, uint64_t value, unsigned width) {
     // Geometry: 0x4000400 is the packed FIFO, 0x4000440.. are the command ports.
     // These execute on write and leave nothing readable behind, so unlike every
     // other block they cannot be served by the memory window alone.
-    else if (addr == 0x04000400u) gx_write_fifo(static_cast<uint32_t>(value));
+    else if (addr>=0x04000400u && addr<0x04000440u) gx_write_fifo(static_cast<uint32_t>(value));
     else if (addr >= 0x04000440u && addr <= 0x040005FFu)
         gx_write_port(addr, static_cast<uint32_t>(value));
 }

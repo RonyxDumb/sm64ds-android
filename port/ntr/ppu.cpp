@@ -121,7 +121,7 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
 
 }  // namespace
 
-void ppu_scanout(Engine eng, Framebuffer &fb) {
+void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     const EngineMap &em = kEngines[eng];
     const uint32_t dispcnt = rd32(em.reg_base);
 
@@ -136,6 +136,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb) {
 
     BgConfig bgs[4];
     for (int i = 0; i < 4; ++i) bgs[i] = read_bg(em, i, dispcnt);
+    const bool bg0_3d=eng==ENGINE_A && (dispcnt&8);
 
     const uint32_t backdrop = bgr555(rd16(em.pltt_base));
     const uint16_t blend = rd16(em.reg_base + 0x50), master = rd16(em.reg_base + 0x6c);
@@ -163,7 +164,16 @@ void ppu_scanout(Engine eng, Framebuffer &fb) {
                 for (int bg = 3; bg >= 0; --bg) {
                     if (!bgs[bg].enabled || bgs[bg].priority != prio) continue;
                     uint32_t s;
-                    if (sample_bg(em, bgs[bg], x, y, s)) { c = s; layer = unsigned(bg); }
+                    if (bg==0 && bg0_3d) {
+                        if (!geometry) continue;
+                        const uint32_t pixel=geometry->px[y][x];
+                        const unsigned alpha=pixel>>24;
+                        if (!alpha) continue;
+                        s=0xff000000;
+                        for (unsigned shift=0;shift<24;shift+=8)
+                            s|=((((pixel>>shift)&255)*alpha+((c>>shift)&255)*(255-alpha)+127)/255)<<shift;
+                        c=s; layer=0;
+                    } else if (sample_bg(em, bgs[bg], x, y, s)) { c=s; layer=unsigned(bg); }
                 }
             }
             if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
@@ -189,6 +199,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
     const uint32_t obj_pltt = kEngines[eng].pltt_base + 0x200u;
     // DISPCNT bit 4: OBJ 1D mapping; bits 20-21: tile-index boundary shift.
     const uint32_t dispcnt = rd32(kEngines[eng].reg_base);
+    if (!(dispcnt&(1u<<12)) || (dispcnt&0x80) || ((dispcnt>>16)&3)!=1) return;
     const uint32_t boundary = 32u << ((dispcnt >> 20) & 3);
 
     for (int i = 127; i >= 0; --i) {           // low index on top: draw high first
@@ -244,16 +255,18 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                 const int fx = tx & 7, fy = ty & 7;
                 // 1D mapping: tiles of one sprite are consecutive.
                 const int tiles_per_row = w / 8;
-                const uint32_t tno = trow * tiles_per_row + tcol;
+                const bool oneDimensional=dispcnt&(1u<<4);
+                const uint32_t tno=trow*(oneDimensional?tiles_per_row:(c256?16:32))+tcol;
+                const uint32_t baseTile=oneDimensional?tile*boundary:(c256?(tile&~1u):tile)*32u;
                 uint32_t index;
                 if (c256) {
-                    const uint32_t addr = obj_vram + tile * boundary
+                    const uint32_t addr = obj_vram + baseTile
                                           + tno * 64u + fy * 8u + fx;
                     index = *reinterpret_cast<volatile uint8_t *>(addr);
                     if (!index) continue;
                     fb.px[py][px] = bgr555(rd16(obj_pltt + index * 2u));
                 } else {
-                    const uint32_t addr = obj_vram + tile * boundary
+                    const uint32_t addr = obj_vram + baseTile
                                           + tno * 32u + fy * 4u + fx / 2;
                     const uint8_t b = *reinterpret_cast<volatile uint8_t *>(addr);
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);

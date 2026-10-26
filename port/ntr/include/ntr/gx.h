@@ -39,6 +39,7 @@ struct GxTriangle {
     GxVertex v[3];
     const uint32_t *tex;   // decoded RGBA, or null for untextured
     int tw, th;
+    uint32_t polygon_attr=0x001f00c0,texture_param=0;
 };
 
 // Feed the engine. `gx_write_port` takes a geometry-port address in
@@ -48,6 +49,8 @@ void gx_write_fifo(uint32_t word);
 
 // Reset the command stream, matrix stacks and polygon list.
 void gx_reset();
+void gx_begin_frame();
+uint32_t gx_status();
 
 // Bind a decoded texture for subsequent geometry. Pass null for untextured.
 void gx_bind_texture(const uint32_t *rgba, int width, int height);

@@ -298,6 +298,19 @@ int pc_start_sequence(int player, int sequence) {
     sd_seq_set_volume(player, e[6]);
     return 1;
 }
+bool pc_effect_exists(int archive, int entry) {
+    auto *e=sdat_info_entry(SDAT_REC_SEQARC,archive);
+    if (!e || entry<0) return false;
+    auto *file=sdat_file(rd32(e));
+    const size_t size=sdat_file_size(rd32(e));
+    if (!file || size<0x20 || std::memcmp(file,"SSAR",4)) return false;
+    const size_t count=rd32(file+0x1c), data=rd32(file+0x18);
+    if (size_t(entry)>=count || !range(0x20,count*12,size) || data>=size) return false;
+    const auto *record=file+0x20+size_t(entry)*12;
+    if (rd32(record)>=size-data) return false;
+    auto *bank=sdat_info_entry(SDAT_REC_BANK,rd16(record+4));
+    return bank && sdat_file(rd32(bank));
+}
 int pc_start_effect(int player, int archive, int entry, int bankOverride) {
     auto *e = sdat_info_entry(SDAT_REC_SEQARC, archive);
     if (!e)

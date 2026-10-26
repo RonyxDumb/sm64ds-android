@@ -26,7 +26,7 @@ struct Framebuffer {
 
 // Rasterise one engine's current register state into fb. Text-mode BGs only for
 // now; affine, bitmap, sprites and the blend/window units are not implemented.
-void ppu_scanout(Engine eng, Framebuffer &fb);
+void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry=nullptr);
 
 // Rasterise one engine's OBJ layer (sprites) from its OAM + OBJ VRAM over
 // whatever fb already holds. Plain and affine sprites, 16- and 256-color

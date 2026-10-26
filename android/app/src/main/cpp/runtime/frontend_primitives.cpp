@@ -40,6 +40,32 @@ void fill32(unsigned value, Ptr<int> dst, int bytes) {
 }
 }
 extern "C" {
+uint8_t pk_frontend_command(int value) { return sm64ds::FrontendCore::current().command(value); }
+int pk_func_02051f1c(Ptr<void> handle,unsigned archive,int entry) {
+    return sm64ds::FrontendCore::current().start_sound(handle.address(),archive,entry);
+}
+int pk_func_0204fa2c(Ptr<void> handle,int frames) {
+    return sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::Stop,frames);
+}
+void pk_func_0204f8cc(Ptr<void> handle,int level,int frames) {
+    sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::Fade,level,frames);
+}
+void pk_func_0204f73c(Ptr<void> handle,int value) {
+    sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::PlayerParam,0x1a,value);
+}
+void pk_func_0204f76c(Ptr<void> handle,int tracks,int value) {
+    sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::TrackParam,tracks,0x19,value);
+}
+void pk_func_0204f79c(Ptr<void> handle,int tracks,int value) {
+    sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::TrackParam,tracks,0x1a,value);
+}
+void pk_func_0204f7fc(Ptr<void> handle,int tracks,int value) {
+    sm64ds::FrontendCore::current().control_sound(handle.address(),sm64ds::SoundOp::TrackParam,tracks,0x0c,value);
+}
+void pk_func_0204f924(Ptr<void> handle,uint8_t priority) {
+    sm64ds::FrontendCore::current().sound_priority(handle.address(),priority);
+}
+void pk_func_0204f934(Ptr<void> handle) { sm64ds::FrontendCore::current().detach_sound(handle.address()); }
 int pk_frontend_allocate(Ptr<void> bytes) { return Space::current().allocate(bytes.address()); }
 void pk_frontend_deallocate(Ptr<void> address) { Space::current().release(address.address()); }
 int pk_frontend_largest() { return static_cast<int>(Space::current().largest_free_span()); }
@@ -73,9 +99,44 @@ void pk_MultiCopyHalf(int src, Ptr<char> dst, int n) {
     copy(uint32_t(src),dst.address(),n,2);
 }
 void pk_MultiCopy_Int(Ptr<int> src,Ptr<int> dst,int n) { copy(src.address(),dst.address(),n,4); }
+void pk_MultiCopy32Bytes(Ptr<int> src,Ptr<int> dst,int n) { copy(src.address(),dst.address(),n,4); }
 void pk_Copy48Bytes(Ptr<int> src,Ptr<int> dst) { copy(src.address(),dst.address(),48,4); }
 void pk_Copy36Bytes(Ptr<int> src,Ptr<int> dst) { copy(src.address(),dst.address(),36,4); }
 void pk_Copy32Bytes(Ptr<int> src,Ptr<int> dst) { copy(src.address(),dst.address(),32,4); }
+void pk_Copy48BytesFixed(Ptr<int> src,Ptr<int> dst) {
+    for (int i=0;i<4;++i) copy(src.address()+i*12,dst.address(),12,4);
+}
+void pk_DMAStartTransfer(unsigned channel,Ptr<void> src,Ptr<void> dst,unsigned control) {
+    if (channel>3) throw std::runtime_error("Invalid native DMA channel");
+    const unsigned width=(control&(1u<<26))?4:2;
+    const unsigned units=control&0x1fffff;
+    const unsigned sourceMode=(control>>23)&3, targetMode=(control>>21)&3;
+    if (sourceMode==3) throw std::runtime_error("Invalid DMA source mode");
+    uint32_t source=src.address(),target=dst.address();
+    for (unsigned i=0;i<units;++i) {
+        copy(source,target,static_cast<int>(width),static_cast<int>(width));
+        if (sourceMode!=2) source+=sourceMode==1?-width:width;
+        if (targetMode!=2) target+=targetMode==1?-width:width;
+    }
+    ntr::io_write(0x040000b8+channel*12,control&~(1u<<31),4);
+}
+void pk_func_0205a358(unsigned channel,Ptr<void> src,unsigned bytes,Ptr<void(int)> callback,int argument) {
+    // The ARM version uses a FIFO IRQ to submit chunks. Native FIFO consumption
+    // is synchronous; call the same source chunker, then its completion hook.
+    extern void pk_func_01ffde98(unsigned,Ptr<void>,unsigned);
+    pk_func_01ffde98(channel,src,bytes);
+    if (callback) callback(argument);
+}
+void pk_func_02052514(Ptr<int> src,Ptr<int> dst) {
+    for (int r=0;r<3;++r) {
+        for (int c=0;c<3;++c) dst[r*4+c]=src[r*3+c];
+        dst[r*4+3]=0;
+    }
+    dst[12]=dst[13]=dst[14]=0; dst[15]=4096;
+}
+void pk_func_020527e8(Ptr<int> m,int x,int y,int z) {
+    fill32(0,m,48); m[0]=x; m[4]=y; m[8]=z;
+}
 void pk_DMASyncWordTransfer(unsigned channel,Ptr<void> src,Ptr<void> dst,unsigned bytes) {
     if (channel>3 || bytes>INT_MAX) throw std::runtime_error("Invalid native DMA transfer.");
     copy(src.address(),dst.address(),static_cast<int>(bytes),4);
@@ -114,6 +175,11 @@ void pk_Matrix3x3_SetRotationZ(Ptr<int> m,int s,int c) {
 int pk__ZN4cstd4fdivEii(int a,int b) { return cstd::fdiv(a,b); }
 [[noreturn]] void pk_Crash() { throw std::runtime_error("Original game graphics invariant failed."); }
 void pk_CP15_EnableDTCM() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+void pk_CP15_FlushAndInvalidateDataCache() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+void pk_CP15_FlushDataCache() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+void pk__ZN4CP1527FlushAndInvalidateDataCacheEjj(uint32_t address,uint32_t bytes) {
+    pk__ZN4CP1514FlushDataCacheEjj(address,bytes);
+}
 int pk__ZN4cstd6strcmpEPKcS1_(Ptr<const char> a,Ptr<const char> b) { return std::strcmp(a.get(),b.get()); }
 void pk_func_0205a588(int a, int v, int n) {
     count(n,1); if (n) std::memset(Space::current().data(uint32_t(a),n),v,n);
@@ -127,6 +193,39 @@ void pk_func_02052ec8(Ptr<void> p) {
 int pk__ZN4cstd3divEii(int a,int b) {
     if (!b) throw std::runtime_error("Native integer division by zero.");
     return a==INT_MIN && b==-1 ? INT_MIN : a/b;
+}
+int pk__ZN4cstd3modEii(int a,int b) {
+    if (!b) throw std::runtime_error("Native integer modulus by zero");
+    return a==INT_MIN && b==-1?0:a%b;
+}
+int pk_cstd_div(int a,int b) { return pk__ZN4cstd3divEii(a,b); }
+int pk_cstd_mod(int a,int b) { return pk__ZN4cstd3modEii(a,b); }
+int pk_cstd_fdiv(int a,int b) { return cstd::fdiv(a,b); }
+int pk_cstd_abs(int a) { return a<0?int32_t(0u-uint32_t(a)):a; }
+int pk__ZN4cstd3absEi(int a) { return pk_cstd_abs(a); }
+int pk___aeabi_idiv(int a,int b) { return pk__ZN4cstd3divEii(a,b); }
+long long pk_ll_sdiv(long long a,long long b) {
+    if (!b) throw std::runtime_error("Native long division by zero");
+    return a==LLONG_MIN && b==-1?LLONG_MIN:a/b;
+}
+int pk_func_01ffaa34(long long a,long long b) { return static_cast<int>(pk_ll_sdiv(a,b)); }
+void pk_Matrix3x3_LoadIdentity(Ptr<int> m) { fill32(0,m,36); m[0]=m[4]=m[8]=4096; }
+void pk_func_02052800(Ptr<int> m,int s,int c) {
+    const int v[12]={4096,0,0,0,c,s,0,-s,c,0,0,0}; std::memcpy(m.get(sizeof v),v,sizeof v);
+}
+void pk_func_02052820(Ptr<int> m,int s,int c) {
+    const int v[12]={c,0,-s,0,4096,0,s,0,c,0,0,0}; std::memcpy(m.get(sizeof v),v,sizeof v);
+}
+void pk_func_0205283c(Ptr<int> m,int s,int c) {
+    const int v[12]={c,s,0,-s,c,0,0,0,4096,0,0,0}; std::memcpy(m.get(sizeof v),v,sizeof v);
+}
+void pk_func_020590fc(int arena,int heap,Ptr<void> address) {
+    if (arena || heap!=-1) throw std::runtime_error("Unsupported native SDK heap selection");
+    Space::current().release(address.address());
+}
+Ptr<void> pk_func_02059170(int arena,int heap,int bytes) {
+    if (arena || heap!=-1 || bytes<0) throw std::runtime_error("Unsupported native SDK allocation");
+    return Space::current().allocate(static_cast<unsigned>(bytes));
 }
 long long pk__ZN4cstd4ldivEii(int a,int b) {
     if (!b) throw std::runtime_error("Native fractional division by zero.");

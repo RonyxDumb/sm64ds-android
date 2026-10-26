@@ -15,7 +15,8 @@ Session::Session(const char *path) {
         throw std::runtime_error("Private ROM path must be absolute.");
     saves_ = std::make_unique<SaveStore>(rom.substr(0, slash + 1) + "game.sav");
     game_ = std::make_unique<GameProgram>(
-        path, [this](uint32_t a, uint32_t b) { return audio_->effect(a, b); });
+        path, [this](uint32_t a, uint32_t b) { return audio_->effect(a, b); },
+        [this](const SoundRequest &request){return audio_->native(request);});
 }
 void Session::frame(int width, int height, float dt, uint32_t buttons, float x, float y, int tx,
                     int ty, bool enabled) {

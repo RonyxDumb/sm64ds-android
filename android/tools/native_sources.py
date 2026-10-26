@@ -204,6 +204,13 @@ def title_files(text):
         'func_02013c84(saveSlot, reinterpret_cast<FileSaveData *>(fileBytes), -1, '
         'reinterpret_cast<FileSaveData *>(data_0209caa0));')
     output += 'bool sm64ds::TitleFiles::load() {\nu8 failed = 0;\n' + body + '\nreturn failed == 0;\n}\n'
+    command = replace_once(command, 'extern "C" u8 func_ov007_020cc600(s32 command)',
+                            'u8 sm64ds::TitleFiles::command(s32 command)')
+    command = replace_once(command,load,'if (command == 20) { failed = load() ? 0 : 1; }')
+    command = command.replace('data_0209caa0);','reinterpret_cast<FileSaveData *>(data_0209caa0));')
+    output += ('extern "C" { void SetSoundMode(int); void TurnBacklightOn(); void TurnBacklightOff();\n'
+               'int func_ov007_020cc118(int,unsigned); extern u8 data_0209cae4[]; }\n'
+               'namespace Sound { void StopLoadedMusic_Layer1(unsigned); }\n'+command+'\n')
     return output
 
 

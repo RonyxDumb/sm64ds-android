@@ -15,7 +15,7 @@ namespace sm64ds {
 class GameProgram {
 public:
     using Sound = std::function<bool(uint32_t, uint32_t)>;
-    GameProgram(const char *path, Sound sound);
+    GameProgram(const char *path, Sound sound, FrontendCore::Audio audio = {});
     ~GameProgram();
     GameProgram(const GameProgram &) = delete;
     GameProgram &operator=(const GameProgram &) = delete;
@@ -31,6 +31,7 @@ public:
         return ticks_;
     }
     uint16_t requested_scene() const;
+    int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;
     }
@@ -50,6 +51,8 @@ public:
     bool sound(uint32_t archive, uint32_t entry) {
         return sound_(archive, entry);
     }
+    int native_audio(const SoundRequest &request);
+    int defer_music(int music,unsigned frames);
     void prepare_boot();
     void queue(void (*callback)(int), int argument);
     bool worker_complete() const {
@@ -65,6 +68,9 @@ private:
     BootState boot_{};
     GameInput input_;
     Sound sound_;
+    FrontendCore::Audio audio_;
+    int activeScene_=0,pendingMusic_=-1;
+    uint16_t musicDelay_=0;
     std::map<void *, size_t> files_;
     ntr::Framebuffer main_{}, sub_{};
     void (*job_)(int) = nullptr;

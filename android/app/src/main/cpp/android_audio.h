@@ -12,6 +12,7 @@ public:
         return archive <= INT32_MAX && entry <= INT32_MAX &&
                music_.effect(static_cast<int>(archive), static_cast<int>(entry));
     }
+    int native(const SoundRequest &request) { return music_.native(request); }
     bool start(); // owner GL thread only
     void close();
     bool disconnected() const {

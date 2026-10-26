@@ -8,11 +8,9 @@ import re
 
 def view_for(rel, raw, view, parser, behaviors, full_particles):
     if rel == 'include/dExtModel_c.h':
-        view += ('\nstruct BCA_File;\n'
-                 'extern void _ZN15ModelComponents11UpdateBonesEP8BCA_Filei(ModelComponents *, BCA_File *, int);\n'
-                 'extern void _ZN15ModelComponents21UpdateVertsUsingBonesEv(ModelComponents *);\n'
-                 'extern void _ZN15ModelComponents6RenderEP9Matrix4x3P7Vector3(ModelComponents *, Matrix4x3 *, Vector3 *);\n')
+        view += '\nstruct BCA_File;\n'
     if rel == 'src/unnamed/ov007/func_ov007_020bc894.cpp':
+        view = view.replace('#include "dExtModel_c.h"','#include "dExtModel_c.h"\nextern void _ZN15ModelComponents11UpdateBonesEP8BCA_Filei(ModelComponents *, BCA_File *, int);')
         view = view.replace('((ModelComponents *)model)->UpdateBones(m->boneAnims[idx], p->frame)',
                             '_ZN15ModelComponents11UpdateBonesEP8BCA_Filei((ModelComponents *)model, m->boneAnims[idx], p->frame)')
     if rel == 'src/unnamed/ov007/func_ov007_020b7708.cpp':
@@ -22,6 +20,9 @@ def view_for(rel, raw, view, parser, behaviors, full_particles):
     veneers = {'020c8440':'020c3d1c', '020c92a0':'020c3d1c', '020c8098':'020c3d1c',
                '020c9080':'020c3d1c', '020c3544':'020c3d1c', '020c8970':'020c897c',
                '020bdeb0':'020be098'}
+    for name in ('020c05f8','020c0a9c','020c105c','020c1620','020c2018','020c22f8',
+                 '020c2410','020c338c','020c8b04','020c8f58','020c9460'):
+        veneers[name]='020c3d1c'
     suffix = rel.rsplit('/',1)[-1].split('.')[0].removeprefix('func_ov007_')
     if rel.startswith('src/unnamed/ov007/') and suffix in veneers:
         target = 'func_ov007_'+veneers[suffix]

@@ -41,6 +41,7 @@ public:
     FileSummary summary(unsigned slot) const;
     const TitleConfig &config() const;
     bool start_selected(int result);
+    u8 command(s32 value);
 
 private:
     bool load();

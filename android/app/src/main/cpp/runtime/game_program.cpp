@@ -2,6 +2,7 @@
 #include "boot_seams.h"
 #include "resources.h"
 #include "ntr/lz77.h"
+#include "ntr/gx.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -156,10 +157,24 @@ namespace Sound {
 void Play2D(u32 a, u32 b) {
     sm64ds::GameProgram::active().sound(a, b);
 }
+void StopLoadedMusic_Layer1(unsigned frames) {
+    sm64ds::GameProgram::active().native_audio({sm64ds::SoundOp::Stop,0,0,static_cast<int>(frames)});
 }
+}
+extern "C" int func_ov007_020cc118(int music,unsigned frames) {
+    return sm64ds::GameProgram::active().defer_music(music,frames);
+}
+extern "C" void SetSoundMode(int mode) {
+    data_0209d4b4=static_cast<uint8_t>(mode);
+    sm64ds::GameProgram::active().native_audio({sm64ds::SoundOp::Mode,0,0,mode==0?1:mode==1?2:0});
+}
+extern "C" void TurnBacklightOn() { data_0208ee3c=1; }
+extern "C" void TurnBacklightOff() { data_0208ee3c=0; }
 namespace GX {
 void DisableAllBanks() {
-    std::memset(ntr::host_ptr(0x04000240), 0, 9);
+    ntr::io_write(0x04000240,0,4);
+    ntr::io_write(0x04000244,0,4);
+    ntr::io_write(0x04000248,0,2);
 }
 void SetBankForBG(u16 mask) {
     require(mask == 1, "Boot BG bank configuration changed.");
@@ -194,8 +209,8 @@ GameProgram &GameProgram::active() {
     require(program, "No native game program.");
     return *program;
 }
-GameProgram::GameProgram(const char *path, Sound sound)
-    : cartridge_(single_program_path(path)), stage_(cartridge_), sound_(std::move(sound)) {
+GameProgram::GameProgram(const char *path, Sound sound,FrontendCore::Audio audio)
+    : cartridge_(single_program_path(path)), stage_(cartridge_), sound_(std::move(sound)),audio_(std::move(audio)) {
     require(!program && bool(sound_), "A native game program is already running.");
     require(ntr::io_init(), "Cannot map native video registers.");
     program = this;
@@ -312,6 +327,16 @@ bool GameProgram::accept_title_result(int result) {
         stage_.prepare_input();
     return started;
 }
+int GameProgram::native_audio(const SoundRequest &request) {
+    if (!audio_) throw std::runtime_error("No native scene audio control backend.");
+    return audio_(request);
+}
+int GameProgram::defer_music(int music,unsigned frames) {
+    if (pendingMusic_>=0) return 0;
+    pendingMusic_=music; musicDelay_=static_cast<uint16_t>(frames);
+    native_audio({SoundOp::Stop,0,0,static_cast<int>(frames)});
+    return 1;
+}
 void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx, int ty) {
     require(std::isfinite(seconds) && seconds >= 0, "Invalid native frame interval.");
     constexpr double Step = 1.0 / 59.8261;
@@ -332,6 +357,15 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         callback(argument_);
         complete_ = true;
     }
+    if (activeScene_==1 && data_02092664==NoScene) {
+        if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
+            native_audio({SoundOp::Music,0,0,pendingMusic_}); pendingMusic_=-1;
+        }
+        const int result=frontend_->update(input_.raw_buttons(),tx,ty);
+        frontend_->render();
+        accept_title_result(result);
+        ++ticks_; scanout(); return;
+    }
     if (data_02092664 != NoScene) {
         if (data_0209f5bc->IsAtStart())
             data_0209f5bc->SetForwardTime(30);
@@ -345,12 +379,13 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                     frontend_ = std::make_unique<FrontendCore>(Resources::active().heap(),
                         std::move(overlay), GetOwnerLanguage(),
                         [this](uint16_t handle) { return cartridge_.file(handle); },std::move(arm9),
-                        &title_->config());
+                        &title_->config(),[this](int value){return title_->command(value);},
+                        [this](const SoundRequest &request){return native_audio(request);});
                 }
-                frontend_->sample(input_.raw_buttons(), tx, ty);
-                throw std::runtime_error(
-                    "Il core originale del frontend è inizializzato. Il dispatcher e il rendering di "
-                    "dScDSMT_c non sono ancora collegati.");
+                activeScene_=1; data_02092664=NoScene;
+                const int result=frontend_->update(input_.raw_buttons(),tx,ty);
+                frontend_->render(); accept_title_result(result);
+                ++ticks_; scanout(); return;
             }
             if (data_02092664 == 3)
                 throw std::runtime_error(
@@ -366,11 +401,23 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     scanout();
 }
 void GameProgram::scanout() {
+    if (activeScene_==0) {
     ntr::io_write(0x04000000,
                   (ntr::io_read(0x04000000, 4) & ~0xf00u) | (uint32_t(data_0209d45c & 15) << 8), 4);
     ntr::io_write(0x04001000,
                   (ntr::io_read(0x04001000, 4) & ~0xf00u) | (uint32_t(data_0209d454 & 15) << 8), 4);
-    ntr::ppu_scanout(ntr::ENGINE_A, main_);
+    }
+    ntr::Framebuffer geometry{};
+    if (activeScene_==1) ntr::gx_render(geometry);
+    ntr::ppu_scanout(ntr::ENGINE_A, main_,activeScene_==1?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);
+    if (activeScene_==1) {
+        ntr::ppu_scanout_obj(ntr::ENGINE_A,main_);
+        ntr::ppu_scanout_obj(ntr::ENGINE_B,sub_);
+    }
+    if (!data_0208ee3c) {
+        std::fill(&main_.px[0][0],&main_.px[0][0]+256*192,0xff000000u);
+        std::fill(&sub_.px[0][0],&sub_.px[0][0]+256*192,0xff000000u);
+    }
 }
 }
