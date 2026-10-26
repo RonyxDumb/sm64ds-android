@@ -1,5 +1,6 @@
 #include "packed_memory.h"
 #include <link.h>
+#include <algorithm>
 #include <pthread.h>
 #include <cstdio>
 #include <sstream>
@@ -55,16 +56,27 @@ size_t Space::largest_free_span() const { return heap_.largest_free_span(); }
 void Space::map(uint32_t a, void *p, size_t n) {
     if (!a || !p || !n || uint64_t(a)+n > UINT32_MAX)
         throw std::runtime_error("Invalid packed data span.");
-    for (const auto &r : regions_)
-        if (uint64_t(a) < uint64_t(r.address)+r.size && uint64_t(r.address) < uint64_t(a)+n)
-            throw std::runtime_error("Overlapping packed data spans.");
-    regions_.push_back({a,n,static_cast<uint8_t *>(p)});
+    // The native frontend performs many thousands of checked DS-pointer
+    // reads per frame. Keep its immutable address regions sorted, so every
+    // pointer dereference uses O(log N) lookup instead of scanning every
+    // register/VRAM/overlay/native stack/heap mapping.
+    const auto it = std::lower_bound(regions_.begin(), regions_.end(), a,
+        [](const Region &r, uint32_t addr) { return r.address < addr; });
+    if ((it != regions_.end() && uint64_t(a) + n > it->address) ||
+        (it != regions_.begin() && uint64_t((it-1)->address) + (it-1)->size > a))
+        throw std::runtime_error("Overlapping packed data spans.");
+    regions_.insert(it, {a,n,static_cast<uint8_t *>(p)});
 }
 void *Space::data(uint32_t a, size_t n) const {
     if (!a) throw std::runtime_error("Null packed data handle.");
-    for (const auto &r : regions_)
-        if (a >= r.address && uint64_t(a)-r.address <= r.size && n <= r.size-(uint64_t(a)-r.address))
-            return r.memory + (a-r.address);
+    auto it = std::upper_bound(regions_.begin(), regions_.end(), a,
+        [](uint32_t addr, const Region &r) { return addr < r.address; });
+    if (it != regions_.begin()) {
+        --it;
+        const uint64_t offset = uint64_t(a) - it->address;
+        if (offset <= it->size && n <= it->size - offset)
+            return it->memory + offset;
+    }
     throw std::runtime_error("Packed data handle outside registered span: " + std::to_string(a));
 }
 bool Space::map_native_segment(const void *pointer) {
