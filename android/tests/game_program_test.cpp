@@ -3,6 +3,7 @@
 #include "runtime/save_store.h"
 #include "pc_audio/stream.h"
 #include "runtime/boot_seams.h"
+#include "ntr/lz77.h"
 #include <cassert>
 #include <climits>
 #include <cstdlib>
@@ -327,6 +328,36 @@ int main(int argc, char **argv) {
             data_0209f5e8.color = 0x1234;
             LoadLevel(1, 0, 1, 0, -1);
             assert(data_0209f5e8.color == 0);
+            // Native boot helpers must accept both original logical DS video
+            // addresses and relocated host pointers, without writing outside
+            // VRAM or palette bounds. These assets come from the private ROM.
+            const int decodedSize = ntr::lz77_size(data_020918c4, sizeof data_020918c4);
+            assert(decodedSize > 0 && decodedSize <= 0x20000);
+            std::vector<uint8_t> reference(static_cast<size_t>(decodedSize));
+            assert(ntr::lz77_unpack(data_020918c4, sizeof data_020918c4,
+                                    reference.data(), decodedSize) == decodedSize);
+            constexpr uint32_t vramTarget = ntr::VRAM_BASE + 0x800000u;
+            void *nativeTarget = ntr::host_ptr(vramTarget);
+            std::memset(nativeTarget, 0, static_cast<size_t>(decodedSize));
+            DecompressLZ16(data_020918c4,
+                           reinterpret_cast<void *>(static_cast<uintptr_t>(vramTarget)));
+            assert(std::memcmp(nativeTarget, reference.data(), reference.size()) == 0);
+            std::memset(nativeTarget, 0, static_cast<size_t>(decodedSize));
+            DecompressLZ16(data_020918c4, nativeTarget);
+            assert(std::memcmp(nativeTarget, reference.data(), reference.size()) == 0);
+            bool invalidDestination = false;
+            try {
+                DecompressLZ16(data_020918c4, reinterpret_cast<void *>(
+                    static_cast<uintptr_t>(ntr::VRAM_BASE + ntr::VRAM_SIZE - 4)));
+            } catch (const std::runtime_error &) {
+                invalidDestination = true;
+            }
+            assert(invalidDestination);
+            constexpr uint32_t plttTarget = ntr::PLTT_BASE + 0x780u;
+            extern void MultiCopy_Int(int *, int *, int);
+            MultiCopy_Int(reinterpret_cast<int *>(data_020914e0),
+                          reinterpret_cast<int *>(static_cast<uintptr_t>(plttTarget)), 16);
+            assert(std::memcmp(ntr::host_ptr(plttTarget), data_020914e0, 16) == 0);
             std::cout << "Recovered title result " << 3 + selected << " selected character "
                       << request.character << ", mode " << request.controllerMode
                       << " and requested castle grounds / scene 3.\n";
