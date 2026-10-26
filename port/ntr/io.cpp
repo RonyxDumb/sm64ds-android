@@ -178,7 +178,7 @@ void *map_fixed(uintptr_t base, size_t size) {
 
 bool io_init() {
     if (g_io) return true;
-    struct Region { uintptr_t base; size_t size; };
+    struct Region { uintptr_t base; size_t size; void *mapping; };
     constexpr Region regions[] = {
         {MAIN_BASE, MAIN_SIZE}, {IO_BASE, IO_SIZE}, {PLTT_BASE, PLTT_SIZE},
         {VRAM_BASE, VRAM_SIZE}, {OAM_BASE, OAM_SIZE},
@@ -188,6 +188,16 @@ bool io_init() {
     void *io = nullptr;
     for (const auto &r : regions) {
         void *p = map_fixed(r.base, r.size);
+#if defined(__ANDROID__)
+        // Android may reserve low virtual-address windows for its own runtime.
+        // The I/O proxy and packed frontend can use a relocated host backing.
+        // Do not replace the existing mapping with MAP_FIXED.
+        if (!p && r.base == IO_BASE) {
+            p = mmap(nullptr, r.size, PROT_READ | PROT_WRITE,
+                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (p == MAP_FAILED) p = nullptr;
+        }
+#endif
         if (!p) {
             // MAIN is optional. Game code still directly addresses DS video
             // windows, so never overwrite an occupied mapping with MAP_FIXED.
@@ -199,9 +209,9 @@ bool io_init() {
 #endif
             for (size_t i = mapped_count; i > 0; --i) {
 #if defined(_WIN32)
-                VirtualFree(reinterpret_cast<void *>(mapped[i - 1].base), 0, MEM_RELEASE);
+                VirtualFree(mapped[i - 1].mapping, 0, MEM_RELEASE);
 #else
-                munmap(reinterpret_cast<void *>(mapped[i - 1].base), mapped[i - 1].size);
+                munmap(mapped[i - 1].mapping, mapped[i - 1].size);
 #endif
             }
             throw std::runtime_error("Cannot map DS video region at address " +
@@ -209,14 +219,14 @@ bool io_init() {
                 " (size " + std::to_string(r.size) + ", error " +
                 std::to_string(error) + ")");
         }
-        mapped[mapped_count++] = r;
+        mapped[mapped_count++] = {r.base, r.size, p};
         if (r.base == IO_BASE) io = p;
     }
 #if !defined(_WIN32)
     if (!init_vram_banks()) {
         const int error = errno;
         for (size_t i = mapped_count; i > 0; --i)
-            munmap(reinterpret_cast<void *>(mapped[i - 1].base), mapped[i - 1].size);
+            munmap(mapped[i - 1].mapping, mapped[i - 1].size);
         throw std::runtime_error("Cannot map DS VRAM bank backing (errno " +
             std::to_string(error) + ")");
     }
@@ -225,6 +235,14 @@ bool io_init() {
     // The geometry FIFO starts empty and less than half full.
     raw_write(0x04000600u, 0x06000000u, 4);
     return true;
+}
+
+void *host_ptr(uint32_t addr) {
+    // Only the Android I/O window may be relocated. Physical DS addresses
+    // remain the keys for register side effects and packed frontend handles.
+    if (addr >= IO_BASE && addr - IO_BASE < IO_SIZE && g_io)
+        return g_io + (addr - IO_BASE);
+    return reinterpret_cast<void *>(static_cast<uintptr_t>(addr));
 }
 
 uint64_t io_read(uint32_t addr, unsigned width) {
