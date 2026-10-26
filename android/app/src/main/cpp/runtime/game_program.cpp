@@ -23,18 +23,31 @@ const char *single_program_path(const char *path) {
 uint32_t word(const uint8_t *p) {
     return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
 }
-bool video_span(const void *p, size_t size, uintptr_t base, size_t capacity) {
-    const uintptr_t at = reinterpret_cast<uintptr_t>(p);
-    base = reinterpret_cast<uintptr_t>(ntr::host_ptr(static_cast<uint32_t>(base)));
-    return at >= base && at - base <= capacity && size <= capacity - (at - base);
+// Recovered DS graphics routines sometimes return a logical 32-bit video
+// address, while native backend callers can already hold a translated pointer.
+// Validate both forms before touching the buffer. Android may relocate each
+// video window independently if its original low VA is occupied.
+void *video_destination(void *target, size_t size, uintptr_t dsBase, size_t capacity) {
+    const uintptr_t at = reinterpret_cast<uintptr_t>(target);
+    const uintptr_t hostBase =
+        reinterpret_cast<uintptr_t>(ntr::host_ptr(static_cast<uint32_t>(dsBase)));
+    const auto in_bounds = [size, capacity](uintptr_t address, uintptr_t base) {
+        return address >= base && address - base <= capacity &&
+               size <= capacity - (address - base);
+    };
+    if (in_bounds(at, hostBase)) return target;
+    if (in_bounds(at, dsBase))
+        return ntr::host_ptr(static_cast<uint32_t>(at));
+    return nullptr;
 }
 void copy_video(const void *source, void *target, size_t size) {
-    require(source && (video_span(target, size, ntr::VRAM_BASE, ntr::VRAM_SIZE) ||
-                       video_span(target, size, ntr::PLTT_BASE, ntr::PLTT_SIZE)),
-            "Video upload outside mapped memory.");
+    void *destination = video_destination(target, size, ntr::VRAM_BASE, ntr::VRAM_SIZE);
+    if (!destination)
+        destination = video_destination(target, size, ntr::PLTT_BASE, ntr::PLTT_SIZE);
+    require(source && destination, "Video upload outside mapped memory.");
     require(size <= sm64ds::GameProgram::active().bytes_at(source),
             "Video upload exceeds source data.");
-    std::memcpy(target, source, size);
+    std::memcpy(destination, source, size);
 }
 }
 extern "C" {
@@ -76,9 +89,10 @@ void DecompressLZ16(const void *source, void *target) {
     std::vector<uint8_t> decoded(static_cast<size_t>(size));
     require(ntr::lz77_unpack(data, static_cast<int32_t>(available), decoded.data(), size) == size,
             "Video decompression failed.");
-    require(video_span(target, size, ntr::VRAM_BASE, ntr::VRAM_SIZE),
-            "LZ destination outside VRAM.");
-    std::memcpy(target, decoded.data(), decoded.size());
+    void *destination = video_destination(target, static_cast<size_t>(size),
+                                          ntr::VRAM_BASE, ntr::VRAM_SIZE);
+    require(destination, "LZ destination outside VRAM.");
+    std::memcpy(destination, decoded.data(), decoded.size());
 }
 void *LoadFile(int handle) {
     require(handle >= 0, "Negative cartridge handle.");
