@@ -90,9 +90,9 @@ const ControllerInput &StageFlow::controller(unsigned slot) const {
     return data_0209f498[slot];
 }
 
-void StageFlow::prepare_input() {
-    if (data_0208a0e0 > 4)
-        throw std::runtime_error("Invalid native player count.");
+void StageFlow::prepare_scene() {
+    if (data_02092110 < 0 || data_02092110 >= 0x34)
+        throw std::runtime_error("A save file requested an invalid native sublevel.");
     // The game's StartFile has already set the level/entrance and requested
     // dScStage_c. Mount the same overlay and level model/KCL the original
     // InitResources reads. The class lifecycle and actor spawn must consume
@@ -117,6 +117,11 @@ void StageFlow::prepare_input() {
     assets_ = std::move(nextAssets);
     arm9Image_ = std::move(nextArm9);
     addressSpace_ = std::move(nextSpace);
+}
+
+void StageFlow::prepare_input() {
+    if (data_0208a0e0 > 4)
+        throw std::runtime_error("Invalid native player count.");
     data_0209f21c = data_0208a0e0;
     reset_input();
 }
