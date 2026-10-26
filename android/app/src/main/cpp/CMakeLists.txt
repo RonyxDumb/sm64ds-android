@@ -89,7 +89,7 @@ set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
-    runtime/stage_flow.cpp runtime/title_files.cpp runtime/native_math.cpp
+    runtime/stage_flow.cpp runtime/stage_assets.cpp runtime/title_files.cpp runtime/native_math.cpp
     "${REPO_ROOT}/src/SetNumPlayers.c" "${REPO_ROOT}/src/SublevelToLevel.c"
     "${REPO_ROOT}/src/unnamed/arm9/0203/func_020308d0.c"
     "${REPO_ROOT}/src/DecIfAbove0_Byte.c" "${REPO_ROOT}/src/GetControllerMode.c"
