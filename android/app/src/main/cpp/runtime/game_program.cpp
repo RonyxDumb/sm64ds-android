@@ -24,7 +24,8 @@ uint32_t word(const uint8_t *p) {
     return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
 }
 bool video_span(const void *p, size_t size, uintptr_t base, size_t capacity) {
-    uintptr_t at = reinterpret_cast<uintptr_t>(p);
+    const uintptr_t at = reinterpret_cast<uintptr_t>(p);
+    base = reinterpret_cast<uintptr_t>(ntr::host_ptr(static_cast<uint32_t>(base)));
     return at >= base && at - base <= capacity && size <= capacity - (at - base);
 }
 void copy_video(const void *source, void *target, size_t size) {

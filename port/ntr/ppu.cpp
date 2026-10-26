@@ -37,8 +37,9 @@ constexpr EngineMap kEngines[2] = {
     {0x04001000u, 0x06200000u, 0x05000400u, false},
 };
 
-inline uint16_t rd16(uint32_t a) { return *reinterpret_cast<volatile uint16_t *>(a); }
-inline uint32_t rd32(uint32_t a) { return *reinterpret_cast<volatile uint32_t *>(a); }
+inline uint8_t rd8(uint32_t a) { return *static_cast<volatile uint8_t *>(host_ptr(a)); }
+inline uint16_t rd16(uint32_t a) { return *static_cast<volatile uint16_t *>(host_ptr(a)); }
+inline uint32_t rd32(uint32_t a) { return *static_cast<volatile uint32_t *>(host_ptr(a)); }
 
 // DS palettes are BGR555.
 inline uint32_t bgr555(uint16_t c) {
@@ -140,7 +141,7 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
                 if (!(value&0x8000)) return false;
                 out=bgr555(value);
             } else {
-                const uint8_t index=*reinterpret_cast<volatile uint8_t *>(c.screen+pixel);
+                const uint8_t index=rd8(c.screen+pixel);
                 if (!index) return false;
                 out=bgr555(rd16(em.pltt_base+index*2));
             }
@@ -150,7 +151,7 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
 
     uint16_t se;
     if (c.kind==BgConfig::Affine)
-        se=*reinterpret_cast<volatile uint8_t *>(c.screen+(py>>3)*c.tiles_w+(px>>3));
+        se=rd8(c.screen+(py>>3)*c.tiles_w+(px>>3));
     else if (c.kind==BgConfig::Extended)
         se=rd16(c.screen+((py>>3)*c.tiles_w+(px>>3))*2);
     else se=rd16(screen_entry_addr(c,px>>3,py>>3));
@@ -161,11 +162,11 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
 
     uint32_t index;
     if (c.bpp8) {
-        index = *reinterpret_cast<volatile uint8_t *>(c.chars + tile * 64 + fy * 8 + fx);
+        index = rd8(c.chars + tile * 64 + fy * 8 + fx);
         if (index == 0) return false;
     } else {
         const uint8_t pair =
-            *reinterpret_cast<volatile uint8_t *>(c.chars + tile * 32 + fy * 4 + (fx >> 1));
+            rd8(c.chars + tile * 32 + fy * 4 + (fx >> 1));
         index = (fx & 1) ? (pair >> 4) : (pair & 0xF);
         if (index == 0) return false;
         index += ((se >> 12) & 0xF) * 16;
@@ -317,13 +318,13 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                 if (c256) {
                     const uint32_t addr = obj_vram + baseTile
                                           + tno * 64u + fy * 8u + fx;
-                    index = *reinterpret_cast<volatile uint8_t *>(addr);
+                    index = rd8(addr);
                     if (!index) continue;
                     fb.px[py][px] = bgr555(rd16(obj_pltt + index * 2u));
                 } else {
                     const uint32_t addr = obj_vram + baseTile
                                           + tno * 32u + fy * 4u + fx / 2;
-                    const uint8_t b = *reinterpret_cast<volatile uint8_t *>(addr);
+                    const uint8_t b = rd8(addr);
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);
                     if (!index) continue;
                     fb.px[py][px] = bgr555(rd16(obj_pltt + (pal * 16u + index) * 2u));
@@ -364,7 +365,7 @@ void ppu_capture(const Framebuffer &composited,const Framebuffer &geometry) {
             for (unsigned shift=0;shift<15;shift+=5)
                 result|=std::min(31u,(((a>>shift)&31)*aa+((b>>shift)&31)*bb)/16)<<shift;
         }
-        *reinterpret_cast<uint16_t *>(0x06800000+bank*0x20000+((writeOffset+i*2)&0x1ffff))=result;
+        *static_cast<uint16_t *>(host_ptr(0x06800000u+bank*0x20000+((writeOffset+i*2)&0x1ffff)))=result;
     }
     io_write(0x04000064,control&~0x80000000u,4);
 }

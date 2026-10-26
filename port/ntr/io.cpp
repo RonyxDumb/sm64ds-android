@@ -26,6 +26,9 @@ namespace ntr {
 namespace {
 
 uint8_t *g_io = nullptr;
+uint8_t *g_pltt = nullptr;
+uint8_t *g_vram = nullptr;
+uint8_t *g_oam = nullptr;
 #if !defined(_WIN32)
 int g_vram_fd=-1;
 struct VramAlias { uintptr_t base; size_t size; };
@@ -35,7 +38,7 @@ size_t g_vram_alias_count=0;
 bool init_vram_banks() {
     const int fd=static_cast<int>(syscall(SYS_memfd_create,"sm64ds-vram",1u));
     if (fd<0) return false;
-    if (ftruncate(fd,0xa4000)!=0 || mmap(reinterpret_cast<void *>(0x06800000u),0xa4000,
+    if (ftruncate(fd,0xa4000)!=0 || mmap(host_ptr(0x06800000u),0xa4000,
         PROT_READ|PROT_WRITE,MAP_SHARED|MAP_FIXED,fd,0)==MAP_FAILED) { close(fd); return false; }
     g_vram_fd=fd; return true;
 }
@@ -75,10 +78,12 @@ void update_vram_banks() {
             else if (mst==2) base=0x06600000u;
         }
         if (!base) continue;
-        if (mmap(reinterpret_cast<void *>(base),sizes[bank],PROT_READ|PROT_WRITE,
+        // Rebind pages only inside our own reserved VRAM window.
+        const uintptr_t mapped = reinterpret_cast<uintptr_t>(host_ptr(static_cast<uint32_t>(base)));
+        if (mmap(reinterpret_cast<void *>(mapped),sizes[bank],PROT_READ|PROT_WRITE,
             MAP_SHARED|MAP_FIXED,g_vram_fd,offsets[bank])==MAP_FAILED)
             throw std::runtime_error("Cannot route native VRAM bank");
-        g_vram_aliases[g_vram_alias_count++]={base,sizes[bank]};
+        g_vram_aliases[g_vram_alias_count++]={mapped,sizes[bank]};
     }
 }
 #endif
@@ -186,13 +191,13 @@ bool io_init() {
     std::array<Region, sizeof(regions) / sizeof(regions[0])> mapped{};
     size_t mapped_count = 0;
     void *io = nullptr;
+    void *pltt = nullptr, *vram = nullptr, *oam = nullptr;
     for (const auto &r : regions) {
         void *p = map_fixed(r.base, r.size);
 #if defined(__ANDROID__)
-        // Android may reserve low virtual-address windows for its own runtime.
-        // The I/O proxy and packed frontend can use a relocated host backing.
-        // Do not replace the existing mapping with MAP_FIXED.
-        if (!p && r.base == IO_BASE) {
+        // Android can occupy any low DS video window. Never replace a
+        // foreign mapping with MAP_FIXED; use a translated host allocation.
+        if (!p && r.base != MAIN_BASE) {
             p = mmap(nullptr, r.size, PROT_READ | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
             if (p == MAP_FAILED) p = nullptr;
@@ -221,27 +226,40 @@ bool io_init() {
         }
         mapped[mapped_count++] = {r.base, r.size, p};
         if (r.base == IO_BASE) io = p;
+        if (r.base == PLTT_BASE) pltt = p;
+        if (r.base == VRAM_BASE) vram = p;
+        if (r.base == OAM_BASE) oam = p;
     }
+    // Physical LCDC banks are mapped inside the reserved VRAM allocation.
+    g_vram = static_cast<uint8_t *>(vram);
 #if !defined(_WIN32)
     if (!init_vram_banks()) {
         const int error = errno;
         for (size_t i = mapped_count; i > 0; --i)
             munmap(mapped[i - 1].mapping, mapped[i - 1].size);
+        g_vram = nullptr;
         throw std::runtime_error("Cannot map DS VRAM bank backing (errno " +
             std::to_string(error) + ")");
     }
 #endif
     g_io = static_cast<uint8_t *>(io);
+    g_pltt = static_cast<uint8_t *>(pltt);
+    g_oam = static_cast<uint8_t *>(oam);
     // The geometry FIFO starts empty and less than half full.
     raw_write(0x04000600u, 0x06000000u, 4);
     return true;
 }
 
 void *host_ptr(uint32_t addr) {
-    // Only the Android I/O window may be relocated. Physical DS addresses
-    // remain the keys for register side effects and packed frontend handles.
+    // Keep logical DS addresses, translate each video window to host memory.
     if (addr >= IO_BASE && addr - IO_BASE < IO_SIZE && g_io)
         return g_io + (addr - IO_BASE);
+    if (addr >= PLTT_BASE && addr - PLTT_BASE < PLTT_SIZE && g_pltt)
+        return g_pltt + (addr - PLTT_BASE);
+    if (addr >= VRAM_BASE && addr - VRAM_BASE < VRAM_SIZE && g_vram)
+        return g_vram + (addr - VRAM_BASE);
+    if (addr >= OAM_BASE && addr - OAM_BASE < OAM_SIZE && g_oam)
+        return g_oam + (addr - OAM_BASE);
     return reinterpret_cast<void *>(static_cast<uintptr_t>(addr));
 }
 
