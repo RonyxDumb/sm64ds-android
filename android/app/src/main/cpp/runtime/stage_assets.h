@@ -23,6 +23,7 @@ public:
     const Descriptor &descriptor() const { return descriptor_; }
     const std::vector<uint8_t> &model() const { return model_; }
     const std::vector<uint8_t> &collision() const { return collision_; }
+    Cartridge::DataImage &overlay() { return overlay_; }
     const Cartridge::DataImage &overlay() const { return overlay_; }
 
     // Return a checked span of the unmodified level overlay image. This is
