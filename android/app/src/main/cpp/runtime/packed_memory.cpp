@@ -66,6 +66,9 @@ void Space::map(uint32_t a, void *p, size_t n) {
         (it != regions_.begin() && uint64_t((it-1)->address) + (it-1)->size > a))
         throw std::runtime_error("Overlapping packed data spans.");
     regions_.insert(it, {a,n,static_cast<uint8_t *>(p)});
+    // New host ranges can alias a larger allocator VMA registered earlier.
+    // Clear the hot cache so the lowest DS-handle mapping keeps precedence.
+    recentNativeValid_ = false;
 }
 void *Space::data(uint32_t a, size_t n) const {
     if (!a) throw std::runtime_error("Null packed data handle.");
@@ -150,11 +153,20 @@ bool Space::map_native_segment(const void *pointer) {
 }
 uint32_t Space::address(const void *p) {
     if (!p) return 0;
+    const uintptr_t a=reinterpret_cast<uintptr_t>(p);
+    if (recentNativeValid_) {
+        const uintptr_t b = reinterpret_cast<uintptr_t>(recentNative_.memory);
+        if (a >= b && a-b < recentNative_.size)
+            return recentNative_.address + static_cast<uint32_t>(a-b);
+    }
     for (int attempt=0; attempt<2; ++attempt) {
-        uintptr_t a=reinterpret_cast<uintptr_t>(p);
         for (const auto &r : regions_) {
-            uintptr_t b=reinterpret_cast<uintptr_t>(r.memory);
-            if (a>=b && a-b<r.size) return r.address+static_cast<uint32_t>(a-b);
+            const uintptr_t b=reinterpret_cast<uintptr_t>(r.memory);
+            if (a>=b && a-b<r.size) {
+                recentNative_ = r;
+                recentNativeValid_ = true;
+                return r.address+static_cast<uint32_t>(a-b);
+            }
         }
         if (attempt || !map_native_segment(p)) break;
     }
