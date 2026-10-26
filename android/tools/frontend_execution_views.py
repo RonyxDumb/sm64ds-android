@@ -7,6 +7,12 @@ import re
 
 
 def view_for(rel, raw, view, parser, behaviors, full_particles):
+    if rel == 'src/unnamed/ov007/func_ov007_020c6b58.c':
+        # Each successful search sets the best index and its polygon together.
+        # GCC/AArch64 loses that implication across the projected pointer calls.
+        # The sentinel is never read by the original successful-search paths.
+        view = view.replace('    int bj1;', '    int bj1 = -1;')
+        view = view.replace('    int bj2;', '    int bj2 = -1;')
     if rel == 'include/dExtModel_c.h':
         view += '\nstruct BCA_File;\n'
     if rel == 'src/unnamed/ov007/func_ov007_020bc894.cpp':
