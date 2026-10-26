@@ -1,55 +1,56 @@
-# Android checkpoint — 2026-10-26, native frontend items and texture records
+# Android checkpoint — 2026-10-26, all five native frontend root builders
 
-**Not playable.** Production boot now executes four of the five original root
-builders: core state, texture records, palette state and all 24 item views.
-The display builder and interactive dispatcher, scene 3, actors and Player
-remain unlinked. Android still reports that boundary explicitly.
+**Not playable.** Production boot executes the original b68e8 factory and all
+five root builders. Full b7138 initialization, interactive b7090/aed98 dispatch
+and rendering, scene 3, actors and Player are still unlinked. The application
+reports the actual missing frontend boundary rather than simulating success.
 
 ## Implemented
 
-- 43 recovered translation units compile as native code with four-byte data
-  and code handles. Native addresses remain full width in separate registries;
-  no ARM instruction bytes are interpreted, compiled at runtime or called.
-- Original record size/offset assertions remain active. Distinct translation
-  units have independent namespaces and share the same root/overlay data.
-- Genuine builders allocate core records, load the original menu BMD through
-  the cartridge callback, run its original offset fixup, derive 11 texture
-  records, connect palette buffers and initialize all 24 item views, sprites,
-  item states and output-bound tweens. Production owns 179 allocations.
-- The BMD/BCA/BTP static offset loaders are projected independently of their
-  polymorphic model classes. Only the selected static method body and its
-  original records enter this profile; required headers are hash guarded.
-- Array symbols denote an address without first binding a possibly misaligned
-  array reference. This preserves the original byte casts of wider aliases,
-  including the odd-address menu height table, under UBSan.
-- Source hashes gate all generated code. Builds need only Python's stdlib;
-  developer regeneration uses the pinned parser. Projected POD headers remain
-  private to the generated target. Unknown data/code handles fail explicitly.
+- 77 recovered translation units compile as native code through checked
+  four-byte data/code handles. Native addresses stay full width in side tables;
+  no cartridge instruction bytes are executed or interpreted.
+- The original factory allocates shared state, cameras, lights, tweens, input,
+  settings, 11 texture records, palette-state buffers, all 24 item views, the
+  two-screen display/OAM/BG lists, 4 character resources, 6 palettes, 6 sprite
+  banks, 9 item nodes and 8 BG-layer slots. All original layout assertions stay
+  active; unrelated partial record views live in separate TU namespaces.
+- Native cartridge callbacks load the actual menu BMD; original BMD/BCA/BTP
+  static offset loaders are projected without importing polymorphic classes.
+- Explicitly recover the live character-record return through c3550/c99d8.
+  Their original ARM epilogues preserve the allocated pointer in r0, whereas
+  the recovered C void/missing-return spelling loses it on native targets.
+  The runtime projection forwards that value; matching sources are untouched.
+- Wider array aliases preserve their address without binding misaligned array
+  references before byte casts. Source and selected-header hashes guard all
+  projections. Android builds need only the Python stdlib.
 
 ## Verification
 
-- Private-ROM ASan/UBSan with use-after-return and halt-on-UB: four complete
-  production boot/frontend/launch lifetimes pass. Every original item ID,
-  texture link and tween output target is checked, along with 179 allocations,
-  high native pointers, saved-slot selection, scene-3 request and full teardown.
-- The launch result is supplied by the execution check. It is not evidence
-  that the interactive title dispatcher or a game stage runs.
-- The preceding 25-unit core passed native ARM64 execution, ARM64 debug/release
-  APK builds and Lint in run 40299953081. The expanded profile is queued for the
-  same CI checks before it reaches main. No Android device is attached.
+- Private-ROM production boot/root/launch lifetimes pass ASan/UBSan with
+  use-after-return and halt-on-UB. Checks include all original item IDs, texture
+  and tween links, character pointers, BG slot IDs/list counts, high native
+  pointers, saved-file launch requests and full heap recovery.
+- A ROM-free fixture with invented model and binary-screen records executes
+  all five actual builders, including character return forwarding. It also
+  checks BCA/BTP fixups and state/input behavior. This is native-code validation,
+  not a resource-viewer product or evidence of an interactive title.
+- The previous 43-unit increment passed native ARM64 execution, debug/release
+  ARM64 APK builds and Lint in run 40301539866 and is on main. The expanded
+  77-unit profile runs the same checks on work/frontend-native-20261026 before
+  main advances. No Android device is attached.
 
 ## Resume here
 
-1. Complete b6d40's display/OAM/BG builder. Its actual direct-call closure is
-   38 functions, not the 491 names mentioned in comments and declarations.
-   Audit c3550/c99d8: the recovered C omits the returned character-record
-   pointer, but the original ARM preserves it in r0 through both returns.
-2. Connect b7138 initialization, b7090 update, aed98 dispatch and source
-   rendering; deliver only the actual frontend result to accept_title_result.
-3. Polymorphic model/actor layouts and member-function pointers require an
-   explicit ABI projection. Raw native vptrs cannot enter packed records.
-   Scene 3, actor dispatch, Player/collision/camera, complete 3D/animation,
-   HUD/minimap and game sound remain unfinished.
+1. Complete b7138 initialization and its model/particle/audio/display setup;
+   map the title settings and message bank through a correct packed/native
+   boundary. Then connect b7090 update, aed98 dispatch, source rendering and
+   the actual result to GameProgram::accept_title_result.
+2. ModelComponents is a nonpolymorphic five-pointer record; it can be projected
+   independently. Native C++ model/actor vptrs and member-function pointers
+   cannot be placed into packed records. Ptr rejects polymorphic dereferences.
+3. Scene 3 lifecycle, native actor dispatch, Player/collision/camera, complete
+   3D/animation, HUD/minimap and game sound still remain unfinished.
 
 
 ---

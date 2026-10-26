@@ -592,6 +592,464 @@
       "header": false
     },
     {
+      "path": "src/unnamed/ov007/func_ov007_020adc08.c",
+      "sha256": "05c6b9a8715a8dbe4c0921d6d2044caa38108dbb1019afdd3819d000e902bec6",
+      "source": "extern \"C\" int pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" int pk_func_ov007_020c9388(int a);\nextern \"C\" int pk_func_ov007_020b8500(void);\nextern \"C\" int pk_func_ov007_020b84e8(void);\nextern \"C\" void pk_func_ov007_020c0384(int c, Ptr<void> x);\nextern \"C\" int pk_func_ov007_020b84f4(void);\nextern \"C\" void pk_func_ov007_020c02d8(int r0, int r1, unsigned short r2);\n\n#define data_ov007_0210342c (*Ptr<Ptr<int>>(0x0210342cu))\n\n\n/* The 0x38-byte BG layer record pk_func_ov007_020c0aa8 allocates; only the two\n * screen buffers this file sets. func_ov007_020c076c uploads `screen` to the\n * layer's BG screen VRAM; func_ov007_020c0638 rebuilds `screen` from `source`\n * at a tile offset and func_ov007_020b1390 recolours `source`. */\ntypedef struct Ov007BgLayer {\n    char pad_00[0x10];\n    Ptr<void> screen; /* 0x10 */\n    Ptr<void> source; /* 0x14 */\n} Ov007BgLayer;\n\n/* The manager's +0x74: the 0x48-byte 2D display record pk_func_ov007_020b7594\n * allocates. Only its two BG layer lists, which pk_func_ov007_020c0604 creates\n * for engine bit 1 (main) and 2 (sub) and pk_func_ov007_020c0384 appends to. */\ntypedef struct Ov007Display {\n    char pad_00[8];\n    int bgListMain; /* 0x08 */\n    int bgListSub;  /* 0x0c */\n} Ov007Display;\n\n/* data_ov007_0210342c: the overlay's manager; only the slot this file reads. */\ntypedef struct Ov007Work {\n    char pad_00[0x74];\n    Ptr<Ov007Display> display; /* 0x74: pk_func_ov007_020b6d40 stores pk_func_ov007_020b7594's record */\n} Ov007Work;\n\n/* The 0xc-byte record this function returns; pk_func_ov007_020b6d40 keeps the\n * eight of them from the manager's +0xc8. */\ntypedef struct Ov007LayerSlot {\n    int state;           /* 0x00: an Ov007MenuState (pk_func_ov007_020c9388) */\n    Ptr<Ov007BgLayer> layer; /* 0x04 */\n    char kind;           /* 0x08: pk_func_ov007_020b6d40's slot index, 0..7 */\n} Ov007LayerSlot;\n\ntypedef char Ov007LayerSlot_size_must_be_0xc[sizeof(Ov007LayerSlot) == 0xc ? 1 : -1];\ntypedef char Ov007Work_size_must_be_0x78[sizeof(Ov007Work) == 0x78 ? 1 : -1];\ntypedef char Ov007Display_size_must_be_0x10[sizeof(Ov007Display) == 0x10 ? 1 : -1];\ntypedef char Ov007BgLayer_size_must_be_0x18[sizeof(Ov007BgLayer) == 0x18 ? 1 : -1];\n\n/* Builds layer slot `type` around `obj` and links obj into the main or sub\n * BG list: 6/7 take prebuilt screen pairs, 1 keeps the loaded screen as its\n * source behind a fresh buffer, 5 starts from a blank (tile 0x300) screen. */\nextern \"C\" int pk_func_ov007_020adc08(int type, Ptr<char> obj) {\n    int r5 = pk_func_ov007_020c3df4(0, 0xc);\n    Ptr<Ov007LayerSlot> slot = (Ptr<Ov007LayerSlot>)(r5);\n    Ptr<Ov007BgLayer> layer = (Ptr<Ov007BgLayer>)(obj);\n    Ptr<int> g = data_ov007_0210342c;\n    Ptr<Ov007Display> display = ((Ptr<Ov007Work>)(g))->display;\n    slot->kind = (char)(type);\n    slot->layer = layer;\n    slot->state = pk_func_ov007_020c9388(0);\n    switch (type) {\n    case 6:\n        layer->screen = (Ptr<void>)(pk_func_ov007_020b8500());\n        layer->source = (Ptr<void>)(pk_func_ov007_020b84e8());\n        pk_func_ov007_020c0384(display->bgListMain, obj);\n        break;\n    case 7:\n        layer->screen = (Ptr<void>)(pk_func_ov007_020b84f4());\n        layer->source = (Ptr<void>)(pk_func_ov007_020b84e8());\n        pk_func_ov007_020c0384(display->bgListSub, obj);\n        break;\n    case 1:\n        layer->source = layer->screen;\n        layer->screen = (Ptr<void>)(pk_func_ov007_020c3df4(0, 0x800));\n        pk_func_ov007_020c0384(display->bgListMain, obj);\n        break;\n    case 2:\n        pk_func_ov007_020c0384(display->bgListSub, obj);\n        break;\n    case 3:\n    case 4:\n        pk_func_ov007_020c0384(display->bgListSub, obj);\n        break;\n    case 5:\n        layer->screen = (Ptr<void>)(pk_func_ov007_020c3df4(0, 0x800));\n        pk_func_ov007_020c02d8(word(layer->screen), 0x18, 0x300);\n        pk_func_ov007_020c0384(display->bgListSub, obj);\n        break;\n    default:\n        break;\n    }\n    return r5;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020adc08(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020adc08((int)(a0), (Ptr<char>)(a1))); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_0210342c": 34616364
+      },
+      "functions": [
+        "func_ov007_020adc08",
+        "func_ov007_020b84e8",
+        "func_ov007_020b84f4",
+        "func_ov007_020b8500",
+        "func_ov007_020c02d8",
+        "func_ov007_020c0384",
+        "func_ov007_020c3df4",
+        "func_ov007_020c9388"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020ade58.c",
+      "sha256": "72906a2a0282041f6c814d912de62f48874c632d3b9b2255ac243d985b728627",
+      "source": "#include \"types.h\"\n\n#define data_ov007_0210342c ArrayRef<Ptr<char>>(0x0210342cu)\n\n\n#define data_ov007_020ccbc4 ArrayRef<u8>(0x020ccbc4u)\n\n\n#define data_ov007_020ccb7d ArrayRef<u8>(0x020ccb7du)\n\n\n#define data_ov007_020ccb7c ArrayRef<u8>(0x020ccb7cu)\n\n\nextern \"C\" int pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" Ptr<char> pk_func_ov007_020aea6c(int a, Ptr<void> b, Ptr<void> c);\nextern \"C\" Ptr<void> pk_func_ov007_020c11ac(int n);\nextern \"C\" void pk_func_ov007_020c10b0(Ptr<void> a, Ptr<void> b);\nextern \"C\" void pk_func_ov007_020c0af4(Ptr<void> c, Ptr<void> x);\nextern \"C\" void pk_Sprite_SetAnimation(Ptr<void> c, int r1, int r2, int r3, int sp0);\n\n/* The 0x2c-byte record pk_func_ov007_020aea6c allocates; names as in\n * func_ov007_020ae070, only the slot this file reads. */\ntypedef struct Ov007Item {\n    u16 id; /* 0x00: aea6c's first argument */\n} Ov007Item;\n\n/* The 0x44-byte OAM sprite node pk_func_ov007_020c11ac allocates; names as in\n * pk_func_ov007_020c10ec, only the slots this file touches. */\ntypedef struct Ov007OamNode {\n    int x; /* 0x00: Q12 screen x; func_ov007_020c0b78 adds it to the parent's */\n    char pad_04[0x10];\n    unsigned char priority; /* 0x14: OAM priority, used when the caller passes none (> 3) */\n    char pad_15[3];\n    Ptr<Ptr<void>> anims;            /* 0x18: animCount animations (pk_func_ov007_020c11ac) */\n    unsigned char animCount; /* 0x1c: func_ov007_020c1180 frees anims only when nonzero */\n    char pad_1d[0x1b];\n    Ptr<struct Ov007OamNode> head; /* 0x38: first child (pk_func_ov007_020c10b0) */\n} Ov007OamNode;\n\n/* data_ov007_020ccb7c: one 8-byte row per item. data_ov007_020ccb7d is\n * the same table's animCount byte, read by its own symbol. */\ntypedef struct Ov007NodeSprites {\n    u8 bank;      /* 0x00: index into the display's spriteBanks */\n    u8 animCount; /* 0x01: the node's animation count (pk_func_ov007_020c11ac) */\n    char pad_02[2];\n    Ptr<u8> animIndices; /* 0x04: per animation, its index in the bank */\n} Ov007NodeSprites;\n\ntypedef char Ov007NodeSprites_size_must_be_0x8[sizeof(Ov007NodeSprites) == 0x8 ? 1 : -1];\n\n/* The 8-byte record this function returns (names as in\n * func_ov007_020ae558); pk_func_ov007_020b6d40 keeps nine of them in the\n * manager's itemNodes. */\ntypedef struct Ov007ItemNode {\n    Ptr<Ov007Item> item;    /* 0x00: pk_func_ov007_020aea6c */\n    Ptr<Ov007OamNode> node; /* 0x04: pk_func_ov007_020c11ac */\n} Ov007ItemNode;\n\n/* The manager's +0x74: the 0x48-byte 2D display record pk_func_ov007_020b7594\n * allocates (as in pk_func_ov007_020adc08); only the slots this file reads. */\ntypedef struct Ov007Display {\n    /* 0x00/0x04: the OAM node lists (pk_func_ov007_020c1068) that\n     * func_ov007_020bc9c8 draws into the main (+0x10) and sub (+0x14) OAM\n     * buffers; pk_func_ov007_020c0af4 appends a node */\n    Ptr<void> oamListMain;\n    Ptr<void> oamListSub;\n    char pad_08[0x34];\n    /* 0x3c: the six pk_func_ov007_020c9688 sprite banks pk_func_ov007_020b6d40\n     * builds (count at +0x38, pk_func_ov007_020b72fc); a bank's +0xc is its\n     * array of 0x10-byte animations */\n    Ptr<Ptr<char>> spriteBanks;\n} Ov007Display;\n\n/* data_ov007_0210342c: the overlay's manager; only the slot this file reads. */\ntypedef struct Ov007Work {\n    char pad_00[0x74];\n    Ptr<Ov007Display> display; /* 0x74: pk_func_ov007_020b6d40 stores pk_func_ov007_020b7594's record */\n} Ov007Work;\n\ntypedef char Ov007OamNode_head_must_be_at_0x38[offsetof(Ov007OamNode, head) == 0x38 ? 1 : -1];\ntypedef char Ov007Display_size_must_be_0x40[sizeof(Ov007Display) == 0x40 ? 1 : -1];\n\n#pragma opt_strength_reduction off\n\nextern \"C\" Ptr<void> pk_func_ov007_020ade58(int self) {\n    Ptr<Ov007ItemNode> s = (Ptr<Ov007ItemNode>)(pk_func_ov007_020c3df4(0, 8));\n    Ptr<char> g = data_ov007_0210342c[0];\n    Ptr<Ov007Display> r6 = ((Ptr<Ov007Work>)(g))->display;\n    Ptr<Ov007OamNode> r4;\n    Ptr<Ptr<char>> sl;\n    int sb;\n    int cnt;\n\n    s->item = (Ptr<Ov007Item>)(pk_func_ov007_020aea6c(self, &data_ov007_020ccbc4[self * 0xa], 0));\n    r4 = (Ptr<Ov007OamNode>)(pk_func_ov007_020c11ac(data_ov007_020ccb7d[self * 8]));\n    s->node = r4;\n\n    switch (s->item->id) {\n    case 0:\n        pk_func_ov007_020c10b0(r4, pk_func_ov007_020c11ac(1));\n        pk_func_ov007_020c0af4(r6->oamListSub, r4);\n        r4->head->x = 0xe8000;\n        r4->priority = 1;\n        break;\n    case 1:\n        pk_func_ov007_020c0af4(r6->oamListSub, r4);\n        r4->priority = 0;\n        break;\n    case 2:\n        r4->priority = 3;\n        break;\n    case 3:\n    case 4:\n    case 5:\n        pk_func_ov007_020c0af4(r6->oamListSub, r4);\n        r4->priority = 2;\n        break;\n    case 7:\n        pk_func_ov007_020c0af4(r6->oamListMain, r4);\n        r4->priority = 1;\n        break;\n    case 8:\n        pk_func_ov007_020c0af4(r6->oamListMain, r4);\n        r4->priority = 0;\n        break;\n    }\n\n    cnt = r4->animCount;\n    sl = r6->spriteBanks;\n    sb = 0;\n    if (cnt > 0) {\n        int zero = sb;\n        int one = 1;\n        do {\n            u16 state = s->item->id;\n            Ptr<Ov007NodeSprites> entry = (Ptr<Ov007NodeSprites>)(&data_ov007_020ccb7c[state * 8]);\n            int r7 = entry->bank;\n\n            if (state == 1 && sb >= 4) {\n                r7 = one;\n            } else if (state == 0) {\n                r4->head->anims[sb] =\n                    (Ptr<void>)((*(Ptr<int>)((sl[r7] + 0xc)) + (entry->animIndices[sb] << 4)));\n                pk_Sprite_SetAnimation(r4->head, zero, zero, zero, zero);\n            }\n\n            r4->anims[sb] = (Ptr<void>)((*(Ptr<int>)((sl[r7] + 0xc)) + (entry->animIndices[sb] << 4)));\n            sb++;\n        } while (sb < r4->animCount);\n    }\n\n    pk_Sprite_SetAnimation(s->node, 0, 0, 0, 0);\n    return s;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020ade58(unsigned int a0) { return uword(pk_func_ov007_020ade58((int)(a0))); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_0210342c": 34616364,
+        "data_ov007_020ccbc4": 34393028,
+        "data_ov007_020ccb7d": 34392957,
+        "data_ov007_020ccb7c": 34392956
+      },
+      "functions": [
+        "Sprite_SetAnimation",
+        "func_ov007_020ade58",
+        "func_ov007_020aea6c",
+        "func_ov007_020c0af4",
+        "func_ov007_020c10b0",
+        "func_ov007_020c11ac",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b6d40.c",
+      "sha256": "57a43babc9cf79ffe3dcda8e4f5252beaf452dad0a6fbd30cb4f99dbace738b8",
+      "source": "#include \"types.h\"\n\n#define data_ov007_0210342c (*Ptr<Ptr<char>>(0x0210342cu))\n\n\n#define data_ov007_020d7e28 ArrayRef<int>(0x020d7e28u)\n\n\n#define data_ov007_020d7e38 ArrayRef<int>(0x020d7e38u)\n\n\n#define data_ov007_020d7e50 ArrayRef<int>(0x020d7e50u)\n\n\n#define data_ov007_020d7ec8 ArrayRef<int>(0x020d7ec8u)\n\n\n#define data_ov007_020d7a24 ArrayRef<u8>(0x020d7a24u)\n\n\nextern \"C\" int pk_func_ov007_020b7594(int a, int b);\nextern \"C\" void pk_func_ov007_020b7320(Ptr<char> c, int a, int b);\nextern \"C\" int pk_func_ov007_020c99d8(int x);\nextern \"C\" Ptr<char> pk_func_ov007_020c9988(int a);\nextern \"C\" void pk_func_ov007_020b72fc(Ptr<char> c, int n);\nextern \"C\" int pk_func_ov007_020c9688(int a);\nextern \"C\" Ptr<void> pk_func_ov007_020ade58(int self);\nextern \"C\" void pk_func_ov007_020b72d8(Ptr<char> c, int n);\nextern \"C\" Ptr<int> pk_func_ov007_020c95fc(Ptr<void> a, int b, int c);\nextern \"C\" int pk_func_ov007_020adc08(int type, Ptr<char> obj);\n\n/* A pk_func_ov007_020c9988 palette (pk_func_ov007_020c3398 builds the 8-byte\n * record); colors as in func_ov007_020ada70. */\ntypedef struct Ov007Palette {\n    Ptr<char> colors; /* 0x00: 16-color (0x20-byte) rows */\n    /* 0x04: how many colors func_ov007_020c32e8 loads (it copies\n     * (colorCount - off) * 2 bytes) */\n    u16 colorCount;\n} Ov007Palette;\n\n/* The manager's +0x74: the 0x48-byte 2D display record pk_func_ov007_020b7594\n * allocates; palettes and spriteBanks as in func_ov007_020ada70 and\n * pk_func_ov007_020ade58, only the tables this function fills. Each table's\n * count sits in the word before it (pk_func_ov007_020b7320,\n * pk_func_ov007_020b72d8, pk_func_ov007_020b72fc). */\ntypedef struct Ov007Display {\n    char pad_00[0x24];\n    /* 0x24: four pk_func_ov007_020c99d8 character records; func_ov007_020c33d0\n     * loads one into OBJ VRAM */\n    Ptr<Ptr<void>> characters;\n    char pad_28[4];\n    Ptr<Ptr<Ov007Palette>> palettes; /* 0x2c: six pk_func_ov007_020c9988 palettes */\n    char pad_30[4];\n    /* 0x34: eight pk_func_ov007_020c95fc BG layers, each wrapped by\n     * pk_func_ov007_020adc08 into a layer slot */\n    Ptr<Ptr<int>> bgLayers;\n    char pad_38[4];\n    Ptr<Ptr<char>> spriteBanks; /* 0x3c: six pk_func_ov007_020c9688 sprite banks */\n} Ov007Display;\n\n/* data_ov007_0210342c: the overlay's manager; names as in\n * pk_func_ov007_020adc08, pk_func_ov007_020ade58 and func_ov007_020b0244, only the\n * slots this function fills. */\ntypedef struct Ov007Work {\n    char pad_00[0x74];\n    Ptr<Ov007Display> display; /* 0x74 */\n    char pad_78[0x2c];\n    Ptr<void> itemNodes[9];                   /* 0xa4: pk_func_ov007_020ade58 */\n    Ptr<struct Ov007LayerSlot> layerSlots[8]; /* 0xc8: pk_func_ov007_020adc08 */\n} Ov007Work;\n\ntypedef char Ov007Display_size_must_be_0x40[sizeof(Ov007Display) == 0x40 ? 1 : -1];\ntypedef char Ov007Work_size_must_be_0xe8[sizeof(Ov007Work) == 0xe8 ? 1 : -1];\n\n/* The extern keeps the tree's char * spelling; the typed view is reached\n * through a cast macro. */\n#define WORK ((Ptr<Ov007Work>)(data_ov007_0210342c))\n\n#pragma opt_strength_reduction off\n#pragma opt_common_subs off\n\nextern \"C\" void pk_func_ov007_020b6d40(void) {\n    Ptr<Ov007Display> c;\n    int i;\n    int tmp;\n\n    tmp = pk_func_ov007_020b7594(0x1f, 0x1f);\n    WORK->display = (Ptr<Ov007Display>)(tmp);\n    c = WORK->display;\n    pk_func_ov007_020b7320((Ptr<char>)(c), 4, 6);\n\n    for (i = 0; i < 4; i++) {\n        c->characters[i] = (Ptr<void>)(pk_func_ov007_020c99d8(data_ov007_020d7e28[i]));\n    }\n\n    for (i = 0; i < 6; i++) {\n        c->palettes[i] = (Ptr<Ov007Palette>)(pk_func_ov007_020c9988(data_ov007_020d7e38[i]));\n        if (i >= 2 && i <= 5) {\n            c->palettes[i]->colorCount = 0xd0;\n        }\n    }\n\n    pk_func_ov007_020b72fc((Ptr<char>)(c), 6);\n\n    for (i = 0; i < 6; i++) {\n        c->spriteBanks[i] = (Ptr<char>)(pk_func_ov007_020c9688(data_ov007_020d7e50[i]));\n    }\n\n    for (i = 0; i < 9; i++) {\n        WORK->itemNodes[i] = pk_func_ov007_020ade58(i);\n    }\n\n    pk_func_ov007_020b72d8((Ptr<char>)(c), 8);\n\n    for (i = 0; i < 8; i++) {\n        c->bgLayers[i] =\n            pk_func_ov007_020c95fc((Ptr<void>)(data_ov007_020d7ec8[i]), (&data_ov007_020d7a24[i * 2])[0],\n                                (&data_ov007_020d7a24[i * 2])[1]);\n        WORK->layerSlots[i] =\n            (Ptr<struct Ov007LayerSlot>)(pk_func_ov007_020adc08(i, (Ptr<char>)(c->bgLayers[i])));\n    }\n}\n\nextern \"C\" void abi_func_ov007_020b6d40() { pk_func_ov007_020b6d40(); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_0210342c": 34616364,
+        "data_ov007_020d7e28": 34438696,
+        "data_ov007_020d7e38": 34438712,
+        "data_ov007_020d7e50": 34438736,
+        "data_ov007_020d7ec8": 34438856,
+        "data_ov007_020d7a24": 34437668
+      },
+      "functions": [
+        "func_ov007_020adc08",
+        "func_ov007_020ade58",
+        "func_ov007_020b6d40",
+        "func_ov007_020b72d8",
+        "func_ov007_020b72fc",
+        "func_ov007_020b7320",
+        "func_ov007_020b7594",
+        "func_ov007_020c95fc",
+        "func_ov007_020c9688",
+        "func_ov007_020c9988",
+        "func_ov007_020c99d8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b72d8.c",
+      "sha256": "9aebc8ba5853219cf95a966dfdf7c43b0a2196616cfece9952314804f03da9eb",
+      "source": "extern \"C\" int pk_func_ov007_020c3d40(int, int);\nextern \"C\" void pk_func_ov007_020b72d8(Ptr<char> c, int n) {\n  *(Ptr<int>)((c+0x30)) = n;\n  *(Ptr<int>)((c+0x34)) = pk_func_ov007_020c3d40(0, n<<2);\n}\n\nextern \"C\" void abi_func_ov007_020b72d8(unsigned int a0, unsigned int a1) { pk_func_ov007_020b72d8((Ptr<char>)(a0), (int)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020b72d8",
+        "func_ov007_020c3d40"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b72fc.c",
+      "sha256": "05e6c42dc68f24994ae8db065c13b43c55afda017b7e34ffed55e939074e31d7",
+      "source": "extern \"C\" int pk_func_ov007_020c3d40(int, int);\nextern \"C\" void pk_func_ov007_020b72fc(Ptr<char> c, int n) {\n  *(Ptr<int>)((c+0x38)) = n;\n  *(Ptr<int>)((c+0x3c)) = pk_func_ov007_020c3d40(0, n<<2);\n}\n\nextern \"C\" void abi_func_ov007_020b72fc(unsigned int a0, unsigned int a1) { pk_func_ov007_020b72fc((Ptr<char>)(a0), (int)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020b72fc",
+        "func_ov007_020c3d40"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b7320.c",
+      "sha256": "4b8004dd5d53ebc2299b25087218aa599a5f220b712313c40e9daa2436f4fe47",
+      "source": "extern \"C\" int pk_func_ov007_020c3d40(int, int);\n\n/* The manager's +0x74: the 0x48-byte 2D display record pk_func_ov007_020b7594\n * allocates; characters and palettes as in pk_func_ov007_020b6d40, only the\n * slots this file writes. Each table's count sits in the word before it. */\ntypedef struct Ov007Display {\n    char pad_00[0x20];\n    int characterCount; /* 0x20 */\n    /* 0x24: pk_func_ov007_020c99d8 character records; func_ov007_020c33d0\n     * loads one into OBJ VRAM */\n    Ptr<Ptr<void>> characters;\n    int paletteCount; /* 0x28 */\n    Ptr<Ptr<void>> palettes;  /* 0x2c: pk_func_ov007_020c9988 palettes */\n} Ov007Display;\n\ntypedef char Ov007Display_palettes_must_be_at_0x2c[offsetof(Ov007Display, palettes) == 0x2c ? 1 : -1];\n\n/* Sizes the character and palette tables (pk_func_ov007_020b6d40 asks for 4\n * and 6). c keeps the tree's char * spelling; `d` is the typed view. */\nextern \"C\" void pk_func_ov007_020b7320(Ptr<char> c, int a, int b) {\n    Ptr<Ov007Display> d = (Ptr<Ov007Display>)(c);\n    d->characterCount = a;\n    d->paletteCount = b;\n    d->characters = (Ptr<Ptr<void>>)(pk_func_ov007_020c3d40(0, a << 2));\n    d->palettes = (Ptr<Ptr<void>>)(pk_func_ov007_020c3d40(0, b << 2));\n}\n\nextern \"C\" void abi_func_ov007_020b7320(unsigned int a0, unsigned int a1, unsigned int a2) { pk_func_ov007_020b7320((Ptr<char>)(a0), (int)(a1), (int)(a2)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020b7320",
+        "func_ov007_020c3d40"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b7594.c",
+      "sha256": "07b95d0e3413e23ac9201ef17a0fa2cdccfed5db3930cc2cb9ba6b60832578a0",
+      "source": "extern \"C\" int pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_func_ov007_020c0354(Ptr<int[2]> words, unsigned count);\nextern \"C\" int pk_func_ov007_020c1068(void);\nextern \"C\" int pk_func_ov007_020c0604(int a, int b);\nextern \"C\" int pk_func_ov007_020b7594(int r0arg, int r1arg) {\n    Ptr<int> p = (Ptr<int>)(pk_func_ov007_020c3df4(0, 0x48));\n    p[4] = pk_func_ov007_020c3df4(0, 0x400);\n    p[5] = pk_func_ov007_020c3df4(0, 0x400);\n    pk_func_ov007_020c0354((Ptr<int[2]>)(p[4]), 0x80);\n    pk_func_ov007_020c0354((Ptr<int[2]>)(p[5]), 0x80);\n    p[0] = pk_func_ov007_020c1068();\n    p[1] = pk_func_ov007_020c1068();\n    p[2] = pk_func_ov007_020c0604(1, r0arg);\n    p[3] = pk_func_ov007_020c0604(2, r1arg);\n    p[6] = 0;\n    p[7] = 0;\n    p[8] = 0;\n    p[9] = 0;\n    p[10] = 0;\n    p[11] = 0;\n    p[14] = 0;\n    p[15] = 0;\n    p[16] = 0;\n    p[17] = 0;\n    p[12] = 0;\n    p[13] = 0;\n    return word(p);\n}\n\nextern \"C\" unsigned int abi_func_ov007_020b7594(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020b7594((int)(a0), (int)(a1))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020b7594",
+        "func_ov007_020c0354",
+        "func_ov007_020c0604",
+        "func_ov007_020c1068",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b84e8.cpp",
+      "sha256": "9ba46cf24781d6e305bef1cb92f208fa99d0488113ae8177e31734e6386c2de5",
+      "source": "//cpp\n\n\n\n#define data_ov007_02103998 ArrayRef<unsigned char>(0x02103998u)\n\n\nextern \"C\" Ptr<void> pk_func_ov007_020b84e8(void) {\n    return data_ov007_02103998;\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020b84e8() { return uword(pk_func_ov007_020b84e8()); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_02103998": 34617752
+      },
+      "functions": [
+        "func_ov007_020b84e8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b84f4.cpp",
+      "sha256": "f4d54b701e80e4812e5b694ea214673f155e241c2d2d9142abc4143335d9b711",
+      "source": "//cpp\n\n\n\n#define data_ov007_02103f98 ArrayRef<unsigned char>(0x02103f98u)\n\n\nextern \"C\" Ptr<void> pk_func_ov007_020b84f4(void) {\n    return data_ov007_02103f98;\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020b84f4() { return uword(pk_func_ov007_020b84f4()); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_02103f98": 34619288
+      },
+      "functions": [
+        "func_ov007_020b84f4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b8500.cpp",
+      "sha256": "83c2ce65c80549c0ae1ef749d461ee14020d579493aa6ab5d5fcdab463d4e287",
+      "source": "//cpp\n\n\n\n#define data_ov007_02104598 ArrayRef<unsigned char>(0x02104598u)\n\n\nextern \"C\" Ptr<void> pk_func_ov007_020b8500(void) {\n    return data_ov007_02104598;\n}\n\n\nextern \"C\" unsigned int abi_func_ov007_020b8500() { return uword(pk_func_ov007_020b8500()); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_02104598": 34620824
+      },
+      "functions": [
+        "func_ov007_020b8500"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c02d8.cpp",
+      "sha256": "83d1383662287e6619ed213cfba5d946af8574a6e6fcaa5da4a3ac2654ca8f8f",
+      "source": "//cpp\n\n\nextern \"C\" void pk_MultiStore16(unsigned short val, Ptr<void> dest, unsigned int size);\nextern \"C\" void pk_func_ov007_020c02d8(Ptr<void> r0, int r1, unsigned short r2) {\n    volatile unsigned short tmp = r2;\n    pk_MultiStore16(tmp, r0, r1 << 6);\n}\n\n\nextern \"C\" void abi_func_ov007_020c02d8(unsigned int a0, unsigned int a1, unsigned int a2) { pk_func_ov007_020c02d8((Ptr<void>)(a0), (int)(a1), (unsigned short)(a2)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "MultiStore16",
+        "func_ov007_020c02d8"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0354.cpp",
+      "sha256": "33effeb4d1bd13b1ca25a535c59f8dbce869a6ff78ff03291a0e32186baaaae0",
+      "source": "//cpp\n// Each screen's tilemap buffer is cleared in eight-byte blocks.\nextern \"C\" void pk_func_ov007_020c0354(Ptr<int[2]> words, unsigned count) {\n    for (unsigned i = 0; i < count; i++) {\n        words[i][1] = 0;\n        words[i][0] = words[i][1];\n    }\n}\n\nextern \"C\" void abi_func_ov007_020c0354(unsigned int a0, unsigned int a1) { pk_func_ov007_020c0354((Ptr<int[2]>)(a0), (unsigned)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0354"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0384.c",
+      "sha256": "db9cc89a51826cd0244e267e9a94ca2b65b5ce8e2d21e32cd4732d2ebb96cf5e",
+      "source": "extern \"C\" void pk_func_ov007_020c0384(Ptr<int> c, int x) {\n  if(c[2]==0){ c[3]=x; c[2]=c[3]; }\n  else {\n    *(Ptr<int>)((x+0x34))=c[3];\n    *(Ptr<int>)((c[3]+0x30))=x;\n    c[3]=x;\n  }\n}\n\nextern \"C\" void abi_func_ov007_020c0384(unsigned int a0, unsigned int a1) { pk_func_ov007_020c0384((Ptr<int>)(a0), (int)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0384"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c05e4.c",
+      "sha256": "dcbc9269fdc0141446c1f55db161260f8f3696641680ee39e9127088a1ad937f",
+      "source": "extern \"C\" void pk_func_ov007_020c05e4(Ptr<int> c) { c[3]=0; c[2]=c[3]; }\n\nextern \"C\" void abi_func_ov007_020c05e4(unsigned int a0) { pk_func_ov007_020c05e4((Ptr<int>)(a0)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c05e4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0604.c",
+      "sha256": "65472917a5ced55935a662d0d3f2dbbfe6b8a0d4b1895e55040bb2c67f12f9ff",
+      "source": "extern \"C\" Ptr<int> pk_func_ov007_020c3df4(int, int);\nextern \"C\" void pk_func_ov007_020c05e4(Ptr<int>);\nextern \"C\" Ptr<int> pk_func_ov007_020c0604(int a, int b) {\n  Ptr<int> o = pk_func_ov007_020c3df4(0,0x10);\n  pk_func_ov007_020c05e4(o);\n  o[0]=a;\n  o[1]=b;\n  return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c0604(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020c0604((int)(a0), (int)(a1))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c05e4",
+        "func_ov007_020c0604",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0a44.c",
+      "sha256": "9f4f955a03fe4a8b86908b82ee254efe9b6b4074efe44525d2cfcf43e8b09e1f",
+      "source": "/* c: the 0x38-byte record pk_func_ov007_020c0aa8 allocates; no class or header names it, so raw. */\nextern \"C\" void pk_func_ov007_020c0a44(Ptr<int> c) {\n  c[9]=0;\n  c[8]=c[9];\n  c[11]=0;\n  c[10]=c[11];\n  c[0]=-1;\n  c[2]=1;\n  c[4]=0;\n  c[5]=0;\n  *(Ptr<unsigned short>)(((Ptr<char>)(c)+0x1e))=0;\n  *(Ptr<unsigned short>)(((Ptr<char>)(c)+0x1c))=*(Ptr<unsigned short>)(((Ptr<char>)(c)+0x1e));\n  c[6]=0;\n  c[13]=0;\n  c[12]=c[13];\n  c[3]=1;\n}\n\nextern \"C\" void abi_func_ov007_020c0a44(unsigned int a0) { pk_func_ov007_020c0a44((Ptr<int>)(a0)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0a44"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0aa8.c",
+      "sha256": "3a9ffb6f5d7c14fd02ad4972c43538c938aa1ccd57d8075c86e22b75a96ea1e1",
+      "source": "extern \"C\" Ptr<int> pk_func_ov007_020c3df4(int, int);\nextern \"C\" void pk_func_ov007_020c0a44(Ptr<int>);\n/* The 0x38-byte record pk_func_ov007_020c0a44 resets; no class or header names it, so raw. */\nextern \"C\" Ptr<int> pk_func_ov007_020c0aa8(int a, int b, int c, short d, unsigned short e) {\n  Ptr<int> o = pk_func_ov007_020c3df4(0,0x38);\n  pk_func_ov007_020c0a44(o);\n  o[4]=a;\n  *(Ptr<short>)(((Ptr<char>)(o)+0x1c))=d;\n  *(Ptr<short>)(((Ptr<char>)(o)+0x1e))=e;\n  o[0]=b;\n  o[1]=c;\n  return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c0aa8(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3, unsigned int a4) { return uword(pk_func_ov007_020c0aa8((int)(a0), (int)(a1), (int)(a2), (short)(a3), (unsigned short)(a4))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0a44",
+        "func_ov007_020c0aa8",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c0af4.c",
+      "sha256": "9cb457dffca0696a63e798e9c453b1ac2f377b2bf91216ef16ea1a5637109622",
+      "source": "extern \"C\" void pk_func_ov007_020c0af4(Ptr<int> c, int x) {\n  if(c[0]==0){ c[1]=x; c[0]=c[1]; }\n  else {\n    *(Ptr<int>)((x+0x40))=c[1];\n    *(Ptr<int>)((c[1]+0x3c))=x;\n    c[1]=x;\n  }\n}\n\nextern \"C\" void abi_func_ov007_020c0af4(unsigned int a0, unsigned int a1) { pk_func_ov007_020c0af4((Ptr<int>)(a0), (int)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0af4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c1048.c",
+      "sha256": "b723d7937da453bffdb2b37c01d42f58f56072c8d9d1db9d3a2d3a733a18c7e7",
+      "source": "extern \"C\" void pk_func_ov007_020c1048(Ptr<int> c) { c[1]=0; c[0]=c[1]; }\n\nextern \"C\" void abi_func_ov007_020c1048(unsigned int a0) { pk_func_ov007_020c1048((Ptr<int>)(a0)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c1048"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c1068.c",
+      "sha256": "80c53592b41bbf0bbdbbaf6434e5491a75a003edc7c313a0dfe5fedf569ad0a2",
+      "source": "extern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_func_ov007_020c1048(Ptr<void> c);\nextern \"C\" Ptr<void> pk_func_ov007_020c1068(void) {\n  Ptr<void> c = pk_func_ov007_020c3df4(0, 0xc);\n  pk_func_ov007_020c1048(c);\n  return c;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c1068() { return uword(pk_func_ov007_020c1068()); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c1048",
+        "func_ov007_020c1068",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c10b0.c",
+      "sha256": "bbd727780fb5f1f8ae791b76c8b22cf64ea66fb32ffa7eaa5f417192da4e235d",
+      "source": "// Append b to a's child list: set b's owner, then link b at the head slot if\n// empty, else at the end of the sibling chain. Reusing the parameter `a` as the\n// list walker keeps the walker web pinned to r0 (forces the ROM's `mov r0,r2`).\nstruct N { char pad34[0x34]; Ptr<struct N> owner; Ptr<struct N> head; Ptr<struct N> next; };\n\nextern \"C\" void pk_func_ov007_020c10b0(Ptr<struct N> a, Ptr<struct N> b) {\n    b->owner = a;\n    if (a->head == 0) { a->head = b; return; }\n    a = a->head;\n    while (a->next != 0) a = a->next;\n    a->next = b;\n}\n\nextern \"C\" void abi_func_ov007_020c10b0(unsigned int a0, unsigned int a1) { pk_func_ov007_020c10b0((Ptr<struct N>)(a0), (Ptr<struct N>)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c10b0"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c10ec.c",
+      "sha256": "e35bb0713fad4c42986c39f77380d90cc05cac2486791326978200a42c4da275",
+      "source": "/* The 0x44-byte OAM sprite node pk_func_ov007_020c11ac allocates and resets\n * here. Roles are from its drawer func_ov007_020c0b78, the animation step\n * func_ov007_020c0d70 (whose mode/rev/frame/tick/changed names are kept),\n * pk_Sprite_SetAnimation and the child list pk_func_ov007_020c10b0 builds\n * (owner/head/next as there). The word at +0x40 has no reader found yet and\n * stays raw on `c`. */\ntypedef struct Ov007OamNode {\n    int x;       /* 0x00: Q12 screen x; func_ov007_020c0b78 adds it to the parent's */\n    int y;       /* 0x04: Q12 screen y */\n    int visible; /* 0x08: func_ov007_020c0b78 draws this node and its children only when set */\n    int flip;    /* 0x0c: the OAM flip mode func_ov007_020c0eb0 applies */\n    int mosaic;  /* 0x10: func_ov007_020c0eb0 sets the OAM mosaic bit when set */\n    unsigned char priority;  /* 0x14: OAM priority, used when the caller passes none (> 3) */\n    signed char affineIndex; /* 0x15: OAM affine matrix, -1 = none */\n    char pad_16[2];\n    Ptr<Ptr<void>> anims;            /* 0x18: animCount animations (pk_func_ov007_020c11ac) */\n    unsigned char animCount; /* 0x1c: func_ov007_020c1180 frees anims only when nonzero */\n    unsigned char animIndex; /* 0x1d: pk_Sprite_SetAnimation's first argument */\n    char pad_1e[2];\n    int mode;    /* 0x20: 0 = stopped, 1 = looping, else once (func_ov007_020c0d70) */\n    int rev;     /* 0x24: 1 = step backwards */\n    int paused;  /* 0x28: func_ov007_020c0d70 does not step while set; no writer found */\n    short frame; /* 0x2c */\n    short tick;  /* 0x2e: ticks into the frame */\n    int changed; /* 0x30: set when the frame wraps or clamps at an end */\n    Ptr<struct Ov007OamNode> owner; /* 0x34: pk_func_ov007_020c10b0 */\n    Ptr<struct Ov007OamNode> head;  /* 0x38: first child */\n    Ptr<struct Ov007OamNode> next;  /* 0x3c: next sibling */\n} Ov007OamNode;\n\ntypedef char Ov007OamNode_size_must_be_0x40[sizeof(Ov007OamNode) == 0x40 ? 1 : -1];\n\nextern \"C\" void pk_func_ov007_020c10ec(Ptr<char> c) {\n    Ptr<Ov007OamNode> n = (Ptr<Ov007OamNode>)(c);\n    int i;\n    n->y = 0;\n    n->x = n->y;\n    n->visible = 1;\n    n->flip = 0;\n    n->priority = 0;\n    n->mosaic = 0;\n    n->affineIndex = -1;\n    n->animCount = 0;\n    n->animIndex = 0;\n    n->mode = 0;\n    n->rev = 0;\n    n->paused = 0;\n    n->frame = 0;\n    n->tick = 0;\n    n->changed = 0;\n    *(Ptr<int>)((c + 0x40)) = 0;\n    n->next = (Ptr<Ov007OamNode>)(*(Ptr<int>)((c + 0x40)));\n    n->head = n->next;\n    n->owner = n->head;\n    for (i = 0; i < n->animCount; i++) {\n        n->anims[i] = 0;\n    }\n}\n\nextern \"C\" void abi_func_ov007_020c10ec(unsigned int a0) { pk_func_ov007_020c10ec((Ptr<char>)(a0)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c10ec"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c11ac.c",
+      "sha256": "193bb30ef1604be5993b58f66a237c491b4dfa711b2cc19e23f18ad01ba267cc",
+      "source": "extern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_func_ov007_020c10ec(Ptr<void> c);\nextern \"C\" void pk_Sprite_SetAnimation(Ptr<void> c, int r1, int r2, int r3, int sp0);\n\nextern \"C\" Ptr<void> pk_func_ov007_020c11ac(int n) {\n  Ptr<char> o = (Ptr<char>)(pk_func_ov007_020c3df4(0, 0x44));\n  if(n == 0){\n    *(Ptr<Ptr<void>>)((o+0x18)) = 0;\n  } else {\n    *(Ptr<Ptr<void>>)((o+0x18)) = pk_func_ov007_020c3df4(0, n*4);\n  }\n  pk_func_ov007_020c10ec(o);\n  *(Ptr<unsigned char>)((o+0x1c)) = (unsigned char)(n);\n  pk_Sprite_SetAnimation(o, 0, 1, 0, 0);\n  return o;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c11ac(unsigned int a0) { return uword(pk_func_ov007_020c11ac((int)(a0))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "Sprite_SetAnimation",
+        "func_ov007_020c10ec",
+        "func_ov007_020c11ac",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c12ac.c",
+      "sha256": "ce455ed23a5061224b1992d4935675133e1ac143ee301a54b53291f8fb689ed2",
+      "source": "struct S { Ptr<void> f0; Ptr<int> f4; Ptr<void> f8; Ptr<int> fc; };\nextern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_MultiStore_Int(int val, Ptr<int> dst, int len);\n\nextern \"C\" Ptr<struct S> pk_func_ov007_020c12ac(int a, int b) {\n    Ptr<struct S> s = (Ptr<struct S>)(pk_func_ov007_020c3df4(0, 0x10));\n    s->f4 = (Ptr<int>)(pk_func_ov007_020c3df4(0, a << 3));\n    s->fc = (Ptr<int>)(pk_func_ov007_020c3df4(0, b << 4));\n    s->f0 = (Ptr<void>)(a);\n    s->f8 = (Ptr<void>)(b);\n    {\n        volatile int v1;\n        int i;\n        for (i = 0; i < a; i++) {\n            v1 = 0;\n            pk_MultiStore_Int(v1, (Ptr<int>)(((Ptr<char>)(s->f4) + i * 8)), 8);\n        }\n    }\n    {\n        volatile int v2;\n        int j;\n        for (j = 0; j < b; j++) {\n            v2 = 0;\n            pk_MultiStore_Int(v2, (Ptr<int>)(((Ptr<char>)(s->fc) + j * 16)), 0x10);\n        }\n    }\n    return s;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c12ac(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020c12ac((int)(a0), (int)(a1))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "MultiStore_Int",
+        "func_ov007_020c12ac",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c13a4.c",
+      "sha256": "0cfacb4fc41711d380f1c1505348016e239a83b536057f12c9b1a435c14bf4f2",
+      "source": "extern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\nextern \"C\" void pk_func_ov007_020c13a4(Ptr<char> c, int r1, short r2, short r3) {\n  *(Ptr<Ptr<void>>)((c)) = pk_func_ov007_020c3df4(0, r1*4);\n  *(Ptr<Ptr<void>>)((c+4)) = pk_func_ov007_020c3df4(0, r1*2);\n  *(Ptr<int>)((c+0xc)) = r1;\n  *(Ptr<short>)((c+8)) = r2;\n  *(Ptr<short>)((c+0xa)) = r3;\n}\n\nextern \"C\" void abi_func_ov007_020c13a4(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3) { pk_func_ov007_020c13a4((Ptr<char>)(a0), (int)(a1), (short)(a2), (short)(a3)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c13a4",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3398.c",
+      "sha256": "cc670b8d8568dae59ea4674e2851f986bf6bf72577560c7f67f08b7ca0d1a90f",
+      "source": "extern \"C\" Ptr<char> pk_func_ov007_020c3df4(int, int);\nextern \"C\" Ptr<char> pk_func_ov007_020c3398(int a, int b) {\n  Ptr<char> p = pk_func_ov007_020c3df4(0,8);\n  *(Ptr<int>)(p)=a;\n  *(Ptr<short>)((p+4))=b;\n  *(Ptr<char>)((p+6))=0;\n  return p;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c3398(unsigned int a0, unsigned int a1) { return uword(pk_func_ov007_020c3398((int)(a0), (int)(a1))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3398",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c3550.c",
+      "sha256": "7762cf4e39dbfbc9f6ebe0e363a2b2c7e6a5baf49c46c65ec07660d3988b9830",
+      "source": "extern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, int b);\n\nextern \"C\" int pk_func_ov007_020c3550(int a, int b, int c, int d) {\n  Ptr<char> p = (Ptr<char>)(pk_func_ov007_020c3df4(0, 0xc));\n  *(Ptr<int>)((p)) = a;\n  *(Ptr<unsigned char>)((p+8)) = (unsigned char)(b);\n  *(Ptr<unsigned char>)((p+9)) = (unsigned char)(c);\n  *(Ptr<int>)((p+4)) = d;\n  *(Ptr<unsigned char>)((p+0xa)) = 0;\n    return word(p);\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c3550(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3) { return uword(pk_func_ov007_020c3550((int)(a0), (int)(a1), (int)(a2), (int)(a3))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3550",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c95fc.c",
+      "sha256": "d4226b0f3fc95972cdd0e4ee976891c3122ae6119632ecbf6b768f296a647217",
+      "source": "#include \"types.h\"\n/* Block 0 of a screen file: a 16-byte header, then the screen data. The\n * whole header is copied before the two sizes are read. */\ntypedef struct Ov007ScreenBlock {\n    /* 0x00: in tiles; pk_func_ov007_020c0aa8 keeps it as the BG layer's row\n     * length (+0x1c, func_ov007_020c0638) */\n    int width;\n    int height; /* 0x04: in tiles (+0x1e) */\n    int w8;\n    int wc;\n} Ov007ScreenBlock;\n\n/* The 0x84-byte block index pk_func_ov007_020c9a2c fills; names as there,\n * untyped: only block 0's data is read. The tag keeps this file's spelling\n * of pk_func_ov007_020c9a2c's parameter. */\ntypedef struct Ctx {\n    Ptr<void> header;        /* 0x00 */\n    Ptr<void> blocks[16];    /* 0x04 */\n    Ptr<void> blockData[16]; /* 0x44 */\n} Ctx;\n\ntypedef char Ctx_size_must_be_0x84[sizeof(Ctx) == 0x84 ? 1 : -1];\n\nextern \"C\" Ptr<int> pk_func_ov007_020c0aa8(int a, int b, int c, u16 d, u16 e);\nextern \"C\" void pk_func_ov007_020c9a2c(Ptr<Ctx> ctx, Ptr<void> a);\n\n/* Builds a BG layer around file a's screen (a blank 0x20 x 0x18-tile layer\n * when there is no file). */\nextern \"C\" Ptr<int> pk_func_ov007_020c95fc(Ptr<void> a, int b, int c) {\n    Ov007ScreenBlock f;\n    Ctx ctx;\n    Ptr<Ov007ScreenBlock> p;\n\n    if (a == 0) {\n        return pk_func_ov007_020c0aa8(0, b, c, 0x20, 0x18);\n    }\n    pk_func_ov007_020c9a2c(&ctx, a);\n    p = (Ptr<Ov007ScreenBlock>)(ctx.blockData[0]);\n    f = *p;\n    return pk_func_ov007_020c0aa8(word((p + 1)), b, c, (u16)(f.width), (u16)(f.height));\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c95fc(unsigned int a0, unsigned int a1, unsigned int a2) { return uword(pk_func_ov007_020c95fc((Ptr<void>)(a0), (int)(a1), (int)(a2))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c0aa8",
+        "func_ov007_020c95fc",
+        "func_ov007_020c9a2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c9688.c",
+      "sha256": "2fe192f036164c232854fe9b9e30c99577d3a9addd8e671716699fac64d00f71",
+      "source": "// @symbol pk_func_ov007_020c9688\n// recovered: ov007 scene table builder, ov007 0x020c9688 (768 bytes).\n/* pk_func_ov007_020c9688 -- ov007 0x020c9688, 0x300 bytes.\n *\n * Builds the packed runtime tables for one scene description. The context\n * filled in by pk_func_ov007_020c9a2c carries two counted lists; the allocation\n * made by pk_func_ov007_020c12ac carries the two output arrays.\n *\n * The first pass walks list A. Each list-A header word gives the number of\n * 0x14-byte records that follow it; a 6-byte output slot is allocated per\n * record and each record is folded into three halfwords -- a 32-bit key\n * (fields 0x6/0x7/0x8/0xc/0xd, plus 0x0, 0x2, 0x5, 0x9, 0xa and, unless\n * field 0x9 is 3, 0xb) and a 16-bit tail (fields 0x10, 0xe, 0xf).\n *\n * The second pass walks list B. Each 0xc-byte group header gives a member\n * count at +8; pk_func_ov007_020c13a4 sizes the group, then every 0x18-byte\n * member contributes an entry pointer (index at +0) and a value (+2).\n *\n * ONE SPELLING IS LOAD BEARING, measured against the ROM on 2004/b56:\n * THE SECOND PASS WALKS WITH `p`, THE SAME CURSOR THE FIRST PASS USED.\n * Given its own local pointer the second pass is byte-identical except for a\n * three-way rotation of the callee-saved registers -- the cursor colours to\n * r7 and the two hoisted zeroes to sb and r8, where the ROM has the cursor in\n * sb and the zeroes in r8 and r7. Ten instructions, no other difference.\n * Reusing `p` puts all three where the ROM has them. That rotation survived\n * every declaration order of the block (all 120), the function-top ordering\n * climb in the near-miss note, both loop forms, the named-zero and\n * named-init spellings, and every integer width for the counters; only the\n * shared cursor moves it. */\n#include \"types.h\"\n\ntypedef struct RecA {\n    s16 f0;\n    s16 f2;\n    u8 f4;\n    u8 f5;\n    u8 f6;\n    u8 f7;\n    u8 f8;\n    u8 f9;\n    u8 fA;\n    u8 fB;\n    u8 fC;\n    u8 fD;\n    u8 fE;\n    u8 fF;\n    u16 f10;\n    u16 f12;\n} RecA;\n\ntypedef struct Entry {\n    Ptr<u16> data;\n    u32 count;\n} Entry;\n\ntypedef struct Group {\n    Ptr<Ptr<Entry>> arr;\n    Ptr<u16> vals;\n    u32 f8;\n    u32 fC;\n} Group;\n\ntypedef struct Res {\n    u32 f0;\n    Ptr<u8> entries;\n    u32 f8;\n    Ptr<u8> groups;\n} Res;\n\ntypedef struct Ctx {\n    u8 pad[0x44];\n    Ptr<u32> listA;\n    u8 pad2[8];\n    Ptr<u32> listB;\n    u8 pad3[0x30];\n} Ctx;\n\n/* List B: a 0xc-byte group header, then `count` 0x18-byte members. Only\n * the slots this function reads are named. */\ntypedef struct GroupHdr {\n    u8 pad_00[8];\n    u8 count; /* 0x08: members that follow; pk_func_ov007_020c13a4 sizes the group */\n    u8 pad_09[3];\n} GroupHdr;\n\ntypedef struct GroupMember {\n    u16 entry; /* 0x00: index into Res::entries */\n    u16 value; /* 0x02: copied into Group::vals */\n    u8 pad_04[0x14];\n} GroupMember;\n\ntypedef char GroupHdr_size_must_be_0xc[sizeof(GroupHdr) == 0xc ? 1 : -1];\ntypedef char GroupMember_size_must_be_0x18[sizeof(GroupMember) == 0x18 ? 1 : -1];\ntypedef char RecA_size_must_be_0x14[sizeof(RecA) == 0x14 ? 1 : -1];\n\ntypedef struct Packed {\n    u32 val;\n    u16 ext;\n} Packed;\n\nextern \"C\" void pk_func_ov007_020c9a2c(Ptr<Ctx> ctx, int a);\nextern \"C\" Ptr<Res> pk_func_ov007_020c12ac(u32 a, u32 b);\nextern \"C\" Ptr<void> pk_func_ov007_020c3df4(int a, u32 b);\nextern \"C\" void pk_func_ov007_020c13a4(Ptr<void> c, int r1, short r2, short r3);\n\nextern \"C\" Ptr<Res> pk_func_ov007_020c9688(int arg) {\n    Ptr<Res> s;\n    u32 i;\n    u32 nA;\n    u32 nB;\n    u32 cnt;\n    // Every other caller of pk_func_ov007_020c3df4 passes a literal 0; this named local is deliberate (one of the near-miss row's nine zero-plumbing shapes).\n    u32 heap = 0;\n    Packed tmp;\n    Ctx ctx;\n    u32 j;\n    Ptr<u8> p;\n\n    pk_func_ov007_020c9a2c(&ctx, arg);\n    nA = *ctx.listA;\n    nB = *ctx.listB;\n    s = pk_func_ov007_020c12ac(nA, nB);\n\n    p = (Ptr<u8>)(ctx.listA) + 4;\n    for (i = 0; i < nA; i++) {\n        Ptr<Entry> e;\n        Ptr<u8> base;\n        cnt = *p;\n        p = p + 4;\n        base = s->entries;\n        e = (Ptr<Entry>)((base + i * 8));\n        e->data = (Ptr<u16>)(pk_func_ov007_020c3df4(heap, cnt * 6));\n        e->count = cnt;\n        for (j = 0; j < cnt; j++) {\n            s16 h0;\n            u32 key;\n            u32 hi;\n            u8 bE;\n            u32 h10;\n            u8 b9;\n            u8 bA;\n            u8 bB;\n            u32 bF;\n            Ptr<RecA> r;\n            s16 h2;\n            u8 b5;\n            r = (Ptr<RecA>)(p);\n            key = (uword(r->f8) << 8) | (uword(r->f6) << 28) | (uword(r->f7) << 29);\n            hi = (uword(r->fC) << 14) | (uword(r->fD) << 30);\n            p = p + sizeof(RecA);\n            bF = r->fF;\n            h10 = r->f10;\n            b5 = r->f5;\n            bB = r->fB;\n            bA = r->fA;\n            b9 = r->f9;\n            bE = r->fE;\n            h2 = r->f2;\n            h0 = r->f0;\n            if (key == 0x100 || key == 0x300) {\n                if (b9 == 3) {\n                    tmp.val = key | ((hi | ((h2 & 0xff) | (b5 << 25) | (b9 << 10) | (bA << 12))) | ((h0 & 0x1ff) << 16));\n                } else {\n                    tmp.val = key | ((hi | ((h2 & 0xff) | ((b5 << 25) | (bB << 13)) | (b9 << 10) | (bA << 12))) | ((h0 & 0x1ff) << 16));\n                }\n            } else {\n                if (b9 == 3) {\n                    tmp.val = key | ((hi | ((h2 & 0xff) | (b9 << 10) | (bA << 12))) | ((h0 & 0x1ff) << 16));\n                } else {\n                    tmp.val = key | ((hi | ((h2 & 0xff) | (bB << 13) | (b9 << 10) | (bA << 12))) | ((h0 & 0x1ff) << 16));\n                }\n            }\n            tmp.ext = h10 | (bE << 10) | (bF << 12);\n            *(Ptr<u16>)(((Ptr<u8>)(e->data) + j * 6)) = ((Ptr<u16>)(&tmp))[0];\n            *(Ptr<u16>)(((Ptr<u8>)(e->data) + j * 6 + 2)) = ((Ptr<u16>)(&tmp))[1];\n            *(Ptr<u16>)(((Ptr<u8>)(e->data) + j * 6 + 4)) = ((Ptr<u16>)(&tmp))[2];\n        }\n    }\n\n    {\n        u32 k;\n        Ptr<Group> g;\n        u32 m;\n        u32 c2;\n        p = (Ptr<u8>)(ctx.listB) + 4;\n        for (k = 0; k < nB; k++) {\n            c2 = ((Ptr<GroupHdr>)(p))->count;\n            g = (Ptr<Group>)((s->groups + k * sizeof(Group)));\n            p = p + sizeof(GroupHdr);\n            pk_func_ov007_020c13a4(g, c2, 0, 0);\n            for (m = 0; m < c2; m++) {\n                Ptr<GroupMember> q0 = (Ptr<GroupMember>)(p);\n                p = p + sizeof(GroupMember);\n                g->arr[m] = (Ptr<Entry>)(((Ptr<Entry>)(s->entries) + q0->entry));\n                g->vals[m] = q0->value;\n            }\n        }\n    }\n    return s;\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c9688(unsigned int a0) { return uword(pk_func_ov007_020c9688((int)(a0))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c12ac",
+        "func_ov007_020c13a4",
+        "func_ov007_020c3df4",
+        "func_ov007_020c9688",
+        "func_ov007_020c9a2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c9988.c",
+      "sha256": "9563ec5cecb9525804b3f81c070c2c1afbecffa3cf5118f167ec3b36d4579e87",
+      "source": "struct Local { char b[0x84]; };\nstruct P { int f0; int f4; char rest[1]; };\nextern \"C\" void pk_func_ov007_020c9a2c(Ptr<struct Local> l, int a);\nextern \"C\" Ptr<char> pk_func_ov007_020c3398(Ptr<char> p, unsigned short n);\nextern \"C\" Ptr<char> pk_func_ov007_020c9988(int a) {\n    struct Local l;\n    Ptr<struct P> p;\n    if (a == 0) {\n        return 0;\n    }\n    pk_func_ov007_020c9a2c(&l, a);\n    p = *(Ptr<Ptr<struct P>>)(((Ptr<char>)(&l) + 0x44));\n    return pk_func_ov007_020c3398((Ptr<char>)(p) + 8, (unsigned short)((p->f0 * p->f4)));\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c9988(unsigned int a0) { return uword(pk_func_ov007_020c9988((int)(a0))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3398",
+        "func_ov007_020c9988",
+        "func_ov007_020c9a2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c99d8.c",
+      "sha256": "44ae00fe19b15c4fbdcbad7f9fc66a466ab944d9d4610aadbf5942e057c2ffa2",
+      "source": "typedef enum { FALSE, TRUE } Bool;\n\n/* The 0x84-byte block index pk_func_ov007_020c9a2c fills; names as there,\n * untyped here: only block 0's data is read. */\ntypedef struct Ov007BinFile {\n    Ptr<void> header;        /* 0x00 */\n    Ptr<void> blocks[16];    /* 0x04 */\n    Ptr<void> blockData[16]; /* 0x44 */\n} Ov007BinFile;\n\n/* Block 0 of a character file: a 0xc-byte header, then the tile data. Each\n * slot is read as a byte; pk_func_ov007_020c3550 keeps them in the record\n * func_ov007_020c33d0 loads into VRAM. */\ntypedef struct Ov007CharBlock {\n    unsigned char width; /* 0x00: in tiles (the record's +8) */\n    char pad_01[3];\n    unsigned char height; /* 0x04: in tiles (the record's +9) */\n    char pad_05[3];\n    /* 0x08: func_ov007_020c33d0 sizes each tile 0x40 bytes (8bpp) when set,\n     * else 0x20 (4bpp) */\n    unsigned char is8bpp;\n    char pad_09[3];\n} Ov007CharBlock;\n\ntypedef char Ov007BinFile_size_must_be_0x84[sizeof(Ov007BinFile) == 0x84 ? 1 : -1];\ntypedef char Ov007CharBlock_size_must_be_0xc[sizeof(Ov007CharBlock) == 0xc ? 1 : -1];\n\nextern \"C\" void pk_func_ov007_020c9a2c(Ptr<void> buf, int x);\nextern \"C\" int pk_func_ov007_020c3550(int a, int b, int c, int d);\n\n/* Builds the character record for file x: its tiles follow block 0's header. */\nextern \"C\" int pk_func_ov007_020c99d8(int x) {\n    Ov007BinFile buf;\n    Ptr<Ov007CharBlock> ip;\n    unsigned char a;\n    unsigned char b;\n    unsigned char c;\n    Bool d;\n\n    if (x == 0) {\n        return 0;\n    }\n    pk_func_ov007_020c9a2c(&buf, x);\n    ip = (Ptr<Ov007CharBlock>)(buf.blockData[0]);\n    a = ip->is8bpp;\n    b = ip->width;\n    c = ip->height;\n    if (a == 0) {\n        d = FALSE;\n    } else {\n        d = TRUE;\n    }\n    return pk_func_ov007_020c3550(word((ip + 1)), b, c, d);\n}\n\nextern \"C\" unsigned int abi_func_ov007_020c99d8(unsigned int a0) { return uword(pk_func_ov007_020c99d8((int)(a0))); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c3550",
+        "func_ov007_020c99d8",
+        "func_ov007_020c9a2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020c9a2c.c",
+      "sha256": "7670e11841d2749b75cd1ee22d89e6c904312e9e8f58f192658216db240e956f",
+      "source": "/* The common Nitro binary file header (field names as NitroSystem's\n * NNSG2dBinaryFileHeader); only the block count is read here. The blocks\n * start 0x10 bytes in, the header's usual size. */\ntypedef struct Ov007BinFileHeader {\n    char pad_00[0xe];\n    unsigned short dataBlocks; /* 0x0e */\n} Ov007BinFileHeader;\n\n/* Each block's 8-byte header (NNSG2dBinaryBlockHeader's names). */\ntypedef struct Ov007BinBlockHeader {\n    unsigned int kind; /* 0x00: the block's four-character code */\n    unsigned int size; /* 0x04: header included; the next block starts here */\n} Ov007BinBlockHeader;\n\n/* The 0x84-byte index this function fills for its callers\n * (pk_func_ov007_020c95fc, pk_func_ov007_020c9688, pk_func_ov007_020c9988 and\n * pk_func_ov007_020c99d8 read blockData[0], pk_func_ov007_020c9688 also [3]). */\ntypedef struct Ov007BinFile {\n    Ptr<Ov007BinFileHeader> header;      /* 0x00 */\n    Ptr<Ov007BinBlockHeader> blocks[16]; /* 0x04 */\n    Ptr<void> blockData[16];             /* 0x44: each block's data, past its header */\n} Ov007BinFile;\n\ntypedef char Ov007BinFile_size_must_be_0x84[sizeof(Ov007BinFile) == 0x84 ? 1 : -1];\n\n/* The parameter keeps the tree's int * spelling; `f` is the typed view. */\n#pragma opt_strength_reduction off\nextern \"C\" void pk_func_ov007_020c9a2c(Ptr<int> o, int x) {\n    Ptr<Ov007BinFile> f = (Ptr<Ov007BinFile>)(o);\n    Ptr<Ov007BinFileHeader> base;\n    int i;\n\n    f->header = (Ptr<Ov007BinFileHeader>)(x);\n    base = f->header;\n    x += 0x10;\n    for (i = 0; i < base->dataBlocks; i++) {\n        Ptr<Ov007BinBlockHeader> q;\n        f->blocks[i] = (Ptr<Ov007BinBlockHeader>)(x);\n        q = f->blocks[i];\n        f->blockData[i] = (Ptr<void>)((x + 8));\n        x += q->size;\n    }\n}\n\nextern \"C\" void abi_func_ov007_020c9a2c(unsigned int a0, unsigned int a1) { pk_func_ov007_020c9a2c((Ptr<int>)(a0), (int)(a1)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "func_ov007_020c9a2c"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/Sprite_SetAnimation.c",
+      "sha256": "b2e894a417620c71912c9c9b3ee48ad36035239ac35488c991a4ef31d1326c53",
+      "source": "/* The OAM sprite node pk_func_ov007_020c11ac allocates; names copied from\n * Ov007OamNode in src/unnamed/ov007/pk_func_ov007_020c10ec.c, only the slots\n * this file writes. */\ntypedef struct Ov007OamNode {\n    char pad_00[0x1d];\n    unsigned char animIndex; /* 0x1d */\n    char pad_1e[2];\n    int mode;    /* 0x20: 0 = stopped, 1 = looping, else once */\n    int rev;     /* 0x24: 1 = step backwards */\n    int paused;  /* 0x28 */\n    short frame; /* 0x2c */\n    short tick;  /* 0x2e: ticks into the frame */\n} Ov007OamNode;\ntypedef char Ov007OamNode_tick_must_be_at_0x2e[offsetof(Ov007OamNode, tick) == 0x2e ? 1 : -1];\n\nextern \"C\" void pk_Sprite_SetAnimation(Ptr<char> c, int r1, int r2, int r3, int sp0) {\n    Ptr<Ov007OamNode> n = (Ptr<Ov007OamNode>)(c);\n    n->animIndex = (char)(r1);\n    if (sp0 >= 0) {\n        n->frame = (short)(sp0);\n        n->tick = 0;\n    }\n    n->mode = r2;\n    n->rev = r3;\n}\n\nextern \"C\" void abi_Sprite_SetAnimation(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3, unsigned int a4) { pk_Sprite_SetAnimation((Ptr<char>)(a0), (int)(a1), (int)(a2), (int)(a3), (int)(a4)); }\n",
+      "dependencies": {},
+      "globals": {},
+      "functions": [
+        "Sprite_SetAnimation"
+      ],
+      "header": false
+    },
+    {
+      "path": "src/unnamed/ov007/func_ov007_020b68e8.c",
+      "sha256": "940bdd6e0bfe93c8caa88db0827b8b5195028a4fabb29f9145d48005bc1577e1",
+      "source": "\n#define data_ov007_02102dc4 ArrayRef<int>(0x02102dc4u)\n\n\n#define data_ov007_0210342c ArrayRef<int>(0x0210342cu)\n\nextern \"C\" int pk_func_ov007_020c3df4(int, int);\nextern \"C\" void pk_func_ov007_020b6a84(void);\nextern \"C\" void pk_func_ov007_020b697c(void);\nextern \"C\" void pk_func_ov007_020b69c4(void);\nextern \"C\" void pk_func_ov007_020b693c(void);\nextern \"C\" void pk_func_ov007_020b6d40(void);\nextern \"C\" void pk_func_ov007_020b68e8(void) {\n  int r = pk_func_ov007_020c3df4(word(data_ov007_02102dc4),0x188);\n  data_ov007_0210342c[0]=r;\n  pk_func_ov007_020b6a84();\n  pk_func_ov007_020b697c();\n  pk_func_ov007_020b69c4();\n  pk_func_ov007_020b693c();\n  pk_func_ov007_020b6d40();\n  int c = data_ov007_0210342c[0];\n  *(Ptr<int>)((c+0x184))=0;\n}\n\nextern \"C\" void abi_func_ov007_020b68e8() { pk_func_ov007_020b68e8(); }\n",
+      "dependencies": {},
+      "globals": {
+        "data_ov007_02102dc4": 34614724,
+        "data_ov007_0210342c": 34616364
+      },
+      "functions": [
+        "func_ov007_020b68e8",
+        "func_ov007_020b693c",
+        "func_ov007_020b697c",
+        "func_ov007_020b69c4",
+        "func_ov007_020b6a84",
+        "func_ov007_020b6d40",
+        "func_ov007_020c3df4"
+      ],
+      "header": false
+    },
+    {
       "path": "include/types.h",
       "sha256": "d02733a5530459ca5cd8da02c6c5b2e5ddc380a38ebe36b985df363977a6f434",
       "source": "typedef unsigned char u8;\ntypedef unsigned short u16;\ntypedef unsigned int u32;\ntypedef signed char s8;\ntypedef signed short s16;\ntypedef signed int s32;\ntypedef unsigned long long u64;\ntypedef signed long long s64;\ntypedef unsigned int size_t;\ntypedef s32 Fix12i;\ntypedef struct Vector3 {\n    Fix12i x;\nFix12i y;\nFix12i z;\n} Vector3;\ntypedef struct Vector3s {\n    s16 x;\ns16 y;\ns16 z;\n} Vector3s;\ntypedef float f32;\ntypedef double f64;\ntypedef volatile unsigned char vu8;\ntypedef volatile signed char vs8;\ntypedef volatile unsigned short vu16;\ntypedef volatile signed short vs16;\ntypedef volatile unsigned int vu32;\ntypedef volatile signed int vs32;\ntypedef int OnYoshiEatReturnVal;\n\n",

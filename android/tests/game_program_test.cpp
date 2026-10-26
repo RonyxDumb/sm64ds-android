@@ -268,9 +268,27 @@ int main(int argc, char **argv) {
             assert(data_0209d6fc && data_0209d708 == data_0209d6fc + 0x30 &&
                    data_0209d6e8 == data_0209d6fc);
             assert(game.frontend_core() && game.frontend_core()->has_items());
-            assert(game.frontend_core()->allocations() == 179);
+            assert(game.frontend_core()->allocations() > 179);
             const auto &front = *game.frontend_core();
             const auto root = front.root_address();
+            auto display = front.word_at(root + 0x74);
+            assert(front.word_at(display + 0x20) == 4);
+            assert(front.word_at(display + 0x28) == 6);
+            assert(front.word_at(display + 0x30) == 8);
+            assert(front.word_at(display + 0x38) == 6);
+            for (unsigned i = 0; i < 4; ++i) {
+                auto character = front.word_at(front.word_at(display + 0x24) + 4 * i);
+                assert(character && front.word_at(character));
+            }
+            for (unsigned i = 0; i < 8; ++i) {
+                auto slot = front.word_at(root + 0xc8 + 4 * i);
+                uint8_t kind;
+                std::memcpy(&kind, front.data_at(slot + 8, 1), 1);
+                assert(kind == i && front.word_at(slot) && front.word_at(slot + 4));
+            }
+            assert(front.word_at(root + 0x184) == 0);
+            std::cout << "Recovered frontend root: " << front.allocations()
+                      << " allocations, 24 item views and 8 BG slots.\n";
             for (unsigned i = 0; i < 24; ++i) {
                 auto view = front.word_at(root + 0x114 + i * 4);
                 auto item = front.word_at(view);

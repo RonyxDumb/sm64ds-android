@@ -5,6 +5,7 @@
 
 extern "C" {
 void abi_func_ov007_020b6a84();
+void abi_func_ov007_020b68e8();
 void abi_func_ov007_020b697c();
 void abi_func_ov007_020b69c4();
 void abi_func_ov007_020b693c();
@@ -45,12 +46,18 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
     abi_func_ov007_020c3e2c(0x020cca98);
     abi_func_ov007_020c3e1c(0x020cca80);
     abi_func_ov007_020b4100(0x020cca74,0x020cca68);
-    root_=space_.allocate(0x188);
-    *packed::Ptr<packed::Ptr<void>>(0x0210342c)=packed::Ptr<void>(root_);
-    abi_func_ov007_020b6a84();
-    if (loader_) abi_func_ov007_020b697c();
-    abi_func_ov007_020b69c4();
-    if (loader_) abi_func_ov007_020b693c();
+    if (loader_) {
+        // Execute all five genuine builders in the original root factory.
+        abi_func_ov007_020b68e8();
+        root_=word_at(0x0210342c);
+    } else {
+        // ROM-free dependency check: only source records requiring no embedded
+        // screen/sprite-bank tables. Production always takes the factory above.
+        root_=space_.allocate(0x188);
+        *packed::Ptr<packed::Ptr<void>>(0x0210342c)=packed::Ptr<void>(root_);
+        abi_func_ov007_020b6a84();
+        abi_func_ov007_020b69c4();
+    }
 }
 FrontendCore::~FrontendCore() = default;
 uint32_t FrontendCore::load_file(uint16_t handle) {

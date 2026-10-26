@@ -5,8 +5,8 @@
 #include <functional>
 
 namespace sm64ds {
-// Original frontend core records; this is not a substitute for the unfinished
-// menu dispatcher, display builders, or game scene.
+// Owns the original frontend root and its five builders. The complete scene
+// initialization, interactive dispatcher and rendering still need link closure.
 class FrontendCore {
 public:
     using FileLoader = std::function<std::vector<uint8_t>(uint16_t)>;

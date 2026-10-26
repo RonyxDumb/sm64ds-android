@@ -246,6 +246,24 @@ def main():
         raw = (ROOT/rel).read_text()
         view = raw
         dependencies = {}
+        if rel == 'src/unnamed/ov007/func_ov007_020c3550.c':
+            # Original ARM 020c3570..020c3594 keeps the allocated p in r0
+            # through bx lr. The recovered void spelling loses that live result
+            # on native ABIs; expose it explicitly, without changing its stores.
+            signature = 'void func_ov007_020c3550(int a, int b, int c, int d)'
+            if view.count(signature) != 1 or view.count('char* p =') != 1:
+                raise ValueError('character record return projection changed')
+            view = view.replace(signature, signature.replace('void ', 'int ', 1))
+            end = view.rfind('}')
+            view = view[:end] + '    return (int)p;\n' + view[end:]
+        if rel == 'src/unnamed/ov007/func_ov007_020c99d8.c':
+            # 020c9a1c calls c3550, then returns with r0 untouched.
+            declaration = 'extern void func_ov007_020c3550('
+            call = '    func_ov007_020c3550('
+            if view.count(declaration) != 1 or view.count(call) != 1:
+                raise ValueError('character file return projection changed')
+            view = view.replace(declaration, 'extern int func_ov007_020c3550(')
+            view = view.replace(call, '    return func_ov007_020c3550(')
         if rel == 'include/types.h':
             view = subprocess.check_output(['gcc','-x','c','-E','-P','-Iinclude',rel], cwd=ROOT, text=True)
             view = view.replace('typedef int bool;', '')

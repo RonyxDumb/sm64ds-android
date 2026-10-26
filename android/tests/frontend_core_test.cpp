@@ -5,8 +5,63 @@
 #include <stdexcept>
 
 using namespace sm64ds;
+extern "C" void abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(uint32_t);
+extern "C" void abi__ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(uint32_t);
 template<class T> T at(const FrontendCore &c, uint32_t a) {
     T v; std::memcpy(&v,c.data_at(a,sizeof v),sizeof v); return v;
+}
+namespace {
+void put(std::vector<uint8_t> &v, size_t a, uint32_t value, unsigned bytes=4) {
+    assert(a+bytes<=v.size());
+    for (unsigned i=0;i<bytes;++i) v[a+i]=uint8_t(value>>(8*i));
+}
+std::vector<uint8_t> model_fixture() {
+    // Invented data, not cartridge assets: eleven tiny paletted texture pairs.
+    std::vector<uint8_t> v(0x1000);
+    put(v,0x14,11); put(v,0x18,0x38); put(v,0x1c,11); put(v,0x20,0x114);
+    for (unsigned i=0;i<11;++i) {
+        put(v,0x38+i*20+4,0x300+i*64); put(v,0x38+i*20+8,64);
+        put(v,0x38+i*20+16,4u<<26);
+        put(v,0x114+i*16+4,0x700+i*32); put(v,0x114+i*16+8,32);
+    }
+    return v;
+}
+Cartridge::DataImage factory_fixture() {
+    Cartridge::DataImage image{0x020c0000,std::vector<uint8_t>(0x45000)};
+    auto set=[&](uint32_t a,uint32_t value,unsigned n=4) { put(image.bytes,a-image.base,value,n); };
+    auto binary=[&](uint32_t a,const std::vector<std::vector<uint8_t>> &blocks) {
+        set(a+14,blocks.size(),2);
+        uint32_t pos=a+16;
+        for (const auto &b:blocks) {
+            set(pos+4,b.size()+8);
+            std::memcpy(image.bytes.data()+pos+8-image.base,b.data(),b.size());
+            pos+=8+b.size();
+        }
+    };
+    std::vector<uint8_t> character(12+32), palette(8+0x200), entries(28), groups(40);
+    put(character,0,1); put(character,4,1);
+    put(palette,0,1); put(palette,4,0xd0);
+    put(entries,0,1); put(entries,4,1);
+    put(groups,0,1); put(groups,12,1,1);
+    binary(0x020f8000,{character}); binary(0x020f8100,{palette});
+    binary(0x020f8400,{entries,std::vector<uint8_t>(4),std::vector<uint8_t>(4),groups});
+    set(0x020d7db4,4096);
+    set(0x020d76a2,16,1); set(0x020d76a3,16,1);
+    set(0x020d7648,uint32_t(-4096));
+    for (unsigned i=0;i<24;++i) {
+        set(0x020d77d8+i*12,1);
+        set(0x020d77e0+i*12,1,1);
+    }
+    for (unsigned i=0;i<9;++i) {
+        set(0x020ccb7d+i*8,1,1);
+        set(0x020ccb80+i*8,0x020f8300);
+    }
+    for (unsigned i=0;i<4;++i) set(0x020d7e28+i*4,0x020f8000);
+    for (unsigned i=0;i<6;++i) {
+        set(0x020d7e38+i*4,0x020f8100); set(0x020d7e50+i*4,0x020f8400);
+    }
+    return image;
+}
 }
 int main() {
     GameHeap heap;
@@ -62,6 +117,22 @@ int main() {
         // before the source casts it to its real byte view.
         auto alias=packed::ArrayRef<uint16_t>(root+1);
         assert(packed::Ptr<uint8_t>(alias).address()==root+1);
+        auto &memory=packed::Space::current();
+        auto bca=memory.allocate(0x40);
+        for (unsigned i=0;i<4;++i) *packed::Ptr<uint32_t>(bca+8+i*4)=0x18+i*4;
+        abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(bca);
+        for (unsigned i=0;i<4;++i) assert(c.word_at(bca+8+i*4)==bca+0x18+i*4);
+        memory.release(bca);
+        auto btp=memory.allocate(0x80);
+        for (auto count : {2,8,0x1c}) *packed::Ptr<uint16_t>(btp+count)=1;
+        for (auto pair : {std::pair<unsigned,unsigned>{4,0x24},{12,0x2c},{32,0x34}})
+            *packed::Ptr<uint32_t>(btp+pair.first)=pair.second;
+        for (auto name : {0x28,0x30,0x38}) *packed::Ptr<uint32_t>(btp+name)=0x48;
+        abi__ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(btp);
+        assert(c.word_at(btp+4)==btp+0x24 && c.word_at(btp+12)==btp+0x2c);
+        assert(c.word_at(btp+32)==btp+0x34);
+        for (auto name : {0x28,0x30,0x38}) assert(c.word_at(btp+name)==btp+0x48);
+        memory.release(btp);
         bool bad=false;
         try { packed::Ptr<void()>(0x020b7138)(); } catch (const std::runtime_error &) { bad=true; }
         assert(bad);
@@ -69,6 +140,27 @@ int main() {
         try { (void)*packed::Ptr<int>(0xfffffff0); } catch (const std::runtime_error &) { bad=true; }
         assert(bad);
     }
+    {
+        unsigned loads=0;
+        FrontendCore full(heap,factory_fixture(),1,[&](uint16_t handle) {
+            assert(handle==0); ++loads; return model_fixture();
+        });
+        assert(loads==1 && full.has_items());
+        auto root=full.root_address(), display=full.word_at(root+0x74);
+        assert(full.word_at(display+0x20)==4 && full.word_at(display+0x28)==6);
+        assert(full.word_at(display+0x30)==8 && full.word_at(display+0x38)==6);
+        for (unsigned i=0;i<4;++i) {
+            auto character=full.word_at(full.word_at(display+0x24)+i*4);
+            assert(full.word_at(character)==0x020f8024);
+        }
+        for (unsigned i=0;i<24;++i) {
+            auto view=full.word_at(root+0x114+i*4);
+            assert(at<uint16_t>(full,full.word_at(view))==i);
+            auto sprite=full.word_at(view+4);
+            assert(at<uint16_t>(full,sprite+0xc)==16 && at<uint16_t>(full,sprite+0xe)==16);
+        }
+        assert(full.word_at(root+0x184)==0);
+    }
     assert(heap.allocations()==0 && heap.memory_left()==available);
-    std::puts("Native frontend: original allocators, root, states, cameras, lights, tweens, input and teardown passed.");
+    std::puts("Native frontend: original five root builders, state/input, model fixups and teardown passed.");
 }
