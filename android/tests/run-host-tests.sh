@@ -27,7 +27,7 @@ ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/bmd_test"
 g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
     -Iport/ntr/include android/tests/ppu_display_test.cpp \
     port/ntr/{ppu,io,gx,texture}.cpp -o "$TEST_BUILD/ppu_display_test"
-ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/ppu_display_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" "$TEST_BUILD/ppu_display_test"
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/ControllerState.java android/tests/ControllerStateTest.java
 java -cp "$TEST_BUILD/java" ControllerStateTest
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/{ControllerState,GamepadState}.java android/tests/GamepadStateTest.java
