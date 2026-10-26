@@ -313,6 +313,13 @@ int main(int argc, char **argv) {
             assert(assets->descriptor().levelAddress == 0x02112bdc);
             assert(!assets->model().empty() && !assets->collision().empty());
             assert(assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
+            auto *stageSpace = game.stage_address_space();
+            assert(stageSpace);
+            assert(stageSpace->data(assets->descriptor().levelAddress, 0x1c) ==
+                   assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
+            assert(stageSpace->address(assets->overlay_at(
+                assets->descriptor().levelAddress, 0x1c)) ==
+                   assets->descriptor().levelAddress);
             assert(request.players == 1 && request.character == expected[selected][0x41]);
             assert(request.controllerMode == expected[selected][0x42]);
             assert(game.requested_scene() == 3 && data_0209f5e8.color == 0x7fff);
