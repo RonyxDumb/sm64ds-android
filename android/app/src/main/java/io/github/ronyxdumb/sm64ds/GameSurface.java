@@ -70,7 +70,11 @@ final class GameSurface extends GLSurfaceView implements GLSurfaceView.Renderer 
                                       inputTy, audioEnabled);
         } catch (Exception | LinkageError e) {
             failed = true;
-            post(() -> failure.report("Renderer: " + e.getMessage()));
+            if (handle != 0) {
+                NativeBridge.destroyRenderer(handle, true);
+                handle = 0;
+            }
+            post(() -> failure.report(e.getMessage()));
         }
     }
     void suspend() {

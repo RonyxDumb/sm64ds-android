@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "gles_renderer.h"
+#include "screen_renderer.h"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <cstdio>
@@ -78,6 +79,25 @@ int main(int argc, char **argv) {
         renderer.draw(scene, 960, 540, 1.2f, .8f);
         renderer.release();
         check(glGetError() == GL_NO_ERROR, "GL error after recreate");
+        ntr::Framebuffer top{}, bottom{};
+        for (int y = 0; y < ntr::SCREEN_H; ++y)
+            for (int x = 0; x < ntr::SCREEN_W; ++x) {
+                top.px[y][x] = y < 96 ? 0xffff0000u : 0xff0000ffu;
+                bottom.px[y][x] = 0xff00ff00u;
+            }
+        sm64ds::ScreenRenderer screens;
+        for (int repeat = 0; repeat < 2; ++repeat) {
+            screens.create(); screens.draw(top, bottom, 960, 540);
+            uint8_t sample[4]{};
+            glReadPixels(240, 400, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
+            check(sample[0] == 255 && sample[1] == 0 && sample[2] == 0, "top screen orientation/color");
+            glReadPixels(240, 120, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
+            check(sample[0] == 0 && sample[1] == 0 && sample[2] == 255, "bottom row orientation/color");
+            glReadPixels(720, 270, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, sample);
+            check(sample[0] == 0 && sample[1] == 255 && sample[2] == 0, "sub-screen scanout");
+            screens.release();
+        }
+        check(glGetError() == GL_NO_ERROR, "native screen GL lifecycle error");
         eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         eglDestroyContext(display, context);
         eglDestroySurface(display, surface);

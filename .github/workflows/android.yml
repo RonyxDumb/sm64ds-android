@@ -26,10 +26,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
       - name: Native filesystem and importer regression tests (no ROM)
         run: bash android/tests/run-host-tests.sh
+      - name: Native game dependency bounds (no ROM)
+        run: bash android/tests/run-game-tests.sh
       - name: Test GLES3 renderer without ROM assets
         run: |
           python3 android/tools/native_sources.py --out /tmp/native-src
-          g++ -std=c++17 -Wall -Wextra -Werror -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp android/tests/gles_test.cpp android/app/src/main/cpp/{scene,gles_renderer}.cpp android/app/src/main/cpp/runtime/{resources,game_heap}.cpp /tmp/native-src/src/SharedFilePtr.cpp port/ntr/{bmd,fs,gx,lz77,texture}.cpp -lEGL -lGLESv2 -o /tmp/gles_test
+          g++ -std=c++17 -Wall -Wextra -Werror -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp android/tests/gles_test.cpp android/app/src/main/cpp/{scene,gles_renderer,screen_renderer}.cpp android/app/src/main/cpp/runtime/{resources,game_heap}.cpp /tmp/native-src/src/SharedFilePtr.cpp port/ntr/{bmd,fs,gx,lz77,texture}.cpp -lEGL -lGLESv2 -o /tmp/gles_test
           LIBGL_ALWAYS_SOFTWARE=1 /tmp/gles_test
       - name: Build and lint ARM64 APK
         working-directory: android

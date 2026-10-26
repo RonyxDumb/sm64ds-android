@@ -52,7 +52,7 @@ public final class MainActivity extends Activity {
         title.setTextColor(Color.WHITE);
         root.addView(title);
         TextView phase = new TextView(this);
-        phase.setText("Native port • development build 0.3\nBy Francesco Pio Pipino");
+        phase.setText("Native port • development build 0.4\nBy Francesco Pio Pipino");
         phase.setTextSize(14);
         phase.setTextColor(0xff8db5ff);
         root.addView(phase);
@@ -70,12 +70,12 @@ public final class MainActivity extends Activity {
         select.setOnClickListener(v -> pickRom());
         buttons.addView(select);
         verify = new Button(this);
-        verify.setText("Verify native assets");
+        verify.setText("Verifica ROM");
         verify.setOnClickListener(v -> checkInstalled());
         buttons.addView(verify);
         root.addView(buttons);
         render = new Button(this);
-        render.setText("Test renderer, audio e controlli");
+        render.setText("Avvia boot originale");
         render.setOnClickListener(v -> startActivity(new Intent(this, RuntimeActivity.class)));
         root.addView(render);
         ScrollView scroll = new ScrollView(this);
@@ -87,7 +87,7 @@ public final class MainActivity extends Activity {
             checkInstalled();
         else {
             status.setText(
-                "Select a European ASMP revision 0 .nds ROM or ZIP.\n\nThis build imports and verifies assets. Playable game integration is still in development.");
+                "Select a European ASMP revision 0 .nds ROM or ZIP.\n\nIl boot originale è disponibile; titolo e gameplay sono ancora in sviluppo.");
             busy(false);
         }
     }

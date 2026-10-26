@@ -53,11 +53,14 @@ Java_io_github_ronyxdumb_sm64ds_NativeBridge_createRenderer(JNIEnv *env, jclass,
     return reinterpret_cast<jlong>(session.release());
 }
 extern "C" JNIEXPORT void JNICALL Java_io_github_ronyxdumb_sm64ds_NativeBridge_drawRenderer(
-    JNIEnv *, jclass, jlong handle, jint width, jint height, jfloat dt, jint buttons, jfloat x,
+    JNIEnv *env, jclass, jlong handle, jint width, jint height, jfloat dt, jint buttons, jfloat x,
     jfloat y, jint tx, jint ty, jboolean audioEnabled) {
-    if (handle)
-        reinterpret_cast<sm64ds::Session *>(handle)->frame(
+    try {
+        if (handle) reinterpret_cast<sm64ds::Session *>(handle)->frame(
             width, height, dt, static_cast<uint32_t>(buttons), x, y, tx, ty, audioEnabled);
+    } catch (const std::exception &e) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), e.what());
+    }
 }
 extern "C" JNIEXPORT void JNICALL Java_io_github_ronyxdumb_sm64ds_NativeBridge_destroyRenderer(
     JNIEnv *, jclass, jlong handle, jboolean contextValid) {
