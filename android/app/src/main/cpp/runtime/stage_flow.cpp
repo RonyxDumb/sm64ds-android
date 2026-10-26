@@ -1,4 +1,5 @@
 #include "stage_flow.h"
+#include "resources.h"
 #include "PlayerInput.h"
 #include "nitro/fx/fx.h"
 #include <algorithm>
@@ -98,7 +99,24 @@ void StageFlow::prepare_input() {
     // these data; this does NOT substitute for them.
     auto nextAssets = std::make_unique<StageAssets>(
         StageAssets::load(cartridge_, static_cast<uint8_t>(data_02092110)));
+    auto nextArm9 = std::make_unique<Cartridge::DataImage>(
+        cartridge_.arm9_data(nextAssets->overlay().base));
+    auto nextSpace = std::make_unique<packed::Space>(Resources::active().heap());
+    nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
+    nextSpace->map(nextAssets->overlay().base, nextAssets->overlay().bytes.data(),
+                   nextAssets->overlay().bytes.size());
+    // The original LVL_Overlay and its CLPS/object pointers must round-trip
+    // through the same checked 32-bit address space the actor ABI consumes.
+    if (nextSpace->address(nextAssets->overlay_at(
+            nextAssets->descriptor().levelAddress, 0x1c)) !=
+        nextAssets->descriptor().levelAddress)
+        throw std::runtime_error("Native stage overlay cannot be rebound to DS addresses.");
+    // Destroy an old address space before its backing buffers, then install
+    // the next scene atomically once all cartridge and ABI checks pass.
+    addressSpace_.reset();
     assets_ = std::move(nextAssets);
+    arm9Image_ = std::move(nextArm9);
+    addressSpace_ = std::move(nextSpace);
     data_0209f21c = data_0208a0e0;
     reset_input();
 }
