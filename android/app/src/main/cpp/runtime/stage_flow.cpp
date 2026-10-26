@@ -40,7 +40,7 @@ u16 data_0209f368[4]{};
 s16 data_020756b0[16]{}, data_02082214[8192]{};
 u16 *data_0209214c[3] = {buttonMaps[0], buttonMaps[1], buttonMaps[2]};
 u16 data_020994e0[1025]{};
-int data_ov002_02111180 = 0;
+u8 data_ov002_02111180 = 0;
 }
 
 namespace sm64ds {

@@ -43,7 +43,7 @@ extern u8 data_0209f294, data_0209f2c4, data_0209f20c, data_020a1166[4 * 0x24];
 extern u16 data_0209f368[4];
 extern s16 data_020756b0[16], data_02082214[8192];
 extern u16 *data_0209214c[3], data_020994e0[1025];
-extern int data_ov002_02111180;
+extern u8 data_ov002_02111180;
 extern u8 data_0209fc50, data_0209fc5c[4];
 extern char data_0209fc64[4];
 int SublevelToLevel(int level);
