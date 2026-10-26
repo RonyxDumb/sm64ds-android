@@ -17,12 +17,43 @@ import hostgen
 
 
 def local_cpp(raw):
-    # Select the original C++ spelling without expanding included headers into
-    # every consumer. Keep compiler and platform conditionals out of the view.
-    raw = re.sub(r'^\s*#include\s+([^\n]+)',r'#pragma packed_include \1',raw,flags=re.M)
-    value = subprocess.run(['g++','-E','-P','-x','c++','-'],input=raw,text=True,
-                           stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=True).stdout
-    return re.sub(r'^#pragma packed_include\s+', '#include ',value,flags=re.M)
+    # Select platform branches, retaining shared type/include guards across
+    # headers. Preprocessing each header independently loses those guards.
+    lines=[]; stack=[]; active=True
+    platform={'__cplusplus':True,'_MSC_VER':False,'SM64DS_PLATFORM_PC':False}
+    for line in ascii_comments(raw).splitlines(keepends=True):
+        match=re.match(r'\s*#\s*(ifdef|ifndef|if|elif|else|endif)\b\s*(.*)',line)
+        if not match:
+            if active: lines.append(line)
+            continue
+        kind,expression=match.groups()
+        if kind in ('ifdef','ifndef','if'):
+            known=expression.strip() in platform and kind!='if'
+            selected=(platform.get(expression.strip(),True) != (kind=='ifndef')) if known else True
+            stack.append((active,known,selected))
+            active=active and selected
+            if active and not known: lines.append(line)
+        elif kind=='else':
+            parent,known,selected=stack[-1]
+            if known:
+                active=parent and not selected
+                stack[-1]=(parent,known,not selected)
+            elif active: lines.append(line)
+        elif kind=='endif':
+            parent,known,selected=stack.pop()
+            if parent and not known: lines.append(line)
+            active=parent
+        elif active: lines.append(line)
+    if stack: raise ValueError('unbalanced header conditionals')
+    return ''.join(lines)
+
+
+def ascii_comments(raw):
+    # tree-sitter offsets are bytes. Normalize only commentary so subsequent
+    # reviewed text edits cannot confuse UTF-8 byte and Python character offsets.
+    value=re.sub(r'/\*.*?\*/|//[^\n]*',lambda m:m[0].encode('ascii','replace').decode(),raw,flags=re.S)
+    if not value.isascii(): raise ValueError('non-ASCII code needs a byte-indexed source view')
+    return value
 
 
 def walk(node):
@@ -44,6 +75,7 @@ def function_decl(node):
 
 class GameLift(Lift):
     symbols={}
+    reference_calls={}
 
     def address(self,name):
         return self.symbols[name] if name in self.symbols else super().address(name)
@@ -52,8 +84,16 @@ class GameLift(Lift):
         # Runtime entries use typed Ptr<signature> calls. The frontend's legacy
         # word-only convenience wrappers cannot express namespace-local types.
         value=self.rewrite(self.root)
+        def outside_record(node):
+            parent=node.parent
+            while parent:
+                if parent.type=='field_declaration_list': return False
+                parent=parent.parent
+            return True
+        functions=[n for n in walk(PARSER.parse(value.encode()).root_node)
+                   if n.type=='function_definition' and outside_record(n)]
         includes=list(re.finditer(r'^\s*#include[^\n]*\n',value,re.M))
-        at=includes[-1].end() if includes else 0
+        at=functions[0].start_byte if functions else (includes[-1].end() if includes else 0)
         value=value[:at]+'\n'+'\n'.join(dict.fromkeys(self.hoisted))+'\n'+value[at:]
         if '' in self.functions: raise ValueError('unnamed native function declaration')
         if self.functions:
@@ -96,9 +136,27 @@ class GameLift(Lift):
 
     def rewrite(self,node):
         kind=node.type
+        if kind=='new_expression':
+            if node.child_by_field_name('declarator'): raise ValueError('array new needs its original element constructor')
+            typ=self.text(node.child_by_field_name('type'))
+            args=node.child_by_field_name('arguments')
+            return 'make<'+typ+'>'+ (self.rewrite(args) if args else '()')
+        if kind=='delete_expression':
+            return 'destroy_object('+self.rewrite(node.named_children[-1])+')'
+        if kind=='preproc_function_def':
+            value=node.child_by_field_name('value')
+            if value and re.search(r'\((?:int|u32|unsigned int)\)',self.text(value)) and '*' not in self.text(value):
+                content=self.text(value).strip().replace('\\\n','\n')
+                probe=GameLift('void macro() { '+content+'; }')
+                stmt=probe.root.named_children[0].child_by_field_name('body').named_children[0]
+                content=probe.rewrite(stmt.named_children[0])
+                return self.source[node.start_byte:value.start_byte].decode()+content+'\n'
         if kind=='type_descriptor':
             return self.declaration(node)
-        if kind=='declaration' and node.parent.type=='compound_statement' and function_decl(node) and not any(
+        if kind=='field_declaration' and any(c.type=='bitfield_clause' for c in node.named_children):
+            value=self.text(node)
+            return re.sub(r'\bunsigned long(?: int)?\b','unsigned int',re.sub(r'\bsigned long(?: int)?\b','int',value))
+        if kind=='declaration' and node.parent.type=='compound_statement' and node.child_by_field_name('declarator') and node.child_by_field_name('declarator').type=='function_declarator' and self.base(node)[:1].isupper() and not any(
                 c.type=='storage_class_specifier' and self.text(c)=='extern' for c in node.named_children):
             # A local class-valued direct initializer is not an extern function.
             # Parsing alone cannot distinguish `Fix12 a(value)` from a prototype.
@@ -107,12 +165,31 @@ class GameLift(Lift):
             # tree-sitter-cpp represents ARM member declarators with an ERROR
             # node. Parse only this bounded declarator, not arbitrary source.
             value=self.text(node)
-            member=re.fullmatch(r'(typedef\s+)?(.+?)\s*\(\s*([\w:]+)::\*(\w+)\s*\)\s*\((.*?)\)\s*;',value,re.S)
+            member=re.fullmatch(r'(?:(typedef|extern)\s+)?(.+?)\s*\(\s*([\w:]+)::\*(\w+)(\[[^\]]*\])?\s*\)\s*\((.*?)\)\s*;',value,re.S)
             if member:
-                return ('typedef ' if member[1] else '')+'Member<'+member[3]+', '+member[2].strip()+'('+member[5]+')> '+member[4]+';'
+                probe=GameLift('void parameters('+member[6]+');')
+                params=function_decl(probe.root.named_children[0]).child_by_field_name('parameters')
+                types=[probe.typename(probe.decode(p.child_by_field_name('declarator'),probe.base(p))[1]) for p in params.named_children if p.type=='parameter_declaration']
+                typ='Member<'+member[3]+', '+member[2].strip()+'('+', '.join(types)+')>'
+                if member[1]=='extern':
+                    address=self.address(member[4]);self.globals[member[4]]=address
+                    ref=('ArrayRef<'+typ+'>(0x%08xu)'%address) if member[5] else '(*Ptr<'+typ+'>(0x%08xu))'%address
+                    return '\n#define '+member[4]+' '+ref+'\n'
+                return ('typedef ' if member[1]=='typedef' else '')+typ+' '+member[4]+(member[5] or '')+';'
+            decls=node.children_by_field_name('declarator')
+            if kind=='declaration' and any(d.type=='init_declarator' and d.child_by_field_name('value').type=='argument_list' for d in decls):
+                result=[]
+                for d in decls:
+                    if d.type!='init_declarator': raise ValueError('mixed direct initialization needs an explicit view')
+                    name,typ=self.decode(d.child_by_field_name('declarator'),self.base(node))
+                    result.append(self.named(name,typ)+' = '+self.typename(typ)+self.rewrite(d.child_by_field_name('value'))+';')
+                return '\n'.join(result)
         if kind=='call_expression':
             fn=node.child_by_field_name('function')
             args=node.child_by_field_name('arguments')
+            if self.text(fn) in self.reference_calls:
+                refs=self.reference_calls[self.text(fn)]
+                return self.rewrite(fn)+'('+', '.join(('&('+self.rewrite(a)+')') if i in refs else self.rewrite(a) for i,a in enumerate(args.named_children))+')'
             member=re.fullmatch(r'\((.*?)\s*(->\*|\.\*)\s*(.*?)\)',self.text(fn),re.S)
             if member:
                 obj=member[1] if member[2]=='->*' else '&('+member[1]+')'
@@ -124,6 +201,8 @@ class GameLift(Lift):
             name,value=self.decode(decl,ret)
             storage=[self.text(c) for c in node.named_children if c.type in ('storage_class_specifier','type_qualifier')]
             middle=self.source[decl.end_byte:body.start_byte].decode()
+            qualifiers=' '.join(self.text(c) for c in function_decl(node).named_children if c.type=='type_qualifier')
+            if qualifiers: middle=' '+qualifiers+middle
             # Initializer lists also contain pointer casts and constructor args.
             for c in node.named_children:
                 if c.type=='field_initializer_list': middle=self.rewrite(c)+' '
@@ -191,6 +270,8 @@ class Classes:
         for qualified,r in self.records.items():
             if r['path']!=path: continue
             body=r['node'].child_by_field_name('body')
+            if '~' in r['slots']:
+                edits.append((body.start_byte+1,body.start_byte+1,'\npublic: enum : unsigned { packed_delete_slot='+str(r['slots']['~'][0]+1)+' };\n'))
             if r['root']:
                 base=next((n for n in r['node'].named_children if n.type=='base_class_clause'),None)
                 if base: edits.append((base.start_byte+1,base.start_byte+1,' public Vptr, '))
@@ -222,7 +303,11 @@ class Classes:
                 member=next(n for n in walk(lift.root) if n.type in ('declaration','field_declaration','function_definition') and function_decl(n))
                 local=function_decl(member)
                 ret=lift.base(member)
-                name,signature=lift.decode(local,ret)
+                name,signature=lift.decode(member.child_by_field_name('declarator'),ret)
+                result_type=signature[1]
+                ret=lift.typename(result_type)
+                ref_result=isinstance(result_type,tuple) and result_type[0]=='ref'
+                stored_ret=lift.typename(('ptr',result_type[1],'')) if ref_result else ret
                 params=local.child_by_field_name('parameters')
                 typed=[]; arguments=[]; stored=[]
                 for i,p in enumerate(params.named_children):
@@ -233,8 +318,8 @@ class Classes:
                     typed.append(lift.named(pn,pt)); arguments.append('&'+pn if isinstance(pt,tuple) and pt[0]=='ref' else pn)
                     stored.append(lift.typename(('ptr',pt[1],'')) if isinstance(pt,tuple) and pt[0]=='ref' else lift.typename(pt))
                 suffix=' const' if re.search(r'\)\s*const',value) else ''
-                sig=ret+'(Ptr<'+qualified+'>'+''.join(', '+p for p in stored)+')'
-                wrapper=ret+' '+method+'('+', '.join(typed)+')'+suffix+' { return virtual_call<'+sig+'>(this, '+str(slot)+''.join(', '+a for a in arguments)+'); }'
+                sig=stored_ret+'(Ptr<'+qualified+'>'+''.join(', '+p for p in stored)+')'
+                wrapper=ret+' '+method+'('+', '.join(typed)+')'+suffix+' { return '+('*' if ref_result else '')+'virtual_call<'+sig+'>(this, '+str(slot)+''.join(', '+a for a in arguments)+'); }'
                 impl=re.sub(r'\bvirtual\s+','',value)
                 impl=re.sub(r'\b'+re.escape(method)+r'(?=\s*\()', 'packed_impl_'+method,impl, count=1)
                 impl=re.sub(r'\s*=\s*0\s*;', ';',impl)
@@ -242,7 +327,8 @@ class Classes:
             # Allocation is supplied by make<T>; no host operator can return a
             # four-byte logical handle. Deleting destructors are explicit bridges.
             for node in body.named_children:
-                if re.search(r'\boperator\s+(new|delete)\b',text(raw,node)):
+                decl=function_decl(node)
+                if decl and re.fullmatch(r'operator\s+(new|delete)(?:\[\])?',text(raw,decl.child_by_field_name('declarator'))):
                     edits.append((node.start_byte,node.end_byte,''))
         for begin,end,value in sorted(edits,reverse=True): raw=raw[:begin]+value+raw[end:]
         return raw
@@ -319,7 +405,9 @@ class Classes:
                     action='self.get()->~'+record['name']+'();'
                     if re.search(r'D0E',symbol): action+=' Space::current().release(self.address());'
                 else:
-                    action='return '+(cls+'::' if static else 'self->')+actual+'('+', '.join(args)+');'
+                    ref_result=ret.endswith('&')
+                    if ref_result: ret='Ptr<'+ret[:-1]+'>'
+                    action='return '+('&' if ref_result else '')+(cls+'::' if static else 'self->')+actual+'('+', '.join(args)+');'
                 bridges.append((symbol,'extern "C" '+ret+' pk_'+symbol+'('+', '.join(signature)+') { '+action+' }'))
         for begin,end,value in sorted(edits,reverse=True): raw=raw[:begin]+value+raw[end:]
         for cls,r in self.records.items():
@@ -336,22 +424,59 @@ def local_externs(raw):
     An asm alias preserves those local call shapes without conflating their
     declarations when native C++ needs them hoisted out of a member body.
     """
-    edits=[]; aliases={}
+    edits=[]; aliases={}; globals_=[]
+    nodes=list(walk(PARSER.parse(raw.encode()).root_node))
+    for index,node in enumerate(nodes):
+        if node.type!='declaration' or not function_decl(node): continue
+        parent=node.parent
+        scoped=False
+        while parent:
+            if parent.type in ('compound_statement','field_declaration_list'): scoped=True;break
+            parent=parent.parent
+        if scoped or re.search(r'^\s*static\b',text(raw,node)): continue
+        name_node=function_decl(node).child_by_field_name('declarator')
+        name=text(raw,name_node)
+        if not re.fullmatch(r'\w+',name): continue
+        alias='global_call_'+str(index)+'_'+name
+        globals_.append((node.start_byte,name,alias))
+        aliases['pk_'+alias]='pk_'+name
+        edits.append((name_node.start_byte,name_node.end_byte,alias))
     for index,fn in enumerate(n for n in walk(PARSER.parse(raw.encode()).root_node) if n.type=='function_definition'):
         body=fn.child_by_field_name('body')
-        names=set()
+        names=set(); changes=[]
+        inherited={name:alias for at,name,alias in globals_ if at<fn.start_byte}
         for node in walk(body):
             if node.type!='declaration' or not function_decl(node): continue
-            if not any(c.type=='storage_class_specifier' and text(raw,c)=='extern' for c in node.named_children): continue
+            if not any(c.type=='storage_class_specifier' and text(raw,c)=='extern' for c in node.named_children):
+                base=node.child_by_field_name('type')
+                if base and text(raw,base)=='Fix12v': continue
             name=text(raw,function_decl(node).child_by_field_name('declarator'))
-            if re.fullmatch(r'\w+',name): names.add(name)
+            if re.fullmatch(r'\w+',name):
+                names.add(name)
+                refs=[]
+                for pi,param in enumerate(function_decl(node).child_by_field_name('parameters').named_children):
+                    if param.type!='parameter_declaration': continue
+                    decl=param.child_by_field_name('declarator')
+                    is_ref=decl and decl.type in ('reference_declarator','abstract_reference_declarator')
+                    typ=param.child_by_field_name('type')
+                    # The original ARM reference is one logical address word.
+                    # Function-local record spellings need no global type name.
+                    if is_ref or (typ and text(raw,typ)=='State' and decl and decl.type=='pointer_declarator'):
+                        argument=re.search(r'\b(\w+)\s*$',text(raw,decl))
+                        named=argument[1] if argument else ''
+                        changes.append((param.start_byte-body.start_byte,param.end_byte-body.start_byte,'void *'+named))
+                    if is_ref: refs.append(pi)
+                if refs: GameLift.reference_calls['local_call_'+str(index)+'_'+name]=refs
         value=text(raw,body)
+        for begin,end,replacement in sorted(changes,reverse=True): value=value[:begin]+replacement+value[end:]
         for name in sorted(names,key=len,reverse=True):
             alias='local_call_'+str(index)+'_'+name
             aliases['pk_'+alias]='pk_'+name
             value=re.sub(r'\b'+re.escape(name)+r'\b',alias,value)
-        if names: edits.append((body.start_byte,body.end_byte,value))
-    for begin,end,value in reversed(edits): raw=raw[:begin]+value+raw[end:]
+        for name,alias in inherited.items():
+            if name not in names: value=re.sub(r'\b'+re.escape(name)+r'\b',alias,value)
+        if names or inherited: edits.append((body.start_byte,body.end_byte,value))
+    for begin,end,value in sorted(edits,reverse=True): raw=raw[:begin]+value+raw[end:]
     return raw,aliases
 
 
@@ -374,7 +499,32 @@ def main():
         if path=='include/types.h': view=local_cpp(raw)
         elif path in headers: view=classes.header(path)
         else:
-            view=raw
+            view=ascii_comments(raw)
+            names='|'.join(re.escape(name) for name in classes.records)
+            names+='|Vector3|Vector3s'
+            view=re.sub(r'(?<![\w:])::('+names+r')\b',r'::sm64ds::game::source::\1',view)
+            view=re.sub(r'\((\w+)\s*->\*\s*\(([^()]*)\)\)\s*\(\s*\)',r'member_call(\1, \2)',view)
+            view=view.replace('__builtin__clear','clear_bytes')
+            if path=='src/game/player/Player.cpp':
+                view=view.replace('    Player::State;\n','')
+                view=view.replace('struct Arg {\n virtual void *m0();\n virtual void *m1();\n virtual struct Ret *m2();\n};',
+                    'struct Arg : Vptr {\n'
+                    'Ptr<void> m0() { return virtual_call<Ptr<void>(Ptr<void>)>(this,0); }\n'
+                    'Ptr<void> m1() { return virtual_call<Ptr<void>(Ptr<void>)>(this,1); }\n'
+                    'Ptr<Ret> m2() { return virtual_call<Ptr<Ret>(Ptr<void>)>(this,2); }\n'
+                    '};\nstatic_assert(sizeof(Arg)==4);')
+                view=view.replace('    int var_r4 = 0;', '    var_r4 = 0;')
+                view,n=re.subn(r'(int Player::St_HoldLight_Main\(\)\s*\{)',r'\1\n    int var_r4;',view)
+                if n!=1: raise ValueError('hold-light state declaration changed')
+                start=view.index('// @symbol func_ov002_020e2ea0\n')
+                end=view.index('// @symbol ',start+10)
+                block=view[start:end]
+                block,n=re.subn(r'(int func_ov002_020e2ea0\([^)]*\)\s*\{)',r'\1\n    int val, diff;\n    dBgPi *cr;',block)
+                if n!=1: raise ValueError('fall-height helper declaration changed')
+                block=block.replace('    int val =','    val =').replace('    int diff =','    diff =')
+                block=block.replace('    dBgPi *cr =','    cr =')
+                view=view[:start]+block+view[end:]
+                view=view.replace('#include "types.h"','#include "types.h"\nextern unsigned short *func_ov002_020e6ad4(unsigned short *);',1)
             if path=='src/runtime/actor/ActorBase.cpp':
                 # h != 0 implies one of the two branches that assigns avail.
                 # Keep a sentinel for native optimizers across handle calls.
@@ -387,6 +537,7 @@ def main():
                               if set(re.findall(r'\b(?:func_\w+|data_\w+|_Z\w+)\b',m.group()))&used]
                 view=view.replace('#include "decl_common.h"','#include "common.h"\n'+'\n'.join(declarations))
             view,bridges=classes.source(view)
+            GameLift.reference_calls={}
             view,local_aliases=local_externs(view)
         view=hostgen.transform(view)[0] if path.startswith('src/') else view
         view=re.sub(r'\bNTR_MMIO\(((?:(?:unsigned|signed)\s+)?(?:char|short|int|long(?: long)?|[su](?:8|16|32|64))),\s*([^()]+)\)',
@@ -396,7 +547,7 @@ def main():
         if path.startswith('src/'):
             lines=[]
             for line in source.splitlines():
-                match=re.search(r'\b(pk_local_call_\w+)\(',line) if line.startswith('extern "C" ') and line.endswith(';') else None
+                match=re.search(r'\b(pk_(?:local|global)_call_\w+)\(',line) if line.startswith('extern "C" ') and line.endswith(';') else None
                 if match and match[1] in local_aliases:
                     line=line[:-1]+' __asm__("'+local_aliases[match[1]]+'");'
                 lines.append(line)

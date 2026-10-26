@@ -56,4 +56,10 @@ template<class T,class... Args> Ptr<T> make(Args&&...args) {
 template<class T> void destroy_virtual(T object,unsigned slot) {
     virtual_call<void(Ptr<void>)>(object,slot);
 }
+template<class T> void destroy_object(Ptr<T> object) {
+    if (object.address()) destroy_virtual(object,T::packed_delete_slot);
+}
+inline void clear_bytes(Ptr<void> object,uint32_t bytes) {
+    std::memset(object.get(bytes),0,bytes);
+}
 }

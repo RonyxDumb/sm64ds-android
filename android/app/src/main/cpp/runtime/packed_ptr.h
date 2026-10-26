@@ -23,6 +23,8 @@ template<class From,class To,class=void> struct BaseConversion : std::false_type
 template<class From,class To> struct BaseConversion<From,To,std::void_t<decltype(sizeof(From)),decltype(sizeof(To))>>
     : std::bool_constant<std::is_class_v<From> && std::is_class_v<To> && std::is_base_of_v<To,From> &&
                          !std::is_same_v<std::remove_cv_t<From>,std::remove_cv_t<To>>> {};
+template<class T,class=void> struct PackedCompatible : std::true_type {};
+template<class T> struct PackedCompatible<T,std::void_t<decltype(sizeof(T))>> : std::bool_constant<!std::is_polymorphic_v<T>> {};
 // Recovered SDK code also keeps a volatile register pointer in a local.
 // Those writes must reach the same command/arithmetic ports as literal MMIO.
 template<class T> class VolatileRef {
@@ -39,6 +41,8 @@ public:
             return Value(*static_cast<volatile uint32_t *>(resolve(address_,4)));
         } else return *static_cast<T *>(resolve(address_,sizeof(Value)));
     }
+    template<class V=Value,std::enable_if_t<std::is_class_v<V>,int> = 0>
+    explicit operator uint32_t() const { return static_cast<uint32_t>(static_cast<Value>(*this)); }
     VolatileRef &operator=(Value value) {
         if (port()) ntr::io_write(address_,static_cast<uint64_t>(value),sizeof(Value));
         else if constexpr (std::is_class_v<Value>) {
@@ -65,9 +69,10 @@ public:
     template<class I, std::enable_if_t<std::is_integral_v<I>, int> = 0>
     constexpr Ptr(I value) : address_(static_cast<uint32_t>(value)) {}
     template<class U> constexpr Ptr(Ptr<U> value) : address_(value.address()) {
-        if constexpr (BaseConversion<U,T>::value)
+        if constexpr (BaseConversion<U,T>::value || BaseConversion<T,U>::value)
             if (address_) address_=encode(reinterpret_cast<uintptr_t>(static_cast<T *>(value.get())));
     }
+    template<class U> Ptr(VolatileRef<U> value) : Ptr(static_cast<std::remove_cv_t<U>>(value)) {}
     template<class U> Ptr(U *value) {
         if constexpr (std::is_function_v<U>) {
             uintptr_t bits = 0;
@@ -76,7 +81,9 @@ public:
             address_ = value ? encode_code(bits) : 0;
         } else {
             static_assert(sizeof(uintptr_t)>=sizeof(value));
-            address_ = value ? encode(reinterpret_cast<uintptr_t>(value)) : 0;
+            if constexpr (BaseConversion<U,T>::value || BaseConversion<T,U>::value)
+                address_ = value ? encode(reinterpret_cast<uintptr_t>(static_cast<T *>(value))) : 0;
+            else address_ = value ? encode(reinterpret_cast<uintptr_t>(value)) : 0;
         }
     }
     constexpr uint32_t address() const { return address_; }
@@ -86,8 +93,7 @@ public:
     constexpr operator int32_t() const { return static_cast<int32_t>(address_); }
     T *get(size_t bytes = Extent<T>::value) const {
         static_assert(!std::is_function_v<T>, "use the bound native call operator");
-        if constexpr (std::is_class_v<T>)
-            static_assert(!std::is_polymorphic_v<T>, "project the actor ABI before using a native C++ vptr in a packed record");
+        static_assert(PackedCompatible<T>::value, "project the actor ABI before using a native C++ vptr in a packed record");
         return static_cast<T *>(resolve(address_, bytes));
     }
     T *operator->() const { return get(); }

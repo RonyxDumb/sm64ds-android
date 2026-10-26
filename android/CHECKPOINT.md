@@ -1,3 +1,53 @@
+# Paused at user request — 2026-10-26
+
+All current repository edits are saved in `android/actor-runtime`. Development
+was suspended at the user's request to preserve the remaining usage allowance.
+Do not restart builds or implementation until the user asks to resume.
+
+Verified production remains main `2dc6f44a6914dfc677219e7eacedaf1c77748c3b`:
+Android debug/release/lint and native ARM64 execution passed in Actions run
+40374219101. The original interactive save menu calls StartFile and requests
+scene 3. The actor increment below remains WIP and is not connected to GameProgram.
+
+Latest saved WIP details:
+
+- The game generator now preserves shared include/type guards, normalizes only
+  non-ASCII comments before byte-indexed AST edits, and handles native const
+  methods, reference returns, ARM member-pointer arrays and direct initialization.
+- Local and file-scope ABI prototypes receive unique C++ names with canonical
+  ELF asm aliases. Reference arguments at those local boundaries become logical
+  pointer words. Matching source/header files remain untouched.
+- Packed native allocation/deletion helpers and explicit virtual dispatch are
+  implemented. Multiple-inheritance pointer conversions adjust native subobject
+  offsets; volatile stored pointers and incomplete address-only types are handled.
+- The last regeneration completed successfully for 9 source units / 78 headers
+  with 890 native code bindings. The generated manifest and object files are
+  reproducible build intermediates; regenerate from the saved profile.
+- Last Player syntax pass before the final fixes reported generated constexpr
+  delete-slot initializers and a goto crossing local initializers. The generator
+  now emits enum constants and moves declarations in the exact affected helper
+  (`func_ov002_020e2ea0`), keeping assignments at their original locations. Those
+  final fixes were regenerated but have NOT been compiled or executed yet.
+- Earlier complete actor/stage units compiled, and the actor-base 0x50 layout and
+  Player 0x768 layout assertions remain active. No gameplay execution is claimed.
+
+Resume with pinned tree-sitter 0.25.2 and tree-sitter-cpp 0.23.4:
+
+```sh
+PYTHONPATH=/tmp/sm64ds-python python3 android/tools/lift_game.py --profile android/tools/game_execution_profile.json --out /tmp/game-manifest.json
+python3 android/tools/packed_sources.py --manifest /tmp/game-manifest.json --out /tmp/packed-game-src
+```
+
+Then compile the current projection, finish constructor/destructor variants and
+secondary vtable thunks, close actual stage/Player/model/collision/camera
+references, and connect the original actor scheduler to scene 3 in GameProgram.
+A new StageCore/shared ARM9/save/input/overlay owner is still required. Source
+new/delete and virtual/member dispatch helpers need runtime verification. Preserve
+the existing native frontend and its renderer/audio owners during that work.
+No ROM, extracted game data, save files, screenshots or binary assets are uploaded.
+
+---
+
 # Actor runtime continuation — 2026-10-26
 
 Main `2dc6f44a6914dfc677219e7eacedaf1c77748c3b` connects the original interactive
