@@ -54,6 +54,10 @@ private:
     struct Region { uint32_t address; size_t size; uint8_t *memory; };
     GameHeap &heap_;
     std::vector<Region> regions_;
+    // Hot reverse lookup for native-to-DS pointer encoding. The frontend
+    // repeatedly visits fields in the same mapped stack/heap/overlay region.
+    Region recentNative_{};
+    bool recentNativeValid_ = false;
     std::map<uint32_t, void *> allocations_;
     std::map<uint32_t, uintptr_t> code_;
     uint32_t external_ = 0x30000000, nextCode_ = 0x60000000;
