@@ -1,4 +1,5 @@
 #include "session.h"
+#include "ntr/mmio.h"
 #include <stdexcept>
 namespace sm64ds {
 std::mutex &platform_mutex() {
@@ -31,6 +32,9 @@ void Session::frame(int width, int height, float dt, uint32_t buttons, float x, 
         audioRetry_ = 1;
     }
     game_->frame(dt, buttons, x, y, tx, ty);
-    renderer_.draw(game_->main_screen(), game_->sub_screen(), width, height);
+    // POWCNT1[15] = 1: engine A -> top LCD. The Android top LCD is
+    // on the left; the physical bottom/touch LCD is on the right.
+    const bool mainOnTop = (ntr::io_read(0x04000304u, 2) & 0x8000u) != 0;
+    renderer_.draw(game_->main_screen(), game_->sub_screen(), width, height, mainOnTop);
 }
 }
