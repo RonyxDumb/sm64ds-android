@@ -13,6 +13,10 @@ def generate(out, manifest=None):
         raise ValueError('unsupported frontend manifest')
     sources = []
     inputs = set()
+    for path,digest in data.get('dependencies',{}).items():
+        inputs.add(ROOT/path)
+        if hashlib.sha256((ROOT/path).read_bytes()).hexdigest()!=digest:
+            raise ValueError('frontend symbol map changed; regenerate/review projection: '+path)
     for row in data['entries']:
         source = ROOT/row['path']
         inputs.add(source)
@@ -35,6 +39,16 @@ def generate(out, manifest=None):
             sources.append(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text('// Generated from ' + row['path'] + '; see frontend_manifest.json.\n' + text)
+    if 'bindings' in data:
+        dest = out/'frontend_bindings.cpp'
+        symbols = sorted({binding['symbol'] for binding in data['bindings']})
+        text = '#include "runtime/packed_memory.h"\nextern "C" {\n'
+        text += ''.join('void '+name+'();\n' for name in symbols)+'}\n'
+        text += 'namespace sm64ds::frontend {\nvoid bind_sources(packed::Space &space) {\n'
+        text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol']) for b in data['bindings'])
+        text += '}\n}\n'
+        dest.write_text(text)
+        sources.append(dest)
     (out/'sources.cmake').write_text('set(PACKED_FRONTEND_SOURCES\n' +
                                     ''.join('    "' + str(p) + '"\n' for p in sources) + ')\n')
     (out/'inputs.cmake').write_text('set(PACKED_FRONTEND_INPUTS\n' +

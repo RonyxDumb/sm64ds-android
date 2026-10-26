@@ -17,10 +17,21 @@ import hostgen
 from tree_sitter import Language, Parser
 import tree_sitter_cpp
 from frontend_sdk_views import flatten as flatten_sdk
+from frontend_execution_views import view_for
 ROOT = Path(__file__).resolve().parents[2]
 PARSER = Parser(Language(tree_sitter_cpp.language()))
 BEHAVIORS = {name: '_ZN8Particle' + str(len(name)) + name + '4FuncERNS_10EffectDataEPcR7Vector3'
              for name in ('Acceleration','Jitter','Converge','Turn','LimitPlane','RadiusConverge')}
+SYMBOL_FILES = ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
+                'config/arm9/overlays/ov007/symbols.txt')
+DATA_SYMBOLS = {}
+CODE_SYMBOLS = set()
+for _path in SYMBOL_FILES:
+    for _line in (ROOT/_path).read_text().splitlines():
+        _match = re.match(r'(\S+) kind:(\w+).*?addr:0x([0-9a-f]+)', _line)
+        if _match:
+            if _match[2] == 'function': CODE_SYMBOLS.add(_match[1])
+            else: DATA_SYMBOLS[_match[1]] = int(_match[3],16)
 
 
 def definitions(raw, symbols):
@@ -65,10 +76,12 @@ def normalize(text):
 
 
 class Lift:
-    def __init__(self, text):
+    def __init__(self, text, c_source=False):
         self.source = text.encode()
         self.root = PARSER.parse(self.source).root_node
         self.globals, self.functions, self.exports = {}, set(), []
+        self.c_source = c_source
+        self.hoisted = []
 
     def text(self, node):
         return self.source[node.start_byte:node.end_byte].decode()
@@ -143,7 +156,7 @@ class Lift:
         m = re.fullmatch(r'data_(?:ov\d+_)?([0-9a-f]{8})', name)
         if m:
             return int(m.group(1), 16)
-        for file in (ROOT/'config/arm9/symbols.txt', ROOT/'config/arm9/overlays/ov007/symbols.txt'):
+        for file in (ROOT/path for path in SYMBOL_FILES):
             for line in file.read_text().splitlines():
                 if line.startswith(name + ' '):
                     m = re.search(r'addr:0x([0-9a-f]+)', line)
@@ -156,11 +169,16 @@ class Lift:
         if kind in ('preproc_def', 'preproc_function_def'):
             value = node.child_by_field_name('value')
             if value and '*' in self.text(value):
-                probe = Lift('void expression() { ' + self.text(value).rstrip() + '; }')
+                content = self.text(value).rstrip().replace('\\\n','\n')
+                probe = Lift('void expression() { ' + content + '; }')
                 stmt = probe.root.named_children[0].child_by_field_name('body').named_children[0]
-                if stmt.type != 'expression_statement' or len(stmt.named_children) != 1:
+                if stmt.type == 'expression_statement' and len(stmt.named_children) == 1:
+                    content = probe.rewrite(stmt.named_children[0])
+                elif stmt.type == 'do_statement':
+                    content = probe.rewrite(stmt)
+                else:
                     raise ValueError('unsupported frontend macro: ' + self.text(node))
-                return self.source[node.start_byte:value.start_byte].decode() + probe.rewrite(stmt.named_children[0]) + '\n'
+                return self.source[node.start_byte:value.start_byte].decode() + content.replace('\n','\\\n') + '\n'
         if kind == 'linkage_specification':
             body = node.child_by_field_name('body')
             if body is not None:
@@ -179,7 +197,7 @@ class Lift:
             if fn and fn.type == 'template_function' and self.text(fn).startswith(('reinterpret_cast<', 'static_cast<')):
                 target = next(c for c in fn.named_children if c.type == 'template_argument_list').named_children[0]
                 spelling = self.declaration(target) if target.type == 'type_descriptor' else self.text(target)
-                return '(' + spelling + ')(' + ', '.join(self.rewrite(c) for c in args.named_children) + ')'
+                return '((' + spelling + ')(' + ', '.join(self.rewrite(c) for c in args.named_children) + '))'
         if kind in ('declaration', 'field_declaration', 'type_definition', 'parameter_declaration', 'type_descriptor'):
             base = node.child_by_field_name('type')
             decls = node.children_by_field_name('declarator')
@@ -194,7 +212,14 @@ class Lift:
                         value = ('ptr', value[1], '')
                     storage = [self.text(c) for c in node.named_children if c.type == 'storage_class_specifier']
                     is_function = isinstance(value, tuple) and value[0] == 'function'
-                    if name.startswith(('data_', 'IDENTITY_')) and 'extern' in storage and not is_function:
+                    if is_function and self.c_source and not value[2]:
+                        params = actual
+                        while params.type != 'function_declarator':
+                            params = params.child_by_field_name('declarator')
+                        if self.text(params.child_by_field_name('parameters')) == '()':
+                            value = ('function',value[1],['...'])
+                    external = 'extern' in storage or node.parent.type == 'linkage_specification'
+                    if (name.startswith(('data_', 'IDENTITY_')) or name in DATA_SYMBOLS) and external and not is_function:
                         address = self.address(name)
                         self.globals[name] = address
                         if isinstance(value, tuple) and value[0] == 'array':
@@ -213,6 +238,12 @@ class Lift:
                         bits = ' ' + self.text(bitfields[0]) if bitfields else ''
                         rendered.append(prefix + self.named(name, value) + bits + (' = ' + self.rewrite(init) if init else '') +
                                         ('' if kind in ('parameter_declaration', 'type_descriptor') else ';'))
+                        if is_function:
+                            parent = node.parent
+                            while parent and parent.type not in ('translation_unit','compound_statement'):
+                                parent = parent.parent
+                            if parent and parent.type == 'compound_statement':
+                                self.hoisted.append(rendered.pop())
                 return '\n'.join(rendered)
             if kind == 'type_descriptor' and base:
                 return self.declaration(node)
@@ -248,6 +279,7 @@ class Lift:
 
     def result(self):
         text = self.rewrite(self.root)
+        text = '\n'.join(dict.fromkeys(self.hoisted)) + '\n' + text
         for name in sorted(self.functions, key=len, reverse=True):
             text = re.sub(r'\b' + re.escape(name) + r'\b', 'pk_' + name, text)
         for name, void, types in self.exports:
@@ -264,6 +296,7 @@ def main():
     parser.add_argument('--headers', nargs='*', default=[])
     parser.add_argument('--profile', type=Path)
     parser.add_argument('--full-model', action='store_true')
+    parser.add_argument('--full-particles', action='store_true')
     parser.add_argument('sources', nargs='*')
     args = parser.parse_args()
     if args.profile:
@@ -272,6 +305,7 @@ def main():
         profile = json.loads(args.profile.read_text())
         args.sources, args.headers = profile['sources'], profile['headers']
         args.full_model = args.full_model or profile.get('full_model',False)
+        args.full_particles = args.full_particles or profile.get('full_particles',False)
     if not args.sources:
         parser.error('sources or --profile are required')
     entries = []
@@ -280,16 +314,29 @@ def main():
         raw = (ROOT/rel).read_text()
         view = raw
         dependencies = {}
+        if rel.startswith('src/') and '#include "decl_common.h"' in view:
+            header = 'include/decl_common.h'
+            shared = (ROOT/header).read_text()
+            dependencies[header] = hashlib.sha256(shared.encode()).hexdigest()
+            code = re.sub(r'/\*.*?\*/|//[^\n]*','',raw,flags=re.S)
+            needed = set(re.findall(r'\b(?:func_\w+|data_\w+|_Z\w+)\b',code))
+            lines = [match.group() for match in re.finditer(r'^extern [^;]+;',shared,re.M)
+                     if set(re.findall(r'\b(?:func_\w+|data_\w+|_Z\w+)\b',match.group())) & needed]
+            view = view.replace('#include "decl_common.h"','#include "common.h"\n'+'\n'.join(lines))
         if rel == 'src/cstd.cpp':
             selected = {'_ZN4cstd16reciprocal_asyncEi':'reciprocal_async',
                         '_ZN4cstd11fdiv_resultEv':'fdiv_result',
                         '_ZN4cstd11ldiv_resultEv':'ldiv_result', 'func_02053200':'func_02053200'}
+            if args.full_particles:
+                selected.update({name:name for name in ('func_020531a4','func_02053274','func_02052fdc')})
             view = definitions(raw,selected)
             for symbol,name in selected.items():
                 view = view.replace('cstd::'+name,symbol)
                 view = re.sub(r'\b'+name+r'\b',symbol,view)
             view = ('#include "types.h"\nextern void _ZN4cstd16reciprocal_asyncEi(int);\n'
-                    'extern int _ZN4cstd11fdiv_resultEv(void);\n' + view)
+                    'extern int _ZN4cstd11fdiv_resultEv(void);\nextern int func_02052fdc(void);\n' + view)
+        if rel == 'src/cstd6.cpp':
+            view = '#include "types.h"\nextern unsigned int data_0209a624;\n'+definitions(raw,['func_02070348'])
         if rel == 'src/engine/sound/SoundEngine.cpp':
             view = definitions(raw,['func_0204f94c'])
         if rel == 'src/engine/particle/Particle_Manager.cpp':
@@ -440,7 +487,10 @@ def main():
                                '_ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File', 'BTP_File',
                                '#include "types.h"\n#define REBASE(p) ((char *)(p) + base)\n' +
                                '\n'.join([record.group(), *locals_, *assertions]))
+        view = view_for(rel, raw, view, PARSER, BEHAVIORS, args.full_particles)
         if rel.startswith('src/'):
+            view = re.sub(r'\bextern\s+(?:char|int|void)\s+(\w+)\s*(?:\[\])?\s*;',
+                          lambda m:'extern void '+m[1]+'(void);' if m[1] in CODE_SYMBOLS else m[0],view)
             view = hostgen.transform(view)[0]
             # Type arguments in a macro assignment can parse as declarations.
             # Spell the exact mmio.h macro expansion before the syntax walk.
@@ -450,23 +500,40 @@ def main():
             if view.count('    *ime;') != 1:
                 raise ValueError('normalizer volatile read changed')
             view = view.replace('    *ime;', '    (void)static_cast<u16>(*ime);')
-        lift = Lift(normalize(flatten_sdk(view, PARSER, sdk_aliases)))
+        lift = Lift(normalize(flatten_sdk(view, PARSER, sdk_aliases)),rel.endswith('.c'))
         try:
             source = lift.result()
         except ValueError as error:
             raise ValueError(rel + ': ' + str(error)) from None
         entries.append(dict(path=rel, sha256=hashlib.sha256(raw.encode()).hexdigest(), source=source,
                             dependencies=dependencies, globals=lift.globals,
-                            functions=sorted(lift.functions), header=rel in args.headers))
+                            functions=sorted(lift.functions), definitions=[name for name,_,_ in lift.exports],
+                            header=rel in args.headers))
     # A call may import its declaration from a projected header. Give it the
     # same native spelling even when the TU itself has no local extern.
     functions = {name for row in entries for name in row['functions']}
+    names = re.compile(r'\b(?:'+'|'.join(re.escape(name) for name in sorted(functions,key=len,reverse=True))+r')\b')
+    aliases = {'pk_'+original:'pk_'+alias for original,alias in sdk_aliases.items()}
+    alias_names = re.compile(r'\b(?:'+'|'.join(re.escape(name) for name in sorted(aliases,key=len,reverse=True))+r')\b') if aliases else None
     for row in entries:
-        for name in sorted(functions, key=len, reverse=True):
-            row['source'] = re.sub(r'\b' + re.escape(name) + r'\b', 'pk_' + name, row['source'])
-        for original,alias in sdk_aliases.items():
-            row['source']=re.sub(r'\bpk_'+re.escape(original)+r'\b','pk_'+alias,row['source'])
-    args.out.write_text(json.dumps(dict(version=1,entries=entries), indent=2) + '\n')
+        row['source'] = names.sub(lambda match:'pk_'+match.group(),row['source'])
+        if alias_names: row['source'] = alias_names.sub(lambda match:aliases[match.group()],row['source'])
+    addresses = {}
+    for path in SYMBOL_FILES:
+        for match in re.finditer(r'^(\S+) kind:function\(([^,]+),[^\n]+addr:0x([0-9a-f]+)',(ROOT/path).read_text(),re.M):
+            addresses[match[1]] = (int(match[3],16),match[2]=='thumb')
+    original_names = {alias:original for original,alias in sdk_aliases.items()}
+    bindings = []
+    for row in entries:
+        for name in row['definitions']:
+            original = original_names.get(name,name)
+            if original in addresses:
+                address,thumb = addresses[original]
+                symbol = 'pk_'+sdk_aliases.get(name,name)
+                bindings.append(dict(address=address,symbol=symbol))
+                if thumb: bindings.append(dict(address=address|1,symbol=symbol))
+    dependencies = {path:hashlib.sha256((ROOT/path).read_bytes()).hexdigest() for path in SYMBOL_FILES}
+    args.out.write_text(json.dumps(dict(version=1,entries=entries,bindings=bindings,dependencies=dependencies), indent=2) + '\n')
 
 if __name__ == '__main__':
     main()

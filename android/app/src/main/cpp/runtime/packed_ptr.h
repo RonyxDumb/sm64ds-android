@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include "ntr/mmio.h"
@@ -29,14 +30,26 @@ public:
     VolatileRef(const VolatileRef &) = default;
     operator Value() const {
         if (port()) return static_cast<Value>(ntr::io_read(address_,sizeof(Value)));
-        return *static_cast<T *>(resolve(address_,sizeof(Value)));
+        if constexpr (std::is_class_v<Value>) {
+            static_assert(sizeof(Value)==4 && std::is_trivially_copyable_v<Value>);
+            return Value(*static_cast<volatile uint32_t *>(resolve(address_,4)));
+        } else return *static_cast<T *>(resolve(address_,sizeof(Value)));
     }
     VolatileRef &operator=(Value value) {
         if (port()) ntr::io_write(address_,static_cast<uint64_t>(value),sizeof(Value));
-        else *static_cast<T *>(resolve(address_,sizeof(Value)))=value;
+        else if constexpr (std::is_class_v<Value>) {
+            static_assert(sizeof(Value)==4 && std::is_trivially_copyable_v<Value>);
+            uint32_t bits; std::memcpy(&bits,&value,4);
+            *static_cast<volatile uint32_t *>(resolve(address_,4))=bits;
+        } else *static_cast<T *>(resolve(address_,sizeof(Value)))=value;
         return *this;
     }
     VolatileRef &operator=(const VolatileRef &other) { return *this=static_cast<Value>(other); }
+    template<class V=Value> auto operator->() const -> decltype(std::declval<V>().operator->()) {
+        return static_cast<Value>(*this).operator->();
+    }
+    template<class U> auto operator+(U value) const { return static_cast<Value>(*this)+value; }
+    template<class U> auto operator-(U value) const { return static_cast<Value>(*this)-value; }
     template<class U> VolatileRef &operator|=(U value) { return *this=static_cast<Value>(*this)|value; }
     template<class U> VolatileRef &operator&=(U value) { return *this=static_cast<Value>(*this)&value; }
 };
@@ -60,6 +73,9 @@ public:
         }
     }
     constexpr uint32_t address() const { return address_; }
+    uint32_t address() const volatile { return address_; }
+    template<class U> void operator=(Ptr<U> value) volatile { address_=value.address(); }
+    template<class U> Ptr &operator=(Ptr<U> value) { address_=value.address(); return *this; }
     constexpr operator int32_t() const { return static_cast<int32_t>(address_); }
     T *get(size_t bytes = Extent<T>::value) const {
         static_assert(!std::is_function_v<T>, "use the bound native call operator");
@@ -91,12 +107,12 @@ public:
         return int64_t(int32_t(address_ - other.address())) / ptrdiff_t(Extent<T>::value);
     }
     template<class... Args, class U=T, std::enable_if_t<std::is_function_v<U>, int> = 0>
-    decltype(auto) operator()(Args &&...args) const {
+    decltype(auto) operator()(Args...args) const {
         auto bits = resolve_code(address_);
         U *function = nullptr;
         static_assert(sizeof(function) == sizeof bits);
         std::memcpy(&function, &bits, sizeof function);
-        return function(std::forward<Args>(args)...);
+        return function(args...);
     }
 };
 static_assert(sizeof(Ptr<void>) == 4 && alignof(Ptr<void>) == 4);

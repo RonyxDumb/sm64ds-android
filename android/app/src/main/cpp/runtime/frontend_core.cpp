@@ -2,6 +2,7 @@
 #include "packed_ptr.h"
 #include "title_config.h"
 #include "ntr/mmio.h"
+#include "ntr/gx.h"
 #include <stdexcept>
 
 extern "C" {
@@ -9,6 +10,10 @@ void abi_func_ov007_020b6a84();
 void abi_func_ov007_020b68e8();
 uint32_t abi_func_ov007_020b7138(uint32_t,uint32_t);
 void abi_GX_DispOn();
+uint32_t abi_func_ov007_020b7090(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t);
+void abi_func_ov007_020b7040();
+void abi_func_ov007_020b6eb4();
+uint8_t pk_frontend_command(int);
 void abi_func_ov007_020b697c();
 void abi_func_ov007_020b69c4();
 void abi_func_ov007_020b693c();
@@ -24,6 +29,7 @@ void pk_frontend_deallocate(sm64ds::packed::Ptr<void>);
 int pk_frontend_largest();
 sm64ds::packed::Ptr<void> pk_frontend_load(uint16_t);
 }
+namespace sm64ds::frontend { void bind_sources(packed::Space &); }
 namespace sm64ds {
 namespace { thread_local FrontendCore *core=nullptr; }
 FrontendCore &FrontendCore::current() {
@@ -33,8 +39,9 @@ FrontendCore &FrontendCore::current() {
 FrontendCore::Scope::Scope(FrontendCore &next) : address_(next.space_), previous_(core) { core=&next; }
 FrontendCore::Scope::~Scope() { core=previous_; }
 FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerLanguage, FileLoader loader,
-                           Cartridge::DataImage arm9, const TitleConfig *config)
-    : space_(heap), image_(std::move(data)), arm9_(std::move(arm9)), ownerLanguage_(ownerLanguage), loader_(std::move(loader)) {
+                           Cartridge::DataImage arm9, const TitleConfig *config, Command command, Audio audio)
+    : space_(heap), image_(std::move(data)), arm9_(std::move(arm9)), ownerLanguage_(ownerLanguage),
+      loader_(std::move(loader)), command_(std::move(command)), audio_(std::move(audio)), config_(config) {
     if (ownerLanguage<0 || ownerLanguage>5) throw std::runtime_error("Invalid owner language.");
     if (!ntr::io_init()) throw std::runtime_error("Cannot map native hardware latches.");
     space_.map(ntr::IO_BASE,ntr::host_ptr(ntr::IO_BASE),ntr::IO_SIZE);
@@ -43,11 +50,13 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
     space_.map(ntr::OAM_BASE,ntr::host_ptr(ntr::OAM_BASE),ntr::OAM_SIZE);
     if (!arm9_.bytes.empty()) space_.map(arm9_.base,arm9_.bytes.data(),arm9_.bytes.size());
     space_.map(image_.base,image_.bytes.data(),image_.bytes.size());
+    frontend::bind_sources(space_);
     space_.bind(0x020ccab4,pk_frontend_allocate);
     space_.bind(0x020cca98,pk_frontend_deallocate);
     space_.bind(0x020cca80,pk_frontend_largest);
     space_.bind(0x020cca74,pk_frontend_load);
     space_.bind(0x020cca68,pk_frontend_deallocate);
+    space_.bind(0x020cc600,pk_frontend_command);
     Scope scope(*this);
     // IDs from the original callback table, bound only to compiled native code.
     abi_func_ov007_020c3e3c(0x020ccab4);
@@ -57,7 +66,7 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
     if (config) {
         if (!loader_ || arm9_.bytes.empty() || !config->messageBank)
             throw std::runtime_error("Incomplete native title configuration.");
-        auto record=space_.allocate(0xa0);
+        auto record=configAddress_=space_.allocate(0xa0);
         std::memcpy(space_.data(record,0x9c),config->bytes.data(),0x9c);
         *packed::Ptr<uint32_t>(record+0x9c)=packed::Ptr<const uint8_t>(config->messageBank).address();
         ntr::io_write(0x04000304,(ntr::io_read(0x04000304,2)&~0x20eu)|0x20e,2);
@@ -79,7 +88,78 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
         abi_func_ov007_020b69c4();
     }
 }
-FrontendCore::~FrontendCore() = default;
+FrontendCore::~FrontendCore() {
+    if (audio_) for (const auto &voice:voices_) audio_({SoundOp::Stop,voice.second.player,voice.first});
+}
+uint8_t FrontendCore::command(int value) {
+    if (!command_ || !config_) throw std::runtime_error("No native title command owner.");
+    auto result=command_(value);
+    std::memcpy(space_.data(configAddress_,0x9c),config_->bytes.data(),0x9c);
+    return result;
+}
+int FrontendCore::update(uint16_t keys,int x,int y) {
+    Scope scope(*this);
+    const bool down=x>=0 && x<256 && y>=0 && y<192;
+    if (down) { touch_[0]=static_cast<uint16_t>(x); touch_[1]=static_cast<uint16_t>(y); }
+    touch_[2]=static_cast<uint16_t>(down); touch_[3]=0;
+    update_sounds();
+    return static_cast<int>(abi_func_ov007_020b7090(touch_[0],touch_[1],touch_[2],touch_[3],keys));
+}
+void FrontendCore::render() {
+    Scope scope(*this);
+    ntr::gx_begin_frame();
+    abi_func_ov007_020b7040();
+    abi_func_ov007_020b6eb4();
+}
+void FrontendCore::retire_sound(uint32_t token) {
+    auto found=voices_.find(token);
+    if (found==voices_.end()) return;
+    auto handle=packed::Ptr<uint32_t>(found->second.handle);
+    if (*handle==token) *handle=0;
+    voices_.erase(found);
+}
+void FrontendCore::update_sounds() {
+    if (!audio_) return;
+    for (auto it=voices_.begin();it!=voices_.end();) {
+        const auto token=it->first; const auto voice=it->second; ++it;
+        if (!audio_({SoundOp::Status,voice.player,token})) retire_sound(token);
+    }
+}
+int FrontendCore::start_sound(uint32_t handle,unsigned archive,int entry) {
+    if (!audio_) throw std::runtime_error("No native frontend audio backend.");
+    auto selected=voices_.end();
+    int player=2;
+    for (;player<16;++player) {
+        bool used=false;
+        for (const auto &v:voices_) used|=v.second.player==player;
+        if (!used) break;
+    }
+    if (player==16) {
+        for (auto it=voices_.begin();it!=voices_.end();++it)
+            if (selected==voices_.end() || it->second.priority<selected->second.priority) selected=it;
+        player=selected->second.player;
+        if (!audio_({SoundOp::Stop,player,selected->first})) return 0;
+        retire_sound(selected->first);
+    }
+    const auto token=nextVoice_++;
+    if (!token) throw std::runtime_error("Native sound identifiers exhausted.");
+    if (!audio_({SoundOp::Effect,player,token,static_cast<int>(archive),entry})) return 0;
+    voices_.emplace(token,Voice{player,handle,64,false});
+    *packed::Ptr<uint32_t>(handle)=token;
+    return 1;
+}
+int FrontendCore::control_sound(uint32_t handle,SoundOp op,int a,int b,int c) {
+    const auto token=word_at(handle); auto found=voices_.find(token);
+    if (found==voices_.end()) return 0;
+    if (op==SoundOp::Stop && found->second.stopping) return 1;
+    int result=audio_({op,found->second.player,token,a,b,c});
+    if (result && op==SoundOp::Stop) found->second.stopping=true;
+    return result;
+}
+void FrontendCore::sound_priority(uint32_t handle,uint8_t priority) {
+    auto found=voices_.find(word_at(handle));
+    if (found!=voices_.end()) found->second.priority=priority;
+}
 uint32_t FrontendCore::load_file(uint16_t handle) {
     if (!loader_) throw std::runtime_error("No native frontend file loader.");
     auto bytes=loader_(handle);

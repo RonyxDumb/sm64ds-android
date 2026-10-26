@@ -1,6 +1,6 @@
 """Source-only views of stateless SDK APIs; never flatten game/actor classes."""
 import re
-SDK = {'GX', 'GXS', 'G2x', 'G3X', 'G3i', 'CP15'}
+SDK = {'GX', 'GXS', 'G2', 'G2S', 'G2x', 'G3X', 'G3i', 'CP15', 'cstd'}
 
 
 def flatten(text, parser, aliases=None):
