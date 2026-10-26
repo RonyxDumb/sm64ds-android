@@ -19,6 +19,10 @@ template<class T, class = void> struct Extent { static constexpr size_t value = 
 template<class T> struct Extent<T, std::void_t<decltype(sizeof(T))>> {
     static constexpr size_t value = sizeof(T);
 };
+template<class From,class To,class=void> struct BaseConversion : std::false_type {};
+template<class From,class To> struct BaseConversion<From,To,std::void_t<decltype(sizeof(From)),decltype(sizeof(To))>>
+    : std::bool_constant<std::is_class_v<From> && std::is_class_v<To> && std::is_base_of_v<To,From> &&
+                         !std::is_same_v<std::remove_cv_t<From>,std::remove_cv_t<To>>> {};
 // Recovered SDK code also keeps a volatile register pointer in a local.
 // Those writes must reach the same command/arithmetic ports as literal MMIO.
 template<class T> class VolatileRef {
@@ -60,7 +64,10 @@ public:
     constexpr Ptr(std::nullptr_t) : address_(0) {}
     template<class I, std::enable_if_t<std::is_integral_v<I>, int> = 0>
     constexpr Ptr(I value) : address_(static_cast<uint32_t>(value)) {}
-    template<class U> constexpr Ptr(Ptr<U> value) : address_(value.address()) {}
+    template<class U> constexpr Ptr(Ptr<U> value) : address_(value.address()) {
+        if constexpr (BaseConversion<U,T>::value)
+            if (address_) address_=encode(reinterpret_cast<uintptr_t>(static_cast<T *>(value.get())));
+    }
     template<class U> Ptr(U *value) {
         if constexpr (std::is_function_v<U>) {
             uintptr_t bits = 0;
@@ -74,8 +81,8 @@ public:
     }
     constexpr uint32_t address() const { return address_; }
     uint32_t address() const volatile { return address_; }
-    template<class U> void operator=(Ptr<U> value) volatile { address_=value.address(); }
-    template<class U> Ptr &operator=(Ptr<U> value) { address_=value.address(); return *this; }
+    template<class U> void operator=(Ptr<U> value) volatile { address_=Ptr(value).address(); }
+    template<class U> Ptr &operator=(Ptr<U> value) { address_=Ptr(value).address(); return *this; }
     constexpr operator int32_t() const { return static_cast<int32_t>(address_); }
     T *get(size_t bytes = Extent<T>::value) const {
         static_assert(!std::is_function_v<T>, "use the bound native call operator");

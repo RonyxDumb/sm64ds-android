@@ -1,3 +1,35 @@
+# Actor runtime continuation — 2026-10-26
+
+Main `2dc6f44a6914dfc677219e7eacedaf1c77748c3b` connects the original interactive
+save menu through StartFile to scene 3. Android debug/release/lint, host execution
+and native ARM64 execution passed in Actions run 40374219101.
+
+The next increment is in progress in `android/actor-runtime`:
+
+- `lift_game.py` keeps original C++ method bodies and uses explicit four-byte
+  address points with native entry bridges. `packed_member.h` preserves the
+  ARM EABI eight-byte member pointer, including virtual/this-adjustment rules.
+- Native methods share one C++ namespace across translation units. Source
+  projections retain layout assertions, including the 0x50 actor base.
+- Multiple inheritance uses physical native subobject offsets when converting
+  a stored derived handle to a base handle. The root vptr is a leading base,
+  including classes such as dBgPi whose original non-polymorphic base follows it.
+- The 9-unit game profile includes original ActorBase/Derived, intrusive lists,
+  dActor_c, dScene_c, dScStage_c, Player and the player factory; 78 headers.
+  Stage/actor units compiled locally. Full Player compilation is being closed.
+- Body-local ABI declarations get unique C++ names with shared ELF asm aliases,
+  preserving their local register views without hoisting conflicting prototypes
+  under a single C++ identifier.
+
+This increment is not yet linked to GameProgram. Continue native method/bridge
+compilation, constructor/destructor variants, stage dependency closure, shared
+ARM9/save/input state and overlay loading, then execute the actual scene-3
+factory/actor scheduler, Player and rendering. Secondary vtable thunks, native
+new/delete paths and full gameplay are still pending. Keep src/include unchanged.
+No ROM content or extracted data belongs in Git.
+
+---
+
 # Android checkpoint — 2026-10-26, native title execution
 
 Production connects original `b7138` initialization, `b7090`/`aed98` input and

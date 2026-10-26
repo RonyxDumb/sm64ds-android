@@ -31,8 +31,10 @@ def generate(out, manifest=None):
             text = '#pragma once\n' + row['source']
         else:
             dest = out/(source.stem + '.cpp')
-            text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n'
-                    'namespace sm64ds::frontend::unit_' + source.stem + ' {\n'
+            scope = row.get('namespace', 'sm64ds::frontend::unit_' + source.stem)
+            text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n' +
+                    ('#include "runtime/packed_member.h"\n' if row.get('namespace') else '') +
+                    'namespace ' + scope + ' {\n'
                     'using namespace sm64ds::packed;\n#pragma pack(push, 4)\n' +
                     ('#define bool int\n' if source.suffix == '.c' else '') + row['source'] +
                     '\n#undef bool\n#pragma pack(pop)\n}\n')
@@ -44,7 +46,7 @@ def generate(out, manifest=None):
         symbols = sorted({binding['symbol'] for binding in data['bindings']})
         text = '#include "runtime/packed_memory.h"\nextern "C" {\n'
         text += ''.join('void '+name+'();\n' for name in symbols)+'}\n'
-        text += 'namespace sm64ds::frontend {\nvoid bind_sources(packed::Space &space) {\n'
+        text += 'namespace '+data.get('namespace','sm64ds::frontend')+' {\nvoid bind_sources(packed::Space &space) {\n'
         text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol']) for b in data['bindings'])
         text += '}\n}\n'
         dest.write_text(text)
