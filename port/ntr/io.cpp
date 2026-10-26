@@ -8,6 +8,8 @@
 #include "ntr/gx.h"
 
 #include <cstring>
+#include <cerrno>
+#include <string>
 #include <array>
 #include <stdexcept>
 
@@ -176,28 +178,51 @@ void *map_fixed(uintptr_t base, size_t size) {
 
 bool io_init() {
     if (g_io) return true;
-    struct { uintptr_t base; size_t size; } regions[] = {
+    struct Region { uintptr_t base; size_t size; };
+    constexpr Region regions[] = {
         {MAIN_BASE, MAIN_SIZE}, {IO_BASE, IO_SIZE}, {PLTT_BASE, PLTT_SIZE},
         {VRAM_BASE, VRAM_SIZE}, {OAM_BASE, OAM_SIZE},
     };
+    std::array<Region, sizeof(regions) / sizeof(regions[0])> mapped{};
+    size_t mapped_count = 0;
     void *io = nullptr;
     for (const auto &r : regions) {
         void *p = map_fixed(r.base, r.size);
-        // Main RAM is only needed by the ROM-image fs backend; in the port
-        // build the game's globals are host-linked symbols and file images
-        // live on the game heap, so a lost race for 0x02000000 (the host
-        // allocator can land anything there first) is not fatal.
-        if (!p && r.base != MAIN_BASE) return false;
+        if (!p) {
+            // MAIN is optional. Game code still directly addresses DS video
+            // windows, so never overwrite an occupied mapping with MAP_FIXED.
+            if (r.base == MAIN_BASE) continue;
+#if defined(_WIN32)
+            const unsigned long error = GetLastError();
+#else
+            const int error = errno;
+#endif
+            for (size_t i = mapped_count; i > 0; --i) {
+#if defined(_WIN32)
+                VirtualFree(reinterpret_cast<void *>(mapped[i - 1].base), 0, MEM_RELEASE);
+#else
+                munmap(reinterpret_cast<void *>(mapped[i - 1].base), mapped[i - 1].size);
+#endif
+            }
+            throw std::runtime_error("Cannot map DS video region at address " +
+                std::to_string(static_cast<unsigned long long>(r.base)) +
+                " (size " + std::to_string(r.size) + ", error " +
+                std::to_string(error) + ")");
+        }
+        mapped[mapped_count++] = r;
         if (r.base == IO_BASE) io = p;
     }
 #if !defined(_WIN32)
-    if (!init_vram_banks()) return false;
+    if (!init_vram_banks()) {
+        const int error = errno;
+        for (size_t i = mapped_count; i > 0; --i)
+            munmap(reinterpret_cast<void *>(mapped[i - 1].base), mapped[i - 1].size);
+        throw std::runtime_error("Cannot map DS VRAM bank backing (errno " +
+            std::to_string(error) + ")");
+    }
 #endif
     g_io = static_cast<uint8_t *>(io);
-    // Reset state: the geometry FIFO starts empty. GXSTAT bit 26 (empty) and
-    // bit 25 (less than half full) are set on hardware at boot; the game's
-    // display-list pump spin-waits on bit 25 before touching the FIFO, so the
-    // latch must come up idle or the wait never falls through.
+    // The geometry FIFO starts empty and less than half full.
     raw_write(0x04000600u, 0x06000000u, 4);
     return true;
 }
