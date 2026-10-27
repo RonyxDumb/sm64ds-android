@@ -4,6 +4,7 @@ final class NativeBridge {
     static {
         System.loadLibrary("sm64ds_android");
     }
+    static native boolean configureCrashLog(String path);
     static native String probe(String path) throws IOException;
     static native long createRenderer(String path) throws IOException;
     static native void drawRenderer(long handle, int width, int height, float dt, int buttons,
