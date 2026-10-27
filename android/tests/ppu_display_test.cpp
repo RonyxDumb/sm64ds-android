@@ -131,5 +131,34 @@ int main() {
     ntr::ppu_scanout(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == convert(0x03e0));
     ntr::io_write(0x04000050u, 0, 2);
-    std::puts("NDS bitmap, affine BG2, OBJ priority, alpha, bitmap OAM, BG blend and fade passed.");
+
+    // DS SUB engine mode 3 has BG2 TEXT and BG3 EXTENDED. The old
+    // renderer incorrectly decoded BG2 as an 8-bit affine screen and could
+    // turn title/options backgrounds into narrow vertical colored stripes.
+    // Mode 4 uses the SAME BG2 as AFFINE: test both on real VRAM bytes.
+    ntr::io_write(0x04000242u, 0x84, 1); // VRAM C -> sub BG
+    auto *subvram = static_cast<uint8_t *>(ntr::host_ptr(0x06200000u));
+    std::memset(subvram, 0, 0x8000);
+    auto *subpal = static_cast<uint16_t *>(ntr::host_ptr(0x05000400u));
+    subpal[0] = 0;
+    subpal[2] = 0x7c00; // blue: 4bpp TEXT BG2
+    subpal[3] = 0x03e0; // green: 8bpp AFFINE BG2
+    subvram[0x800] = 2; // text entry tile 2; affine entry tile 2
+    subvram[0x4000 + 2 * 32] = 2;
+    subvram[0x4000 + 2 * 64] = 3;
+    ntr::io_write(0x0400100cu, (1u << 8) | (1u << 2), 2);
+    ntr::io_write(0x04001020u, 256, 2); // affine identity (only mode 4)
+    ntr::io_write(0x04001022u, 0, 2);
+    ntr::io_write(0x04001024u, 0, 2);
+    ntr::io_write(0x04001026u, 256, 2);
+    ntr::io_write(0x04001028u, 0, 4);
+    ntr::io_write(0x0400102cu, 0, 4);
+    ntr::io_write(0x04001000u, (1u << 16) | (1u << 10) | 3u, 4);
+    ntr::ppu_scanout(ntr::ENGINE_B, frame);
+    assert(frame.px[0][0] == convert(0x7c00));
+    ntr::io_write(0x04001000u, (1u << 16) | (1u << 10) | 4u, 4);
+    ntr::ppu_scanout(ntr::ENGINE_B, frame);
+    assert(frame.px[0][0] == convert(0x03e0));
+
+    std::puts("NDS bitmap, affine/text BG2 modes, OBJ priority, alpha, BG blend and fade passed.");
 }
