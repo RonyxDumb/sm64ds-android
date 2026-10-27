@@ -103,5 +103,16 @@ int main() {
     ntr::ppu_scanout(ntr::ENGINE_A, frame);
     ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == convert(0x03e0));
-    std::puts("NDS bitmap, affine BG2, OBJ priority, bitmap OAM and master fade passed.");
+    // A semi-transparent OBJ ignores the global first-target selection, but
+    // must blend only when the underneath layer is a selected second target.
+    oam[0] = 1u << 10;
+    oam[2] = 1;
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 8) | (1u << 12), 4);
+    ntr::io_write(0x04000050u, 1u << 8, 2); // only BG0 as second target
+    ntr::io_write(0x04000052u, 8u | (8u << 8), 2); // 50% + 50%
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == 0xff808000u);
+    ntr::io_write(0x04000050u, 0, 2);
+    std::puts("NDS bitmap, affine BG2, OBJ priority, alpha, bitmap OAM and fade passed.");
 }
