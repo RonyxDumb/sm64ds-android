@@ -86,6 +86,8 @@ int main() {
     assert(spawns[0].param == 3 && spawns[0].x == -8192 &&
            spawns[0].y == 16384 && spawns[0].z == -28672);
     assert(spawns[0].area == -1 && !spawns[0].minimapChange);
+    assert(spawns[0].starFilter == 3 && spawns[0].selected_for(3) &&
+           !spawns[0].selected_for(1));
     assert(spawns[1].minimapChange && spawns[1].actorIndex == 0x1ff &&
            spawns[1].param == 0xb);
     auto bad = objects[1];
