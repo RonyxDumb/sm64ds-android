@@ -42,6 +42,11 @@ add_library(sm64ds_frontend STATIC ${PACKED_FRONTEND_SOURCES})
 # Projected POD headers must never enter native runtime includes.
 target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
+# The downloadable debug APK is for on-device playtesting. Keep symbols,
+# but do not compile the hundreds of native scene/frontend routines and the
+# CPU rasterizer at Clang's unoptimized Debug defaults.
+target_compile_options(sm64ds_frontend PRIVATE -O2)
+target_compile_options(sm64ds_android PRIVATE -O2)
 target_compile_options(sm64ds_frontend PRIVATE -fwrapv -fsigned-char -fno-strict-aliasing
     -fvisibility=hidden -ffunction-sections -fdata-sections
     -Wno-unknown-pragmas -Wno-return-type-c-linkage -Wno-unused-parameter
