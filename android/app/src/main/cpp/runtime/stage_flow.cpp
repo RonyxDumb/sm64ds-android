@@ -139,6 +139,7 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02015024u, &native_collision_clear);
     nextSpace->bind(0x02014ff0u, &native_collision_update);
     nextSpace->bind(0x02014fa4u, &native_collision_unlink);
+    nextSpace->bind(0x02014aa8u, &native_collision_process);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(

@@ -24,6 +24,12 @@ extern "C" int actor_test_action(uint32_t) {
 extern "C" void actor_test_after(uint32_t, uint32_t status) {
     actorLastStatus = status;
 }
+extern "C" uint32_t collision_test_pos(uint32_t collider) {
+    return *packed::Ptr<uint32_t>(collider+0x30);
+}
+extern "C" uint32_t collision_test_owner(uint32_t collider) {
+    return *packed::Ptr<uint32_t>(collider+0x34);
+}
 extern "C" int actor_list_callback(uint32_t owner) {
     if(actorVisitCount<3) actorVisited[actorVisitCount]=owner;
     ++actorVisitCount;
@@ -283,6 +289,45 @@ int main() {
         *packed::Ptr<uint32_t>(collider1+0x18)=1; // original disabled bit
         native_collision_update(collider1);
         assert(collisionRoot==0);
+        // Run original dCc_c::Process against two real packed collider
+        // records and native callbacks for the GetPos/GetOwnerID vtable.
+        memory.bind(0x62000040u,&collision_test_pos);
+        memory.bind(0x62000044u,&collision_test_owner);
+        const uint32_t vtableCollision=memory.allocate(16);
+        *packed::Ptr<uint32_t>(vtableCollision+8)=0x62000040u;
+        *packed::Ptr<uint32_t>(vtableCollision+12)=0x62000044u;
+        const uint32_t p1=memory.allocate(12);
+        const uint32_t p2=memory.allocate(12);
+        const uint32_t c1=memory.allocate(0x38);
+        const uint32_t c2=memory.allocate(0x38);
+        *packed::Ptr<uint32_t>(c1)=vtableCollision;
+        *packed::Ptr<uint32_t>(c2)=vtableCollision;
+        *packed::Ptr<uint32_t>(c1+0x30)=p1;
+        *packed::Ptr<uint32_t>(c2+0x30)=p2;
+        *packed::Ptr<uint32_t>(c1+0x34)=11;
+        *packed::Ptr<uint32_t>(c2+0x34)=22;
+        *packed::Ptr<int32_t>(p1)=0;
+        *packed::Ptr<int32_t>(p2)=4096;
+        native_collision_init(c1,8192,8192,0x10,0x10);
+        native_collision_init(c2,8192,8192,0x10,0x10);
+        native_collision_update(c1);
+        native_collision_update(c2);
+        native_collision_process();
+        assert(collisionRoot==0);
+        assert(*packed::Ptr<int32_t>(c1+0x0c)==6144);
+        assert(*packed::Ptr<int32_t>(c2+0x0c)==-6144);
+        assert(*packed::Ptr<uint32_t>(c1+0x20)==0x10u);
+        assert(*packed::Ptr<uint32_t>(c1+0x24)==22u);
+        assert(*packed::Ptr<uint32_t>(c2+0x24)==11u);
+        for(uint32_t addr : {c1,c2}) {
+            assert(*packed::Ptr<uint32_t>(addr+0x28)==0);
+            assert(*packed::Ptr<uint32_t>(addr+0x2c)==0);
+        }
+        memory.release(c1);
+        memory.release(c2);
+        memory.release(p1);
+        memory.release(p2);
+        memory.release(vtableCollision);
         memory.release(collider1);
         memory.release(collider2);
         // The original Player::State uses {function_or_vtable_offset,

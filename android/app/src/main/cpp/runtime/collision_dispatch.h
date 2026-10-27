@@ -8,4 +8,8 @@ void native_collision_init(uint32_t collider, int32_t radius, int32_t height,
 void native_collision_clear(uint32_t collider);
 void native_collision_update(uint32_t collider);
 void native_collision_unlink(uint32_t collider);
+// Port of dCc_c::Process: contact flags, Q12 sphere/cylinder separation,
+// pushback, and source-ordered list clearing. Virtual GetPos/GetOwnerID
+// must be connected to native code; unlinked Player notifications fail.
+void native_collision_process();
 } // namespace sm64ds
