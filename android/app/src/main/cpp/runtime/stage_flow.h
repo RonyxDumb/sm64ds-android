@@ -28,6 +28,7 @@ public:
     // Execute the recovered fBase_c::Process callback ABI using registered
     // ARM64 native code, never a guest ARM function pointer.
     int process_actor(uint32_t actor, const ActorProcessMethods &methods);
+    int invoke_player_state(uint32_t player, uint32_t state, PlayerStatePhase phase);
 
 private:
     Cartridge &cartridge_;

@@ -193,6 +193,14 @@ int StageFlow::process_actor(uint32_t actor, const ActorProcessMethods &methods)
     return ActorDispatch(*addressSpace_).process(actor, methods);
 }
 
+int StageFlow::invoke_player_state(uint32_t player, uint32_t state,
+                                   PlayerStatePhase phase) {
+    if (!addressSpace_)
+        throw std::runtime_error("Player callback requested before native stage activation.");
+    packed::Space::Scope scope(*addressSpace_);
+    return PlayerStateDispatch(*addressSpace_).invoke(player, state, phase);
+}
+
 StageRequest StageFlow::request() const {
     return {data_02092110,    data_0209f268, data_0209f1f0,
             data_02092128[0], data_0208a0e0, controller(0).mode};

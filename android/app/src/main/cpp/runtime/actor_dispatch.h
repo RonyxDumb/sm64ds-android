@@ -24,4 +24,23 @@ public:
 private:
     packed::Space &space_;
 };
+// The recovered Player::State contains three ARM EABI member function
+// pointers at offsets +0, +8, +16. Player::Behavior invokes Main each tick;
+// Player::ChangeState tests Cleanup first and invokes Init after transition.
+struct PlayerStateMethods {
+    packed::MemberCall init;
+    packed::MemberCall main;
+    packed::MemberCall cleanup;
+};
+static_assert(sizeof(PlayerStateMethods)==0x18);
+enum class PlayerStatePhase { Init, Main, Cleanup };
+class PlayerStateDispatch {
+public:
+    explicit PlayerStateDispatch(packed::Space &space) : space_(space) {}
+    // Dispatch ONLY the recovered member callback. State changes, physics and
+    // animation remain owned by the yet-to-be-connected original Player.
+    int invoke(uint32_t player, uint32_t state, PlayerStatePhase phase) const;
+private:
+    packed::Space &space_;
+};
 } // namespace sm64ds

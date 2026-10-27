@@ -14,7 +14,7 @@ namespace {
 int actorTestMode = 0;
 uint32_t actorLastStatus = 0xffffffffu;
 }
-extern "C" int actor_test_before(uint32_t) { return actorTestMode != 0; }
+extern "C" bool actor_test_before(uint32_t) { return actorTestMode != 0; }
 extern "C" int actor_test_action(uint32_t) {
     return actorTestMode == 2 ? -1 : actorTestMode == 3 ? 0 : 1;
 }
@@ -240,6 +240,28 @@ int main() {
             (void)dispatcher.process(actor,badCallbacks);
         } catch(const std::runtime_error &) { unboundRejected=true; }
         assert(unboundRejected);
+        // Recovered Player::State has exactly three 8-byte method pairs.
+        // Exercise each with an original-width overlay record, including a
+        // virtual Main and a null Cleanup (the source treats that as success).
+        const uint32_t state = memory.allocate(0x18);
+        const PlayerStateMethods playerState{
+            {0x62000014u,0}, {16,17}, {0x62000010u,0}
+        };
+        std::memcpy(memory.data(state,sizeof playerState),&playerState,sizeof playerState);
+        PlayerStateDispatch playerDispatch(memory);
+        actorTestMode=1;
+        assert(playerDispatch.invoke(actor,state,PlayerStatePhase::Init)==1);
+        assert(playerDispatch.invoke(actor,state,PlayerStatePhase::Main)==1);
+        assert(playerDispatch.invoke(actor,state,PlayerStatePhase::Cleanup)==1);
+        auto noCleanup = playerState;
+        noCleanup.cleanup={0,0};
+        std::memcpy(memory.data(state,sizeof noCleanup),&noCleanup,sizeof noCleanup);
+        assert(playerDispatch.invoke(actor,state,PlayerStatePhase::Cleanup)==1);
+        auto noMain = noCleanup;
+        noMain.main={0,0};
+        std::memcpy(memory.data(state,sizeof noMain),&noMain,sizeof noMain);
+        assert(playerDispatch.invoke(actor,state,PlayerStatePhase::Main)==0);
+        memory.release(state);
         memory.release(vtable);
         memory.release(actor);
         auto bca=memory.allocate(0x40);
