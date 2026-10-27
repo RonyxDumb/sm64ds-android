@@ -130,7 +130,7 @@ inline uint32_t screen_entry_addr(const BgConfig &c, int tx, int ty) {
 }
 
 // Returns false where the background is transparent at this pixel.
-bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &out) {
+bool sample_bg(const BgConfig &c, const uint32_t *palette, int x, int y, uint32_t &out) {
     int px=(x+c.hofs)&(c.tiles_w*8-1),py=(y+c.vofs)&(c.tiles_h*8-1);
     if (c.kind!=BgConfig::Text) {
         px=static_cast<int>((int64_t(c.refx)+c.pa*x+c.pb*y)>>8);
@@ -146,7 +146,7 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
             } else {
                 const uint8_t index=rd8(c.screen+pixel);
                 if (!index) return false;
-                out=bgr555(rd16(em.pltt_base+index*2));
+                out=palette[index];
             }
             return true;
         }
@@ -174,7 +174,7 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
         if (index == 0) return false;
         index += ((se >> 12) & 0xF) * 16;
     }
-    out = bgr555(rd16(em.pltt_base + index * 2));
+    out = palette[index];
     return true;
 }
 
@@ -200,7 +200,13 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     for (int i = 0; i < 4; ++i) bgs[i] = read_bg(em, i, dispcnt);
     const bool bg0_3d=eng==ENGINE_A && (dispcnt&8);
 
-    const uint32_t backdrop = bgr555(rd16(em.pltt_base));
+    // Background 4/8bpp palettes are immutable for this scanout frame.
+    // Convert once rather than repeating bus lookups and BGR555 expansion
+    // for every pixel of every visible tile.
+    std::array<uint32_t, 256> bgPalette{};
+    for (unsigned i = 0; i < bgPalette.size(); ++i)
+        bgPalette[i] = bgr555(rd16(em.pltt_base + i * 2u));
+    const uint32_t backdrop = bgPalette[0];
     const uint16_t blend = rd16(em.reg_base + 0x50), master = rd16(em.reg_base + 0x6c);
     const unsigned blend_mode = (blend >> 6) & 3, master_mode = (master >> 14) & 3;
     const unsigned blend_level = std::min(16u, unsigned(rd16(em.reg_base + 0x54) & 31));
@@ -252,7 +258,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
                         for (unsigned shift=0;shift<24;shift+=8)
                             s|=((((pixel>>shift)&255)*alpha+((c>>shift)&255)*(255-alpha)+127)/255)<<shift;
                         c=s; layer=0; topPriority=prio;
-                    } else if (sample_bg(em, bgs[bg], x, y, s)) { c=s; layer=unsigned(bg); topPriority=prio; }
+                    } else if (sample_bg(bgs[bg], bgPalette.data(), x, y, s)) { c=s; layer=unsigned(bg); topPriority=prio; }
                 }
             }
             if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
