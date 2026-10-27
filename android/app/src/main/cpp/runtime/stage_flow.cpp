@@ -132,6 +132,17 @@ void StageFlow::prepare_scene() {
     addressSpace_ = std::move(nextSpace);
 }
 
+std::vector<StageAssets::PlayerSpawnCommand> StageFlow::player_spawn_commands(
+    uint8_t savedCharacter) const {
+    if (!assets_)
+        throw std::runtime_error("Player spawn before original stage resources are loaded.");
+    std::array<uint8_t,4> characters{};
+    std::copy_n(data_02092128, 4, characters.begin());
+    return assets_->player_spawn_commands(
+        static_cast<uint8_t>(data_0209f268), data_0208a0e0, data_0209f220,
+        savedCharacter, characters, data_0209f2d8);
+}
+
 void StageFlow::prepare_input() {
     if (data_0208a0e0 > 4)
         throw std::runtime_error("Invalid native player count.");

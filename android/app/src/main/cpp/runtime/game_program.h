@@ -45,6 +45,7 @@ public:
     // Original LVL_Overlay and cartridge-backed model/KCL, held across scene
     // activation for the native dScStage_c actor loader.
     const StageAssets *stage_assets() const { return stage_.assets(); }
+    std::vector<StageAssets::PlayerSpawnCommand> stage_player_spawn_commands() const;
     packed::Space *stage_address_space() const { return stage_.address_space(); }
     // Receives the real frontend's return code (3..5), never raw UI coordinates.
     // The title dispatcher and stage actor scene still need native link closure.

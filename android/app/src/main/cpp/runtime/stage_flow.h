@@ -22,6 +22,7 @@ public:
     const StageAssets *assets() const { return assets_.get(); }
     packed::Space *address_space() const { return addressSpace_.get(); }
     void prepare_scene();
+    std::vector<StageAssets::PlayerSpawnCommand> player_spawn_commands(uint8_t savedCharacter) const;
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
     // Execute the recovered fBase_c::Process callback ABI using registered

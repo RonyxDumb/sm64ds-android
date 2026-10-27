@@ -53,6 +53,7 @@ public:
     // 16-byte StandardEntry. Entrance actors use their own spawnParam formula
     // later, after the original entrance-order preparation has executed.
     struct StandardSpawn {
+        uint32_t categoryAddress = 0; // original ObjSubTable identity
         uint16_t actorId = 0, actorIndex = 0, param = 0;
         int32_t x = 0, y = 0, z = 0;
         int16_t rotX = 0, rotY = 0, rotZ = 0;
@@ -63,6 +64,20 @@ public:
             return starFilter == 0 || starFilter == star;
         }
     };
+
+    // Original LoadEntranceObjects spawn arguments, not a fabricated actor.
+    // The source entrance prepass func_0202b0e0 remains to be ported.
+    struct PlayerSpawnCommand {
+        StandardSpawn entry{};
+        uint32_t spawnParam = 0;
+        uint8_t playerSlot = 0;
+        int8_t areaID = 0;
+        int16_t deathTableID = -1;
+    };
+    std::vector<PlayerSpawnCommand> player_spawn_commands(
+        uint32_t entranceIndex, uint8_t playerCount, uint8_t star,
+        uint8_t savedCharacter, const std::array<uint8_t,4> &playerCharacters,
+        uint8_t gameMode) const;
 
     static StageAssets load(Cartridge &cartridge, uint32_t sublevel);
     static std::vector<StandardSpawn> decode_standard_spawns(

@@ -340,6 +340,10 @@ size_t GameProgram::bytes_at(const void *p) const {
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;
 }
+std::vector<StageAssets::PlayerSpawnCommand> GameProgram::stage_player_spawn_commands() const {
+    const auto savedCharacter = reinterpret_cast<const uint8_t *>(data_0209caa0)[0x41];
+    return stage_.player_spawn_commands(savedCharacter);
+}
 bool GameProgram::accept_title_result(int result) {
     require(title_ != nullptr, "Title file records have not been prepared.");
     const bool started = title_->start_selected(result);

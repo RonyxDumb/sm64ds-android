@@ -117,6 +117,7 @@ int main() {
     standard.loaderAddress = 0x020fe8acu;
     auto normal = sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
     assert(normal.size() == 1 && !normal[0].entrance);
+    assert(entrance[0].categoryAddress == standard.guestAddress);
     put16(bytes, 0x100, 326);
     must_reject([&] {
         (void)sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);

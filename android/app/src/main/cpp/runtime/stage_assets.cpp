@@ -55,6 +55,7 @@ std::vector<StageAssets::StandardSpawn> StageAssets::decode_standard_spawns(
     for (unsigned i = 0; i < category.entryCount; ++i) {
         const uint8_t *entry = entries + size_t(i) * 16;
         StandardSpawn spawn{};
+        spawn.categoryAddress = category.guestAddress;
         spawn.actorIndex = half(entry);
         require(spawn.actorIndex < (0x0210ce80u - 0x0210cbf4u) / 2,
                 "Original standard/entrance actor index exceeds its ROM ID table.");
@@ -174,6 +175,44 @@ std::vector<StageAssets::ObjectRecord> StageAssets::decode_object_catalog(
         }
     }
     return result;
+}
+
+std::vector<StageAssets::PlayerSpawnCommand> StageAssets::player_spawn_commands(
+    uint32_t entranceIndex, uint8_t playerCount, uint8_t star, uint8_t savedCharacter,
+    const std::array<uint8_t,4> &playerCharacters, uint8_t gameMode) const {
+    // Recovered LevelObjects.cpp: each selected entrance ObjSubTable starts
+    // at entries + entranceIndex and produces playerCount actor spawn calls.
+    require(playerCount > 0 && playerCount <= 4, "Invalid player count for stage actor spawns.");
+    require(gameMode <= 2 && savedCharacter <= 3, "Invalid native game mode/character.");
+    for (auto character : playerCharacters)
+        require(character <= 3, "Invalid original player-character index.");
+    std::vector<PlayerSpawnCommand> commands;
+    for (size_t first = 0; first < entrances_.size();) {
+        size_t end = first + 1;
+        while (end < entrances_.size() &&
+               entrances_[end].categoryAddress == entrances_[first].categoryAddress)
+            ++end;
+        if (entrances_[first].selected_for(star)) {
+            require(entranceIndex <= end - first &&
+                    playerCount <= end - first - entranceIndex,
+                    "Original entrance table lacks requested player records.");
+            for (uint8_t slot = 0; slot < playerCount; ++slot) {
+                const auto &entry = entrances_[first + entranceIndex + slot];
+                const uint8_t saved = gameMode == 1 ? 3 : savedCharacter;
+                const uint8_t character = gameMode == 1 ? 3 : playerCharacters[slot];
+                const uint32_t kind = (entry.param >> 7) & 0xf;
+                PlayerSpawnCommand command{};
+                command.entry = entry;
+                command.playerSlot = slot;
+                command.areaID = static_cast<int8_t>(entry.param & 7);
+                command.spawnParam = uint32_t(saved) | (uint32_t(character) << 3) |
+                                     (uint32_t(slot) << 6) | (kind << 8);
+                commands.push_back(command);
+            }
+        }
+        first = end;
+    }
+    return commands;
 }
 
 const uint8_t *StageAssets::overlay_at(uint32_t guest, size_t bytes) const {
