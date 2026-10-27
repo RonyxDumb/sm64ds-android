@@ -64,7 +64,7 @@ def stage_methods(text):
                  "data_0209d4b0 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(entry)));")
     text = exact(text, "data_0209d4b0 == (int)((dFdWipe_c *)data_0209f324 + 6)",
                  "data_0209d4b0 == static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>((dFdWipe_c *)data_0209f324 + 6)))")
-    return '#include "runtime/packed_ptr.h"\\n' + text
+    return '#include "runtime/packed_ptr.h"\n' + text
 
 
 def crate_actor(text):
