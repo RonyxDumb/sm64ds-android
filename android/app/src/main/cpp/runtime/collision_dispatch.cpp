@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <unordered_set>
 
+namespace cstd { int sqrt(unsigned long long); int fdiv(int,int); }
 namespace sm64ds {
 namespace {
 // fLiNdBa_c-style collision pointers are encoded DS words at +0x28/+0x2c.
@@ -57,12 +58,8 @@ void notify_player(const packed::Space &space,uint32_t owner,uint32_t collider) 
     notifier(owner,collider);
 }
 }
-namespace cstd {
-int sqrt(unsigned long long);
-int fdiv(int,int);
-}
 namespace {
-int32_t divide_q12(int32_t a,int32_t b) {return cstd::fdiv(a,b);}
+int32_t divide_q12(int32_t a,int32_t b) {return ::cstd::fdiv(a,b);}
 }
 
 void native_collision_init(uint32_t collider, int32_t radius, int32_t height,
@@ -158,7 +155,7 @@ void native_collision_process() {
                             uint32_t(signed_word(space,pos,8))-uint32_t(z0));
                         const uint64_t squared=uint64_t(int64_t(dx)*dx)+
                                                uint64_t(int64_t(dz)*dz);
-                        int32_t horizontal=cstd::sqrt(squared);
+                        int32_t horizontal=::cstd::sqrt(squared);
                         if(!horizontal) {horizontal=0x1000;dx=horizontal;}
                         int32_t overlap=firstRadius+signed_word(space,other,4)-horizontal;
                         if(overlap>0) {

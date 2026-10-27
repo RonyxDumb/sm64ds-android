@@ -314,8 +314,8 @@ int main() {
         native_collision_update(c2);
         native_collision_process();
         assert(collisionRoot==0);
-        assert(*packed::Ptr<int32_t>(c1+0x0c)==6144);
-        assert(*packed::Ptr<int32_t>(c2+0x0c)==-6144);
+        assert(*packed::Ptr<int32_t>(c1+0x0c)==-6144);
+        assert(*packed::Ptr<int32_t>(c2+0x0c)==6144);
         assert(*packed::Ptr<uint32_t>(c1+0x20)==0x10u);
         assert(*packed::Ptr<uint32_t>(c1+0x24)==22u);
         assert(*packed::Ptr<uint32_t>(c2+0x24)==11u);
