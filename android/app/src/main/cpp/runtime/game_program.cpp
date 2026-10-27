@@ -444,6 +444,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 require(ntr::bmd_parse(assets->model(), parsed) && !parsed.dlists.empty(),
                         "Original stage BMD could not be decoded into display lists.");
                 stageModel_ = std::move(parsed);
+                stagePreviewReady_ = false;
                 ntr::gx_reset();
                 frontend_.reset();
                 activeScene_ = 3;
@@ -516,12 +517,17 @@ void GameProgram::scanout() {
         // Original cartridge mesh and material display lists rendered by the
         // same DS geometry engine as the title. Until the actual game camera
         // runs, fit the vertices for an explicitly non-gameplay level preview.
-        ntr::gx_begin_frame();
-        ntr::bmd_set_animation(nullptr);
-        ntr::bmd_submit(stageModel_);
-        ntr::gx_fit_geometry_preview();
-        ntr::gx_render(geometry);
-        main_ = geometry;
+        if (!stagePreviewReady_) {
+            ntr::gx_begin_frame();
+            ntr::bmd_set_animation(nullptr);
+            ntr::bmd_submit(stageModel_);
+            ntr::gx_fit_geometry_preview();
+            ntr::gx_render(stagePreviewFrame_);
+            stagePreviewReady_ = true;
+        }
+        // Until Player/camera/animated actors are integrated the source geometry
+        // is static; do not re-decode and rasterize an entire level each tick.
+        main_ = stagePreviewFrame_;
         std::fill(&sub_.px[0][0], &sub_.px[0][0] + 256 * 192, 0xff000000u);
         return;
     }
