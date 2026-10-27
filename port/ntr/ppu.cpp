@@ -189,7 +189,10 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     const bool forced_blank = (dispcnt >> 7) & 1;
     if (disp_mode == 0 || forced_blank) {
         for (int y = 0; y < SCREEN_H; ++y)
-            for (int x = 0; x < SCREEN_W; ++x) fb.px[y][x] = 0xFFFFFFFFu;
+            for (int x = 0; x < SCREEN_W; ++x) {
+                fb.px[y][x] = 0xFFFFFFFFu;
+                fb.priority[y][x] = 4;
+            }
         return;
     }
 
@@ -225,6 +228,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             if (master_mode == 1 || master_mode == 2)
                 c = brightness(c, master_mode, master_level);
             fb.px[i / SCREEN_W][i % SCREEN_W] = c;
+            fb.priority[i / SCREEN_W][i % SCREEN_W] = 4;
         }
         return;
     }
@@ -232,7 +236,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     for (int y = 0; y < SCREEN_H; ++y) {
         for (int x = 0; x < SCREEN_W; ++x) {
             uint32_t c = backdrop;
-            unsigned layer = 5;
+            unsigned layer = 5, topPriority = 4;
             // Lower priority value wins; ties break toward the lower BG number,
             // so walk priorities 3..0 and let later writes overwrite.
             for (int prio = 3; prio >= 0; --prio) {
@@ -247,14 +251,15 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
                         s=0xff000000;
                         for (unsigned shift=0;shift<24;shift+=8)
                             s|=((((pixel>>shift)&255)*alpha+((c>>shift)&255)*(255-alpha)+127)/255)<<shift;
-                        c=s; layer=0;
-                    } else if (sample_bg(em, bgs[bg], x, y, s)) { c=s; layer=unsigned(bg); }
+                        c=s; layer=0; topPriority=prio;
+                    } else if (sample_bg(em, bgs[bg], x, y, s)) { c=s; layer=unsigned(bg); topPriority=prio; }
                 }
             }
             if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
                 c = brightness(c, blend_mode == 2 ? 1 : 2, blend_level);
             if (master_mode == 1 || master_mode == 2) c = brightness(c, master_mode, master_level);
             fb.px[y][x] = c;
+            fb.priority[y][x] = static_cast<uint8_t>(topPriority);
         }
     }
 }
@@ -298,6 +303,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
         const bool vflip = !affine && (a1 & 0x2000);
         const uint32_t tile = a2 & 0x3FF;
         const uint32_t pal = (a2 >> 12) & 0xF;
+        const uint8_t objPriority = static_cast<uint8_t>((a2 >> 10) & 3);
 
         int pa = 256, pb = 0, pc = 0, pd = 256;
         if (affine) {
@@ -313,7 +319,8 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
             if (py < 0 || py >= SCREEN_H) continue;
             for (int sx = 0; sx < bw; ++sx) {
                 const int px = x + sx;
-                if (px < 0 || px >= SCREEN_W) continue;
+                if (px < 0 || px >= SCREEN_W ||
+                    objPriority > fb.priority[py][px]) continue;
                 // texel coordinate: affine maps through the matrix around the
                 // box center; plain is direct with optional flips.
                 int tx, ty;
@@ -340,6 +347,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     index = rd8(addr);
                     if (!index) continue;
                     fb.px[py][px] = bgr555(rd16(obj_pltt + index * 2u));
+                    fb.priority[py][px] = objPriority;
                 } else {
                     const uint32_t addr = obj_vram + baseTile
                                           + tno * 32u + fy * 4u + fx / 2;
@@ -347,6 +355,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);
                     if (!index) continue;
                     fb.px[py][px] = bgr555(rd16(obj_pltt + (pal * 16u + index) * 2u));
+                    fb.priority[py][px] = objPriority;
                 }
             }
         }
