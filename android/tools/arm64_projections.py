@@ -70,6 +70,8 @@ def stage_methods(text):
                  "func_ov002_020b18f0(static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(data_0209f394[idx]))));")
     text = exact(text, "data_0209f314 = (int)scene->mTexAnimSlots;",
                  "data_0209f314 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(scene->mTexAnimSlots)));")
+    text = exact(text, "data_0209f320 = (int)components;",
+                 "data_0209f320 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(components)));")
     return '#include "runtime/packed_ptr.h"\n' + text
 
 
