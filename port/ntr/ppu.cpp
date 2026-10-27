@@ -200,6 +200,14 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     BgConfig bgs[4];
     for (int i = 0; i < 4; ++i) bgs[i] = read_bg(em, i, dispcnt);
     const bool bg0_3d=eng==ENGINE_A && (dispcnt&8);
+    // Prepare the DS priority order once, not 16 branches per pixel.
+    // Backgrounds with higher priority numbers draw first; BG0 wins ties.
+    int order[4]{};
+    unsigned orderCount = 0;
+    for (int priority = 3; priority >= 0; --priority)
+        for (int bg = 3; bg >= 0; --bg)
+            if (bgs[bg].enabled && bgs[bg].priority == priority)
+                order[orderCount++] = bg;
 
     // Background 4/8bpp palettes are immutable for this scanout frame.
     // Convert once rather than repeating bus lookups and BGR555 expansion
@@ -247,20 +255,25 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             unsigned layer = 5, topPriority = 4;
             // Lower priority value wins; ties break toward the lower BG number,
             // so walk priorities 3..0 and let later writes overwrite.
-            for (int prio = 3; prio >= 0; --prio) {
-                for (int bg = 3; bg >= 0; --bg) {
-                    if (!bgs[bg].enabled || bgs[bg].priority != prio) continue;
-                    uint32_t s;
-                    if (bg==0 && bg0_3d) {
-                        if (!geometry) continue;
-                        const uint32_t pixel=geometry->px[y][x];
-                        const unsigned alpha=pixel>>24;
-                        if (!alpha) continue;
-                        s=0xff000000;
-                        for (unsigned shift=0;shift<24;shift+=8)
-                            s|=((((pixel>>shift)&255)*alpha+((c>>shift)&255)*(255-alpha)+127)/255)<<shift;
-                        c=s; layer=0; topPriority=prio;
-                    } else if (sample_bg(bgs[bg], bgPalette.data(), x, y, s)) { c=s; layer=unsigned(bg); topPriority=prio; }
+            for (unsigned item = 0; item < orderCount; ++item) {
+                const int bg = order[item];
+                uint32_t s;
+                if (bg == 0 && bg0_3d) {
+                    if (!geometry) continue;
+                    const uint32_t pixel = geometry->px[y][x];
+                    const unsigned alpha = pixel >> 24;
+                    if (!alpha) continue;
+                    s = 0xff000000;
+                    for (unsigned shift = 0; shift < 24; shift += 8)
+                        s |= ((((pixel >> shift) & 255) * alpha +
+                               ((c >> shift) & 255) * (255 - alpha) + 127) / 255) << shift;
+                    c = s;
+                    layer = 0;
+                    topPriority = unsigned(bgs[bg].priority);
+                } else if (sample_bg(bgs[bg], bgPalette.data(), x, y, s)) {
+                    c = s;
+                    layer = unsigned(bg);
+                    topPriority = unsigned(bgs[bg].priority);
                 }
             }
             if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
