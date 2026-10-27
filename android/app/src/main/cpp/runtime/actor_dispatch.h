@@ -22,6 +22,9 @@ int native_fbase_behavior(uint32_t actor);
 int native_fbase_render(uint32_t actor);
 int native_fbase_before_behavior(uint32_t actor);
 int native_fbase_before_render(uint32_t actor);
+// Original func_02043fdc: process the intrusive behavior/render list through
+// ARM EABI member callbacks, preserving next-node-before-dispatch semantics.
+uint32_t native_fbase_process_list(uint32_t descriptor);
 
 class ActorDispatch {
 public:
@@ -30,6 +33,10 @@ public:
     // All three callbacks MUST be registered recovered native functions.
     // No guest ARM instructions, fake gameplay or silent no-op callbacks.
     int process(uint32_t object, const ActorProcessMethods &methods) const;
+    // fLiNdBaPr_c: next at +4 and owner at +8. ProcessListDescriptor:
+    // {head, tail, {member pointer, this-adjustment}} = 16 bytes.
+    // currentNodeCell is the original data_020a4b68 global handle.
+    uint32_t process_list(uint32_t descriptor, uint32_t currentNodeCell) const;
 private:
     packed::Space &space_;
 };

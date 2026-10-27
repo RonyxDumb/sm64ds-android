@@ -12,6 +12,8 @@
 using namespace sm64ds;
 namespace {
 int actorTestMode = 0;
+unsigned actorVisitCount = 0;
+uint32_t actorVisited[3]{};
 uint32_t actorLastStatus = 0xffffffffu;
 }
 extern "C" bool actor_test_before(uint32_t) { return actorTestMode != 0; }
@@ -20,6 +22,11 @@ extern "C" int actor_test_action(uint32_t) {
 }
 extern "C" void actor_test_after(uint32_t, uint32_t status) {
     actorLastStatus = status;
+}
+extern "C" int actor_list_callback(uint32_t owner) {
+    if(actorVisitCount<3) actorVisited[actorVisitCount]=owner;
+    ++actorVisitCount;
+    return 1;
 }
 extern "C" void abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(uint32_t);
 extern "C" void abi__ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(uint32_t);
@@ -259,6 +266,48 @@ int main() {
             (void)dispatcher.process(actor,badCallbacks);
         } catch(const std::runtime_error &) { unboundRejected=true; }
         assert(unboundRejected);
+        // Production actor scheduler from the original fBase_c list walker:
+        // {head,tail,member function} and two 0x10 intrusive nodes. A
+        // deliberately malformed cycle must fail rather than looping.
+        memory.bind(0x6200001cu,&actor_list_callback);
+        const uint32_t list = memory.allocate(16);
+        const uint32_t currentNode = memory.allocate(4);
+        const uint32_t firstNode = memory.allocate(16);
+        const uint32_t secondNode = memory.allocate(16);
+        const uint32_t firstOwner = memory.allocate(0x50);
+        const uint32_t secondOwner = memory.allocate(0x50);
+        *packed::Ptr<uint32_t>(list)=firstNode;
+        *packed::Ptr<uint32_t>(list+4)=secondNode;
+        *packed::Ptr<uint32_t>(list+8)=0x6200001cu;
+        *packed::Ptr<int32_t>(list+12)=0;
+        *packed::Ptr<uint32_t>(firstNode+4)=secondNode;
+        *packed::Ptr<uint32_t>(firstNode+8)=firstOwner;
+        *packed::Ptr<uint32_t>(secondNode+4)=0;
+        *packed::Ptr<uint32_t>(secondNode+8)=secondOwner;
+        actorVisitCount=0;
+        assert(dispatcher.process_list(list,currentNode)==1);
+        assert(actorVisitCount==2 && actorVisited[0]==firstOwner &&
+               actorVisited[1]==secondOwner);
+        assert(*packed::Ptr<uint32_t>(currentNode)==0);
+        // Unbound callback addresses remain fatal instead of becoming
+        // permissive no-op/synthetic actors.
+        *packed::Ptr<uint32_t>(list+8)=0x02000000u;
+        bool failedList=false;
+        try { (void)dispatcher.process_list(list,currentNode); }
+        catch(const std::runtime_error &) { failedList=true; }
+        assert(failedList);
+        *packed::Ptr<uint32_t>(list+8)=0x6200001cu;
+        *packed::Ptr<uint32_t>(secondNode+4)=firstNode;
+        failedList=false;
+        try { (void)dispatcher.process_list(list,currentNode); }
+        catch(const std::runtime_error &) { failedList=true; }
+        assert(failedList);
+        memory.release(firstOwner);
+        memory.release(secondOwner);
+        memory.release(firstNode);
+        memory.release(secondNode);
+        memory.release(currentNode);
+        memory.release(list);
         // Recovered Player::State has exactly three 8-byte method pairs.
         // Exercise each with an original-width overlay record, including a
         // virtual Main and a null Cleanup (the source treats that as success).

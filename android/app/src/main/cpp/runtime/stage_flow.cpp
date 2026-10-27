@@ -126,6 +126,7 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02043af0u, &native_fbase_render);
     nextSpace->bind(0x02043afcu, &native_fbase_before_behavior);
     nextSpace->bind(0x02043ac8u, &native_fbase_before_render);
+    nextSpace->bind(0x02043fdcu, &native_fbase_process_list);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(
@@ -199,6 +200,13 @@ int StageFlow::process_actor(uint32_t actor, const ActorProcessMethods &methods)
         throw std::runtime_error("Actor processing requested before native stage activation.");
     packed::Space::Scope scope(*addressSpace_);
     return ActorDispatch(*addressSpace_).process(actor, methods);
+}
+
+uint32_t StageFlow::process_actor_list(uint32_t descriptor) {
+    if (!addressSpace_)
+        throw std::runtime_error("Actor list requested before native stage activation.");
+    packed::Space::Scope scope(*addressSpace_);
+    return native_fbase_process_list(descriptor);
 }
 
 int StageFlow::invoke_player_state(uint32_t player, uint32_t state,
