@@ -84,12 +84,25 @@ public final class MainActivity extends Activity {
         LinearLayout diagnostics = new LinearLayout(this);
         Button inspect = new Button(this);
         inspect.setText("Console / Log");
-        inspect.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
-            .setTitle("Console diagnostica")
-            .setMessage(CrashReport.preview())
-            .setPositiveButton("Chiudi", null)
-            .setNeutralButton("Esporta TXT", (dialog, which) -> CrashReport.requestExport(this))
-            .show());
+        inspect.setOnClickListener(v -> {
+            TextView console = new TextView(this);
+            console.setTypeface(android.graphics.Typeface.MONOSPACE);
+            console.setTextSize(12);
+            console.setTextColor(0xffd8ead9);
+            console.setBackgroundColor(0xff121a16);
+            int inset = (int)(14 * getResources().getDisplayMetrics().density);
+            console.setPadding(inset, inset, inset, inset);
+            console.setText(CrashReport.preview());
+            ScrollView lines = new ScrollView(this);
+            lines.addView(console);
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Console diagnostica")
+                .setView(lines)
+                .setPositiveButton("Chiudi", null)
+                .setNeutralButton("Esporta TXT",
+                    (dialog, which) -> CrashReport.requestExport(this))
+                .show();
+        });
         diagnostics.addView(inspect);
         Button export = new Button(this);
         export.setText("Esporta log TXT");
