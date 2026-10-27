@@ -81,7 +81,18 @@ def crate_actor(text):
     return text
 
 
+
+def cap_icon(text):
+    # The source extracts the low byte of a real member. This is an address
+    # round-trip used only to steer 32-bit MWCC register allocation. Keep the
+    # native member's full address and its original byte write.
+    return exact(text,
+                 "unsigned char *p1b = (unsigned char *)(int)&mFlags;",
+                 "unsigned char *p1b = reinterpret_cast<unsigned char *>(&mFlags);")
+
+
 PROJECTIONS = {
+    "src/ui/hud/d_cap_icon.cpp": cap_icon,
     "src/game/actors/d_a_btt_bk.cpp": crate_actor,
     "src/EndKuppaScript.cpp": end_kuppa_script,
     "src/game/stages/d_s_stage_methods.cpp": stage_methods,
