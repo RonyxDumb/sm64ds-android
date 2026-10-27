@@ -64,6 +64,12 @@ def stage_methods(text):
                  "data_0209d4b0 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(entry)));")
     text = exact(text, "data_0209d4b0 == (int)((dFdWipe_c *)data_0209f324 + 6)",
                  "data_0209d4b0 == static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>((dFdWipe_c *)data_0209f324 + 6)))")
+    # Stage globals which carry DS addresses still store checked 32-bit
+    # handles; never persist a truncated native Player or texture pointer.
+    text = exact(text, "func_ov002_020b18f0((int)data_0209f394[idx]);",
+                 "func_ov002_020b18f0(static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(data_0209f394[idx]))));")
+    text = exact(text, "data_0209f314 = (int)scene->mTexAnimSlots;",
+                 "data_0209f314 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(scene->mTexAnimSlots)));")
     return '#include "runtime/packed_ptr.h"\n' + text
 
 
