@@ -10,6 +10,7 @@ for source in src/GetOwnerLanguage.c src/SetBg0Offset.c src/SetSubBg{0,1,2}Offse
     src/SetNumPlayers.c src/SublevelToLevel.c src/unnamed/arm9/0203/func_020308d0.c \
     src/DecIfAbove0_Byte.c src/GetControllerMode.c src/GetPlayerFlagByte.c src/GetSoundMode.c \
     src/unnamed/arm9/0202/func_020233f4.c src/ui/messages/func_0201fe08.c \
+    src/Vec3_MulScalarInPlace.c \
     src/unnamed/arm9/0203/func_0203b{b60,c7c}.c; do
     gcc -std=c11 -Wno-unknown-pragmas -fsanitize=address,undefined -g -Iinclude -c "$source" -o "$GAME_BUILD/$(basename "$source").o"
 done

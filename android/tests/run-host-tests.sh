@@ -5,11 +5,20 @@ TEST_BUILD=$(mktemp -d)
 trap 'rm -rf "$TEST_BUILD"' EXIT
 gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -Iinclude -c src/DotVec3.c -o "$TEST_BUILD/dot.o"
 gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -Iinclude -c src/CrossVec3.c -o "$TEST_BUILD/cross.o"
+# These recovered arithmetic objects are also linked by the Android CMake
+# target. The host self-test must link precisely those original C bodies.
+for source in Vec3_Add Vec3_Sub Vec3_MulScalarInPlace MulVec3Mat3x3; do
+    gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined \
+        -Iinclude -Iport/ntr/include -c "src/$source.c" -o "$TEST_BUILD/$source.o"
+done
 g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -g \
     -Iport/ntr/include -Iandroid/app/src/main/cpp -Iinclude \
     android/tests/rom_probe_test.cpp android/app/src/main/cpp/rom_probe.cpp \
     port/ntr/fs.cpp port/ntr/lz77.cpp android/app/src/main/cpp/game_math.cpp \
-    "$TEST_BUILD/dot.o" "$TEST_BUILD/cross.o" -o "$TEST_BUILD/rom_probe_test"
+    "$TEST_BUILD/dot.o" "$TEST_BUILD/cross.o" \
+    "$TEST_BUILD/Vec3_Add.o" "$TEST_BUILD/Vec3_Sub.o" \
+    "$TEST_BUILD/Vec3_MulScalarInPlace.o" "$TEST_BUILD/MulVec3Mat3x3.o" \
+    -o "$TEST_BUILD/rom_probe_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/rom_probe_test" "$@"
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/RomImport.java android/tests/RomImportTest.java
 java -cp "$TEST_BUILD/java" RomImportTest
