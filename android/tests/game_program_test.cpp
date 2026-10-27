@@ -330,6 +330,27 @@ int main(int argc, char **argv) {
             assert(stageSpace->address(assets->overlay_at(
                 assets->descriptor().levelAddress, 0x1c)) ==
                    assets->descriptor().levelAddress);
+            // The recovered actor dispatch address and ID table are read
+            // from the cartridge's actual overlay 2, never generated IDs.
+            const auto &actorOv = assets->object_overlay();
+            assert(stageSpace->data(actorOv.base, actorOv.bytes.size()) ==
+                   actorOv.bytes.data());
+            for (const auto &category : assets->objects()) {
+                assert(category.entryCount == category.data[1]);
+                assert(category.loaderAddress ==
+                       sm64ds::StageAssets::original_loader(actorOv, category.type));
+            }
+            for (const auto &actor : assets->simple_spawns()) {
+                assert(actor.actorIndex <= 0x1ffu);
+                if (actor.minimapChange) {
+                    assert(actor.actorIndex == 0x1ffu && actor.param <= 15);
+                } else {
+                    const auto actorOffset = 0x0210cbf4u + actor.actorIndex * 2;
+                    const uint8_t *id = static_cast<const uint8_t *>(
+                        stageSpace->data(actorOffset, 2));
+                    assert(actor.actorId == (uint16_t(id[0]) | uint16_t(id[1] << 8)));
+                }
+            }
             assert(request.players == 1 && request.character == expected[selected][0x41]);
             assert(request.controllerMode == expected[selected][0x42]);
             assert(game.requested_scene() == 3 && data_0209f5e8.color == 0x7fff);
