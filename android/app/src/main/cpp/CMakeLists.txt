@@ -13,7 +13,7 @@ target_include_directories(sm64ds_android PRIVATE "${REPO_ROOT}/port/ntr/include
 # handle projection below are the only ways they enter the ARM64 process.
 target_link_options(sm64ds_android PRIVATE "-Wl,-z,max-page-size=16384" "-Wl,--gc-sections")
 
-target_link_libraries(sm64ds_android PRIVATE GLESv3 aaudio)
+target_link_libraries(sm64ds_android PRIVATE GLESv3 aaudio log)
 
 set(PC_SDAT "${REPO_ROOT}/external/sm64ds-pc/port/hal/sdat")
 if(NOT EXISTS "${PC_SDAT}/sseq.cpp")
