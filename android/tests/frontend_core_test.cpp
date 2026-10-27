@@ -158,6 +158,20 @@ int main() {
         auto alias=packed::ArrayRef<uint16_t>(root+1);
         assert(packed::Ptr<uint8_t>(alias).address()==root+1);
         auto &memory=packed::Space::current();
+#if !defined(_WIN32)
+        // Raw DS VRAMCNT writes must take effect before the source writes
+        // graphics through a packed VRAM pointer. Waiting until PPU scanout
+        // loses the upload in the previously selected anonymous window.
+        const auto oldC=ntr::io_read(0x04000242u,1);
+        const auto oldH=ntr::io_read(0x04000248u,1);
+        ntr::io_write(0x04000242u,0,1); // avoid two banks at the same address
+        auto *physicalH=static_cast<uint8_t *>(ntr::host_ptr(0x06898000u));
+        *static_cast<volatile uint8_t *>(ntr::host_ptr(0x04000248u))=0x81;
+        *static_cast<uint8_t *>(memory.data(0x06200000u,1))=0x5d;
+        assert(physicalH[0]==0x5d);
+        ntr::io_write(0x04000248u,oldH,1);
+        ntr::io_write(0x04000242u,oldC,1);
+#endif
         // The original Player::State uses {function_or_vtable_offset,
         // signed_this_adjustment_with_virtual_bit}. Check both paths against
         // actual native code, never a cartridge instruction address.
