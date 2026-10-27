@@ -90,6 +90,39 @@ int main() {
            !spawns[0].selected_for(1));
     assert(spawns[1].minimapChange && spawns[1].actorIndex == 0x1ff &&
            spawns[1].param == 0xb);
+    // Recover a real 0x10-byte StandardEntry, also used for the Player
+    // entrance table. Its rotation and parameter are not part of the
+    // eight-byte outer category descriptor.
+    auto standard = objects[1];
+    standard.loaderAddress = 0x020fe6c8u;
+    standard.entryCount = 1;
+    standard.entriesAddress = base + 0x100;
+    put16(bytes, 0x100, 0x21);
+    put16(bytes, 0x102, uint16_t(-1200));
+    put16(bytes, 0x104, 254);
+    put16(bytes, 0x106, 6800);
+    put16(bytes, 0x108, 10);
+    put16(bytes, 0x10a, uint16_t(-32768));
+    put16(bytes, 0x10c, 4);
+    put16(bytes, 0x10e, 0x0387);
+    put16(actorOverlay.bytes, 0xcbf4 - 0xc000 + 0x21 * 2, 0x00bfu);
+    auto entrance = sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
+    assert(entrance.size() == 1 && entrance[0].entrance);
+    assert(entrance[0].actorIndex == 0x21 && entrance[0].actorId == 0x00bf);
+    assert(entrance[0].x == -1200 * 4096 && entrance[0].y == 254 * 4096 &&
+           entrance[0].z == 6800 * 4096);
+    assert(entrance[0].rotX == 10 && entrance[0].rotY == -32768 &&
+           entrance[0].rotZ == 4 && entrance[0].param == 0x0387);
+    assert(entrance[0].selected_for(3) && !entrance[0].selected_for(2));
+    standard.loaderAddress = 0x020fe8acu;
+    auto normal = sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
+    assert(normal.size() == 1 && !normal[0].entrance);
+    put16(bytes, 0x100, 326);
+    must_reject([&] {
+        (void)sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
+    });
+    put16(bytes, 0x100, 0x21);
+
     auto bad = objects[1];
     bad.loaderAddress = 0;
     must_reject([&] {
