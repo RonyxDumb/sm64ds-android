@@ -66,9 +66,15 @@ std::vector<StageAssets::SimpleSpawn> StageAssets::decode_simple_spawns(
         spawn.minimapChange = spawn.actorIndex == 0x1ff;
         if (spawn.minimapChange)
             spawn.param &= 0xf; // special native minimap-change argument
-        else
+        else {
+            // The next recovered ROM symbol is at 0x0210ce80: this lookup
+            // contains exactly 326 u16 actor IDs, not all 512 possible
+            // nine-bit values. Do not read into the unrelated next table.
+            require(spawn.actorIndex < (0x0210ce80u - 0x0210cbf4u) / 2,
+                    "Original simple actor index exceeds the ROM actor-ID table.");
             spawn.actorId = half(guest_data(objectOverlay,
                                      0x0210cbf4u + uint32_t(spawn.actorIndex) * 2, 2));
+        }
         spawns.push_back(spawn);
     }
     return spawns;
