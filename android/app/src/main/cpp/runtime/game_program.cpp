@@ -7,6 +7,9 @@
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
+#if defined(__ANDROID__)
+#include <android/log.h>
+#endif
 namespace {
 sm64ds::GameProgram *program = nullptr;
 constexpr u16 NoScene = 0x187;
@@ -434,6 +437,30 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     if (!batchFrame_) scanout();
 }
 void GameProgram::scanout() {
+#if defined(__ANDROID__)
+    // This is a real hardware-state trace from the phone, not a simulated
+    // scene. It distinguishes an incorrect sub-BG mode/matrix from lost
+    // VRAM bank routing if the title still shows vertical stripes.
+    if (activeScene_ == 1 && ticks_ % 120 == 0) {
+        const auto io = [](uint32_t address, unsigned width) {
+            return static_cast<uint32_t>(ntr::io_read(address, width));
+        };
+        __android_log_print(ANDROID_LOG_INFO, "SM64DS-PPU",
+            "tick=%llu lcd=%04x SUB dispcnt=%08x BG0=%04x BG1=%04x BG2=%04x BG3=%04x "
+            "BGP A=%04x B=%04x C=%04x D=%04x X=%08x Y=%08x "
+            "VRAM A=%02x B=%02x C=%02x D=%02x H=%02x I=%02x",
+            static_cast<unsigned long long>(ticks_),
+            io(0x04000304u, 2), io(0x04001000u, 4),
+            io(0x04001008u, 2), io(0x0400100au, 2),
+            io(0x0400100cu, 2), io(0x0400100eu, 2),
+            io(0x04001030u, 2), io(0x04001032u, 2),
+            io(0x04001034u, 2), io(0x04001036u, 2),
+            io(0x04001038u, 4), io(0x0400103cu, 4),
+            io(0x04000240u, 1), io(0x04000241u, 1),
+            io(0x04000242u, 1), io(0x04000243u, 1),
+            io(0x04000248u, 1), io(0x04000249u, 1));
+    }
+#endif
     if (activeScene_==0) {
     ntr::io_write(0x04000000,
                   (ntr::io_read(0x04000000, 4) & ~0xf00u) | (uint32_t(data_0209d45c & 15) << 8), 4);
