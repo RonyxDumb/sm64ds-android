@@ -44,7 +44,22 @@ def stage_methods(text):
     return text
 
 
+def crate_actor(text):
+    # C++17 forbids jumping past a local initializer. Both flags are pure
+    # masks of the same immutable value; evaluating B before the first goto
+    # has no externally visible effect and keeps the two branches identical.
+    text = exact(text,
+        "    int inYoshiMouthA = (flags & 0x20000) ? 1 : 0;\n"
+        "    if (inYoshiMouthA != 0) goto done;\n"
+        "    int inYoshiMouthB = (flags & 0x40000) ? 1 : 0;",
+        "    int inYoshiMouthA = (flags & 0x20000) ? 1 : 0;\n"
+        "    int inYoshiMouthB = (flags & 0x40000) ? 1 : 0;\n"
+        "    if (inYoshiMouthA != 0) goto done;")
+    return text
+
+
 PROJECTIONS = {
+    "src/game/actors/d_a_btt_bk.cpp": crate_actor,
     "src/EndKuppaScript.cpp": end_kuppa_script,
     "src/game/stages/d_s_stage_methods.cpp": stage_methods,
 }
