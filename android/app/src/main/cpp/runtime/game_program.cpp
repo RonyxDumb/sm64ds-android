@@ -403,6 +403,20 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             stagePilot_.update(stageCollision_, input_.x(), input_.y(),
                                (input_.pressed() & 1u) != 0);
             stageCamera_.follow(stagePilot_);
+#if defined(__ANDROID__)
+            if ((ticks_ % 180) == 0) {
+                char state[200];
+                std::snprintf(state, sizeof state,
+                    "KCL pilot=(%.1f,%.1f,%.1f), grounded=%d, "
+                    "camera=(%.1f,%.1f,%.1f), catalog actors=%zu. "
+                    "Original Player::Behavior not yet dispatched.",
+                    stagePilot_.x, stagePilot_.y, stagePilot_.z,
+                    int(stagePilot_.grounded),
+                    stageCamera_.x,stageCamera_.y,stageCamera_.z,
+                    stageActors_.actors().size());
+                sm64ds::diagnostics::note("STAGE-PILOT", state);
+            }
+#endif
         }
         ++ticks_;
         if (!batchFrame_) scanout();
