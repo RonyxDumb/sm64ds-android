@@ -34,6 +34,8 @@ int g_vram_fd=-1;
 struct VramAlias { uintptr_t base; size_t size; };
 std::array<VramAlias,9> g_vram_aliases{};
 size_t g_vram_alias_count=0;
+std::array<uint8_t,9> g_last_vram_controls{};
+bool g_last_vram_controls_valid=false;
 
 bool init_vram_banks() {
     const int fd=static_cast<int>(syscall(SYS_memfd_create,"sm64ds-vram",1u));
@@ -43,6 +45,13 @@ bool init_vram_banks() {
     g_vram_fd=fd; return true;
 }
 void update_vram_banks() {
+    // Recovered C++ code can write VRAMCNT via a raw volatile pointer, not
+    // just io_write(). Refresh only when a bank register actually changes;
+    // mmap/unmap on every scanout is both expensive and destructive.
+    std::array<uint8_t,9> controls{};
+    for (unsigned bank=0;bank<9;++bank)
+        controls[bank]=g_io[0x240+bank+(bank>=7?1:0)];
+    if (g_last_vram_controls_valid && controls==g_last_vram_controls) return;
     // LCDC, BG and OBJ windows alias the same physical bank. SDK clears and
     // uploads through one window before selecting another; no copies are due.
     for (size_t i=0;i<g_vram_alias_count;++i) {
@@ -55,7 +64,7 @@ void update_vram_banks() {
     constexpr size_t offsets[]={0,0x20000,0x40000,0x60000,0x80000,0x90000,0x94000,0x98000,0xa0000};
     constexpr size_t sizes[]={0x20000,0x20000,0x20000,0x20000,0x10000,0x4000,0x4000,0x8000,0x4000};
     for (unsigned bank=0;bank<9;++bank) {
-        const unsigned control=g_io[0x240+bank+(bank>=7?1:0)];
+        const unsigned control=controls[bank];
         if (!(control&0x80)) continue;
         const unsigned mst=control&7,ofs=(control>>3)&3;
         uintptr_t base=0;
@@ -85,6 +94,8 @@ void update_vram_banks() {
             throw std::runtime_error("Cannot route native VRAM bank");
         g_vram_aliases[g_vram_alias_count++]={mapped,sizes[bank]};
     }
+    g_last_vram_controls=controls;
+    g_last_vram_controls_valid=true;
 }
 #endif
 
@@ -261,6 +272,13 @@ void *host_ptr(uint32_t addr) {
     if (addr >= OAM_BASE && addr - OAM_BASE < OAM_SIZE && g_oam)
         return g_oam + (addr - OAM_BASE);
     return reinterpret_cast<void *>(static_cast<uintptr_t>(addr));
+}
+
+void sync_vram_banks() {
+#if !defined(_WIN32)
+    if (g_io && g_vram_fd>=0)
+        update_vram_banks();
+#endif
 }
 
 uint64_t io_read(uint32_t addr, unsigned width) {
