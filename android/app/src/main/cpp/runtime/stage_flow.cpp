@@ -99,8 +99,13 @@ void StageFlow::prepare_scene() {
     // these data; this does NOT substitute for them.
     auto nextAssets = std::make_unique<StageAssets>(
         StageAssets::load(cartridge_, static_cast<uint8_t>(data_02092110)));
+    // The original ARM9 BSS ends before the *first* resident overlay.
+    // Mapping it to the level overlay would swallow overlay 2's addresses
+    // and collide with the actor dispatch/ID tables on ARM64.
+    const uint32_t overlayBoundary =
+        std::min(nextAssets->overlay().base, nextAssets->object_overlay().base);
     auto nextArm9 = std::make_unique<Cartridge::DataImage>(
-        cartridge_.arm9_data(nextAssets->overlay().base));
+        cartridge_.arm9_data(overlayBoundary));
     auto nextSpace = std::make_unique<packed::Space>(Resources::active().heap());
     nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
     nextSpace->map(nextAssets->overlay().base, nextAssets->overlay().bytes.data(),
