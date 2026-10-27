@@ -22,6 +22,9 @@ enum Engine { ENGINE_A = 0, ENGINE_B = 1 };
 
 struct Framebuffer {
     uint32_t px[SCREEN_H][SCREEN_W];   // 0xAARRGGBB
+    // 0..3: topmost background/OBJ priority, 4: backdrop. Needed to
+    // composite OBJ at its real DS priority rather than over every BG.
+    uint8_t priority[SCREEN_H][SCREEN_W]{};
 };
 
 // Rasterise one engine's current register state into fb. Text-mode BGs only for
