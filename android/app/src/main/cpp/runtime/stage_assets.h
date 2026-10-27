@@ -49,7 +49,27 @@ public:
         }
     };
 
+    // Recovered LoadStandardObjects / LoadEntranceObjects consume the same
+    // 16-byte StandardEntry. Entrance actors use their own spawnParam formula
+    // later, after the original entrance-order preparation has executed.
+    struct StandardSpawn {
+        uint16_t actorId = 0, actorIndex = 0, param = 0;
+        int32_t x = 0, y = 0, z = 0;
+        int16_t rotX = 0, rotY = 0, rotZ = 0;
+        int area = -1;
+        uint8_t starFilter = 0;
+        bool entrance = false;
+        bool selected_for(uint8_t star) const {
+            return starFilter == 0 || starFilter == star;
+        }
+    };
+
     static StageAssets load(Cartridge &cartridge, uint32_t sublevel);
+    static std::vector<StandardSpawn> decode_standard_spawns(
+        const Cartridge::DataImage &levelOverlay,
+        const Cartridge::DataImage &objectOverlay, const ObjectRecord &category);
+    const std::vector<StandardSpawn> &standard_spawns() const { return standardSpawns_; }
+    const std::vector<StandardSpawn> &entrances() const { return entrances_; }
     static uint32_t original_loader(const Cartridge::DataImage &objectOverlay, uint8_t type);
     static std::vector<SimpleSpawn> decode_simple_spawns(
         const Cartridge::DataImage &levelOverlay,
@@ -77,6 +97,7 @@ private:
     std::vector<uint8_t> model_, collision_;
     std::vector<ObjectRecord> objects_;
     std::vector<SimpleSpawn> simpleSpawns_;
+    std::vector<StandardSpawn> standardSpawns_, entrances_;
 };
 
 } // namespace sm64ds
