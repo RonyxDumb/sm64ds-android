@@ -3,7 +3,7 @@ project(sm64ds_android LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../../.." ABSOLUTE)
-add_library(sm64ds_android SHARED bridge.cpp rom_probe.cpp game_math.cpp screen_renderer.cpp audio_core.cpp android_audio.cpp session.cpp
+add_library(sm64ds_android SHARED bridge.cpp crash_diagnostics.cpp rom_probe.cpp game_math.cpp screen_renderer.cpp audio_core.cpp android_audio.cpp session.cpp
     "${REPO_ROOT}/src/DotVec3.c" "${REPO_ROOT}/src/CrossVec3.c"
     "${REPO_ROOT}/port/ntr/rt.cpp" "${REPO_ROOT}/port/ntr/io.cpp"
     "${REPO_ROOT}/port/ntr/bmd.cpp" "${REPO_ROOT}/port/ntr/gx.cpp" "${REPO_ROOT}/port/ntr/texture.cpp"
