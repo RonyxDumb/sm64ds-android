@@ -41,6 +41,19 @@ def stage_methods(text):
     # without narrowing a live native address to the DS's u32 size.
     for symbol in ("data_0209f238", "gTouchHeld", "data_0209f2c8"):
         text = exact(text, "(void)(u32)&" + symbol + ";", "(void)&" + symbol + ";")
+    # Source address of each host-owned object is a full native pointer.
+    # The middle (int) cast was a MWCC register-allocation spelling only.
+    text = exact(text,
+        "*(MinimapDesc *)(((long long)(int)&data_0209f3c8)) = *desc;",
+        "*reinterpret_cast<MinimapDesc *>(&data_0209f3c8) = *desc;")
+    text = exact(text,
+        "int *position = (int *)((long long)(int)&player->mPosX);",
+        "int *position = reinterpret_cast<int *>(&player->mPosX);")
+    # These symbols were linker-defined constants on DS; the host must pass
+    # the overlay IDs rather than the host address of placeholder symbols.
+    for number in (60, 98, 102):
+        text = exact(text, "fn((int)&OVERLAY_%d_ID);" % number,
+                     "fn(%d);" % number)
     return text
 
 
