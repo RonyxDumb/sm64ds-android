@@ -397,8 +397,13 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         complete_ = true;
     }
     if (activeScene_ == 3 && data_02092664 == NoScene) {
-        // Stage 3 is active with original level geometry and controller records.
-        // Actor creation, camera simulation and Player are still unlinked.
+        // This bridge consumes the recovered controller state and cartridge KCL.
+        // Actual Player/dCamera_c::Behavior and actor vtables remain unlinked.
+        if (stagePilotReady_) {
+            stagePilot_.update(stageCollision_, input_.x(), input_.y(),
+                               (input_.pressed() & 1u) != 0);
+            stageCamera_.follow(stagePilot_);
+        }
         ++ticks_;
         if (!batchFrame_) scanout();
         return;
@@ -445,18 +450,43 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                         "Original stage BMD could not be decoded into display lists.");
                 stageModel_ = std::move(parsed);
                 stagePreviewReady_ = false;
+                stagePilotReady_ = false;
+                // The recovered game stores collision as KCL prisms, not a
+                // polygon mesh. Validate and mount its original octree.
+                const bool colliderReady = stageCollision_.load(assets->collision());
+                bool entranceReady = false;
+                try {
+                    const auto actorsOverlay = cartridge_.overlay_data(2);
+                    const auto request = stage_.request();
+                    entranceReady = stageActors_.read(*assets, actorsOverlay,
+                                                        unsigned(request.star),
+                                                        unsigned(request.entrance));
+                } catch (const std::exception&) {
+                    // A missing object-overlay mapping must not become an
+                    // unguarded ARM64 code pointer or crash stage rendering.
+                }
+                if (colliderReady && entranceReady) {
+                    const auto& spawn = stageActors_.entrance();
+                    stagePilot_.place(spawn.x, spawn.y, spawn.z, stageCollision_);
+                    stageCamera_ = StageFollowCamera{};
+                    stageCamera_.yaw = double(spawn.yaw) * (3.14159265358979323846 / 32768.0);
+                    for (int i = 0; i < 24; ++i) stageCamera_.follow(stagePilot_);
+                    stagePilotReady_ = true;
+                }
                 ntr::gx_reset();
                 frontend_.reset();
                 activeScene_ = 3;
                 data_02092664 = NoScene;
 #if defined(__ANDROID__)
-                char message[180];
+                char message[256];
                 std::snprintf(message, sizeof message,
-                    "Native stage geometry loaded: sublevel=%d overlay=%u BMD=%u KCL=%u lists=%zu. "
-                    "Actor/Player lifecycle NOT linked.",
+                    "Native stage: sublevel=%d overlay=%u BMD=%u lists=%zu "
+                    "KCL=%s prisms=%zu actorPlacements=%zu entrance=%s. "
+                    "Original Player/Camera/Actor lifecycle NOT linked.",
                     assets->descriptor().level, assets->descriptor().overlayId,
-                    assets->descriptor().modelHandle, assets->descriptor().collisionHandle,
-                    stageModel_.dlists.size());
+                    assets->descriptor().modelHandle, stageModel_.dlists.size(),
+                    colliderReady ? "ready" : "unavailable", stageCollision_.prism_count(),
+                    stageActors_.actors().size(), stagePilotReady_ ? "found" : "missing");
                 sm64ds::diagnostics::note("STAGE", message);
 #endif
                 ++ticks_; if (!batchFrame_) scanout(); return;
