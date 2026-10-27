@@ -62,6 +62,43 @@ int main() {
     assert(objects[3].type == 7 && objects[3].selected_for(7));
     assert(objects[4].area == 0 && objects[4].type == 31);
     assert(objects[4].selected_for(1) && objects[4].selected_for(7));
+    // The original actor callback table lives in overlay 2, separate from
+    // the level overlay. Its pointer is a guest ARM address, NOT callable on
+    // AArch64. The u16 actor ID table follows it at 0x0210cbf4.
+    sm64ds::Cartridge::DataImage actorOverlay{
+        0x0210c000u, std::vector<uint8_t>(0x2000)};
+    put32(actorOverlay.bytes, 0xcbb8 - 0xc000 + 5 * 4, 0x020fe960u);
+    put16(actorOverlay.bytes, 0xcbf4 - 0xc000 + 0x12 * 2, 0x015au);
+    assert(sm64ds::StageAssets::original_loader(actorOverlay, 5) == 0x020fe960u);
+    must_reject([&] { (void)sm64ds::StageAssets::original_loader(actorOverlay, 15); });
+    // Source-defined ObjSubTable: count at +1, entry pointer at +4.
+    objects[1].entryCount = 2;
+    objects[1].entriesAddress = base + 0xc0;
+    objects[1].loaderAddress = 0x020fe960u;
+    put16(bytes, 0xc0, uint16_t(0x12 | (3 << 9)));
+    put16(bytes, 0xc2, uint16_t(-2));
+    put16(bytes, 0xc4, 4);
+    put16(bytes, 0xc6, uint16_t(-7));
+    put16(bytes, 0xc8, uint16_t(0x1ff | (0x1b << 9)));
+    auto spawns = sm64ds::StageAssets::decode_simple_spawns(overlay, actorOverlay, objects[1]);
+    assert(spawns.size() == 2);
+    assert(spawns[0].actorIndex == 0x12 && spawns[0].actorId == 0x015a);
+    assert(spawns[0].param == 3 && spawns[0].x == -8192 &&
+           spawns[0].y == 16384 && spawns[0].z == -28672);
+    assert(spawns[0].area == -1 && !spawns[0].minimapChange);
+    assert(spawns[1].minimapChange && spawns[1].actorIndex == 0x1ff &&
+           spawns[1].param == 0xb);
+    auto bad = objects[1];
+    bad.loaderAddress = 0;
+    must_reject([&] {
+        (void)sm64ds::StageAssets::decode_simple_spawns(overlay, actorOverlay, bad);
+    });
+    bad = objects[1];
+    bad.entriesAddress = base + 0x1fc;
+    must_reject([&] {
+        (void)sm64ds::StageAssets::decode_simple_spawns(overlay, actorOverlay, bad);
+    });
+
 
     // The native pointer width never changes the 32-bit ROM offsets. Invalid
     // tables and truncated payloads must fail before an actor can be spawned.
