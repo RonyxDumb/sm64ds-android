@@ -316,6 +316,18 @@ int main(int argc, char **argv) {
             // Every projected actor record is still the original overlay
             // payload; no native pointer or fabricated spawn has entered it.
             assert(!assets->objects().empty());
+            // Pinned European cartridge / castle grounds (sublevel 1):
+            // category callback addresses and the real entrance record.
+            assert(assets->entrances().size() == 14);
+            assert(assets->standard_spawns().size() == 49);
+            assert(assets->simple_spawns().size() == 40);
+            const auto &firstEntrance = assets->entrances()[0];
+            assert(firstEntrance.actorIndex == 0 && firstEntrance.actorId == 0xbf);
+            assert(firstEntrance.x == -1200 * 4096 &&
+                   firstEntrance.y == 254 * 4096 &&
+                   firstEntrance.z == 6800 * 4096);
+            assert(firstEntrance.entrance && firstEntrance.param == 0);
+
             for (const auto &object : assets->objects()) {
                 assert(object.type < 32 && object.starFilter < 8);
                 assert(std::memcmp(object.data.data(),
