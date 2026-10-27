@@ -39,6 +39,11 @@ void *host_ptr(uint32_t addr);
 uint64_t io_read(uint32_t addr, unsigned width);
 void     io_write(uint32_t addr, uint64_t value, unsigned width);
 
+// Some recovered/native routines write VRAMCNT through direct volatile
+// register pointers. Refresh physical bank aliases if their latched control
+// bytes changed, even when no io_write() proxy was involved.
+void sync_vram_banks();
+
 // Proxy standing in for `*(volatile T *)addr`. Reads and writes are dispatched so
 // that write-triggered registers run their side effect.
 template <class T>
