@@ -19,10 +19,16 @@ const uint8_t* owned(const Cartridge::DataImage& ov,uint32_t ptr,size_t n){
 }
 bool StageActorCatalog::read(const StageAssets& level,const Cartridge::DataImage& objectOv,
                              unsigned star,unsigned entrance){
+    return read_raw(level.descriptor(),level.overlay(),objectOv,star,entrance);
+}
+bool StageActorCatalog::read_raw(const StageAssets::Descriptor& desc,
+                                 const Cartridge::DataImage& levelOv,
+                                 const Cartridge::DataImage& objectOv,
+                                 unsigned star,unsigned entrance){
     actors_.clear();categories_=0;entranceFound_=false;entrance_={};
     if(star>7||entrance>4096)return false;
     try{
-        const auto& desc=level.descriptor();
+        // The caller gives us checked cartridge image ranges, never host pointer casts.
         // The loader table is 15 four-byte pointers and ends at 0x0210cbf4.
         const uint8_t* code=owned(objectOv,LoaderTable,15*4);
         const uint8_t* actorIds=owned(objectOv,ActorIndexTable,512*2);
@@ -35,7 +41,7 @@ bool StageActorCatalog::read(const StageAssets& level,const Cartridge::DataImage
         }
         if(entranceCat==32||standardCat==32||simpleCat==32)return false;
         auto at=[&](uint32_t address,size_t n)->const uint8_t*{
-            return level.overlay_at(address,n);
+            return owned(levelOv,address,n);
         };
         auto parse=[&](uint32_t address,int area){
             if(!address)return;
