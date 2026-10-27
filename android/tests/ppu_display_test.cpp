@@ -75,5 +75,11 @@ int main() {
     ntr::ppu_scanout(ntr::ENGINE_A, frame);
     ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == convert(0x001f));
-    std::puts("NDS VRAM bitmap, affine BG2 and BG/OBJ priority passed.");
+    // Master brightness applies to hardware sprites too, not only the BG.
+    ntr::io_write(0x0400006cu, (2u << 14) | 16u, 2);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == 0xff000000u);
+    ntr::io_write(0x0400006cu, 0, 2);
+    std::puts("NDS bitmap, affine BG2, OBJ priority and master fade passed.");
 }
