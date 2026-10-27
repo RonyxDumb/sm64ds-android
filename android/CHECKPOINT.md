@@ -1,3 +1,38 @@
+# Android checkpoint — Stage 3 ARM64 bridge (27 October 2026)
+
+**Experimental, not playable and not the original class lifecycle.**
+
+The Android code now reads original EU cartridge KCL prisms using a checked 32-bit offset parser and octree ground query; it also reads stage object categories, spawn IDs and the selected entrance from the original ov002 dispatch and actor lookup data (no host pointer narrowing). The native stage loop consumes controller input and advances an ARM64-owned motion pilot plus follow-camera record. On-device logs report KCL/actor readiness and the pilot's position. All input remains supplied by recovered original controls.
+
+The pilot movement, gravity, jump and follow camera are temporary host adapters, **not** Player::Behavior, Player::St_Walk_Main, dCamera_c::Behavior or the retail dActor_c scheduler. Actor records are catalogued but their real classes are not instantiated. The renderer still draws the static original BMD level preview and does not yet render a moving Player or native camera perspective; the HUD/minimap and gameplay audio remain absent. The entrance lookup can fail safely and then no pilot is activated. The Android APK must be tested with the exact EU ROM; ROM-free CI cannot certify real player movement, actor behavior or gameplay.
+
+**Next integration gate:** audited packed-ABI actor factory/vtables, Player model + animations and lifecycle, original camera projection and movement states, moving collider contacts, object Behavior/Render scheduler, HUD and audio.
+
+---
+
+# Android checkpoint — 2026-10-27, scene-3 ROM geometry milestone (experimental)
+
+The Android native flow now attempts to enter scene 3 after the genuine title
+result, StartFile, scene transition and StageFlow::prepare_scene. It parses
+the selected ROM level's original BMD and submits its display lists to the native
+DS geometry engine. The same game-derived controller records are ticked after
+the transition. The sub-screen stays black and the geometric framing is a
+diagnostic orthographic fit, **not** the original camera.
+
+**This is not a playable port, and it is not dScStage_c's actor lifecycle.**
+No Player, level actor spawning, collision simulation, camera controller,
+HUD/minimap, animated level actors or gameplay sound propagation run yet.
+Stage-model parsing and on-device visuals are not confirmed by a ROM-free build.
+Do not label a CI green build as stage gameplay validation. If BMD parsing fails,
+an explicit diagnostic is retained rather than a fabricated scene.
+
+Next: link original stage lifecycle and scene vtables into packed::Space using
+audited ARM64 adapters; bind native actors/Player, real camera and level object
+dispatch, then replace the orthographic geometric preview with original
+rendering and move to fullscreen plus a real minimap.
+
+---
+
 # Android checkpoint — 2026-10-26, native title execution
 
 Production connects original `b7138` initialization, `b7090`/`aed98` input and

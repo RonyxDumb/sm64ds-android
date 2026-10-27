@@ -3,6 +3,7 @@
 #include "resources.h"
 #include "ntr/lz77.h"
 #include "ntr/gx.h"
+#include "ntr/bmd.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -386,14 +387,40 @@ void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx,
     }
 }
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
-    input_.update(keys, x, y, tx, ty, data_02092664 != 3);
-    if (data_02092664 == 3)
+    input_.update(keys, x, y, tx, ty, activeScene_ != 3 && data_02092664 != 3);
+    if (activeScene_ == 3 || data_02092664 == 3)
         stage_.update_input(0, input_.x(), input_.y());
     if (job_) {
         auto callback = job_;
         job_ = nullptr;
         callback(argument_);
         complete_ = true;
+    }
+    if (activeScene_ == 3 && data_02092664 == NoScene) {
+        // This bridge consumes the recovered controller state and cartridge KCL.
+        // Actual Player/dCamera_c::Behavior and actor vtables remain unlinked.
+        if (stagePilotReady_) {
+            stagePilot_.update(stageCollision_, input_.x(), input_.y(),
+                               (input_.pressed() & 1u) != 0);
+            stageCamera_.follow(stagePilot_);
+#if defined(__ANDROID__)
+            if ((ticks_ % 180) == 0) {
+                char state[200];
+                std::snprintf(state, sizeof state,
+                    "KCL pilot=(%.1f,%.1f,%.1f), grounded=%d, "
+                    "camera=(%.1f,%.1f,%.1f), catalog actors=%zu. "
+                    "Original Player::Behavior not yet dispatched.",
+                    stagePilot_.x, stagePilot_.y, stagePilot_.z,
+                    int(stagePilot_.grounded),
+                    stageCamera_.x,stageCamera_.y,stageCamera_.z,
+                    stageActors_.actors().size());
+                sm64ds::diagnostics::note("STAGE-PILOT", state);
+            }
+#endif
+        }
+        ++ticks_;
+        if (!batchFrame_) scanout();
+        return;
     }
     if (activeScene_==1 && data_02092664==NoScene) {
         if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
@@ -425,10 +452,59 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 frontend_->render(); accept_title_result(result);
                 ++ticks_; if (!batchFrame_) scanout(); return;
             }
-            if (data_02092664 == 3)
-                throw std::runtime_error(
-                    "StartFile originale completato. La scena di gioco dScStage_c e il runtime "
-                    "degli attori non sono ancora collegati.");
+            if (data_02092664 == 3) {
+                // The original StartFile and StageFlow have already resolved the
+                // requested sublevel, overlay, model and KCL. This is a native
+                // stage *geometry* milestone, NOT dScStage_c actor execution.
+                const auto *assets = stage_.assets();
+                require(assets && stage_.address_space(),
+                        "Stage 3 was requested without a prepared original level.");
+                ntr::BmdModel parsed;
+                require(ntr::bmd_parse(assets->model(), parsed) && !parsed.dlists.empty(),
+                        "Original stage BMD could not be decoded into display lists.");
+                stageModel_ = std::move(parsed);
+                stagePreviewReady_ = false;
+                stagePilotReady_ = false;
+                // The recovered game stores collision as KCL prisms, not a
+                // polygon mesh. Validate and mount its original octree.
+                const bool colliderReady = stageCollision_.load(assets->collision());
+                bool entranceReady = false;
+                try {
+                    const auto actorsOverlay = cartridge_.overlay_data(2);
+                    const auto request = stage_.request();
+                    entranceReady = stageActors_.read(*assets, actorsOverlay,
+                                                        unsigned(request.star),
+                                                        unsigned(request.entrance));
+                } catch (const std::exception&) {
+                    // A missing object-overlay mapping must not become an
+                    // unguarded ARM64 code pointer or crash stage rendering.
+                }
+                if (colliderReady && entranceReady) {
+                    const auto& spawn = stageActors_.entrance();
+                    stagePilot_.place(spawn.x, spawn.y, spawn.z, stageCollision_);
+                    stageCamera_ = StageFollowCamera{};
+                    stageCamera_.yaw = double(spawn.yaw) * (3.14159265358979323846 / 32768.0);
+                    for (int i = 0; i < 24; ++i) stageCamera_.follow(stagePilot_);
+                    stagePilotReady_ = true;
+                }
+                ntr::gx_reset();
+                frontend_.reset();
+                activeScene_ = 3;
+                data_02092664 = NoScene;
+#if defined(__ANDROID__)
+                char message[256];
+                std::snprintf(message, sizeof message,
+                    "Native stage: sublevel=%d overlay=%u BMD=%u lists=%zu "
+                    "KCL=%s prisms=%zu actorPlacements=%zu entrance=%s. "
+                    "Original Player/Camera/Actor lifecycle NOT linked.",
+                    assets->descriptor().level, assets->descriptor().overlayId,
+                    assets->descriptor().modelHandle, stageModel_.dlists.size(),
+                    colliderReady ? "ready" : "unavailable", stageCollision_.prism_count(),
+                    stageActors_.actors().size(), stagePilotReady_ ? "found" : "missing");
+                sm64ds::diagnostics::note("STAGE", message);
+#endif
+                ++ticks_; if (!batchFrame_) scanout(); return;
+            }
             throw std::runtime_error("Scena originale non collegata: " +
                                      std::to_string(data_02092664));
         }
@@ -481,6 +557,24 @@ void GameProgram::scanout() {
                   (ntr::io_read(0x04001000, 4) & ~0xf00u) | (uint32_t(data_0209d454 & 15) << 8), 4);
     }
     ntr::Framebuffer geometry{};
+    if (activeScene_ == 3) {
+        // Original cartridge mesh and material display lists rendered by the
+        // same DS geometry engine as the title. Until the actual game camera
+        // runs, fit the vertices for an explicitly non-gameplay level preview.
+        if (!stagePreviewReady_) {
+            ntr::gx_begin_frame();
+            ntr::bmd_set_animation(nullptr);
+            ntr::bmd_submit(stageModel_);
+            ntr::gx_fit_geometry_preview();
+            ntr::gx_render(stagePreviewFrame_);
+            stagePreviewReady_ = true;
+        }
+        // Until Player/camera/animated actors are integrated the source geometry
+        // is static; do not re-decode and rasterize an entire level each tick.
+        main_ = stagePreviewFrame_;
+        std::fill(&sub_.px[0][0], &sub_.px[0][0] + 256 * 192, 0xff000000u);
+        return;
+    }
     if (activeScene_==1) ntr::gx_render(geometry);
     ntr::ppu_scanout(ntr::ENGINE_A, main_,activeScene_==1?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);

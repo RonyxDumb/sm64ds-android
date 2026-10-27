@@ -644,6 +644,39 @@ const GxTriangle *gx_polygons(size_t &count) {
     return g.tris.empty() ? nullptr : g.tris.data();
 }
 
+bool gx_fit_geometry_preview() {
+    if (g.tris.empty()) return false;
+    float minX = INFINITY, minY = INFINITY;
+    float maxX = -INFINITY, maxY = -INFINITY;
+    for (const auto &triangle : g.tris)
+        for (const auto &v : triangle.v) {
+            if (!std::isfinite(v.x) || !std::isfinite(v.y) || v.w <= 0)
+                continue;
+            minX = std::min(minX, v.x); maxX = std::max(maxX, v.x);
+            minY = std::min(minY, v.y); maxY = std::max(maxY, v.y);
+        }
+    if (!std::isfinite(minX) || !std::isfinite(maxX) ||
+        !std::isfinite(minY) || !std::isfinite(maxY))
+        return false;
+    const float spanX = maxX - minX, spanY = maxY - minY;
+    if (!std::isfinite(spanX) || !std::isfinite(spanY) ||
+        (spanX < 0.0001f && spanY < 0.0001f))
+        return false;
+    const float scale = std::min(224.f / std::max(spanX, 0.0001f),
+                                 160.f / std::max(spanY, 0.0001f));
+    const float centerX = minX * 0.5f + maxX * 0.5f;
+    const float centerY = minY * 0.5f + maxY * 0.5f;
+    if (!std::isfinite(scale) || !std::isfinite(centerX) || !std::isfinite(centerY))
+        return false;
+    for (auto &triangle : g.tris)
+        for (auto &v : triangle.v) {
+            if (!std::isfinite(v.x) || !std::isfinite(v.y) || v.w <= 0)
+                continue;
+            v.x = (v.x - centerX) * scale + SCREEN_W * 0.5f;
+            v.y = (v.y - centerY) * scale + SCREEN_H * 0.5f;
+        }
+    return true;
+}
 void gx_render(Framebuffer &fb) {
     static float depth[SCREEN_H][SCREEN_W];
     for (int y = 0; y < SCREEN_H; ++y)

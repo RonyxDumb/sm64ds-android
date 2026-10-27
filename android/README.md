@@ -2,7 +2,7 @@
 
 Native port in development. The Android session runs the recovered boot and
 original title update/render loop. No emulator or ARM guest execution is used.
-Stage/Player integration is still in progress.
+Scene 3 level-geometry preview is integrated experimentally; Stage/Player actor execution is still missing.
 
 ## Current execution
 
