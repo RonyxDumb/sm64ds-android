@@ -75,6 +75,31 @@ Outputs:
 GitHub Actions: [Android workflow](../.github/workflows/android.yml), artifact
 `sm64ds-android-debug`.
 
+## Crash report TXT / diagnostic console
+
+Each start now appends a diagnostic timeline to
+`Android/data/io.github.ronyxdumb.sm64ds/files/logs/sm64ds-crash-report.txt`
+(app-specific external storage). It survives process crashes and ordinary
+restarts, and does not require storage permission.
+
+Open the launcher and choose **Console / Log** to inspect recent lines or
+**Esporta log TXT** to save an ordinary `.txt` file to Downloads (or any
+folder supported by Android's document picker). If the native renderer throws
+an error, the in-game error dialog also offers **Esporta log TXT**. After a
+fatal native crash closes the app, reopen the launcher and export from there.
+
+Entries include Android/device version, renderer startup, periodic frame
+heartbeat, the sub-screen DISPCNT/BG/VRAMCNT state during the title, complete
+Java exception stack traces, native C++ exceptions and fatal signal metadata
+for SIGSEGV/SIGBUS/SIGILL/SIGABRT/SIGFPE (signal, fault address and ARM64 PC
+where available). The log is size-bounded, with recent entries retained.
+No ROM data or game save contents are copied into the report.
+
+Signal handling preserves Android's previous crash handler, so Android may
+also generate its normal tombstone. Process kills by the OS, abrupt power
+losses and hangs/ANRs are not reliably represented by fatal-signal entries.
+The exported text is for diagnosis, not proof that the native game is playable.
+
 ## Verification
 
 ```sh
