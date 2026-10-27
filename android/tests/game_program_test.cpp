@@ -329,13 +329,19 @@ int main(int argc, char **argv) {
                 assert(data_0209fc5c[slot] == (slot == 0));
                 assert(data_0209fc64[slot] == (slot == 0 ? 0 : -1));
             }
-            bool reachedStage = false;
-            try {
-                game.tick();
-            } catch (const std::runtime_error &e) {
-                reachedStage = std::string(e.what()).find("dScStage_c") != std::string::npos;
-            }
-            assert(reachedStage);
+            // The old test expected a deliberate exception at scene 3. Now
+            // use the selected ROM's level BMD to exercise the real transition:
+            // a static geometry preview is NOT actor/Player gameplay.
+            game.tick();
+            assert(game.active_scene() == 3 && game.requested_scene() == 0x187);
+            assert(game.frontend_core() == nullptr);
+            const uint64_t stageTick = game.ticks();
+            game.tick(0, .5f, -.25f);
+            assert(game.ticks() == stageTick + 1);
+            assert(game.active_scene() == 3);
+            assert(game.stage_assets() == assets);
+            std::cout << "Original cartridge level geometry entered scene 3; "
+                         "Player/actor lifecycle remains unlinked.\\n";
             // This source path previously wrote the DS +0xc offset into the
             // native fader's speed. Verify the actual native color member.
             data_02092110 = -1;
