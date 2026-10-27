@@ -44,5 +44,36 @@ int main() {
     ntr::io_write(0x04000000u, (1u << 16) | (1u << 10) | 3u, 4);
     ntr::ppu_scanout(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == convert(0x001f));
-    std::puts("NDS VRAM bitmap display and mode-3 affine BG2 passed.");
+    // OBJ priority is compared against the visible BG pixel, not layered
+    // indiscriminately over it. When equal, OBJ wins; lower BG priority wins.
+    ntr::io_write(0x04000241u, 0x82, 1);  // VRAM B -> engine A OBJ
+    auto *obj = static_cast<uint8_t *>(ntr::host_ptr(0x06400000u));
+    std::memset(obj, 0, 0x100);
+    obj[32] = 1; // first texel of sprite tile 1, 4bpp
+    auto *objPalette = static_cast<uint16_t *>(ntr::host_ptr(0x05000200u));
+    objPalette[1] = 0x001f;
+    std::memset(vram, 0, 0x8000);
+    vram[0x800] = 1; // text BG0 tile 1
+    vram[0x4000 + 32] = 2; // first 4bpp texel of BG tile 1, palette index 2
+    palette[2] = 0x03e0; // green
+    ntr::io_write(0x04000008u, 1u | (1u << 8) | (1u << 2), 2); // BG0 priority 1
+    auto *oam = static_cast<uint16_t *>(ntr::host_ptr(0x07000000u));
+    for (unsigned i = 0; i < 128; ++i) oam[i * 4] = 0x0200; // disable
+    oam[0] = 0; // sprite at (0,0)
+    oam[1] = 0;
+    oam[2] = 1u | (2u << 10); // OBJ priority 2, behind BG0
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 8) | (1u << 12), 4);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x03e0) && frame.priority[0][0] == 1);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x03e0));
+    oam[2] = 1u; // OBJ priority 0, in front of BG0
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x001f) && frame.priority[0][0] == 0);
+    oam[2] = 1u | (1u << 10); // priority tie: OBJ in front
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x001f));
+    std::puts("NDS VRAM bitmap, affine BG2 and BG/OBJ priority passed.");
 }
