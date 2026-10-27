@@ -218,6 +218,9 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     const uint32_t backdrop = bgPalette[0];
     const uint16_t blend = rd16(em.reg_base + 0x50), master = rd16(em.reg_base + 0x6c);
     const unsigned blend_mode = (blend >> 6) & 3, master_mode = (master >> 14) & 3;
+    const uint16_t blendAlpha = rd16(em.reg_base + 0x52);
+    const unsigned blendEVA = std::min(16u, unsigned(blendAlpha & 31u));
+    const unsigned blendEVB = std::min(16u, unsigned((blendAlpha >> 8) & 31u));
     const unsigned blend_level = std::min(16u, unsigned(rd16(em.reg_base + 0x54) & 31));
     const unsigned master_level = std::min(16u, unsigned(master & 31));
     auto brightness = [](uint32_t color, unsigned mode, unsigned level) {
@@ -252,7 +255,9 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     for (int y = 0; y < SCREEN_H; ++y) {
         for (int x = 0; x < SCREEN_W; ++x) {
             uint32_t c = backdrop;
-            unsigned layer = 5, topPriority = 4;
+            uint32_t behind = backdrop;
+            unsigned layer = 5, behindLayer = 5, topPriority = 4;
+            bool topIs3D = false;
             // Lower priority value wins; ties break toward the lower BG number,
             // so walk priorities 3..0 and let later writes overwrite.
             for (unsigned item = 0; item < orderCount; ++item) {
@@ -267,17 +272,38 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
                     for (unsigned shift = 0; shift < 24; shift += 8)
                         s |= ((((pixel >> shift) & 255) * alpha +
                                ((c >> shift) & 255) * (255 - alpha) + 127) / 255) << shift;
+                    behind = c;
+                    behindLayer = layer;
                     c = s;
                     layer = 0;
+                    topIs3D = true;
                     topPriority = unsigned(bgs[bg].priority);
                 } else if (sample_bg(bgs[bg], bgPalette.data(), x, y, s)) {
+                    behind = c;
+                    behindLayer = layer;
                     c = s;
                     layer = unsigned(bg);
+                    topIs3D = false;
                     topPriority = unsigned(bgs[bg].priority);
                 }
             }
-            if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3))
+            // BLDCNT effect 1 blends the TOP visible first-target BG with
+            // the NEXT visible second-target layer. Layers hidden between
+            // them cannot be skipped. Do not apply this a second time to BG0
+            // 3D pixels, whose alpha was already composited above.
+            if (blend_mode == 1 && !topIs3D &&
+                (blend & (1u << layer)) && (blend & (1u << (8u + behindLayer)))) {
+                uint32_t mixed = 0xff000000u;
+                for (unsigned shift = 0; shift < 24; shift += 8) {
+                    const unsigned first = (c >> shift) & 255u;
+                    const unsigned second = (behind >> shift) & 255u;
+                    mixed |= std::min(255u, (first * blendEVA +
+                                              second * blendEVB + 8u) / 16u) << shift;
+                }
+                c = mixed;
+            } else if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3)) {
                 c = brightness(c, blend_mode == 2 ? 1 : 2, blend_level);
+            }
             if (master_mode == 1 || master_mode == 2) c = brightness(c, master_mode, master_level);
             fb.px[y][x] = c;
             fb.priority[y][x] = static_cast<uint8_t>(topPriority);
