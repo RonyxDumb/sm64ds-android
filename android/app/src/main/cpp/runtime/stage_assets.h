@@ -1,5 +1,6 @@
 #pragma once
 #include "cartridge.h"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -19,7 +20,26 @@ public:
         uint8_t subTableCount = 0, flags = 0;
     };
 
+    // A ROM object table has an 8-byte header (u16 count, u32 entry pointer)
+    // and 8-byte entry records. The low five bits of the first entry byte
+    // select the original actor loader, the upper three filter by star.
+    struct ObjectRecord {
+        std::array<uint8_t, 8> data{};
+        uint32_t guestAddress = 0;
+        int area = -1; // -1 = global objects, otherwise the 0-based area
+        uint8_t type = 0, starFilter = 0;
+
+        bool selected_for(uint8_t star) const {
+            return starFilter == 0 || starFilter == star;
+        }
+    };
+
     static StageAssets load(Cartridge &cartridge, uint32_t sublevel);
+    // Byte-preserving projection of original LoadObjects/LoadClsnAndObjects
+    // records. Never follows guest addresses as host pointers.
+    static std::vector<ObjectRecord> decode_object_catalog(
+        const Cartridge::DataImage &overlay, const Descriptor &descriptor);
+    const std::vector<ObjectRecord> &objects() const { return objects_; }
     const Descriptor &descriptor() const { return descriptor_; }
     const std::vector<uint8_t> &model() const { return model_; }
     const std::vector<uint8_t> &collision() const { return collision_; }
@@ -34,6 +54,7 @@ private:
     Descriptor descriptor_;
     Cartridge::DataImage overlay_{};
     std::vector<uint8_t> model_, collision_;
+    std::vector<ObjectRecord> objects_;
 };
 
 } // namespace sm64ds
