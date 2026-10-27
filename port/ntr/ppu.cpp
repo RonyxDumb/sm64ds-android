@@ -402,11 +402,9 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     const uint16_t pixel = rd16(obj_vram + offset);
                     if (!(pixel & 0x8000u)) continue;
                     uint32_t color = bgr555(pixel);
-                    const unsigned alpha = pal + 1u;
-                    const unsigned underneath = fb.layer[py][px];
-                    if (alpha < 16 && underneath <= 5 &&
-                        (blendControl & (1u << (8u + underneath))))
-                        color = blendColors(color, fb.px[py][px], alpha, 16u - alpha);
+                    // Master brightness was applied to the underlying BG
+                    // already. Apply it to the OBJ before blending so a
+                    // semi-transparent pixel does not fade the BG twice.
                     if (masterMode == 1 || masterMode == 2) {
                         uint32_t transformed = 0xff000000u;
                         for (unsigned shift = 0; shift < 24; shift += 8) {
@@ -419,6 +417,11 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                         }
                         color = transformed;
                     }
+                    const unsigned alpha = pal + 1u;
+                    const unsigned underneath = fb.layer[py][px];
+                    if (alpha < 16 && underneath <= 5 &&
+                        (blendControl & (1u << (8u + underneath))))
+                        color = blendColors(color, fb.px[py][px], alpha, 16u - alpha);
                     fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;
                     fb.layer[py][px] = 4;
