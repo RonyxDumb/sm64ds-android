@@ -98,6 +98,13 @@ int main() {
     must_reject([&] {
         (void)sm64ds::StageAssets::decode_simple_spawns(overlay, actorOverlay, bad);
     });
+    // Index 326 is still inside the nine-bit field, but outside the
+    // recovered 326-element u16 table. Do not accept adjacent ROM data as IDs.
+    put16(bytes, 0xc0, 326);
+    must_reject([&] {
+        (void)sm64ds::StageAssets::decode_simple_spawns(overlay, actorOverlay, objects[1]);
+    });
+    put16(bytes, 0xc0, uint16_t(0x12 | (3 << 9)));
 
 
     // The native pointer width never changes the 32-bit ROM offsets. Invalid
