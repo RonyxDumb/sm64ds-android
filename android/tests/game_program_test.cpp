@@ -313,6 +313,16 @@ int main(int argc, char **argv) {
             assert(assets->descriptor().levelAddress == 0x02112bdc);
             assert(!assets->model().empty() && !assets->collision().empty());
             assert(assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
+            // Every projected actor record is still the original overlay
+            // payload; no native pointer or fabricated spawn has entered it.
+            assert(!assets->objects().empty());
+            for (const auto &object : assets->objects()) {
+                assert(object.type < 32 && object.starFilter < 8);
+                assert(std::memcmp(object.data.data(),
+                                   assets->overlay_at(object.guestAddress, 8), 8) == 0);
+                assert(object.area >= -1 &&
+                       object.area < assets->descriptor().subTableCount);
+            }
             auto *stageSpace = game.stage_address_space();
             assert(stageSpace);
             assert(stageSpace->data(assets->descriptor().levelAddress, 0x1c) ==
