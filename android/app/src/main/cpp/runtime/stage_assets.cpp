@@ -1,4 +1,6 @@
 #include "stage_assets.h"
+#include <algorithm>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -17,6 +19,60 @@ void require(bool condition, const char *message) {
 }
 
 namespace sm64ds {
+
+// LoadObjects (LevelObjects.cpp) reads a u16 count at +0 and a 32-bit
+// pointer at +4; each record is exactly eight bytes. Area table records
+// have a 12-byte stride and contain another 32-bit table pointer at +0.
+// These are ROM records, not native LVL_Overlay C++ objects.
+std::vector<StageAssets::ObjectRecord> StageAssets::decode_object_catalog(
+    const Cartridge::DataImage &overlay, const Descriptor &descriptor) {
+    constexpr size_t kObjectLimit = 32768;
+    constexpr unsigned kAreaLimit = 127;
+    const auto at = [&](uint32_t address, size_t size) -> const uint8_t * {
+        if (address < overlay.base ||
+            uint64_t(address) - overlay.base > overlay.bytes.size() ||
+            size > overlay.bytes.size() - (uint64_t(address) - overlay.base))
+            throw std::runtime_error("Stage object table points outside its native overlay.");
+        return overlay.bytes.data() + (address - overlay.base);
+    };
+    std::vector<ObjectRecord> result;
+    const auto readTable = [&](uint32_t address, int area) {
+        const uint8_t *table = at(address, 8);
+        const unsigned count = half(table);
+        const uint32_t entries = word(table + 4);
+        if (count == 0)
+            return;
+        if (count > kObjectLimit - result.size())
+            throw std::runtime_error("Stage object catalog exceeds native actor limit.");
+        const uint8_t *bytes = at(entries, size_t(count) * 8);
+        for (unsigned i = 0; i < count; ++i) {
+            const uint8_t *entry = bytes + size_t(i) * 8;
+            ObjectRecord object{};
+            std::copy_n(entry, object.data.size(), object.data.begin());
+            object.guestAddress = entries + i * 8;
+            object.area = area;
+            object.type = entry[0] & 0x1f;
+            object.starFilter = (entry[0] >> 5) & 7;
+            result.push_back(object);
+        }
+    };
+    // The recovered LoadClsnAndObjects always visits the global table first
+    // then the area tables in increasing index order.
+    require(descriptor.objectsAddress != 0, "Missing original global object table.");
+    readTable(descriptor.objectsAddress, -1);
+    require(descriptor.subTableCount <= kAreaLimit, "Invalid original stage area count.");
+    if (descriptor.subTableCount) {
+        require(descriptor.subTablesAddress != 0, "Missing original stage area table.");
+        const uint8_t *areas = at(descriptor.subTablesAddress,
+                                  size_t(descriptor.subTableCount) * 12);
+        for (unsigned i = 0; i < descriptor.subTableCount; ++i) {
+            const uint32_t tableAddress = word(areas + size_t(i) * 12);
+            if (tableAddress)
+                readTable(tableAddress, static_cast<int>(i));
+        }
+    }
+    return result;
+}
 
 const uint8_t *StageAssets::overlay_at(uint32_t guest, size_t bytes) const {
     if (guest < overlay_.base ||
@@ -53,6 +109,7 @@ StageAssets StageAssets::load(Cartridge &cartridge, uint32_t sublevel) {
     assets.descriptor_.subTablesAddress = word(record + 0x10);
     assets.descriptor_.subTableCount = record[0x14];
     assets.descriptor_.flags = record[0x15];
+    assets.objects_ = decode_object_catalog(assets.overlay_, assets.descriptor_);
     require(assets.descriptor_.modelHandle && assets.descriptor_.collisionHandle,
             "The native level has no original model or collision resource.");
     // Actual cartridge handles, not hard-coded castle replacements.

@@ -47,6 +47,17 @@ g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -Iinclude \
     android/app/src/main/cpp/runtime/game_input.cpp "$TEST_BUILD/touch.o" "$TEST_BUILD/keys.o" -o "$TEST_BUILD/input_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/input_test"
 
+# The cartridge actor tables are 32-bit data, not AArch64 objects. Compile
+# the production parser with host sanitizers against synthetic ROM records.
+g++ -std=c++17 -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
+    -Wl,--gc-sections -fsanitize=address,undefined -g \
+    -Iandroid/app/src/main/cpp \
+    android/tests/stage_object_test.cpp \
+    android/app/src/main/cpp/runtime/stage_assets.cpp \
+    -o "$TEST_BUILD/stage_object_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
+    UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" "$TEST_BUILD/stage_object_test"
+
 python3 android/tests/hostgen_test.py
 python3 android/tests/native_sources_test.py
 python3 android/tools/native_sources.py --out "$TEST_BUILD/native-src"
