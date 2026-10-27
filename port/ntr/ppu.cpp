@@ -282,6 +282,31 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
     if (!(dispcnt&(1u<<12)) || (dispcnt&0x80) || ((dispcnt>>16)&3)!=1) return;
     const uint32_t boundary = 32u << ((dispcnt >> 20) & 3);
 
+    // A 256-entry palette cache eliminates thousands of per-sprite MMIO
+    // lookups and BGR555 conversions on the CPU. The DS master-brightness
+    // register acts after BG/OBJ compositing; BGs have already received it
+    // in ppu_scanout, so OBJ colors need the same transform before overlay.
+    const uint16_t master = rd16(kEngines[eng].reg_base + 0x6c);
+    const unsigned masterMode = (master >> 14) & 3;
+    const unsigned masterLevel = std::min(16u, unsigned(master & 31u));
+    std::array<uint32_t, 256> colors{};
+    for (unsigned i = 0; i < colors.size(); ++i) {
+        uint32_t color = bgr555(rd16(obj_pltt + i * 2));
+        if (masterMode == 1 || masterMode == 2) {
+            uint32_t transformed = 0xff000000u;
+            for (unsigned shift = 0; shift < 24; shift += 8) {
+                unsigned component = (color >> shift) & 255u;
+                if (masterMode == 1)
+                    component += ((255u - component) * masterLevel) / 16u;
+                else
+                    component -= component * masterLevel / 16u;
+                transformed |= component << shift;
+            }
+            color = transformed;
+        }
+        colors[i] = color;
+    }
+
     for (int i = 127; i >= 0; --i) {           // low index on top: draw high first
         const uint16_t a0 = rd16(oam_base + i * 8u);
         const uint16_t a1 = rd16(oam_base + i * 8u + 2);
@@ -346,7 +371,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                                           + tno * 64u + fy * 8u + fx;
                     index = rd8(addr);
                     if (!index) continue;
-                    fb.px[py][px] = bgr555(rd16(obj_pltt + index * 2u));
+                    fb.px[py][px] = colors[index];
                     fb.priority[py][px] = objPriority;
                 } else {
                     const uint32_t addr = obj_vram + baseTile
@@ -354,7 +379,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     const uint8_t b = rd8(addr);
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);
                     if (!index) continue;
-                    fb.px[py][px] = bgr555(rd16(obj_pltt + (pal * 16u + index) * 2u));
+                    fb.px[py][px] = colors[pal * 16u + index];
                     fb.priority[py][px] = objPriority;
                 }
             }
