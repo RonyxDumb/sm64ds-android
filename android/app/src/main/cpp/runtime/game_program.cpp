@@ -9,6 +9,8 @@
 #include <stdexcept>
 #if defined(__ANDROID__)
 #include <android/log.h>
+#include <cstdio>
+#include "crash_diagnostics.h"
 #endif
 namespace {
 sm64ds::GameProgram *program = nullptr;
@@ -459,6 +461,17 @@ void GameProgram::scanout() {
             io(0x04000240u, 1), io(0x04000241u, 1),
             io(0x04000242u, 1), io(0x04000243u, 1),
             io(0x04000248u, 1), io(0x04000249u, 1));
+        char snapshot[230];
+        std::snprintf(snapshot, sizeof snapshot,
+            "tick=%llu subDISPCNT=%08x BG0=%04x BG1=%04x BG2=%04x BG3=%04x "
+            "VRAM_A=%02x B=%02x C=%02x D=%02x H=%02x I=%02x",
+            static_cast<unsigned long long>(ticks_), io(0x04001000u, 4),
+            io(0x04001008u, 2), io(0x0400100au, 2),
+            io(0x0400100cu, 2), io(0x0400100eu, 2),
+            io(0x04000240u, 1), io(0x04000241u, 1),
+            io(0x04000242u, 1), io(0x04000243u, 1),
+            io(0x04000248u, 1), io(0x04000249u, 1));
+        sm64ds::diagnostics::note("VIDEO", snapshot);
     }
 #endif
     if (activeScene_==0) {
