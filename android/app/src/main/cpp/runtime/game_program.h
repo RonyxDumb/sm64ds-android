@@ -72,6 +72,8 @@ private:
     std::unique_ptr<FrontendCore> frontend_;
     // ROM-backed level mesh only. No Player/actor lifecycle is implied.
     ntr::BmdModel stageModel_{};
+    ntr::Framebuffer stagePreviewFrame_{};
+    bool stagePreviewReady_ = false;
     BootState boot_{};
     GameInput input_;
     Sound sound_;
