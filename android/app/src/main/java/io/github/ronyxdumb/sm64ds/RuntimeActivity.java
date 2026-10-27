@@ -32,6 +32,7 @@ public final class RuntimeActivity extends Activity implements InputManager.Inpu
                     .setTitle("Avvio nativo non riuscito")
                     .setMessage(text)
                     .setPositiveButton("Launcher", (d, w) -> finish())
+                    .setNeutralButton("Esporta log TXT", (d, w) -> CrashReport.requestExport(this))
                     .setOnCancelListener(d -> finish())
                     .show();
             });
@@ -52,6 +53,22 @@ public final class RuntimeActivity extends Activity implements InputManager.Inpu
                 .setOnAudioFocusChangeListener(
                     change -> surface.audioEnabled(change == AudioManager.AUDIOFOCUS_GAIN))
                 .build();
+    }
+    @Override
+    protected void onActivityResult(int request, int result, android.content.Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != CrashReport.EXPORT_REQUEST) return;
+        if (result == RESULT_OK && data != null && data.getData() != null) {
+            try {
+                CrashReport.exportTo(this, data.getData());
+                android.widget.Toast.makeText(this, "Log TXT salvato",
+                    android.widget.Toast.LENGTH_LONG).show();
+            } catch (java.io.IOException error) {
+                CrashReport.failure("LOG-EXPORT", error);
+                android.widget.Toast.makeText(this, "Esportazione fallita: " + error.getMessage(),
+                    android.widget.Toast.LENGTH_LONG).show();
+            }
+        }
     }
     private void immersive() {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
