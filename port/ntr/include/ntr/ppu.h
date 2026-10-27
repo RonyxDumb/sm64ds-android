@@ -25,6 +25,8 @@ struct Framebuffer {
     // 0..3: topmost background/OBJ priority, 4: backdrop. Needed to
     // composite OBJ at its real DS priority rather than over every BG.
     uint8_t priority[SCREEN_H][SCREEN_W]{};
+    // Visible BG layer 0..3, OBJ 4 or backdrop 5; needed for target-2 blends.
+    uint8_t layer[SCREEN_H][SCREEN_W]{};
 };
 
 // Rasterise one engine's current register state into fb. Text-mode BGs only for
