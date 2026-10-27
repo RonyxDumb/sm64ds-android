@@ -81,5 +81,27 @@ int main() {
     ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == 0xff000000u);
     ntr::io_write(0x0400006cu, 0, 2);
-    std::puts("NDS bitmap, affine BG2, OBJ priority and master fade passed.");
+    // NDS OAM mode 2 is an invisible OBJ-window mask, not a paletted sprite.
+    oam[0] = 2u << 10;
+    oam[2] = 1;
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x03e0));
+
+    // OAM mode 3 selects a direct-color bitmap. In 1D mapping, character
+    // index 1 begins at a 128-byte boundary; pixel bit15 selects opacity.
+    oam[0] = 3u << 10;
+    oam[2] = 1u | (15u << 12);
+    auto *bitmap = static_cast<uint16_t *>(ntr::host_ptr(0x06400000u));
+    bitmap[64] = 0x801f;
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 8) |
+                  (1u << 12) | (1u << 6), 4);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x001f));
+    oam[2] = 1u; // Alpha-OAM=0 hides bitmap even if pixel bit15 is set
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x03e0));
+    std::puts("NDS bitmap, affine BG2, OBJ priority, bitmap OAM and master fade passed.");
 }
