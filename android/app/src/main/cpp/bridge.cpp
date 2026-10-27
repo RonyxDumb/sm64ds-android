@@ -2,8 +2,20 @@
 #include <exception>
 #include <mutex>
 #include "rom_probe.h"
+#include "crash_diagnostics.h"
 #include "session.h"
 #include <memory>
+extern "C" JNIEXPORT jboolean JNICALL
+Java_io_github_ronyxdumb_sm64ds_NativeBridge_configureCrashLog(
+    JNIEnv *env, jclass, jstring path) {
+    if (!path) return JNI_FALSE;
+    const char *file = env->GetStringUTFChars(path, nullptr);
+    if (!file) return JNI_FALSE;
+    const bool installed = sm64ds::diagnostics::install(file);
+    env->ReleaseStringUTFChars(path, file);
+    return installed ? JNI_TRUE : JNI_FALSE;
+}
+
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_github_ronyxdumb_sm64ds_NativeBridge_probe(JNIEnv *env, jclass, jstring path) {
     if (!path)
@@ -20,6 +32,7 @@ Java_io_github_ronyxdumb_sm64ds_NativeBridge_probe(JNIEnv *env, jclass, jstring 
     }
     env->ReleaseStringUTFChars(path, chars);
     if (!error.empty()) {
+        sm64ds::diagnostics::note("NATIVE-EXCEPTION", error.c_str());
         env->ThrowNew(env->FindClass("java/io/IOException"), error.c_str());
         return nullptr;
     }
@@ -60,14 +73,25 @@ extern "C" JNIEXPORT void JNICALL Java_io_github_ronyxdumb_sm64ds_NativeBridge_d
             reinterpret_cast<sm64ds::Session *>(handle)->frame(
                 width, height, dt, static_cast<uint32_t>(buttons), x, y, tx, ty, audioEnabled);
     } catch (const std::exception &e) {
+        sm64ds::diagnostics::note("NATIVE-RENDER", e.what());
         env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), e.what());
+    } catch (...) {
+        sm64ds::diagnostics::note("NATIVE-RENDER", "Unknown non-standard native exception");
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "Unknown native exception in render loop");
     }
 }
 extern "C" JNIEXPORT void JNICALL Java_io_github_ronyxdumb_sm64ds_NativeBridge_destroyRenderer(
     JNIEnv *, jclass, jlong handle, jboolean contextValid) {
     if (handle) {
         auto *session = reinterpret_cast<sm64ds::Session *>(handle);
-        session->release(contextValid);
+        try {
+            session->release(contextValid);
+        } catch (const std::exception &e) {
+            sm64ds::diagnostics::note("NATIVE-RELEASE", e.what());
+        } catch (...) {
+            sm64ds::diagnostics::note("NATIVE-RELEASE", "Unknown exception");
+        }
         delete session;
     }
 }
