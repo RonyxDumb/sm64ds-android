@@ -14,6 +14,15 @@ struct ActorProcessMethods {
 };
 static_assert(sizeof(ActorProcessMethods)==24);
 
+// Linkable transcriptions of the five recovered fBase_c defaults. Address
+// ownership comes from config/arm9/symbols.txt, with DS field offsets from
+// include/fBase_c.h. They consume checked packed 32-bit actor handles.
+int native_fbase_init(uint32_t actor);
+int native_fbase_behavior(uint32_t actor);
+int native_fbase_render(uint32_t actor);
+int native_fbase_before_behavior(uint32_t actor);
+int native_fbase_before_render(uint32_t actor);
+
 class ActorDispatch {
 public:
     explicit ActorDispatch(packed::Space &space) : space_(space) {}

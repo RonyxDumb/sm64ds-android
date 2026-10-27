@@ -184,6 +184,25 @@ int main() {
         ntr::io_write(0x04000248u,oldH,1);
         ntr::io_write(0x04000242u,oldC,1);
 #endif
+        // Recovered fBase_c lifecycle callbacks are executable native
+        // functions, with the exact 0x50-byte packed actor layout.
+        memory.bind(0x02043afcu, &native_fbase_before_behavior);
+        memory.bind(0x02043ac8u, &native_fbase_before_render);
+        memory.bind(0x02043c80u, &native_fbase_init);
+        auto baseActor = memory.allocate(0x50);
+        assert(native_fbase_before_behavior(baseActor)==1);
+        assert(native_fbase_before_render(baseActor)==1);
+        assert(native_fbase_init(baseActor)==1);
+        *packed::Ptr<uint8_t>(baseActor+0x13)=2;
+        assert(native_fbase_before_behavior(baseActor)==0);
+        assert(native_fbase_before_render(baseActor)==1);
+        *packed::Ptr<uint8_t>(baseActor+0x13)=8;
+        assert(native_fbase_before_behavior(baseActor)==1);
+        assert(native_fbase_before_render(baseActor)==0);
+        *packed::Ptr<uint8_t>(baseActor+0x0f)=1;
+        assert(native_fbase_before_behavior(baseActor)==0);
+        assert(native_fbase_before_render(baseActor)==0);
+        memory.release(baseActor);
         // The original Player::State uses {function_or_vtable_offset,
         // signed_this_adjustment_with_virtual_bit}. Check both paths against
         // actual native code, never a cartridge instruction address.

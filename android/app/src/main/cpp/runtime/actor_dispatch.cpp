@@ -11,6 +11,32 @@ Function native_callback(uintptr_t code) {
     return callback;
 }
 }
+// Recovered fBase_c::InitResources, Behavior and Render default to
+// successful completion; their real subclass overrides must still be
+// linked individually. No success fallback is installed for unknown methods.
+int native_fbase_init(uint32_t actor) {
+    (void)packed::Space::current().data(actor, 0x50);
+    return 1;
+}
+int native_fbase_behavior(uint32_t actor) {
+    (void)packed::Space::current().data(actor, 0x50);
+    return 1;
+}
+int native_fbase_render(uint32_t actor) {
+    (void)packed::Space::current().data(actor, 0x50);
+    return 1;
+}
+int native_fbase_before_behavior(uint32_t actor) {
+    // fBase_c::shouldBeKilled at +0x0f, pauseFlags at +0x13.
+    const auto *state = static_cast<const uint8_t *>(
+        packed::Space::current().data(actor, 0x50));
+    return state[0x0f] || (state[0x13] & 2u) ? 0 : 1;
+}
+int native_fbase_before_render(uint32_t actor) {
+    const auto *state = static_cast<const uint8_t *>(
+        packed::Space::current().data(actor, 0x50));
+    return state[0x0f] || (state[0x13] & 8u) ? 0 : 1;
+}
 // Source: fBase_c::Process in src/runtime/actor/ActorBase.cpp.
 // Callback signatures are the source's action int(), guard bool() and
 // after hook void(u32). The first native argument is a checked packed

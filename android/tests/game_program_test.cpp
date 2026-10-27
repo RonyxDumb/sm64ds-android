@@ -313,6 +313,11 @@ int main(int argc, char **argv) {
             assert(assets->descriptor().levelAddress == 0x02112bdc);
             assert(!assets->model().empty() && !assets->collision().empty());
             assert(assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
+            // Every stage uses the recovered native fBase_c defaults.
+            // Subclass virtuals deliberately remain unbound until ported.
+            assert(game.stage_address_space());
+            assert(game.stage_address_space()->code(0x02043afcu));
+            assert(game.stage_address_space()->code(0x02043ac8u));
             // Every projected actor record is still the original overlay
             // payload; no native pointer or fabricated spawn has entered it.
             assert(!assets->objects().empty());

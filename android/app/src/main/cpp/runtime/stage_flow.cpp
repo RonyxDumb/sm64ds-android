@@ -118,6 +118,14 @@ void StageFlow::prepare_scene() {
     const auto &objectOverlay = nextAssets->object_overlay();
     nextSpace->map(objectOverlay.base, const_cast<uint8_t *>(objectOverlay.bytes.data()),
                    objectOverlay.bytes.size());
+    // Actual recovered fBase_c methods. Bind original ARM9 addresses from
+    // config/arm9/symbols.txt to host-native implementations. Unported
+    // subclass methods still cause an explicit missing-code failure.
+    nextSpace->bind(0x02043c80u, &native_fbase_init);
+    nextSpace->bind(0x02043b24u, &native_fbase_behavior);
+    nextSpace->bind(0x02043af0u, &native_fbase_render);
+    nextSpace->bind(0x02043afcu, &native_fbase_before_behavior);
+    nextSpace->bind(0x02043ac8u, &native_fbase_before_render);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(
