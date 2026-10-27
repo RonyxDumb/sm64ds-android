@@ -105,6 +105,12 @@ void StageFlow::prepare_scene() {
     nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
     nextSpace->map(nextAssets->overlay().base, nextAssets->overlay().bytes.data(),
                    nextAssets->overlay().bytes.size());
+    // Overlay 2 holds the actor factory and category dispatch data used by
+    // LoadClsnAndObjects. It is a separate, simultaneously resident DS image
+    // and must resolve through the same checked 32-bit ABI address space.
+    const auto &objectOverlay = nextAssets->object_overlay();
+    nextSpace->map(objectOverlay.base, const_cast<uint8_t *>(objectOverlay.bytes.data()),
+                   objectOverlay.bytes.size());
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(
