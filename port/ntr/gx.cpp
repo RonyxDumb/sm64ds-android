@@ -663,6 +663,14 @@ void gx_render(Framebuffer &fb) {
         if (area>0 ? !(t.polygon_attr&(1u<<6)) : !(t.polygon_attr&(1u<<7))) continue;
         if (a.w<=0 || b.w<=0 || c.w<=0 || !std::isfinite(area)) continue;
 
+        // These denominators are constant for an entire triangle. Division
+        // inside the 256x192 pixel loop severely hurts the Android software
+        // renderer, especially in debug APKs.
+        const float inverseArea = 1.0f / area;
+        const float invAw = 1.0f / a.w, invBw = 1.0f / b.w, invCw = 1.0f / c.w;
+        const float au = a.u * invAw, bu = b.u * invBw, cu = c.u * invCw;
+        const float av = a.v * invAw, bv = b.v * invBw, cv = c.v * invCw;
+
         int minx = static_cast<int>(std::floor(std::fmin(a.x, std::fmin(b.x, c.x))));
         int maxx = static_cast<int>(std::ceil(std::fmax(a.x, std::fmax(b.x, c.x))));
         int miny = static_cast<int>(std::floor(std::fmin(a.y, std::fmin(b.y, c.y))));
@@ -675,9 +683,9 @@ void gx_render(Framebuffer &fb) {
         for (int y = miny; y <= maxy; ++y) {
             for (int x = minx; x <= maxx; ++x) {
                 const float px = x + 0.5f, py = y + 0.5f;
-                float w0 = ((b.x - a.x) * (py - a.y) - (b.y - a.y) * (px - a.x)) / area;
-                float w1 = ((c.x - b.x) * (py - b.y) - (c.y - b.y) * (px - b.x)) / area;
-                float w2 = ((a.x - c.x) * (py - c.y) - (a.y - c.y) * (px - c.x)) / area;
+                float w0 = ((b.x - a.x) * (py - a.y) - (b.y - a.y) * (px - a.x)) * inverseArea;
+                float w1 = ((c.x - b.x) * (py - b.y) - (c.y - b.y) * (px - b.x)) * inverseArea;
+                float w2 = ((a.x - c.x) * (py - c.y) - (a.y - c.y) * (px - c.x)) * inverseArea;
                 // Accept either winding; back-face culling is a POLYGON_ATTR job.
                 if (!((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)))
                     continue;
@@ -692,10 +700,10 @@ void gx_render(Framebuffer &fb) {
                 // a real perspective matrix.
                 uint32_t texel = 0xFFFFFFFFu;
                 if (t.tex && t.tw > 0 && t.th > 0) {
-                    const float iw=l0/a.w+l1/b.w+l2/c.w;
+                    const float iw=l0*invAw+l1*invBw+l2*invCw;
                     if (iw<=0 || !std::isfinite(iw)) continue;
-                    const float uu=(l0*a.u/a.w+l1*b.u/b.w+l2*c.u/c.w)/iw;
-                    const float vv=(l0*a.v/a.w+l1*b.v/b.w+l2*c.v/c.w)/iw;
+                    const float uu=(l0*au+l1*bu+l2*cu)/iw;
+                    const float vv=(l0*av+l1*bv+l2*cv)/iw;
                     auto coordinate=[](float v,int size,bool repeat,bool mirror) {
                         if (!repeat) return static_cast<int>(std::clamp(std::floor(v),0.f,float(size-1)));
                         int p=static_cast<int>(std::floor(v))%(size*(mirror?2:1));
