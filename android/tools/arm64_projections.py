@@ -72,6 +72,8 @@ def stage_methods(text):
                  "data_0209f314 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(scene->mTexAnimSlots)));")
     text = exact(text, "data_0209f320 = (int)components;",
                  "data_0209f320 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(components)));")
+    text = exact(text, "data_0209f344 = (s32)&VS_STAR_SPAWN_ORDERS[idx];",
+                 "data_0209f344 = static_cast<s32>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(&VS_STAR_SPAWN_ORDERS[idx])));")
     # The 64-bit AND ~0 expression is an identity operation on the address.
     # Read the original signed byte directly rather than truncating the host pointer.
     text = exact(text,
