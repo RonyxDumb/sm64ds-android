@@ -23,6 +23,6 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-int-to-pointer-ca
     "$GAME_BUILD/generated/src/engine/save"/*.cpp \
     android/app/src/main/cpp/pc_audio/{archive,stream}.cpp android/app/src/main/cpp/audio_core.cpp \
     external/sm64ds-pc/port/hal/sdat/{sseq,mixer}.cpp \
-    port/ntr/{io,gx,texture,ppu,fs,lz77}.cpp "$GAME_BUILD"/*.o "$GAME_BUILD/objects"/*.o -ldl -o "$GAME_BUILD/game_program_test"
+    port/ntr/{io,gx,bmd,texture,ppu,fs,lz77}.cpp "$GAME_BUILD"/*.o "$GAME_BUILD/objects"/*.o -ldl -o "$GAME_BUILD/game_program_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
     UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}" "$GAME_BUILD/game_program_test" "$@"
