@@ -39,7 +39,8 @@ def stage_methods(text):
         text = exact(text, declaration, declaration.replace("register ", "", 1))
     # This expression is explicitly discarded; preserve its sole effect (none)
     # without narrowing a live native address to the DS's u32 size.
-    text = exact(text, "(void)(u32)&data_0209f238;", "(void)&data_0209f238;")
+    for symbol in ("data_0209f238", "gTouchHeld", "data_0209f2c8"):
+        text = exact(text, "(void)(u32)&" + symbol + ";", "(void)&" + symbol + ";")
     return text
 
 
