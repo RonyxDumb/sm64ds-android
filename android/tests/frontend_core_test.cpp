@@ -1,6 +1,7 @@
 #include "runtime/frontend_core.h"
 #include "runtime/packed_ptr.h"
 #include "runtime/actor_dispatch.h"
+#include "runtime/collision_dispatch.h"
 #include "ntr/mmio.h"
 #include <cassert>
 #include <cstdio>
@@ -250,6 +251,40 @@ int main() {
         assert(*packed::Ptr<int32_t>(movingActor+0x64)==0x3000);
         memory.release(clsn);
         memory.release(movingActor);
+        // Intrusive collision list is a native four-byte-handle
+        // transcription of src/engine/collision/d_cc.cpp, not an emulated
+        // DS pointer list. Reset, link and unlink both ends.
+        uint32_t collisionRoot=0;
+        memory.map(0x0209cee8u,&collisionRoot,4);
+        const uint32_t collider1=memory.allocate(0x30);
+        const uint32_t collider2=memory.allocate(0x30);
+        native_collision_init(collider1,0x1000,0x2000,4u,8u);
+        native_collision_init(collider2,0x2000,0x3000,4u,16u);
+        assert(*packed::Ptr<uint32_t>(collider1+0x18)==4u);
+        assert(*packed::Ptr<uint32_t>(collider1+0x1c)==8u);
+        *packed::Ptr<int32_t>(collider1+0x0c)=0x1234;
+        *packed::Ptr<int32_t>(collider1+0x10)=0x1234;
+        *packed::Ptr<int32_t>(collider1+0x14)=0x1234;
+        *packed::Ptr<uint32_t>(collider1+0x20)=4u;
+        *packed::Ptr<uint32_t>(collider1+0x24)=42u;
+        native_collision_clear(collider1);
+        for(unsigned offset : {0x0cu,0x10u,0x14u,0x20u,0x24u})
+            assert(*packed::Ptr<uint32_t>(collider1+offset)==0);
+        native_collision_update(collider1);
+        native_collision_update(collider2);
+        assert(collisionRoot==collider2);
+        assert(*packed::Ptr<uint32_t>(collider2+0x2c)==collider1);
+        assert(*packed::Ptr<uint32_t>(collider1+0x28)==collider2);
+        native_collision_unlink(collider2);
+        assert(collisionRoot==collider1);
+        assert(*packed::Ptr<uint32_t>(collider1+0x28)==0);
+        native_collision_unlink(collider1);
+        assert(collisionRoot==0);
+        *packed::Ptr<uint32_t>(collider1+0x18)=1; // original disabled bit
+        native_collision_update(collider1);
+        assert(collisionRoot==0);
+        memory.release(collider1);
+        memory.release(collider2);
         // The original Player::State uses {function_or_vtable_offset,
         // signed_this_adjustment_with_virtual_bit}. Check both paths against
         // actual native code, never a cartridge instruction address.

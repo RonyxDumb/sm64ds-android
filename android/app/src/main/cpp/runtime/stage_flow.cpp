@@ -1,4 +1,5 @@
 #include "stage_flow.h"
+#include "collision_dispatch.h"
 #include "resources.h"
 #include "PlayerInput.h"
 #include "nitro/fx/fx.h"
@@ -133,6 +134,11 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02010c5cu, &native_actor_update_horz_speed);
     nextSpace->bind(0x02010d40u, &native_actor_update_pos_only_speed);
     nextSpace->bind(0x02010c30u, &native_actor_update_pos);
+    // dCc_c source methods: native collision-list ownership and reset.
+    nextSpace->bind(0x02015040u, &native_collision_init);
+    nextSpace->bind(0x02015024u, &native_collision_clear);
+    nextSpace->bind(0x02014ff0u, &native_collision_update);
+    nextSpace->bind(0x02014fa4u, &native_collision_unlink);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(

@@ -86,7 +86,7 @@ uint32_t native_fbase_process_list(uint32_t descriptor) {
 }
 
 // Recovered dActor_c math and collision pushback, projected onto packed
-// records at the original ROM field offsets (include/dActor_c.h/dCc_c.h).
+// records at the original ROM field offsets (include/dActor_c.h and include/dCc_c.h).
 // No unported native C++ vtable/constructor is fabricated.
 namespace {
 int32_t load_actor32(const packed::Space &space, uint32_t base, unsigned offset) {
