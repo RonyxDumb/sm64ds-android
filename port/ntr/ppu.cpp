@@ -183,6 +183,9 @@ bool sample_bg(const BgConfig &c, const uint32_t *palette, int x, int y, uint32_
 }  // namespace
 
 void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
+    // Direct native/overlay writes to VRAMCNT bypass io_write; resynchronize
+    // bank routing before any BG tile, bitmap or palette access.
+    sync_vram_banks();
     const EngineMap &em = kEngines[eng];
     const uint32_t dispcnt = rd32(em.reg_base);
 
@@ -319,6 +322,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
 // VRAM region, palette at pltt+0x200. Sizes come from the shape/size table.
 // Affine params sit in the filler word of entries group*4+0..3 (pa,pb,pc,pd).
 void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
+    sync_vram_banks();
     static const int kSizes[3][4][2] = {
         {{8, 8}, {16, 16}, {32, 32}, {64, 64}},    // square
         {{16, 8}, {32, 8}, {32, 16}, {64, 32}},    // wide
