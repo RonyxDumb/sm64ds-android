@@ -3,6 +3,7 @@
 #include "resources.h"
 #include "ntr/lz77.h"
 #include "ntr/gx.h"
+#include "ntr/bmd.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -386,14 +387,21 @@ void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx,
     }
 }
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
-    input_.update(keys, x, y, tx, ty, data_02092664 != 3);
-    if (data_02092664 == 3)
+    input_.update(keys, x, y, tx, ty, activeScene_ != 3 && data_02092664 != 3);
+    if (activeScene_ == 3 || data_02092664 == 3)
         stage_.update_input(0, input_.x(), input_.y());
     if (job_) {
         auto callback = job_;
         job_ = nullptr;
         callback(argument_);
         complete_ = true;
+    }
+    if (activeScene_ == 3 && data_02092664 == NoScene) {
+        // Stage 3 is active with original level geometry and controller records.
+        // Actor creation, camera simulation and Player are still unlinked.
+        ++ticks_;
+        if (!batchFrame_) scanout();
+        return;
     }
     if (activeScene_==1 && data_02092664==NoScene) {
         if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
@@ -425,10 +433,33 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 frontend_->render(); accept_title_result(result);
                 ++ticks_; if (!batchFrame_) scanout(); return;
             }
-            if (data_02092664 == 3)
-                throw std::runtime_error(
-                    "StartFile originale completato. La scena di gioco dScStage_c e il runtime "
-                    "degli attori non sono ancora collegati.");
+            if (data_02092664 == 3) {
+                // The original StartFile and StageFlow have already resolved the
+                // requested sublevel, overlay, model and KCL. This is a native
+                // stage *geometry* milestone, NOT dScStage_c actor execution.
+                const auto *assets = stage_.assets();
+                require(assets && stage_.address_space(),
+                        "Stage 3 was requested without a prepared original level.");
+                ntr::BmdModel parsed;
+                require(ntr::bmd_parse(assets->model(), parsed) && !parsed.dlists.empty(),
+                        "Original stage BMD could not be decoded into display lists.");
+                stageModel_ = std::move(parsed);
+                ntr::gx_reset();
+                frontend_.reset();
+                activeScene_ = 3;
+                data_02092664 = NoScene;
+#if defined(__ANDROID__)
+                char message[180];
+                std::snprintf(message, sizeof message,
+                    "Native stage geometry loaded: sublevel=%d overlay=%u BMD=%u KCL=%u lists=%zu. "
+                    "Actor/Player lifecycle NOT linked.",
+                    assets->descriptor().level, assets->descriptor().overlayId,
+                    assets->descriptor().modelHandle, assets->descriptor().collisionHandle,
+                    stageModel_.dlists.size());
+                sm64ds::diagnostics::note("STAGE", message);
+#endif
+                ++ticks_; if (!batchFrame_) scanout(); return;
+            }
             throw std::runtime_error("Scena originale non collegata: " +
                                      std::to_string(data_02092664));
         }
@@ -481,6 +512,19 @@ void GameProgram::scanout() {
                   (ntr::io_read(0x04001000, 4) & ~0xf00u) | (uint32_t(data_0209d454 & 15) << 8), 4);
     }
     ntr::Framebuffer geometry{};
+    if (activeScene_ == 3) {
+        // Original cartridge mesh and material display lists rendered by the
+        // same DS geometry engine as the title. Until the actual game camera
+        // runs, fit the vertices for an explicitly non-gameplay level preview.
+        ntr::gx_begin_frame();
+        ntr::bmd_set_animation(nullptr);
+        ntr::bmd_submit(stageModel_);
+        ntr::gx_fit_geometry_preview();
+        ntr::gx_render(geometry);
+        main_ = geometry;
+        std::fill(&sub_.px[0][0], &sub_.px[0][0] + 256 * 192, 0xff000000u);
+        return;
+    }
     if (activeScene_==1) ntr::gx_render(geometry);
     ntr::ppu_scanout(ntr::ENGINE_A, main_,activeScene_==1?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);

@@ -1,3 +1,26 @@
+# Android checkpoint — 2026-10-27, scene-3 ROM geometry milestone (experimental)
+
+The Android native flow now attempts to enter scene 3 after the genuine title
+result, StartFile, scene transition and StageFlow::prepare_scene. It parses
+the selected ROM level's original BMD and submits its display lists to the native
+DS geometry engine. The same game-derived controller records are ticked after
+the transition. The sub-screen stays black and the geometric framing is a
+diagnostic orthographic fit, **not** the original camera.
+
+**This is not a playable port, and it is not dScStage_c's actor lifecycle.**
+No Player, level actor spawning, collision simulation, camera controller,
+HUD/minimap, animated level actors or gameplay sound propagation run yet.
+Stage-model parsing and on-device visuals are not confirmed by a ROM-free build.
+Do not label a CI green build as stage gameplay validation. If BMD parsing fails,
+an explicit diagnostic is retained rather than a fabricated scene.
+
+Next: link original stage lifecycle and scene vtables into packed::Space using
+audited ARM64 adapters; bind native actors/Player, real camera and level object
+dispatch, then replace the orthographic geometric preview with original
+rendering and move to fullscreen plus a real minimap.
+
+---
+
 # Android checkpoint — 2026-10-26, native title execution
 
 Production connects original `b7138` initialization, `b7090`/`aed98` input and

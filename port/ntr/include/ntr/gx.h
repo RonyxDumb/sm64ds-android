@@ -86,6 +86,9 @@ const GxTriangle *gx_polygons(size_t &count);
 
 // Rasterise them into fb with a depth buffer. Does not clear fb -- the 3D layer
 // composites over whatever the 2D engine already drew.
+// Diagnostic, stage-only orthographic framing of real cartridge triangles.
+ // Does not implement dScStage_c's camera or Player transformations.
+bool gx_fit_geometry_preview();
 void gx_render(Framebuffer &fb);
 
 }  // namespace ntr

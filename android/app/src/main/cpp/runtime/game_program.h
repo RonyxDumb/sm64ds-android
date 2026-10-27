@@ -6,6 +6,7 @@
 #include "title_files.h"
 #include "runtime/boot_state.h"
 #include "ntr/ppu.h"
+#include "ntr/bmd.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -69,6 +70,8 @@ private:
     StageFlow stage_;
     std::unique_ptr<TitleFiles> title_;
     std::unique_ptr<FrontendCore> frontend_;
+    // ROM-backed level mesh only. No Player/actor lifecycle is implied.
+    ntr::BmdModel stageModel_{};
     BootState boot_{};
     GameInput input_;
     Sound sound_;
