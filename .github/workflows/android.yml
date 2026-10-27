@@ -36,6 +36,13 @@ jobs:
             android/tests/stage_collision_test.cpp android/app/src/main/cpp/runtime/stage_collision.cpp \
             -o /tmp/stage_collision_test
           /tmp/stage_collision_test
+      - name: Original level object and actor placement regression (no ROM)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
+            -Iandroid/app/src/main/cpp \
+            android/tests/stage_actor_catalog_test.cpp android/app/src/main/cpp/runtime/stage_actor_catalog.cpp \
+            -o /tmp/stage_actor_catalog_test
+          /tmp/stage_actor_catalog_test
       - name: Native game dependency bounds (no ROM)
         run: bash android/tests/run-game-tests.sh
       - name: Execute recovered frontend core (no ROM)
