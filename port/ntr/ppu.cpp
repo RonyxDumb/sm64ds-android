@@ -192,6 +192,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             for (int x = 0; x < SCREEN_W; ++x) {
                 fb.px[y][x] = 0xFFFFFFFFu;
                 fb.priority[y][x] = 4;
+                fb.layer[y][x] = 5;
             }
         return;
     }
@@ -235,6 +236,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
                 c = brightness(c, master_mode, master_level);
             fb.px[i / SCREEN_W][i % SCREEN_W] = c;
             fb.priority[i / SCREEN_W][i % SCREEN_W] = 4;
+            fb.layer[i / SCREEN_W][i % SCREEN_W] = 5;
         }
         return;
     }
@@ -266,6 +268,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             if (master_mode == 1 || master_mode == 2) c = brightness(c, master_mode, master_level);
             fb.px[y][x] = c;
             fb.priority[y][x] = static_cast<uint8_t>(topPriority);
+            fb.layer[y][x] = static_cast<uint8_t>(layer);
         }
     }
 }
@@ -287,6 +290,19 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
     const uint32_t dispcnt = rd32(kEngines[eng].reg_base);
     if (!(dispcnt&(1u<<12)) || (dispcnt&0x80) || ((dispcnt>>16)&3)!=1) return;
     const uint32_t boundary = 32u << ((dispcnt >> 20) & 3);
+    const uint16_t blendControl = rd16(kEngines[eng].reg_base + 0x50);
+    const uint16_t blendAlpha = rd16(kEngines[eng].reg_base + 0x52);
+    const unsigned eva = std::min(16u, unsigned(blendAlpha & 31));
+    const unsigned evb = std::min(16u, unsigned((blendAlpha >> 8) & 31));
+    auto blendColors = [](uint32_t fg, uint32_t bg, unsigned fa, unsigned ba) {
+        uint32_t result = 0xff000000u;
+        for (unsigned shift = 0; shift < 24; shift += 8) {
+            const unsigned component = (((fg >> shift) & 255u) * fa +
+                                        ((bg >> shift) & 255u) * ba + 8u) / 16u;
+            result |= std::min(255u, component) << shift;
+        }
+        return result;
+    };
 
     // A 256-entry palette cache eliminates thousands of per-sprite MMIO
     // lookups and BGR555 conversions on the CPU. The DS master-brightness
@@ -319,7 +335,9 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
         const uint16_t a2 = rd16(oam_base + i * 8u + 4);
         const bool affine = a0 & 0x100;
         if (!affine && (a0 & 0x200)) continue;             // disabled
-        if (((a0 >> 10) & 3) == 3) continue;               // OBJ window: skip
+        const unsigned objMode = (a0 >> 10) & 3;
+        if (objMode == 2) continue; // OBJ window is a mask, never visible pixels
+        const bool bitmap = objMode == 3; // DS direct-color Bitmap OBJ
         const int shape = (a0 >> 14) & 3;
         if (shape == 3) continue;
         const int size = (a1 >> 14) & 3;
@@ -334,6 +352,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
         const bool vflip = !affine && (a1 & 0x2000);
         const uint32_t tile = a2 & 0x3FF;
         const uint32_t pal = (a2 >> 12) & 0xF;
+        if (bitmap && !pal) continue; // Alpha-OAM == 0 hides Bitmap OBJ
         const uint8_t objPriority = static_cast<uint8_t>((a2 >> 10) & 3);
 
         int pa = 256, pb = 0, pc = 0, pd = 256;
@@ -364,6 +383,47 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     tx = hflip ? w - 1 - sx : sx;
                     ty = vflip ? h - 1 - sy : sy;
                 }
+                if (bitmap) {
+                    // DS Bitmap OBJ uses 16-bit direct-color pixels and a
+                    // separate 1D/2D address formula, not 4/8bpp OBJ tiles.
+                    const bool oneD = dispcnt & (1u << 6);
+                    const unsigned bitmapWidth = (dispcnt & (1u << 5)) ? 256u : 128u;
+                    const unsigned maskX = bitmapWidth / 8u - 1u;
+                    const uint32_t bitmapOffset = oneD
+                        ? tile * (128u << ((dispcnt >> 22) & 1u))
+                        : (tile & maskX) * 16u + (tile & ~maskX) * 128u;
+                    const unsigned stride = oneD ? unsigned(w) : bitmapWidth;
+                    const uint32_t offset = bitmapOffset + (unsigned(ty) * stride +
+                                                             unsigned(tx)) * 2u;
+                    // Each engine has a finite OBJ window; reject invalid
+                    // extents instead of reading neighboring DS VRAM banks.
+                    const uint32_t capacity = eng == ENGINE_A ? 0x40000u : 0x20000u;
+                    if (offset + 2u > capacity) continue;
+                    const uint16_t pixel = rd16(obj_vram + offset);
+                    if (!(pixel & 0x8000u)) continue;
+                    uint32_t color = bgr555(pixel);
+                    const unsigned alpha = pal + 1u;
+                    const unsigned underneath = fb.layer[py][px];
+                    if (alpha < 16 && underneath <= 5 &&
+                        (blendControl & (1u << (8u + underneath))))
+                        color = blendColors(color, fb.px[py][px], alpha, 16u - alpha);
+                    if (masterMode == 1 || masterMode == 2) {
+                        uint32_t transformed = 0xff000000u;
+                        for (unsigned shift = 0; shift < 24; shift += 8) {
+                            unsigned component = (color >> shift) & 255u;
+                            if (masterMode == 1)
+                                component += ((255u - component) * masterLevel) / 16u;
+                            else
+                                component -= component * masterLevel / 16u;
+                            transformed |= component << shift;
+                        }
+                        color = transformed;
+                    }
+                    fb.px[py][px] = color;
+                    fb.priority[py][px] = objPriority;
+                    fb.layer[py][px] = 4;
+                    continue;
+                }
                 const int tcol = tx >> 3, trow = ty >> 3;
                 const int fx = tx & 7, fy = ty & 7;
                 // 1D mapping: tiles of one sprite are consecutive.
@@ -377,16 +437,28 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                                           + tno * 64u + fy * 8u + fx;
                     index = rd8(addr);
                     if (!index) continue;
-                    fb.px[py][px] = colors[index];
+                    const unsigned below = fb.layer[py][px];
+                    uint32_t color = colors[index];
+                    if (objMode == 1 && below <= 5 &&
+                        (blendControl & (1u << (8u + below))))
+                        color = blendColors(color, fb.px[py][px], eva, evb);
+                    fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;
+                    fb.layer[py][px] = 4;
                 } else {
                     const uint32_t addr = obj_vram + baseTile
                                           + tno * 32u + fy * 4u + fx / 2;
                     const uint8_t b = rd8(addr);
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);
                     if (!index) continue;
-                    fb.px[py][px] = colors[pal * 16u + index];
+                    const unsigned below = fb.layer[py][px];
+                    uint32_t color = colors[pal * 16u + index];
+                    if (objMode == 1 && below <= 5 &&
+                        (blendControl & (1u << (8u + below))))
+                        color = blendColors(color, fb.px[py][px], eva, evb);
+                    fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;
+                    fb.layer[py][px] = 4;
                 }
             }
         }
