@@ -74,6 +74,11 @@ public:
         int8_t areaID = 0;
         int16_t deathTableID = -1;
     };
+    static std::vector<PlayerSpawnCommand> decode_player_spawn_commands(
+        const std::vector<StandardSpawn> &entrances,
+        uint32_t entranceIndex, uint8_t playerCount, uint8_t star,
+        uint8_t savedCharacter, const std::array<uint8_t,4> &playerCharacters,
+        uint8_t gameMode);
     std::vector<PlayerSpawnCommand> player_spawn_commands(
         uint32_t entranceIndex, uint8_t playerCount, uint8_t star,
         uint8_t savedCharacter, const std::array<uint8_t,4> &playerCharacters,

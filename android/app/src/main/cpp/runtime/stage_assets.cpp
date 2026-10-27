@@ -180,6 +180,13 @@ std::vector<StageAssets::ObjectRecord> StageAssets::decode_object_catalog(
 std::vector<StageAssets::PlayerSpawnCommand> StageAssets::player_spawn_commands(
     uint32_t entranceIndex, uint8_t playerCount, uint8_t star, uint8_t savedCharacter,
     const std::array<uint8_t,4> &playerCharacters, uint8_t gameMode) const {
+    return decode_player_spawn_commands(entrances_, entranceIndex, playerCount, star,
+                                        savedCharacter, playerCharacters, gameMode);
+}
+std::vector<StageAssets::PlayerSpawnCommand> StageAssets::decode_player_spawn_commands(
+    const std::vector<StandardSpawn> &entrances,
+    uint32_t entranceIndex, uint8_t playerCount, uint8_t star, uint8_t savedCharacter,
+    const std::array<uint8_t,4> &playerCharacters, uint8_t gameMode) {
     // Recovered LevelObjects.cpp: each selected entrance ObjSubTable starts
     // at entries + entranceIndex and produces playerCount actor spawn calls.
     require(playerCount > 0 && playerCount <= 4, "Invalid player count for stage actor spawns.");
@@ -187,17 +194,17 @@ std::vector<StageAssets::PlayerSpawnCommand> StageAssets::player_spawn_commands(
     for (auto character : playerCharacters)
         require(character <= 3, "Invalid original player-character index.");
     std::vector<PlayerSpawnCommand> commands;
-    for (size_t first = 0; first < entrances_.size();) {
+    for (size_t first = 0; first < entrances.size();) {
         size_t end = first + 1;
-        while (end < entrances_.size() &&
-               entrances_[end].categoryAddress == entrances_[first].categoryAddress)
+        while (end < entrances.size() &&
+               entrances[end].categoryAddress == entrances[first].categoryAddress)
             ++end;
-        if (entrances_[first].selected_for(star)) {
+        if (entrances[first].selected_for(star)) {
             require(entranceIndex <= end - first &&
                     playerCount <= end - first - entranceIndex,
                     "Original entrance table lacks requested player records.");
             for (uint8_t slot = 0; slot < playerCount; ++slot) {
-                const auto &entry = entrances_[first + entranceIndex + slot];
+                const auto &entry = entrances[first + entranceIndex + slot];
                 const uint8_t saved = gameMode == 1 ? 3 : savedCharacter;
                 const uint8_t character = gameMode == 1 ? 3 : playerCharacters[slot];
                 const uint32_t kind = (entry.param >> 7) & 0xf;

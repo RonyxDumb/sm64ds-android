@@ -118,6 +118,23 @@ int main() {
     auto normal = sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
     assert(normal.size() == 1 && !normal[0].entrance);
     assert(entrance[0].categoryAddress == standard.guestAddress);
+    const std::array<uint8_t,4> characters{1,2,3,0};
+    auto commands = sm64ds::StageAssets::decode_player_spawn_commands(
+        entrance, 0, 1, 3, 2, characters, 0);
+    assert(commands.size() == 1 && commands[0].entry.actorId == 0x00bfu);
+    // LoadEntranceObjects: saved | (character<<3) | (slot<<6) | (kind<<8).
+    assert(commands[0].spawnParam == (2u | (1u<<3) | (7u<<8)));
+    assert(commands[0].areaID == 7 && commands[0].deathTableID == -1);
+    assert(sm64ds::StageAssets::decode_player_spawn_commands(
+        entrance, 0, 1, 1, 2, characters, 0).empty());
+    auto vsCommands = sm64ds::StageAssets::decode_player_spawn_commands(
+        entrance, 0, 1, 3, 2, characters, 1);
+    assert(vsCommands.size() == 1 &&
+           vsCommands[0].spawnParam == (3u | (3u<<3) | (7u<<8)));
+    must_reject([&] { (void)sm64ds::StageAssets::decode_player_spawn_commands(
+        entrance, 1, 1, 3, 2, characters, 0); });
+    must_reject([&] { (void)sm64ds::StageAssets::decode_player_spawn_commands(
+        entrance, 0, 5, 3, 2, characters, 0); });
     put16(bytes, 0x100, 326);
     must_reject([&] {
         (void)sm64ds::StageAssets::decode_standard_spawns(overlay, actorOverlay, standard);
