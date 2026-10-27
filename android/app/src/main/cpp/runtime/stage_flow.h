@@ -2,6 +2,7 @@
 #include "cartridge.h"
 #include "stage_assets.h"
 #include "packed_memory.h"
+#include "actor_dispatch.h"
 #include "runtime/controller_input.h"
 #include "types.h"
 #include <memory>
@@ -23,6 +24,9 @@ public:
     void prepare_scene();
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
+    // Execute the recovered fBase_c::Process callback ABI using registered
+    // ARM64 native code, never a guest ARM function pointer.
+    int process_actor(uint32_t actor, const ActorProcessMethods &methods);
 
 private:
     Cartridge &cartridge_;

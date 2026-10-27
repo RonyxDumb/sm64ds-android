@@ -1,5 +1,6 @@
 #include "runtime/frontend_core.h"
 #include "runtime/packed_ptr.h"
+#include "runtime/actor_dispatch.h"
 #include "ntr/mmio.h"
 #include <cassert>
 #include <cstdio>
@@ -9,6 +10,17 @@
 #include <thread>
 
 using namespace sm64ds;
+namespace {
+int actorTestMode = 0;
+uint32_t actorLastStatus = 0xffffffffu;
+}
+extern "C" int actor_test_before(uint32_t) { return actorTestMode != 0; }
+extern "C" int actor_test_action(uint32_t) {
+    return actorTestMode == 2 ? -1 : actorTestMode == 3 ? 0 : 1;
+}
+extern "C" void actor_test_after(uint32_t, uint32_t status) {
+    actorLastStatus = status;
+}
 extern "C" void abi__ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(uint32_t);
 extern "C" void abi__ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(uint32_t);
 extern "C" uint32_t native_member_probe(uint32_t object, uint32_t value) {
@@ -202,6 +214,32 @@ int main() {
         try { (void)memory.resolve_member(actor, {0x02020000, 0}); }
         catch (const std::runtime_error &) { badMethod = true; }
         assert(badMethod);
+        // The original fBase_c::Process runs Before, Action, After in
+        // order. Dispatch through the DS member-pointer pair and map the
+        // original return code to the 0/1/2/3 completion status.
+        memory.bind(0x62000010u, &actor_test_before);
+        memory.bind(0x62000014u, &actor_test_action);
+        memory.bind(0x62000018u, &actor_test_after);
+        *packed::Ptr<uint32_t>(vtable+16) = 0x62000014u;
+        const ActorProcessMethods actorMethods{
+            {16,17}, {0x62000010u,0}, {0x62000018u,0}
+        };
+        ActorDispatch dispatcher(memory);
+        actorTestMode=0;
+        assert(dispatcher.process(actor,actorMethods)==0 && actorLastStatus==0);
+        actorTestMode=1;
+        assert(dispatcher.process(actor,actorMethods)==1 && actorLastStatus==2);
+        actorTestMode=2;
+        assert(dispatcher.process(actor,actorMethods)==-1 && actorLastStatus==3);
+        actorTestMode=3;
+        assert(dispatcher.process(actor,actorMethods)==0 && actorLastStatus==1);
+        bool unboundRejected=false;
+        try {
+            ActorProcessMethods badCallbacks=actorMethods;
+            badCallbacks.action={0x02021000u,0};
+            (void)dispatcher.process(actor,badCallbacks);
+        } catch(const std::runtime_error &) { unboundRejected=true; }
+        assert(unboundRejected);
         memory.release(vtable);
         memory.release(actor);
         auto bca=memory.allocate(0x40);

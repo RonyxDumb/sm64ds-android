@@ -175,6 +175,13 @@ void StageFlow::update_input(u32 cameraFlags, float stickX, float stickY) {
     control.ang = cstd::atan2(x, y);
 }
 
+int StageFlow::process_actor(uint32_t actor, const ActorProcessMethods &methods) {
+    if (!addressSpace_)
+        throw std::runtime_error("Actor processing requested before native stage activation.");
+    packed::Space::Scope scope(*addressSpace_);
+    return ActorDispatch(*addressSpace_).process(actor, methods);
+}
+
 StageRequest StageFlow::request() const {
     return {data_02092110,    data_0209f268, data_0209f1f0,
             data_02092128[0], data_0208a0e0, controller(0).mode};
