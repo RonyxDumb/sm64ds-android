@@ -63,6 +63,7 @@ std::vector<StageAssets::SimpleSpawn> StageAssets::decode_simple_spawns(
         spawn.y = int32_t(static_cast<int16_t>(half(entry + 4))) * 4096;
         spawn.z = int32_t(static_cast<int16_t>(half(entry + 6))) * 4096;
         spawn.area = category.area;
+        spawn.starFilter = category.starFilter;
         spawn.minimapChange = spawn.actorIndex == 0x1ff;
         if (spawn.minimapChange)
             spawn.param &= 0xf; // special native minimap-change argument
