@@ -85,10 +85,12 @@ BgConfig read_bg(const EngineMap &em, int bg, uint32_t dispcnt) {
 
     text_size((cnt >> 14) & 3, c.tiles_w, c.tiles_h);
     const unsigned mode=dispcnt&7,size=cnt>>14;
-    // In modes 3 and 4 BG2 is an affine background; only mode 5
-    // upgrades it to an extended-rotation background.
+    // DS hardware BG mode table: in mode 3 BG2 remains TEXT; BG3 is
+    // extended. Only modes 2 and 4 make BG2 affine. Misclassifying BG2
+    // as affine reads 8-bit tile-map bytes as rotated pixels and causes
+    // striped/corrupted lower-screen menus.
     if ((bg==3 && (mode==1 || mode==2)) ||
-        (bg==2 && (mode==2 || mode==3 || mode==4))) c.kind=BgConfig::Affine;
+        (bg==2 && (mode==2 || mode==4))) c.kind=BgConfig::Affine;
     if ((bg==3 && mode>=3 && mode<=5) || (bg==2 && mode==5)) c.kind=BgConfig::Extended;
     if (c.kind==BgConfig::Extended && (cnt&0x80)) c.kind=BgConfig::Bitmap;
     if (mode==6) {
