@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,6 +26,7 @@ jobs:
           packages: 'platform-tools'
           log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/setup-gradle@v4
       - name: Install pinned Android toolchain
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
       - name: Install headless GLES test dependencies
@@ -40,7 +44,22 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=1 /tmp/gles_test
       - name: Build and lint ARM64 APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug assembleRelease lintDebug
+        shell: bash
+        run: |
+          # Maven Central may rate-limit GitHub runners with HTTP 429.
+          # Retry ONLY transient repository failures; compiler/linker errors
+          # must fail without being masked by repeated builds.
+          set -o pipefail
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon assembleDebug assembleRelease lintDebug 2>&1 | tee /tmp/sm64ds-gradle-build.log; then
+              exit 0
+            fi
+            if ! grep -Eqi 'Too Many Requests|status code 429|HTTP 429|Read timed out' /tmp/sm64ds-gradle-build.log; then
+              exit 1
+            fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep $((attempt * 20))
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: sm64ds-android-debug
