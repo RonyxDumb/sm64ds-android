@@ -16,9 +16,63 @@ uint32_t word(const uint8_t *p) {
 void require(bool condition, const char *message) {
     if (!condition) throw std::runtime_error(message);
 }
+const uint8_t *guest_data(const sm64ds::Cartridge::DataImage &image,
+                          uint32_t address, size_t bytes) {
+    if (address < image.base || uint64_t(address) - image.base > image.bytes.size() ||
+        bytes > image.bytes.size() - (uint64_t(address) - image.base))
+        throw std::runtime_error("Recovered stage address outside its cartridge overlay.");
+    return image.bytes.data() + (address - image.base);
+}
 }
 
 namespace sm64ds {
+
+// The ROM's ov002 data table has fifteen four-byte ARM handler addresses.
+// They are used only to identify recovered functions; calling a guest
+// address as an ARM64 function pointer would be invalid.
+uint32_t StageAssets::original_loader(const Cartridge::DataImage &objectOverlay, uint8_t type) {
+    if (type >= 15)
+        throw std::runtime_error("Level object category exceeds original 15-entry dispatch table.");
+    return word(guest_data(objectOverlay, 0x0210cbb8u + uint32_t(type) * 4, 4));
+}
+
+// Source: src/game/stages/LevelObjects.cpp::LoadSimpleObjects.
+// The actual actor table is a u16 array in ov002 at 0x0210cbf4.
+// This prepares exact values for the later dActor_c::Spawn bridge; it does not
+// fabricate Player objects, animation or collision.
+std::vector<StageAssets::SimpleSpawn> StageAssets::decode_simple_spawns(
+    const Cartridge::DataImage &levelOverlay, const Cartridge::DataImage &objectOverlay,
+    const ObjectRecord &category) {
+    require(category.loaderAddress == 0x020fe960u,
+            "Category is not handled by original LoadSimpleObjects.");
+    std::vector<SimpleSpawn> spawns;
+    if (!category.entryCount)
+        return spawns;
+    const uint8_t *entries = guest_data(levelOverlay, category.entriesAddress,
+                                         size_t(category.entryCount) * 8);
+    spawns.reserve(category.entryCount);
+    for (unsigned i = 0; i < category.entryCount; ++i) {
+        const auto *entry = entries + size_t(i) * 8;
+        const uint16_t raw = half(entry);
+        SimpleSpawn spawn{};
+        spawn.actorIndex = raw & 0x1ffu;
+        spawn.param = raw >> 9;
+        // The original uses a signed s16-to-Q12 conversion. Multiplication
+        // avoids undefined behavior from left-shifting a negative integer.
+        spawn.x = int32_t(static_cast<int16_t>(half(entry + 2))) * 4096;
+        spawn.y = int32_t(static_cast<int16_t>(half(entry + 4))) * 4096;
+        spawn.z = int32_t(static_cast<int16_t>(half(entry + 6))) * 4096;
+        spawn.area = category.area;
+        spawn.minimapChange = spawn.actorIndex == 0x1ff;
+        if (spawn.minimapChange)
+            spawn.param &= 0xf; // special native minimap-change argument
+        else
+            spawn.actorId = half(guest_data(objectOverlay,
+                                     0x0210cbf4u + uint32_t(spawn.actorIndex) * 2, 2));
+        spawns.push_back(spawn);
+    }
+    return spawns;
+}
 
 // LoadObjects (LevelObjects.cpp) reads a u16 count at +0 and a 32-bit
 // pointer at +4; each record is exactly eight bytes. Area table records
@@ -53,6 +107,8 @@ std::vector<StageAssets::ObjectRecord> StageAssets::decode_object_catalog(
             object.area = area;
             object.type = entry[0] & 0x1f;
             object.starFilter = (entry[0] >> 5) & 7;
+            object.entryCount = entry[1];
+            object.entriesAddress = word(entry + 4);
             result.push_back(object);
         }
     };
@@ -110,6 +166,17 @@ StageAssets StageAssets::load(Cartridge &cartridge, uint32_t sublevel) {
     assets.descriptor_.subTableCount = record[0x14];
     assets.descriptor_.flags = record[0x15];
     assets.objects_ = decode_object_catalog(assets.overlay_, assets.descriptor_);
+    // Overlay 2 contains the category dispatch and actor-ID tables used by
+    // the original stage loader, independent from the level's own overlay.
+    assets.objectOverlay_ = cartridge.overlay_data(2);
+    for (auto &category : assets.objects_) {
+        category.loaderAddress = original_loader(assets.objectOverlay_, category.type);
+        if (category.loaderAddress == 0x020fe960u) {
+            auto spawns = decode_simple_spawns(assets.overlay_, assets.objectOverlay_, category);
+            assets.simpleSpawns_.insert(assets.simpleSpawns_.end(),
+                                        spawns.begin(), spawns.end());
+        }
+    }
     require(assets.descriptor_.modelHandle && assets.descriptor_.collisionHandle,
             "The native level has no original model or collision resource.");
     // Actual cartridge handles, not hard-coded castle replacements.
