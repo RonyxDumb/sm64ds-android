@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - android/tools/compile_all_src.py
+      - android/tools/arm64_projections.py
       - .github/workflows/android-compile-audit.yml
   workflow_dispatch:
 permissions:
@@ -34,7 +35,8 @@ jobs:
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
           python3 android/tools/compile_all_src.py \
             --shard ${{ matrix.shard }} --shards 4 --jobs 4 --timeout 20 \
-            --out "build/compile-audit/shard-${{ matrix.shard }}"
+            --out "build/compile-audit/shard-${{ matrix.shard }}" \
+            --apply-projections --require-projections-pass
       - name: Upload per-file errors and complete compiler logs
         if: always()
         uses: actions/upload-artifact@v4
