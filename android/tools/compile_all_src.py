@@ -18,9 +18,10 @@ ROOT = Path(__file__).resolve().parents[2]
 EXTENSIONS = {".c", ".cc", ".cpp", ".cxx"}
 
 
-def run_one(index, path, clang, clangxx, timeout, out):
+def run_one(index, path, clang, clangxx, timeout, out, projections):
     rel = path.relative_to(ROOT).as_posix()
     is_cpp = path.suffix != ".c"
+    source = projections.get(rel, path)
     cmd = [
         str(clangxx if is_cpp else clang),
         "--target=aarch64-linux-android26",
@@ -32,7 +33,7 @@ def run_one(index, path, clang, clangxx, timeout, out):
         "-I" + str(ROOT / "android/app/src/main/cpp"),
         "-I" + str(ROOT),
         "-Wno-unknown-pragmas",
-        str(path),
+        str(source),
     ]
     try:
         p = subprocess.run(cmd, text=True, stdout=subprocess.PIPE,
@@ -56,7 +57,8 @@ def run_one(index, path, clang, clangxx, timeout, out):
         encoding="utf-8")
     errors = re.findall(r"^.*?(?:fatal error:|error:).*$", output, re.M)
     first = errors[0].strip() if errors else (output.strip().splitlines()[:1] or [""])[0]
-    return {"file": rel, "status": status, "errors": errors[:8],
+    return {"file": rel, "projected": rel in projections,
+            "status": status, "errors": errors[:8],
             "first": first[:600], "log": "logs/%06d.txt" % index}
 
 
@@ -67,6 +69,10 @@ def main():
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--timeout", type=int, default=20)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--apply-projections", action="store_true",
+                    help="compile audited Android-only projected units where available")
+    ap.add_argument("--require-projections-pass", action="store_true",
+                    help="fail the job if a projected source still has errors")
     ap.add_argument("--ndk", type=Path, default=Path(os.environ.get("ANDROID_NDK_HOME", "")))
     args = ap.parse_args()
     if not (0 <= args.shard < args.shards) or args.jobs < 1:
@@ -81,9 +87,13 @@ def main():
             if i % args.shards == args.shard]
     out = args.out.resolve()
     (out / "logs").mkdir(parents=True, exist_ok=True)
+    projections = {}
+    if args.apply_projections:
+        from arm64_projections import generate
+        projections = generate(out / "projected-src")
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        tasks = [pool.submit(run_one, i, p, clang, clangxx, args.timeout, out)
+        tasks = [pool.submit(run_one, i, p, clang, clangxx, args.timeout, out, projections)
                  for i, p in work]
         for future in concurrent.futures.as_completed(tasks):
             result = future.result()
@@ -94,6 +104,7 @@ def main():
               for key in ("ok", "failed", "timeout", "tool-error")}
     summary = {"target": "aarch64-linux-android26", "raw_src_total": len(all_files),
                "shard": args.shard, "shards": args.shards, "tested": len(results),
+               "projection_mode": args.apply_projections,
                "counts": counts, "results": results}
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     with (out / "failures.txt").open("w", encoding="utf-8") as f:
@@ -103,6 +114,9 @@ def main():
                         row["first"] + "\n")
     print("SUMMARY " + json.dumps({"total": len(all_files), "tested": len(results),
                                     "shard": args.shard, **counts}), flush=True)
+    projections_failed = [r for r in results if r["projected"] and r["status"] != "ok"]
+    if projections_failed:
+        print("PROJECTED FAILURES " + ", ".join(r["file"] for r in projections_failed), flush=True)
     step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if step_summary:
         with open(step_summary, "a", encoding="utf-8") as f:
@@ -111,7 +125,10 @@ def main():
             f.write("Total files: %d; tested: %d; OK: %d; failed: %d; timed out: %d; tool errors: %d.\n\n" %
                     (len(all_files), len(results), counts["ok"], counts["failed"],
                      counts["timeout"], counts["tool-error"]))
-            f.write("Raw source is not the adapted native projection and this audit does not link an APK.\n")
+            f.write("Audited projections: %d, of which %d failed; this audit does not link an APK.\n" %
+                    (sum(r["projected"] for r in results), len(projections_failed)))
+    if args.require_projections_pass and projections_failed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
