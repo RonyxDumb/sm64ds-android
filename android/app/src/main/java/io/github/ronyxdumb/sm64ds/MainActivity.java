@@ -78,6 +78,21 @@ public final class MainActivity extends Activity {
         render.setText("Avvia boot originale");
         render.setOnClickListener(v -> startActivity(new Intent(this, RuntimeActivity.class)));
         root.addView(render);
+        LinearLayout diagnostics = new LinearLayout(this);
+        Button inspect = new Button(this);
+        inspect.setText("Console / Log");
+        inspect.setOnClickListener(v -> new android.app.AlertDialog.Builder(this)
+            .setTitle("Console diagnostica")
+            .setMessage(CrashReport.preview())
+            .setPositiveButton("Chiudi", null)
+            .setNeutralButton("Esporta TXT", (dialog, which) -> CrashReport.requestExport(this))
+            .show());
+        diagnostics.addView(inspect);
+        Button export = new Button(this);
+        export.setText("Esporta log TXT");
+        export.setOnClickListener(v -> CrashReport.requestExport(this));
+        diagnostics.addView(export);
+        root.addView(diagnostics);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.addView(root);
@@ -102,6 +117,19 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == CrashReport.EXPORT_REQUEST) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                try {
+                    CrashReport.exportTo(this, data.getData());
+                    Toast.makeText(this, "Log TXT salvato", Toast.LENGTH_LONG).show();
+                } catch (IOException e) {
+                    CrashReport.failure("LOG-EXPORT", e);
+                    Toast.makeText(this, "Esportazione fallita: " + e.getMessage(),
+                                   Toast.LENGTH_LONG).show();
+                }
+            }
+            return;
+        }
         if (request != PICK_ROM || result != RESULT_OK || data == null || data.getData() == null)
             return;
         Uri uri = data.getData();
