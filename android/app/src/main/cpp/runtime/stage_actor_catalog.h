@@ -14,6 +14,11 @@ public:
     // Overlay 2 owns the original loader-dispatch and actor-ID tables.
     bool read(const StageAssets& level,const Cartridge::DataImage& objectOv,
               unsigned star,unsigned entrance);
+    // Same bounds-checked parser with explicit images, enabling ROM-free tests.
+    bool read_raw(const StageAssets::Descriptor& descriptor,
+                  const Cartridge::DataImage& levelOv,
+                  const Cartridge::DataImage& objectOv,
+                  unsigned star,unsigned entrance);
     bool has_entrance() const {return entranceFound_;}
     const StageActorPlacement& entrance() const {return entrance_;}
     const std::vector<StageActorPlacement>& actors() const {return actors_;}
