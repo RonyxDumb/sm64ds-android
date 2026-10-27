@@ -24,8 +24,8 @@ int main() {
     assert(frame.px[0][1] == convert(0x001f));
     assert(frame.px[191][255] == convert(0x001f));
 
-    // Mode 3 is an affine BG2, not a text BG. Map a single 8bpp tile
-    // through the real bank-routing path; the correct output is red.
+    // Mode 4 makes BG2 affine; mode 3 leaves BG2 as tiled text.
+    // Map a single 8bpp affine tile through the real bank-routing path.
     ntr::io_write(0x04000240u, 0x81, 1); // bank A -> engine A BG
     auto *vram = static_cast<uint8_t *>(ntr::host_ptr(0x06000000u));
     std::memset(vram, 0, 0x8000);
@@ -41,7 +41,7 @@ int main() {
     ntr::io_write(0x04000026u, 256, 2); // BG2PD
     ntr::io_write(0x04000028u, 0, 4); // BG2X
     ntr::io_write(0x0400002cu, 0, 4); // BG2Y
-    ntr::io_write(0x04000000u, (1u << 16) | (1u << 10) | 3u, 4);
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 10) | 4u, 4);
     ntr::ppu_scanout(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == convert(0x001f));
     // OBJ priority is compared against the visible BG pixel, not layered
