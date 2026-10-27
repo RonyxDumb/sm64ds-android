@@ -114,5 +114,22 @@ int main() {
     ntr::ppu_scanout_obj(ntr::ENGINE_A, frame);
     assert(frame.px[0][0] == 0xff808000u);
     ntr::io_write(0x04000050u, 0, 2);
-    std::puts("NDS bitmap, affine BG2, OBJ priority, alpha, bitmap OAM and fade passed.");
+
+    // Genuine BLDCNT effect 1: first-target BG0 (green) blends with the
+    // immediately underlying second-target BG1 (red), both as 4bpp tiles.
+    oam[0] = 0x0200; // no OBJ covers the test pixel
+    vram[0x1000] = 2; // BG1 screen block 2, tile 2
+    vram[0x4000 + 64] = 1; // tile 2 uses palette color 1, red
+    ntr::io_write(0x0400000au, 2u | (2u << 8) | (1u << 2), 2);
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 8) | (1u << 9), 4);
+    ntr::io_write(0x04000050u, (1u << 6) | 1u | (1u << 9), 2);
+    ntr::io_write(0x04000052u, 8u | (8u << 8), 2);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == 0xff808000u);
+    // BG1 is no longer a second target: no blending may take place.
+    ntr::io_write(0x04000050u, (1u << 6) | 1u | (1u << 10), 2);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    assert(frame.px[0][0] == convert(0x03e0));
+    ntr::io_write(0x04000050u, 0, 2);
+    std::puts("NDS bitmap, affine BG2, OBJ priority, alpha, bitmap OAM, BG blend and fade passed.");
 }
