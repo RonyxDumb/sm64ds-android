@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
-    <application android:theme="@style/AppTheme" android:label="Super Mario 64 DS Android"
+    <application android:name=".CrashApplication" android:theme="@style/AppTheme" android:label="Super Mario 64 DS Android"
         android:icon="@drawable/ic_app" android:allowBackup="false" android:supportsRtl="true">
         <activity android:name=".RuntimeActivity" android:exported="false" android:screenOrientation="landscape" />
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">
