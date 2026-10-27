@@ -1,6 +1,7 @@
 #include "collision_dispatch.h"
 #include "packed_memory.h"
 #include <cstring>
+#include <initializer_list>
 #include <stdexcept>
 
 namespace sm64ds {
