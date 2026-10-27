@@ -7,6 +7,8 @@
 #include "runtime/boot_state.h"
 #include "ntr/ppu.h"
 #include "ntr/bmd.h"
+#include "stage_collision.h"
+#include "stage_actor_catalog.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -32,6 +34,11 @@ public:
         return ticks_;
     }
     uint16_t requested_scene() const;
+    bool stage_collision_ready() const { return stageCollision_.ready(); }
+    size_t stage_placed_actors() const { return stageActors_.actors().size(); }
+    bool stage_pilot_ready() const { return stagePilotReady_; }
+    const StagePilot& stage_pilot() const { return stagePilot_; }
+    const StageFollowCamera& stage_camera() const { return stageCamera_; }
     int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;
@@ -74,6 +81,11 @@ private:
     ntr::BmdModel stageModel_{};
     ntr::Framebuffer stagePreviewFrame_{};
     bool stagePreviewReady_ = false;
+    StageCollision stageCollision_;
+    StageActorCatalog stageActors_;
+    StagePilot stagePilot_;
+    StageFollowCamera stageCamera_;
+    bool stagePilotReady_ = false;
     BootState boot_{};
     GameInput input_;
     Sound sound_;
