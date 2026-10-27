@@ -1,4 +1,5 @@
 #include "packed_memory.h"
+#include "ntr/mmio.h"
 #include <link.h>
 #include <algorithm>
 #include <pthread.h>
@@ -72,6 +73,12 @@ void Space::map(uint32_t a, void *p, size_t n) {
 }
 void *Space::data(uint32_t a, size_t n) const {
     if (!a) throw std::runtime_error("Null packed data handle.");
+    // Native ARM64 projection resolves direct DS VRAM pointers through this
+    // API. The original program may just have written VRAMCNT through a raw
+    // pointer. Bank aliases must be correct BEFORE the first tile upload,
+    // not merely when the PPU later scans out that frame.
+    if (a >= ntr::VRAM_BASE && a - ntr::VRAM_BASE < ntr::VRAM_SIZE)
+        ntr::sync_vram_banks();
     auto it = std::upper_bound(regions_.begin(), regions_.end(), a,
         [](uint32_t addr, const Region &r) { return addr < r.address; });
     if (it != regions_.begin()) {
