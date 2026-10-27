@@ -15,6 +15,10 @@ javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds
 java -cp "$TEST_BUILD/java" RomImportTest
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/CrashLogStore.java android/tests/CrashLogStoreTest.java
 java -cp "$TEST_BUILD/java" CrashLogStoreTest
+g++ -std=c++17 -Wall -Wextra -Werror -Iandroid/app/src/main/cpp \
+    android/tests/native_crash_log_test.cpp android/app/src/main/cpp/crash_diagnostics.cpp \
+    -o "$TEST_BUILD/native_crash_log_test"
+"$TEST_BUILD/native_crash_log_test"
 
 g++ -std=c++17 -pthread -Wall -Wextra -Werror -fsanitize=address,undefined -g \
     -Iport/ntr/include android/tests/runtime_test.cpp port/ntr/rt.cpp -o "$TEST_BUILD/runtime_test"
