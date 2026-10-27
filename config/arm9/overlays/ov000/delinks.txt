@@ -1,7 +1,0 @@
-    .text       start:0x020aa420 end:0x020aa4c8 kind:code align:32
-    .ctor       start:0x020aa4c8 end:0x020aa4c8 kind:rodata align:4
-    .data       start:0x020aa4e0 end:0x020bf4e0 kind:data align:32
-    .bss        start:0x020bf4e0 end:0x020bf4e0 kind:bss align:32
-src/runtime/filesystem/InitializeAssetHandleTable.c:
-    complete
-    .text start:0x020aa420 end:0x020aa4c8

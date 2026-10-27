@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths:
+      - src/**
+      - include/**
       - android/tools/compile_all_src.py
       - android/tools/arm64_projections.py
       - .github/workflows/android-compile-audit.yml

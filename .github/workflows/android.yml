@@ -1,9 +1,15 @@
 name: Android
 on:
   push:
-    paths: ['android/**', 'port/ntr/**', '.github/workflows/android.yml', 'docker_build.bat']
+    paths: ['android/**', 'src/**', 'include/**', 'port/ntr/**', 'port/tools/hostgen.py',
+            'config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
+            'config/arm9/overlays/ov007/symbols.txt', 'external/sm64ds-pc',
+            '.gitmodules', '.github/workflows/android.yml', 'docker_build.bat']
   pull_request:
-    paths: ['android/**', 'port/ntr/**', '.github/workflows/android.yml', 'docker_build.bat']
+    paths: ['android/**', 'src/**', 'include/**', 'port/ntr/**', 'port/tools/hostgen.py',
+            'config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
+            'config/arm9/overlays/ov007/symbols.txt', 'external/sm64ds-pc',
+            '.gitmodules', '.github/workflows/android.yml', 'docker_build.bat']
   workflow_dispatch:
 permissions:
   contents: read

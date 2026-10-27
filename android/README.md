@@ -108,7 +108,6 @@ bash android/tests/run-game-tests.sh
 bash android/tests/run-frontend-tests.sh
 # Private-ROM execution of the production native boot:
 bash android/tests/run-game-tests.sh /absolute/path/to/game.nds
-python tools/port_refcheck.py
 ```
 
 The native game check runs production boot, font/message dependencies, faders,
