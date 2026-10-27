@@ -1,0 +1,44 @@
+name: Android raw src compile census
+on:
+  push:
+    branches: [main]
+    paths:
+      - android/tools/compile_all_src.py
+      - .github/workflows/android-compile-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-compile-audit-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  raw-src:
+    name: ARM64 raw src shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - name: Install pinned ARM64 compiler
+        run: sdkmanager 'ndk;27.2.12479018'
+      - name: Compile all raw src translation units, never stop on file errors
+        shell: bash
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+          python3 android/tools/compile_all_src.py \
+            --shard ${{ matrix.shard }} --shards 4 --jobs 4 --timeout 20 \
+            --out "build/compile-audit/shard-${{ matrix.shard }}"
+      - name: Upload per-file errors and complete compiler logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-raw-src-errors-shard-${{ matrix.shard }}
+          path: build/compile-audit/shard-${{ matrix.shard }}/
+          if-no-files-found: warn
