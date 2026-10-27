@@ -13,6 +13,8 @@ g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-fram
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/rom_probe_test" "$@"
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/RomImport.java android/tests/RomImportTest.java
 java -cp "$TEST_BUILD/java" RomImportTest
+javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/CrashLogStore.java android/tests/CrashLogStoreTest.java
+java -cp "$TEST_BUILD/java" CrashLogStoreTest
 
 g++ -std=c++17 -pthread -Wall -Wextra -Werror -fsanitize=address,undefined -g \
     -Iport/ntr/include android/tests/runtime_test.cpp port/ntr/rt.cpp -o "$TEST_BUILD/runtime_test"
