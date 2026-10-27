@@ -160,5 +160,21 @@ int main() {
     ntr::ppu_scanout(ntr::ENGINE_B, frame);
     assert(frame.px[0][0] == convert(0x03e0));
 
-    std::puts("NDS bitmap, affine/text BG2 modes, OBJ priority, alpha, BG blend and fade passed.");
+    // A recovered DS overlay may write VRAMCNT_H with a *volatile byte
+    // pointer*, bypassing the io_write proxy. The LCD refresh must observe
+    // that change and route physical bank H to the sub-engine BG window.
+#if !defined(_WIN32)
+    ntr::io_write(0x04000242u, 0, 1); // unroute bank C from sub BG
+    auto *physicalH = static_cast<uint8_t *>(ntr::host_ptr(0x06898000u));
+    physicalH[0] = 0x6b;
+    auto *directControl = static_cast<volatile uint8_t *>(ntr::host_ptr(0x04000248u));
+    *directControl = 0x81; // bank H -> sub BG, no io_write call
+    ntr::ppu_scanout(ntr::ENGINE_B, frame);
+    assert(*static_cast<const uint8_t *>(ntr::host_ptr(0x06200000u)) == 0x6b);
+    *directControl = 0; // direct write must also unmap the alias
+    ntr::ppu_scanout(ntr::ENGINE_B, frame);
+    assert(*static_cast<const uint8_t *>(ntr::host_ptr(0x06200000u)) != 0x6b);
+    assert(physicalH[0] == 0x6b);
+#endif
+    std::puts("NDS BG modes, sprite blending and native VRAM bank routing passed.");
 }
