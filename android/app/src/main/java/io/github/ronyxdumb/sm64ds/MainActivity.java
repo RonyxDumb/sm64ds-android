@@ -76,7 +76,10 @@ public final class MainActivity extends Activity {
         root.addView(buttons);
         render = new Button(this);
         render.setText("Avvia boot originale");
-        render.setOnClickListener(v -> startActivity(new Intent(this, RuntimeActivity.class)));
+        render.setOnClickListener(v -> {
+            CrashReport.note("LAUNCHER", "Launching original boot and native renderer");
+            startActivity(new Intent(this, RuntimeActivity.class));
+        });
         root.addView(render);
         LinearLayout diagnostics = new LinearLayout(this);
         Button inspect = new Button(this);
