@@ -7,6 +7,8 @@
 #include <cstring>
 #include <stdexcept>
 
+extern "C" void Vec3_MulScalarInPlace(int *v, int scale);
+
 namespace cstd {
 int sqrt(unsigned long long);
 s16 atan2(s32, s32);
@@ -158,8 +160,12 @@ void StageFlow::update_input(u32 cameraFlags, float stickX, float stickY) {
     s32 magnitude = cstd::sqrt(s64(x) * x + s64(y) * y);
     if (magnitude > 4096) {
         const s32 scale = cstd::fdiv(4096, magnitude);
-        x = FX_MUL(x, scale);
-        y = FX_MUL(y, scale);
+        // Use the recovered original vector scaling routine rather than
+        // duplicating its DS Q12 arithmetic in the Android input bridge.
+        int vector[3] = {x, y, 0};
+        Vec3_MulScalarInPlace(vector, scale);
+        x = vector[0];
+        y = vector[1];
         magnitude = 4096;
     }
     auto &control = data_0209f498[0];

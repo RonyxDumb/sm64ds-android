@@ -5,6 +5,17 @@ set(CMAKE_C_STANDARD 11)
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../../.." ABSOLUTE)
 add_library(sm64ds_android SHARED bridge.cpp crash_diagnostics.cpp rom_probe.cpp game_math.cpp screen_renderer.cpp audio_core.cpp android_audio.cpp session.cpp
     "${REPO_ROOT}/src/DotVec3.c" "${REPO_ROOT}/src/CrossVec3.c"
+    # Portable original game maths: compile recovered src/ bodies directly for ARM64.
+    # No DS register accesses, asm primitives or fixed-width host pointers here.
+    "${REPO_ROOT}/src/Vec3_Add.c" "${REPO_ROOT}/src/Vec3_Sub.c"
+    "${REPO_ROOT}/src/Vec3_MulScalar.c" "${REPO_ROOT}/src/Vec3_MulScalarInPlace.c"
+    "${REPO_ROOT}/src/Vec3_Equal.c" "${REPO_ROOT}/src/Vec3_Asr.c"
+    "${REPO_ROOT}/src/Vec3_AsrInPlace.c" "${REPO_ROOT}/src/Vec3_Lsl.c"
+    "${REPO_ROOT}/src/Vec3_LslInPlace.c" "${REPO_ROOT}/src/Vec2_Sub.c"
+    "${REPO_ROOT}/src/SubVec3.c" "${REPO_ROOT}/src/AngleDiff.c"
+    "${REPO_ROOT}/src/MulVec3Mat3x3.c"
+    "${REPO_ROOT}/src/Matrix4x3_FromTranslation.c"
+    "${REPO_ROOT}/src/Vec3_RotateYAndTranslate.c"
     "${REPO_ROOT}/port/ntr/rt.cpp" "${REPO_ROOT}/port/ntr/io.cpp"
     "${REPO_ROOT}/port/ntr/bmd.cpp" "${REPO_ROOT}/port/ntr/gx.cpp" "${REPO_ROOT}/port/ntr/texture.cpp"
     "${REPO_ROOT}/port/ntr/fs.cpp" "${REPO_ROOT}/port/ntr/lz77.cpp")
