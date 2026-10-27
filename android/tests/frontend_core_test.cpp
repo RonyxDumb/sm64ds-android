@@ -245,7 +245,7 @@ int main() {
         // virtual Main and a null Cleanup (the source treats that as success).
         const uint32_t state = memory.allocate(0x18);
         const PlayerStateMethods playerState{
-            {0x62000014u,0}, {16,17}, {0x62000010u,0}
+            {0x62000014u,0}, {16,17}, {0x62000014u,0}
         };
         std::memcpy(memory.data(state,sizeof playerState),&playerState,sizeof playerState);
         PlayerStateDispatch playerDispatch(memory);
