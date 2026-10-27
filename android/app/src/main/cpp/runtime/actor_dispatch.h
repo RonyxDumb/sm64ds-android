@@ -26,6 +26,15 @@ int native_fbase_before_render(uint32_t actor);
 // ARM EABI member callbacks, preserving next-node-before-dispatch semantics.
 uint32_t native_fbase_process_list(uint32_t descriptor);
 
+// Source: src/runtime/actor/d_actor.cpp. These use the exact DS actor
+// fields at offsets 0x05c..0x0c0 but native 64-bit C++ code; no DS vptr casts.
+void native_actor_set_ranges(uint32_t actor, int32_t y, int32_t radius,
+                             int32_t distance, int32_t farDistance);
+void native_actor_clamp_pos(uint32_t actor);
+void native_actor_update_horz_speed(uint32_t actor);
+void native_actor_update_pos_only_speed(uint32_t actor, uint32_t collision);
+void native_actor_update_pos(uint32_t actor, uint32_t collision);
+
 class ActorDispatch {
 public:
     explicit ActorDispatch(packed::Space &space) : space_(space) {}

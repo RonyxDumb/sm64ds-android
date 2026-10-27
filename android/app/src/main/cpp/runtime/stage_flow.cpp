@@ -127,6 +127,12 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02043afcu, &native_fbase_before_behavior);
     nextSpace->bind(0x02043ac8u, &native_fbase_before_render);
     nextSpace->bind(0x02043fdcu, &native_fbase_process_list);
+    // dActor_c recovered movement/clip routines (original ARM9 symbols).
+    nextSpace->bind(0x02010e08u, &native_actor_set_ranges);
+    nextSpace->bind(0x02010da4u, &native_actor_clamp_pos);
+    nextSpace->bind(0x02010c5cu, &native_actor_update_horz_speed);
+    nextSpace->bind(0x02010d40u, &native_actor_update_pos_only_speed);
+    nextSpace->bind(0x02010c30u, &native_actor_update_pos);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(

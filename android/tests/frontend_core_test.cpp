@@ -210,6 +210,46 @@ int main() {
         assert(native_fbase_before_behavior(baseActor)==0);
         assert(native_fbase_before_render(baseActor)==0);
         memory.release(baseActor);
+        // Original dActor_c movement and clip code against the 0xd0-byte
+        // ROM layout. Real source offsets and Nintendo Q12 arithmetic.
+        const uint32_t movingActor=memory.allocate(0xd0);
+        const uint32_t clsn=memory.allocate(0x30);
+        native_actor_set_ranges(movingActor,0x4000,0x10001,0x4000,-0x2000);
+        assert(*packed::Ptr<int32_t>(movingActor+0xb4)==0x4000);
+        assert(*packed::Ptr<int32_t>(movingActor+0xb8)==0x2000);
+        assert(*packed::Ptr<int32_t>(movingActor+0xbc)==0x800);
+        assert(*packed::Ptr<int32_t>(movingActor+0xc0)==-0x400);
+        *packed::Ptr<int32_t>(movingActor+0x5c)=0x7d00000-0x1000;
+        *packed::Ptr<int32_t>(movingActor+0x60)=0;
+        *packed::Ptr<int32_t>(movingActor+0x64)=0x3000;
+        *packed::Ptr<int32_t>(movingActor+0xa4)=0x3000;
+        *packed::Ptr<int32_t>(movingActor+0xa8)=-0x1000;
+        *packed::Ptr<int32_t>(movingActor+0xac)=0x1000;
+        *packed::Ptr<int32_t>(clsn+0x0c)=0x1000;
+        *packed::Ptr<int32_t>(clsn+0x14)=-0x2000;
+        native_actor_update_pos_only_speed(movingActor,clsn);
+        assert(*packed::Ptr<int32_t>(movingActor+0x5c)==0x7d00000);
+        assert(*packed::Ptr<int32_t>(movingActor+0x60)==-0x1000);
+        assert(*packed::Ptr<int32_t>(movingActor+0x64)==0x2000);
+        // The fixed-point horizontal speed uses the ACTUAL ROM sin/cos
+        // lookup, with a synthetic two-entry fixture only in this host test.
+        std::array<int16_t,8192> trigTable{};
+        trigTable[0]=0;
+        trigTable[1]=4096;
+        memory.map(0x02082214u,trigTable.data(),sizeof trigTable);
+        *packed::Ptr<int32_t>(movingActor+0x98)=4096;
+        *packed::Ptr<int32_t>(movingActor+0x9c)=-4096;
+        *packed::Ptr<int32_t>(movingActor+0xa0)=-0x4b000;
+        *packed::Ptr<uint16_t>(movingActor+0x94)=0;
+        native_actor_update_pos(movingActor,0);
+        assert(*packed::Ptr<int32_t>(movingActor+0xa4)==0);
+        assert(*packed::Ptr<int32_t>(movingActor+0xa8)==-8192);
+        assert(*packed::Ptr<int32_t>(movingActor+0xac)==4096);
+        assert(*packed::Ptr<int32_t>(movingActor+0x5c)==0x7d00000);
+        assert(*packed::Ptr<int32_t>(movingActor+0x60)==-0x3000);
+        assert(*packed::Ptr<int32_t>(movingActor+0x64)==0x3000);
+        memory.release(clsn);
+        memory.release(movingActor);
         // The original Player::State uses {function_or_vtable_offset,
         // signed_this_adjustment_with_virtual_bit}. Check both paths against
         // actual native code, never a cartridge instruction address.
