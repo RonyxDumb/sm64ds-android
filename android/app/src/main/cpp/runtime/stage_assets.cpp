@@ -36,6 +36,45 @@ uint32_t StageAssets::original_loader(const Cartridge::DataImage &objectOverlay,
     return word(guest_data(objectOverlay, 0x0210cbb8u + uint32_t(type) * 4, 4));
 }
 
+// Source: LevelObjects.cpp::LoadStandardObjects / LoadEntranceObjects.
+// Preserve the ROM's entry order and 16-byte layout. In particular the
+// player-entrance loader calls func_0202b0e0 before selecting an index, so this
+// decoded table is input to that future native routine, not its replacement.
+std::vector<StageAssets::StandardSpawn> StageAssets::decode_standard_spawns(
+    const Cartridge::DataImage &levelOverlay, const Cartridge::DataImage &objectOverlay,
+    const ObjectRecord &category) {
+    const bool entrance = category.loaderAddress == 0x020fe6c8u;
+    require(entrance || category.loaderAddress == 0x020fe8acu,
+            "Category is not an original standard or entrance actor table.");
+    std::vector<StandardSpawn> result;
+    if (!category.entryCount)
+        return result;
+    const auto *entries = guest_data(levelOverlay, category.entriesAddress,
+                                      size_t(category.entryCount) * 16);
+    result.reserve(category.entryCount);
+    for (unsigned i = 0; i < category.entryCount; ++i) {
+        const uint8_t *entry = entries + size_t(i) * 16;
+        StandardSpawn spawn{};
+        spawn.actorIndex = half(entry);
+        require(spawn.actorIndex < (0x0210ce80u - 0x0210cbf4u) / 2,
+                "Original standard/entrance actor index exceeds its ROM ID table.");
+        spawn.actorId = half(guest_data(objectOverlay,
+                                         0x0210cbf4u + uint32_t(spawn.actorIndex) * 2, 2));
+        spawn.x = int32_t(static_cast<int16_t>(half(entry + 2))) * 4096;
+        spawn.y = int32_t(static_cast<int16_t>(half(entry + 4))) * 4096;
+        spawn.z = int32_t(static_cast<int16_t>(half(entry + 6))) * 4096;
+        spawn.rotX = static_cast<int16_t>(half(entry + 8));
+        spawn.rotY = static_cast<int16_t>(half(entry + 10));
+        spawn.rotZ = static_cast<int16_t>(half(entry + 12));
+        spawn.param = half(entry + 14);
+        spawn.area = category.area;
+        spawn.starFilter = category.starFilter;
+        spawn.entrance = entrance;
+        result.push_back(spawn);
+    }
+    return result;
+}
+
 // Source: src/game/stages/LevelObjects.cpp::LoadSimpleObjects.
 // The actual actor table is a u16 array in ov002 at 0x0210cbf4.
 // This prepares exact values for the later dActor_c::Spawn bridge; it does not
@@ -182,6 +221,13 @@ StageAssets StageAssets::load(Cartridge &cartridge, uint32_t sublevel) {
             auto spawns = decode_simple_spawns(assets.overlay_, assets.objectOverlay_, category);
             assets.simpleSpawns_.insert(assets.simpleSpawns_.end(),
                                         spawns.begin(), spawns.end());
+        }
+        if (category.loaderAddress == 0x020fe8acu ||
+            category.loaderAddress == 0x020fe6c8u) {
+            auto spawns = decode_standard_spawns(assets.overlay_, assets.objectOverlay_, category);
+            auto &destination = category.loaderAddress == 0x020fe6c8u
+                                    ? assets.entrances_ : assets.standardSpawns_;
+            destination.insert(destination.end(), spawns.begin(), spawns.end());
         }
     }
     require(assets.descriptor_.modelHandle && assets.descriptor_.collisionHandle,
