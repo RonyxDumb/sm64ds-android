@@ -54,7 +54,17 @@ def stage_methods(text):
     for number in (60, 98, 102):
         text = exact(text, "fn((int)&OVERLAY_%d_ID);" % number,
                      "fn(%d);" % number)
-    return text
+    # The original 32-bit scalar is a DS-style handle, NOT a place to
+    # truncate a native C++ pointer. Encode the native fader pointer in
+    # the existing checked packed::Space address table (used by frontend).
+    text = exact(text, "data_0209d4b0 = (int)o2;",
+                 "data_0209d4b0 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(o2)));",
+                 2)
+    text = exact(text, "data_0209d4b0 = (int)entry;",
+                 "data_0209d4b0 = static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>(entry)));")
+    text = exact(text, "data_0209d4b0 == (int)((dFdWipe_c *)data_0209f324 + 6)",
+                 "data_0209d4b0 == static_cast<int>(sm64ds::packed::encode(reinterpret_cast<std::uintptr_t>((dFdWipe_c *)data_0209f324 + 6)))")
+    return '#include "runtime/packed_ptr.h"\\n' + text
 
 
 def crate_actor(text):
