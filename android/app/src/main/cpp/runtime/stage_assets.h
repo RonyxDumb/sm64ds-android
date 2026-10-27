@@ -42,7 +42,11 @@ public:
         uint16_t actorId = 0, actorIndex = 0, param = 0;
         int32_t x = 0, y = 0, z = 0; // original Q12 world coordinates
         int area = -1;
+        uint8_t starFilter = 0;
         bool minimapChange = false;
+        bool selected_for(uint8_t star) const {
+            return starFilter == 0 || starFilter == star;
+        }
     };
 
     static StageAssets load(Cartridge &cartridge, uint32_t sublevel);
