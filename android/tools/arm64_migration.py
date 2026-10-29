@@ -379,7 +379,15 @@ def generate(out, clang):
     result = {}
     frontend = None
     for path, row in profile["sources"].items():
-        if row["mode"] == "native_cpp":
+        if row["mode"] == "native_platform":
+            from arm64_platform import generate as platform_generate
+            text = platform_generate(path)
+            includes = []
+        elif row["mode"] == "soft_math":
+            from arm64_soft_math import generate as soft_generate
+            text = soft_generate(path)
+            includes = []
+        elif row["mode"] == "native_cpp":
             text = source_fixes(path, (ROOT / path).read_text())
             text = local_aliases(text)
             text = re.sub(

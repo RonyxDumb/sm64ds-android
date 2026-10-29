@@ -5,9 +5,11 @@ then was reset before its final commit could be pushed. The published parent
 332fefcd1 preserved the earlier 2286/2407 checkpoint. Recovery now restores
 source changes from the recorded work in incremental GitHub checkpoints.
 
-This checkpoint restores the remaining C++ repairs and eight-byte member cells.
-ARM9 system-service and arithmetic changes are being restored next. The old
-full-census result is historical evidence until the recovered tree is rerun.
+The remaining C++ repairs, eight-byte member cells, all 73 ARM9 service
+units and all 18 statically lowered arithmetic units have now been restored.
+The Android runtime duplicate definitions found before the reset are addressed
+by retaining the existing ownership wrappers for six symbols. The old full-census
+result remains historical evidence until this recovered tree is rerun.
 The game still requires the packed stage factory at 0x0202e088 and subsequent
 stage/Player/camera/collision integration. No gameplay success is claimed.
 

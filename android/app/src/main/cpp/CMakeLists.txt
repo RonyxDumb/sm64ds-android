@@ -122,3 +122,15 @@ target_compile_options(sm64ds_android PRIVATE -fvisibility=hidden -ffunction-sec
 target_link_options(sm64ds_android PRIVATE -Wl,--no-undefined)
 set_source_files_properties(${GAME_SOURCES} runtime/game_program.cpp "${REPO_ROOT}/port/ntr/ppu.cpp"
     PROPERTIES COMPILE_OPTIONS "-Wno-int-to-pointer-cast;-Wno-int-to-void-pointer-cast;-Wno-unknown-pragmas")
+
+# Native ARM9 services and complete statically lowered MSL arithmetic.
+set(PLATFORM_ROOT "${CMAKE_CURRENT_BINARY_DIR}/platform-src")
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/arm64_platform.py"
+    --runtime-out "${PLATFORM_ROOT}" COMMAND_ERROR_IS_FATAL ANY)
+include("${PLATFORM_ROOT}/sources.cmake")
+include("${PLATFORM_ROOT}/inputs.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${REPO_ROOT}/android/tools/arm64_platform.py"
+    "${REPO_ROOT}/android/tools/arm64_soft_math.py"
+    "${REPO_ROOT}/android/tools/arm64_migration_profile.json" ${NATIVE_PLATFORM_INPUTS})
+target_sources(sm64ds_android PRIVATE ${NATIVE_PLATFORM_SOURCES} platform/native_context.cpp)
