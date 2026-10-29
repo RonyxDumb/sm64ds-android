@@ -7,9 +7,14 @@ on:
       - include/**
       - android/tools/compile_all_src.py
       - android/tools/arm64_projections.py
-      - android/tools/arm64_migration*
+      - android/tools/arm64_*.py
+      - android/tools/arm64_*.json
       - android/tools/requirements-migration.txt
       - android/app/src/main/cpp/runtime/native_abi.h
+      - android/app/src/main/cpp/runtime/stored_member.h
+      - android/app/src/main/cpp/platform/**
+      - android/tests/*platform*
+      - android/tests/*soft_math*
       - android/tests/*migration*
       - android/tests/native_abi_test.cpp
       - .github/workflows/android-compile-audit.yml
@@ -41,6 +46,9 @@ jobs:
       - name: Check full-width data and callback round trips
         if: matrix.shard == 0
         run: bash android/tests/run-migration-tests.sh
+      - name: Check native ARM9 services and arithmetic
+        if: matrix.shard == 0
+        run: bash android/tests/run-platform-tests.sh
       - name: Compile all raw src translation units, never stop on file errors
         shell: bash
         run: |
@@ -48,7 +56,7 @@ jobs:
           python3 android/tools/compile_all_src.py \
             --shard ${{ matrix.shard }} --shards 4 --jobs 4 --timeout 20 \
             --out "build/compile-audit/shard-${{ matrix.shard }}" \
-            --apply-projections --require-projections-pass
+            --apply-projections --require-projections-pass --require-all-pass
       - name: Upload per-file errors and complete compiler logs
         if: always()
         uses: actions/upload-artifact@v4

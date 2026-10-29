@@ -1,3 +1,25 @@
+# Current checkpoint — 2026-10-29, restored source and native services
+
+**All 2407 original source units pass Android ARM64 compilation.** This was
+revalidated after recovery on commit 6293ceb97acbaac1ec99fab00297f4b24e9b61db:
+[all four census shards](https://github.com/RonyxDumb/sm64ds-android/actions/runs/40863346300)
+finished with zero failures, timeouts or tool errors. Exact counts are saved in
+`android/checks/arm64-census.json`. Original `src/` and `include/` stay intact.
+
+The current changes additionally restore the arithmetic/platform/context tests,
+require every source to compile in CI, preserve the declaring class of native
+member callbacks, and fix Android's noreturn diagnostic in its unwind adapter.
+Local ASan/UBSan tests pass for 20,000 arithmetic pairs, conversions/remainders,
+status writes, memory edges, three codecs and callbacks, CRC, lock IDs, IRQ
+waits, stored native/packed member calls and native stack switches (UBSan).
+
+The six existing runtime ownership wrappers remain the sole linked definitions
+of their symbols. The full APK build is being rerun after the unwind fix.
+Gameplay work continues at the real packed stage factory, 0x0202e088. Compiler
+success does not mean this actor factory or subsequent gameplay is connected.
+
+---
+
 # Recovery checkpoint — 2026-10-29
 
 The prior local session recorded a complete 2407/2407 Android ARM64 census,

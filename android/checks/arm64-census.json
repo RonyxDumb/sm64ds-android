@@ -1,0 +1,50 @@
+{
+  "commit": "6293ceb97acbaac1ec99fab00297f4b24e9b61db",
+  "target": "aarch64-linux-android26",
+  "ndk": "27.2.12479018",
+  "total": 2407,
+  "tested": 2407,
+  "ok": 2407,
+  "failed": 0,
+  "timeout": 0,
+  "tool-error": 0,
+  "run_url": "https://github.com/RonyxDumb/sm64ds-android/actions/runs/40863346300",
+  "shards": [
+    {
+      "total": 2407,
+      "tested": 601,
+      "shard": 3,
+      "ok": 601,
+      "failed": 0,
+      "timeout": 0,
+      "tool-error": 0
+    },
+    {
+      "total": 2407,
+      "tested": 602,
+      "shard": 2,
+      "ok": 602,
+      "failed": 0,
+      "timeout": 0,
+      "tool-error": 0
+    },
+    {
+      "total": 2407,
+      "tested": 602,
+      "shard": 0,
+      "ok": 602,
+      "failed": 0,
+      "timeout": 0,
+      "tool-error": 0
+    },
+    {
+      "total": 2407,
+      "tested": 602,
+      "shard": 1,
+      "ok": 602,
+      "failed": 0,
+      "timeout": 0,
+      "tool-error": 0
+    }
+  ]
+}

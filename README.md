@@ -29,7 +29,7 @@ The debug APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 A diagnostic Android ARM64 compilation of all raw `src/` units is available through the [compile census workflow](https://github.com/RonyxDumb/sm64ds-android/actions/workflows/android-compile-audit.yml). Compile-only success is not equivalent to correct linkage or runtime behavior.
 
-The checked source views currently compile **2,286 / 2,407** complete source units with NDK `27.2.12479018`, including all of `Player.cpp`. **121 units still fail**; the unmodified raw-source baseline has 523 failures. See the current checkpoint for the exact command and remaining ABI boundaries.
+The checked source views currently compile **2,407 / 2,407** complete source units with NDK `27.2.12479018`, including all of `Player.cpp`. **All complete source views pass**; the unmodified raw-source baseline has 523 failures. See the current checkpoint for the exact command and remaining ABI boundaries.
 
 ## Assets and credits
 

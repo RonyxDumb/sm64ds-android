@@ -70,7 +70,7 @@ entry('src/ARMSaveContext.c','#include "platform/context_save.inc"')
 entry('src/ARMRestoreContext.c','#include "platform/context_restore.inc"')
 entry(prefix+'02058568.c','#include "platform/native_context.h"\nextern "C" void func_02058568(void *ctx,uint32_t pc,uint32_t sp){init_context(ctx,pc,sp);}')
 entry(prefix+'02059824.c','extern "C" void func_02059824(){call(0x02059834);}')
-entry('src/unnamed/arm9/0207/func_02071790.c','#include <unwind.h>\nextern "C" [[noreturn]]void func_02071790(_Unwind_Exception *exception){_Unwind_Resume(exception);}')
+entry('src/unnamed/arm9/0207/func_02071790.c','#include <unwind.h>\nextern "C" [[noreturn]]void func_02071790(_Unwind_Exception *exception){_Unwind_Resume(exception);std::terminate();}')
 entry('src/IRQHandler.cpp','''#include "platform/native_context.h"
 extern "C" void func_01ffd9d4();
 namespace IRQ{void UserInterruptHandler(){if(!ntr::io_read(0x04000208,4))return;uint32_t pending=uint32_t(ntr::io_read(0x04000210,4)&ntr::io_read(0x04000214,4));if(!pending)return;unsigned bit=__builtin_ctz(pending);ntr::io_write(0x04000214,1u<<bit,4);call(load<uint32_t>(0x02099fe4+4*bit));signal_interrupt(1u<<bit);func_01ffd9d4();}}

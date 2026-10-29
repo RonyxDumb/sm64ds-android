@@ -1,6 +1,7 @@
 #pragma once
 #include "packed_memory.h"
 #include <map>
+#include <functional>
 #include <mutex>
 #include <type_traits>
 #include <utility>
@@ -13,25 +14,33 @@ public:
  using Native=R(C::*)(Args...);
 private:
  uint32_t entry_;int32_t adjustment_;
- struct Registry{std::mutex mutex;std::map<uint32_t,Native> entries;uint32_t next=0xe0000000u;};
+ struct Method { Native identity; std::function<R(C*,Args...)> invoke; };
+ struct Registry{std::mutex mutex;std::map<uint32_t,Method> entries;uint32_t next=0xe0000000u;};
  static Registry &registry(){static Registry table;return table;}
 public:
  StoredMember()=default;
  StoredMember(std::nullptr_t):entry_(0),adjustment_(0){}
- StoredMember(Native value):entry_(0),adjustment_(0){
+ template<class B,std::enable_if_t<std::is_base_of_v<B,C>,int> = 0>
+ StoredMember(R(B::*value)(Args...)):entry_(0),adjustment_(0){
   if(!value)return;
+  const Native identity=static_cast<Native>(value);
   auto &table=registry();std::lock_guard<std::mutex> lock(table.mutex);
-  for(const auto &row:table.entries)if(row.second==value){entry_=row.first;return;}
+  for(const auto &row:table.entries)if(row.second.identity==identity){entry_=row.first;return;}
   if(table.next==UINT32_MAX)throw std::overflow_error("Native member identity overflow");
-  entry_=table.next++;table.entries.emplace(entry_,value);
+  entry_=table.next++;
+  // Retain the declaring class: C++ performs its base adjustment before
+  // invoking the original PMF, including secondary virtual base tables.
+  table.entries.emplace(entry_,Method{identity,[value](C *object,Args... args)->R{
+   return (static_cast<B*>(object)->*value)(std::forward<Args>(args)...);
+  }});
  }
  bool operator==(std::nullptr_t)const{return entry_==0&&!(adjustment_&1);}
  bool operator!=(std::nullptr_t)const{return entry_!=0||(adjustment_&1);}
  explicit operator bool()const{return entry_!=0||(adjustment_&1);}
  R invoke(C *object,Args... args)const{
-  Native method=nullptr;
-  if(entry_>=0xe0000000u){auto &table=registry();std::lock_guard<std::mutex> lock(table.mutex);method=table.entries.at(entry_);}
-  if(method)return (object->*method)(std::forward<Args>(args)...);
+  std::function<R(C*,Args...)> method;
+  if(entry_>=0xe0000000u){auto &table=registry();std::lock_guard<std::mutex> lock(table.mutex);method=table.entries.at(entry_).invoke;}
+  if(method)return method(object,std::forward<Args>(args)...);
   auto &space=packed::Space::current();const auto target=space.resolve_member(space.address(object),{entry_,adjustment_});
   using Bound=R(*)(uint32_t,Args...);Bound callback=nullptr;
   static_assert(sizeof callback==sizeof target.code);std::memcpy(&callback,&target.code,sizeof callback);
