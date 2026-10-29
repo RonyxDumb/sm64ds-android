@@ -63,8 +63,8 @@ uint32_t ActorDispatch::process_list(uint32_t descriptor, uint32_t currentNodeCe
     uint32_t node = word(descriptor);
     std::unordered_set<uint32_t> visited;
     while (node) {
-        if (!visited.insert(node).second || visited.size()>32768u)
-            throw std::runtime_error("Cyclic or oversized native actor process list.");
+        if (!visited.insert(node).second)
+            throw std::runtime_error("Cyclic native actor process list.");
         // A recovered fLiNdBaPr_c is 0x10 bytes, not an ARM64 object.
         (void)space_.data(node,0x10);
         const uint32_t next = word(node+4);

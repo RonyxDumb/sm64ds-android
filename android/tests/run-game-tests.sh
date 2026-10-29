@@ -4,6 +4,7 @@ cd "$(dirname "$0")/../.."
 GAME_BUILD=$(mktemp -d)
 trap 'rm -rf "$GAME_BUILD"' EXIT
 python3 android/tools/native_sources.py --out "$GAME_BUILD/generated"
+python3 android/tools/verify_stage_sources.py
 python3 android/tools/packed_sources.py --out "$GAME_BUILD/packed"
 python3 android/tools/compile_frontend.py --generated "$GAME_BUILD/packed" --out "$GAME_BUILD/objects"
 for source in src/GetOwnerLanguage.c src/SetBg0Offset.c src/SetSubBg{0,1,2}Offset.c \
@@ -19,7 +20,7 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-int-to-pointer-ca
     -ffunction-sections -fdata-sections -Wl,--gc-sections -fsanitize=address,undefined -g -pthread \
     -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp -I"$GAME_BUILD/generated" \
     -Iexternal/sm64ds-pc/port/hal/sdat \
-    android/tests/game_program_test.cpp android/app/src/main/cpp/runtime/{game_program,cartridge,game_input,resources,game_heap,save_store,stage_flow,stage_assets,title_files,native_math,frontend_core,frontend_primitives,packed_memory,actor_dispatch,collision_dispatch}.cpp \
+    android/tests/game_program_test.cpp android/app/src/main/cpp/runtime/{game_program,cartridge,game_input,resources,game_heap,save_store,stage_flow,stage_runtime,stage_assets,title_files,native_math,frontend_core,frontend_primitives,packed_memory,actor_dispatch,collision_dispatch}.cpp \
     "$GAME_BUILD/generated"/runtime/*.cpp "$GAME_BUILD/generated/src/SharedFilePtr.cpp" \
     "$GAME_BUILD/generated/src/engine/save"/*.cpp \
     android/app/src/main/cpp/pc_audio/{archive,stream}.cpp android/app/src/main/cpp/audio_core.cpp \

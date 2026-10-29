@@ -1,4 +1,5 @@
 #include "stage_flow.h"
+#include "stage_runtime.h"
 #include "collision_dispatch.h"
 #include "resources.h"
 #include "packed_ptr.h"
@@ -146,6 +147,7 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02014ff0u, &native_collision_update);
     nextSpace->bind(0x02014fa4u, &native_collision_unlink);
     nextSpace->bind(0x02014aa8u, &native_collision_process);
+    bind_stage_runtime(*nextSpace);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(
@@ -202,7 +204,9 @@ uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t ki
     *Ptr<uint8_t>(0x020a4b4cu) = 0;
     *Ptr<uint16_t>(0x020a4b50u) = 0xffff;
     sceneActor_ = actor;
-    sceneInitialized_ = false;
+    // The original post-construction scheduler already runs InitResources.
+    // A successful actor has aliveState == 1 and must not initialize twice.
+    sceneInitialized_ = *Ptr<uint8_t>(actor+0x0e) == 1;
     return actor;
 }
 

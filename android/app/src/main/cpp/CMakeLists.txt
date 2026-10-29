@@ -105,7 +105,7 @@ set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
-    runtime/stage_flow.cpp runtime/stage_assets.cpp runtime/title_files.cpp runtime/native_math.cpp
+    runtime/stage_flow.cpp runtime/stage_runtime.cpp runtime/stage_assets.cpp runtime/title_files.cpp runtime/native_math.cpp
     "${REPO_ROOT}/src/SetNumPlayers.c" "${REPO_ROOT}/src/SublevelToLevel.c"
     "${REPO_ROOT}/src/unnamed/arm9/0203/func_020308d0.c"
     "${REPO_ROOT}/src/DecIfAbove0_Byte.c" "${REPO_ROOT}/src/GetControllerMode.c"
@@ -134,3 +134,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${REPO_ROOT}/android/tools/arm64_soft_math.py"
     "${REPO_ROOT}/android/tools/arm64_migration_profile.json" ${NATIVE_PLATFORM_INPUTS})
 target_sources(sm64ds_android PRIVATE ${NATIVE_PLATFORM_SOURCES} platform/native_context.cpp)
+
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/verify_stage_sources.py"
+    --out "${CMAKE_CURRENT_BINARY_DIR}/stage-inputs.cmake" COMMAND_ERROR_IS_FATAL ANY)
+include("${CMAKE_CURRENT_BINARY_DIR}/stage-inputs.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${REPO_ROOT}/android/tools/verify_stage_sources.py"
+    "${REPO_ROOT}/android/tools/stage_runtime_profile.json" ${STAGE_RUNTIME_INPUTS})

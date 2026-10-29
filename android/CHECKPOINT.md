@@ -1,4 +1,29 @@
-# Current checkpoint — 2026-10-29, restored source and native services
+# Current checkpoint — 2026-10-29, original packed stage construction
+
+The recovered source checkpoint 5d349ff28241be67f9500e8089f2625e5bb3347b
+passes both the full 2407/2407 ARM64 census and the complete Android APK/lint
+workflow, including native ARM64 frontend execution:
+[verified APK build](https://github.com/RonyxDumb/sm64ds-android/actions/runs/40865004091).
+
+The stage factory at 0x0202e088 is now bound to native code. Its genuine
+0x9c8-byte cartridge record is allocated and cleared, then fBase's scene
+tree/owner/priority bookkeeping, all particle callbacks, the simple model's
+identity transform, and the static mesh collider are constructed at their
+original offsets. The original post-construction scheduler runs the actual
+InitResources PMF chain. It now reaches the next unlinked scene method,
+ResetFadersAndSound at 0x0202e66c, with spawn phase 5. No scene success is
+published. Source/header/symbol-map hashes guard these ABI transcriptions.
+
+The private-ROM ASan/UBSan regression passes for all four file/character
+launches and asserts the real constructed records, owner links, vtables,
+particle water/scale state, model transform, collider and allocation extent.
+The scheduler also avoids initializing an already-live actor twice, and its
+list traversal has cycle detection without an artificial actor-count limit.
+Gameplay initialization and subsequent actor integration remain in progress.
+
+---
+
+# Restored source and native services
 
 **All 2407 original source units pass Android ARM64 compilation.** This was
 revalidated after recovery on commit 6293ceb97acbaac1ec99fab00297f4b24e9b61db:
@@ -14,9 +39,8 @@ status writes, memory edges, three codecs and callbacks, CRC, lock IDs, IRQ
 waits, stored native/packed member calls and native stack switches (UBSan).
 
 The six existing runtime ownership wrappers remain the sole linked definitions
-of their symbols. The full APK build is being rerun after the unwind fix.
-Gameplay work continues at the real packed stage factory, 0x0202e088. Compiler
-success does not mean this actor factory or subsequent gameplay is connected.
+of their symbols. The APK build after the unwind fix passed on 5d349ff28.
+Compiler success does not mean subsequent gameplay is connected.
 
 ---
 

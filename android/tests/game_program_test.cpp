@@ -386,10 +386,35 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(factory);
+                    "Unlinked native code handle: " + std::to_string(0x0202e66cu);
+                if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
-            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 4);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 5);
+            auto stageWord = [&](uint32_t address) {
+                uint32_t value=0;
+                std::memcpy(&value,stageSpace->data(address,4),4);
+                return value;
+            };
+            const uint32_t actor=stageWord(0x020a4b6cu)-0x14;
+            assert(stageSpace->allocation_size(actor)==0x9c8);
+            assert(stageWord(actor)==0x020921c0u);
+            assert(*static_cast<uint16_t *>(stageSpace->data(actor+12,2))==3);
+            assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x13,1))==5);
+            for (unsigned offset : {0x24u,0x30u,0x40u}) assert(stageWord(actor+offset)==actor);
+            assert(stageWord(0x0209ee74u)==actor+0x50);
+            assert(stageWord(actor+0x50+0x804)==0x4b000);
+            assert(stageWord(actor+0x50+0x7f0)==0x0208f3f4u);
+            assert(stageWord(actor+0x50+0x810)==0x0208f434u);
+            assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x50+0x814,1))==1);
+            assert(stageWord(actor+0x86c)==0x0208e90cu);
+            assert(std::memcmp(stageSpace->data(actor+0x86c+0x1c,48),
+                               stageSpace->data(0x02082128u,48),48)==0);
+            assert(stageWord(actor+0x91c)==0x020993dcu);
+            assert(stageWord(actor+0x91c+8)==UINT32_MAX);
+            assert(stageWord(actor+0x91c+12)==uint32_t(-0x1000));
+            assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x91c+20,1))==0x18);
+            assert(stageWord(actor+0x9c4)==0);
             assert(game.requested_scene() == 3); // failed spawn never publishes success
             // This source path previously wrote the DS +0xc offset into the
             // native fader's speed. Verify the actual native color member.

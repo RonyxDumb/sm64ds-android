@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "target": "EU ASMP rev0; checked 32-bit cartridge records, native functions",
+  "inputs": {
+    "src/game/stages/d_s_stage_methods.cpp": "ac2b91d26fbdaaf11b5558fcc959b1e90a1b8743dbdd9a920ce718d13c056969",
+    "src/game/stages/d_scene.cpp": "cc3bc66f32bd82383773002a5b4087d733edfb217e8204882ce55a3ea2f77b36",
+    "src/runtime/actor/ActorBase.cpp": "51a050b040491912011373e7698914d4b21cf0777b5d2849b88edfb41cabd524",
+    "src/runtime/actor/ActorBase_SceneNode.cpp": "66f1368fa1da02a9f83ffd132030f07cd2f096499ab0ffc2bf263c5a0b12a84a",
+    "src/runtime/actor/ActorDerived.cpp": "f0ffb914f551655aefb4b5e497d96b0d1cd4de0039efe3603a87c7adbdd0a998",
+    "include/fBase_c.h": "527f216c0fcd8dd0a474ed889fb0716a253b7da0b490aa82f409f49df8b6e9a7",
+    "include/dScStage_c.h": "0d0bcd8a1c43b753b3d61559c1a6c28db927eb18a0b4907c546a6f8cc4564e7f",
+    "include/dScene_c.h": "1d7903d852f100c4531b49d6d5125e810c35157587658231e764f8a7cb3e5c09",
+    "include/dExtSimpleModel_c.h": "fa35adc8edf4ee9bfde7df3a57791c00b562c0430f85e6a2a9e9c0056c44de31",
+    "include/dExtModel_c.h": "49f47b23e6f4ca32731a23c74e4b86e26acb126ed26afceda3237a7c358fc9f9",
+    "include/dBgW_Kc.h": "3f9303f6920508a7a372f8e3375188e016ee8c95d13c2b511d860c40c14981cb",
+    "include/dBgW.h": "dbddaafe743575076983d788c007607e6bc4266fdc49ae527b33ecf5b1c57d79",
+    "include/Particle__SysTracker.h": "c866fc28d4649cabe2a63fafdb941cbae1b1edcca0c7c7e76b409fec22e43f44",
+    "include/dPa_c.h": "3d1e9af1aaadce6d2c99d5c72907d00bae2b84eb15def6af3d3618f241f63b16",
+    "src/engine/particle/Particle.cpp": "064686706dc741ce118b76ac498bbc1209e2b36fbf4520c7d126561a5cadfb84",
+    "src/engine/particle/Particle_SysTracker_Contents.cpp": "dc2ab2426cb0c01a49e07fb8be9501594525a6c521cdbc1eb9fef41563d15f25",
+    "src/engine/particle/d_pa.cpp": "6e962edd07d4f29f1230f5ffc9b51d0c7e6885f8d456705d63092ecde1be1eaa",
+    "src/engine/model/d_ext_simple_model.cpp": "1b89e8ee883b93b0c6223c0410c1f1a4a3a1171b4992f8a6a1ac4776f5287833",
+    "src/engine/collision/d_bg_w_kc.cpp": "4bfdefa4dec02f69292a7578827c57c4e335bc632b840273a74053d76d8541d3",
+    "src/engine/collision/d_bg_w.cpp": "db8ac8e79591b7b09788532d65358dab7271daa73a0161682d085b47b9a262bc",
+    "src/engine/collision/d_bg_ch_sph_crr_query.cpp": "9b60cb2a7ff9c44094a5167474e1360131d43ae3c96854f548f61f9b6cd9729e",
+    "src/func_0203b244.c": "bff674e6a883036e3742a34e595558d9a50a8da2baf3443bf83ae34f17753245",
+    "src/unnamed/arm9/0204/func_0204335c.c": "aafc9dcda60d7ca874b082b79b7a819721fa611f4205809cfcb576d4d00fee44",
+    "config/arm9/symbols.txt": "b41cde3a0514bcb64250ee61d2da0b33e99e6194462fe14ab53f1009fb63a273"
+  }
+}
