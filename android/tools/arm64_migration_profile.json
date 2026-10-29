@@ -42,6 +42,10 @@
       "mode": "native_cpp",
       "sha256": "b2b31e4cfa6da88f9eb20e2e7fdb894bc7070d37254074c5eba78c8f3bf4af5d"
     },
+    "src/cstd4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0db3fc704b8c67593448f84a42d90cf53655d23c8ab80636dbdece040bd8e4d3"
+    },
     "src/cstd6.cpp": {
       "mode": "native_cpp",
       "sha256": "99fae8f3cf13ecf02612c9b87a0fbf149074757b43a8fa27a05a2d31f33ffae8"
@@ -134,6 +138,10 @@
       "mode": "native_cpp",
       "sha256": "5694ae3cbc0e014da341a1d00d2f7611282841c827fccfb62649855bf26daf06"
     },
+    "src/engine/sound/SoundEngine.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c34da61086da7f3a87509c8ee803a9a2282e349ffc2d0ea551397252c4006c47"
+    },
     "src/engine/view/d_camera.cpp": {
       "mode": "native_cpp",
       "sha256": "ac6d4ca1efa33144cbefa7969cd873fd9e657a97bd1f08926cb00831d16feea7"
@@ -158,9 +166,17 @@
       "mode": "native_cpp",
       "sha256": "53c9c905ebf7c8c9398de69d54f8a612c9f57e257745ceb89308c26d4edb1d50"
     },
+    "src/game/actors/d_a_bombking.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1058a5f4a18a32187ee6e24af5f8eb372a87164401301fe2fc56385be3eb7234"
+    },
     "src/game/actors/d_a_btfly.cpp": {
       "mode": "native_cpp",
       "sha256": "f39758b20e8872af258bfbb5ff3bca3bf2fed958fa8243b2d87d926486b73b9f"
+    },
+    "src/game/actors/d_a_btn.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b55288750df18361806963c7ea90838f6401a34510bad34114a0e6eb8d60dfab"
     },
     "src/game/actors/d_a_c_jugem.cpp": {
       "mode": "native_cpp",
@@ -266,6 +282,10 @@
       "mode": "native_cpp",
       "sha256": "98a95069fa7312d76eee192f7e58ffc72880f309d16147def4c837f067280564"
     },
+    "src/game/actors/d_a_krb.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cb9e8ec33b210ff963be9a7b517322aa2cf5cd189632bca5ab5f91d4b803a835"
+    },
     "src/game/actors/d_a_kuri_king.cpp": {
       "mode": "native_cpp",
       "sha256": "f7e1b6b26b5df3805e5620cd4b67aa27d0b4407e72d68c92d3f4fe6d62ac6bb3"
@@ -310,6 +330,10 @@
       "mode": "native_cpp",
       "sha256": "b323eca32fa17b7b4f9bf9bd6987a362cff898f5ba99a96a75963447af9ecc51"
     },
+    "src/game/actors/d_a_obj_bk_botaosi.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e1a5d0d64e36e546625e65666a060e77fa67655b0d6ccc1ddc0d09b677d7f361"
+    },
     "src/game/actors/d_a_obj_bk_dossunbar.cpp": {
       "mode": "native_cpp",
       "sha256": "ad7c944779f564154faaecc3ac4e73c1856643bf82d3889b2002d620650e910d"
@@ -326,6 +350,10 @@
       "mode": "native_cpp",
       "sha256": "d47e7ef51055a690cbcc453a2dcfa53015d272e1a322fedb802d602152ad9e5c"
     },
+    "src/game/actors/d_a_obj_block_l.cpp": {
+      "mode": "native_cpp",
+      "sha256": "91a687b2a8247695a01113fa2f86ef89d0168bd2ec0de781afdb1ab0b6c25224"
+    },
     "src/game/actors/d_a_obj_block_s.cpp": {
       "mode": "native_cpp",
       "sha256": "18e00d25f67564934404fb7c42c26228af100d05fce3f7f1b65dce64f7383d57"
@@ -337,6 +365,10 @@
     "src/game/actors/d_a_obj_ct_kaitendai.cpp": {
       "mode": "native_cpp",
       "sha256": "ac56cf033ec1ac311c3cd3749f2f5081537b14e966fc1ddba5446bf5819f933f"
+    },
+    "src/game/actors/d_a_obj_ct_mecha03.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8f72656dda05f38d5e639ccbfa09fab6a4170026b548db9b17d79e659448a25d"
     },
     "src/game/actors/d_a_obj_cv_shutter.cpp": {
       "mode": "native_cpp",
@@ -357,6 +389,10 @@
     "src/game/actors/d_a_obj_emm_yuka.cpp": {
       "mode": "native_cpp",
       "sha256": "cece7abb5cc9adc685aa226a3f834bb18c2e797898c6a1ac045c6c0a36c4fafd"
+    },
+    "src/game/actors/d_a_obj_ewb_ice.cpp": {
+      "mode": "native_cpp",
+      "sha256": "64e31805ea5bf8652bb963e41c9ace01bc390725bf5c094ef7eb6bfc09182aef"
     },
     "src/game/actors/d_a_obj_fall_block.cpp": {
       "mode": "native_cpp",
@@ -409,6 +445,10 @@
     "src/game/actors/d_a_obj_guragura.cpp": {
       "mode": "native_cpp",
       "sha256": "0b7a7064f5f7e67fec259e29315e52b4f25b5341e37de0770cdd62a7a5f6e89f"
+    },
+    "src/game/actors/d_a_obj_hatena_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "823d5aea368f9a938c1311718005ccb673979b45bb1a6ce79415e4631c2a7cc0"
     },
     "src/game/actors/d_a_obj_hm_maruta.cpp": {
       "mode": "native_cpp",
@@ -474,6 +514,10 @@
       "mode": "native_cpp",
       "sha256": "e051b7d4aa54e7d85d2099ccc64424f77de9cb24e1a698e5f3d42687634b92cd"
     },
+    "src/game/actors/d_a_obj_kurumajiku.cpp": {
+      "mode": "native_cpp",
+      "sha256": "161a7778c886f8981795c3b8113b4b57ec41bec5e51c61843ddeb6088d191f41"
+    },
     "src/game/actors/d_a_obj_mario_cap.cpp": {
       "mode": "native_cpp",
       "sha256": "7be70e39ca518782f828b2d41c81fa6318436799c4212b3dfb48d12c7c9bdb7f"
@@ -506,6 +550,10 @@
       "mode": "native_cpp",
       "sha256": "ae341227ab51b4fbaf8d29cf392adfbb5706b1236a14e07d7daa295bee75f8a6"
     },
+    "src/game/actors/d_a_obj_seesaw.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4164276475ade7ef11b234bc4161dd6da338f302e85d053e8bd152576349e671"
+    },
     "src/game/actors/d_a_obj_simple_bg.cpp": {
       "mode": "native_cpp",
       "sha256": "71741afdf8d349aafcc2ce38ac0e16ae3eb32c47f684c853ec652c712ee655b3"
@@ -526,6 +574,10 @@
       "mode": "native_cpp",
       "sha256": "0f5bb610cb6b4298e933da6fbb664313464f689603497b2c8ac68c2f4418935d"
     },
+    "src/game/actors/d_a_obj_tatefuda.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a0043c7b034d4dfc961e2018c933c573ef36880cad19a5e5121a4b0810b6ccab"
+    },
     "src/game/actors/d_a_obj_th_fall_block.cpp": {
       "mode": "native_cpp",
       "sha256": "f7f4042591106ce9fb35af367e8107dfc5a140bb8b227021bf841643529d74c4"
@@ -542,9 +594,17 @@
       "mode": "native_cpp",
       "sha256": "46b3de2e66c7f9bacb808b26121deea16c031ce6b8075a7984abaa9b3ec0935e"
     },
+    "src/game/actors/d_a_obj_wc_obj02.cpp": {
+      "mode": "native_cpp",
+      "sha256": "60e2d95f318c37b41ae13be158015c1087938af2161bb0f673c0062757fd43fc"
+    },
     "src/game/actors/d_a_obj_wc_obj04.cpp": {
       "mode": "native_cpp",
       "sha256": "8621667408f2051f0b26b48fd33d3d23d891b040d9a4814a53163b82dc013f56"
+    },
+    "src/game/actors/d_a_obj_wc_obj05.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b0eb6e3a94cc819caa65ea92a1271aea5fb6f818ba84323287c5517df1df82a6"
     },
     "src/game/actors/d_a_obj_wc_obj07.cpp": {
       "mode": "native_cpp",
@@ -558,9 +618,21 @@
       "mode": "native_cpp",
       "sha256": "720a0440c62f2ba145263198466f662fb4b10f4f4733f1a9bb8e6c3ded5edb6e"
     },
+    "src/game/actors/d_a_obj_yajirusi.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ccddc398f941bd600d8f4fa146dfaeed1d59091a2324b1faec86daa2e7373d7e"
+    },
+    "src/game/actors/d_a_onms.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1d3d4852434b867e20b301f5c162908b8ee2b049ee596cef62fd7149210e70ef"
+    },
     "src/game/actors/d_a_ots.cpp": {
       "mode": "native_cpp",
       "sha256": "fb88de341f767300ea321d1e070dc272fee8d798e253c88da58282e39e81fda1"
+    },
+    "src/game/actors/d_a_owl.cpp": {
+      "mode": "native_cpp",
+      "sha256": "63d569b67b82975a6d04cf8a3dc0dfd4e22608c4155cf942d406301b5c0ff760"
     },
     "src/game/actors/d_a_peach.cpp": {
       "mode": "native_cpp",
@@ -590,6 +662,10 @@
       "mode": "native_cpp",
       "sha256": "873220eb440e0b2eb49b82b6b9482f48ca2c24838b7ec9d79538c8c2bcacadec"
     },
+    "src/game/actors/d_a_propeller_heyho.cpp": {
+      "mode": "native_cpp",
+      "sha256": "fd10ecdf2305bb1b983b51962c56b2693c154cf780470530dc8afd2cd5fd55f4"
+    },
     "src/game/actors/d_a_red_bombhei.cpp": {
       "mode": "native_cpp",
       "sha256": "959108e65b294e94f0b19f7cde7c4a55e088a883b91240be0a7e165562469098"
@@ -601,6 +677,14 @@
     "src/game/actors/d_a_slide_box.cpp": {
       "mode": "native_cpp",
       "sha256": "086dfe5bb5072d8afde9af85038904235ebdbf7cc79106dec9c60d04e0bd4236"
+    },
+    "src/game/actors/d_a_snowman.cpp": {
+      "mode": "native_cpp",
+      "sha256": "244feec7ffbb9378b14d46fe49d0474adacd830369cbb4268f31f7b2d42437e8"
+    },
+    "src/game/actors/d_a_star.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b6bea02fbf859fecd1ed0610eeb9691bebe3e7cb116567ce6816abc0b1ef80bd"
     },
     "src/game/actors/d_a_tgz.cpp": {
       "mode": "native_cpp",
@@ -617,6 +701,10 @@
     "src/game/actors/d_a_trs_trap.cpp": {
       "mode": "native_cpp",
       "sha256": "baeb9f4b4da18bca75fc7138297ad5bbcb1432e05c5ceb9b7d748f53177be3d8"
+    },
+    "src/game/actors/d_a_wanwan.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e36688ffbade1326d1c885fd81ece73b6af2d3525da19703e1d1f3ff33d3fd4a"
     },
     "src/game/actors/d_a_wanwan2.cpp": {
       "mode": "native_cpp",
@@ -650,6 +738,10 @@
       "mode": "native_cpp",
       "sha256": "fe15e62788b7894ebe0636a4fc704166b92634512ffa9ad0e3d429893a6e2ea2"
     },
+    "src/game/stages/d_s_entry.cpp": {
+      "mode": "native_cpp",
+      "sha256": "edde1c7ca01be176e9a2761ece71ae73d13465ac2213ecd942240057981080d5"
+    },
     "src/game/stages/d_s_entry_methods.cpp": {
       "mode": "native_cpp",
       "sha256": "4a31efb0df0edb49024e38a4c207391c172d0375d0bead945386ee051868bfe1"
@@ -670,13 +762,25 @@
       "mode": "native_cpp",
       "sha256": "56b858fe1de075a2181271ccc40e766a475f4beee257700543f3a08ddf1c5b3e"
     },
+    "src/minigames/d_mg3d_heyho_obj_adapter.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f8ab05b7ec73d0c40fbd3cbe8d6f925fb49b654341edd5452752b6c25f6f4464"
+    },
     "src/minigames/d_mg_jump3d_mario.cpp": {
       "mode": "native_cpp",
       "sha256": "82c12cd42dc46d64bf1b85423230f60d6f3b369203adb5384db71cb96fcffc8c"
     },
+    "src/minigames/d_mg_trmpln2_mario.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4ce3609edef1dc0ee992b1d37b31cbe0c8bff7b509cf6294aab7548f3fc64395"
+    },
     "src/minigames/d_s_mg_amida.cpp": {
       "mode": "native_cpp",
       "sha256": "61a786d122c5cfa39ac0fc74f20718a4535b81f19eb5dcdc7a8f0de37da5c06b"
+    },
+    "src/minigames/d_s_mg_base.cpp": {
+      "mode": "native_cpp",
+      "sha256": "dc263f0db61dae11e1fc741402219de4d9c60a658b2c1ef9174a95fd2cbb0c60"
     },
     "src/minigames/d_s_mg_bomroom.cpp": {
       "mode": "native_cpp",
@@ -750,6 +854,14 @@
       "mode": "native_cpp",
       "sha256": "cb1e8d22c12d84fcf033a7d4d0d302e35b534b8ff272d8390f75eb3ea2f6d0eb"
     },
+    "src/minigames/d_s_mg_panel.cpp": {
+      "mode": "native_cpp",
+      "sha256": "477819bdcb19b4f3841526dda3a3b43348d4ebc1ea450b55ccf547af85818b25"
+    },
+    "src/minigames/d_s_mg_roulette_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "66ef69133b3e2e3a12b392cc299a138f27236c9df8cf9166dde81cf008dfa3df"
+    },
     "src/minigames/d_s_mg_single3d_base.cpp": {
       "mode": "native_cpp",
       "sha256": "938216dbba7727f16333d20e6a9a3686fbadaa45bb651af3642ebc716ef012e4"
@@ -757,6 +869,14 @@
     "src/minigames/d_s_mg_slots.cpp": {
       "mode": "native_cpp",
       "sha256": "783e9337bab81c9e31aa9a6cf7463ca39139c68831535b14838d2f295c51a9a7"
+    },
+    "src/minigames/d_s_mg_smartball.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cb62390dd7a5358935fe6d86bd9c037a7ca9b17bd9b3f44ee329cd4d5b52465a"
+    },
+    "src/minigames/d_s_mg_snowball.cpp": {
+      "mode": "native_cpp",
+      "sha256": "6c6e4502a53e7f901617d4d9ab1dac2935295bdae975c720726f07ad450702d0"
     },
     "src/minigames/d_s_mg_sound.cpp": {
       "mode": "native_cpp",
@@ -774,9 +894,21 @@
       "mode": "native_cpp",
       "sha256": "2b4725150ebdfe75ff82057d0e00fc74d7c25fdc8fa717871dc7c6056cafbbea"
     },
+    "src/minigames/unit020b2c84.cpp": {
+      "mode": "native_cpp",
+      "sha256": "651729a6ff8d344b1970233d87fa906f93bfd88d0f9a1326da34ad98ac45653f"
+    },
     "src/minigames/unit020b4aa4.cpp": {
       "mode": "native_cpp",
       "sha256": "4f329f0d0e59dbfa819d06e9af398812b5e63769f337278cc39dd7fd13bb7423"
+    },
+    "src/minigames/unit020bfec0.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a3a27022b2827dfb2d808ee765bd15e6b08959956ee385557d1576497fc9ac56"
+    },
+    "src/minigames/unit020cd744.cpp": {
+      "mode": "native_cpp",
+      "sha256": "da121e6feb8cc20adc932231da0e9c8df3ab5d70d5076fcaf539991521aae174"
     },
     "src/runtime/actor/ActorBase.cpp": {
       "mode": "native_cpp",

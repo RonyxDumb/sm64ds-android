@@ -1,3 +1,18 @@
+# Recovery checkpoint — 2026-10-29
+
+The prior local session recorded a complete 2407/2407 Android ARM64 census,
+then was reset before its final commit could be pushed. The published parent
+332fefcd1 preserved the earlier 2286/2407 checkpoint. Recovery now restores
+source changes from the recorded work in incremental GitHub checkpoints.
+
+This checkpoint restores the remaining C++ repairs and eight-byte member cells.
+ARM9 system-service and arithmetic changes are being restored next. The old
+full-census result is historical evidence until the recovered tree is rerun.
+The game still requires the packed stage factory at 0x0202e088 and subsequent
+stage/Player/camera/collision integration. No gameplay success is claimed.
+
+---
+
 # Android checkpoint — 2026-10-29, ARM64 source migration and scene factory
 
 **Not a finished or verified playable port.** All 2,407 original `src/` C/C++

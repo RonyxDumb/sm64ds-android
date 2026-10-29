@@ -1,0 +1,130 @@
+{
+  "dActor_c.h": [
+    {
+      "before": "int OnAttacked1(",
+      "after": "void OnAttacked1("
+    },
+    {
+      "before": "int OnAttacked2(",
+      "after": "void OnAttacked2("
+    }
+  ],
+  "daObjBlockL_c.h": [
+    {
+      "before": "int OnAttacked1(",
+      "after": "void OnAttacked1("
+    },
+    {
+      "before": "int OnAttacked2(",
+      "after": "void OnAttacked2("
+    }
+  ],
+  "daObjTatefuda_c.h": [
+    {
+      "before": "int  OnAttacked1(",
+      "after": "void  OnAttacked1("
+    }
+  ],
+  "daObjHatenaBlock_c.h": [
+    {
+      "before": "int OnAttacked1(",
+      "after": "void OnAttacked1("
+    }
+  ],
+  "daObjBk_Botaosi_c.h": [
+    {
+      "before": "int  OnAttacked2(",
+      "after": "void  OnAttacked2("
+    }
+  ],
+  "daObjYajirusi_c.h": [
+    {
+      "before": "int OnAttacked1(",
+      "after": "void OnAttacked1("
+    },
+    {
+      "before": "int  OnAttacked1(",
+      "after": "void  OnAttacked1("
+    },
+    {
+      "before": "typedef char daObjYajirusi_c_size_must_be_0x380[sizeof(daObjYajirusi_c) == 0x380 ? 1 : -1];",
+      "after": "// The cartridge record remains distinct from the native C++ actor.\nstruct YajirusiCartridgeLayout {\n u32 vtable; u8 p004[8]; u16 actorID; u8 p00e[0x4e];\n s32 position[3]; u8 p068[12]; s32 cameraX; u8 p078[0x16];\n s16 angleY; u8 p090[0x44]; u8 model[0x50]; u8 collider[0x1c8];\n s32 matrix[12]; u8 p31c[4]; u8 shadow[0x28]; s32 shadowMatrix[12];\n u8 p378[4]; u8 variant; u8 p37d[3];\n};\nstatic_assert(offsetof(YajirusiCartridgeLayout,actorID)==0xc);\nstatic_assert(offsetof(YajirusiCartridgeLayout,position)==0x5c);\nstatic_assert(offsetof(YajirusiCartridgeLayout,model)==0xd4);\nstatic_assert(offsetof(YajirusiCartridgeLayout,collider)==0x124);\nstatic_assert(offsetof(YajirusiCartridgeLayout,matrix)==0x2ec);\nstatic_assert(offsetof(YajirusiCartridgeLayout,shadow)==0x320);\nstatic_assert(offsetof(YajirusiCartridgeLayout,shadowMatrix)==0x348);\nstatic_assert(offsetof(YajirusiCartridgeLayout,variant)==0x37c);\ntypedef char daObjYajirusi_c_size_must_be_0x380[sizeof(YajirusiCartridgeLayout)==0x380?1:-1];"
+    }
+  ],
+  "daStar_c.h": [
+    {
+      "before": "volatile unsigned int func_ov002_020e8c34()",
+      "after": "void func_ov002_020e8c34()"
+    },
+    {
+      "before": "int func_ov002_020e8dd8()",
+      "after": "void func_ov002_020e8dd8()"
+    }
+  ],
+  "daOwl_c.h": [
+    {
+      "before": "#ifndef DAOWL_C_H\n",
+      "after": "#include \"runtime/stored_member.h\"\n#ifndef DAOWL_C_H\n"
+    },
+    {
+      "before": "int (daOwl_c::*mEnter)();",
+      "after": "sm64ds::native_abi::StoredMember<daOwl_c, int()> mEnter;"
+    },
+    {
+      "before": "int (daOwl_c::*mMain)();",
+      "after": "sm64ds::native_abi::StoredMember<daOwl_c, int()> mMain;"
+    }
+  ],
+  "daSnowman_c.h": [
+    {
+      "before": "#ifndef DASNOWMAN_C_H\n",
+      "after": "#include \"runtime/stored_member.h\"\n#ifndef DASNOWMAN_C_H\n"
+    },
+    {
+      "before": "int (daSnowman_c::*enter)();",
+      "after": "sm64ds::native_abi::StoredMember<daSnowman_c, int()> enter;"
+    },
+    {
+      "before": "int (daSnowman_c::*execute)();",
+      "after": "sm64ds::native_abi::StoredMember<daSnowman_c, int()> execute;"
+    }
+  ],
+  "daObjKurumajiku_c.h": [
+    {
+      "before": "SharedFilePtr *model;",
+      "after": "sm64ds::native_abi::StoredPointer<SharedFilePtr> model;"
+    },
+    {
+      "before": "SharedFilePtr *collision;",
+      "after": "sm64ds::native_abi::StoredPointer<SharedFilePtr> collision;"
+    },
+    {
+      "before": "CLPS_Block *clps;",
+      "after": "sm64ds::native_abi::StoredPointer<CLPS_Block> clps;"
+    }
+  ],
+  "decl_common.h": [
+    {
+      "before": "extern int func_ov029_021116e4;",
+      "after": "extern int func_ov029_021116e4(void *, void *, void *);"
+    },
+    {
+      "before": "extern int func_ov029_02111e60(void);",
+      "after": "extern int func_ov029_02111e60(void *, void *, void *);"
+    }
+  ],
+  "launder.h": [
+    {
+      "before": "#define LAUNDER_A(a) (*(int *)(((long long)(int)(a))      & 0xFFFFFFFFFFFFFFFFLL))\n",
+      "after": "#define LAUNDER_A(a) (*sm64ds::native_abi::pointer<int *>(a))\n"
+    },
+    {
+      "before": "#define LAUNDER_B(a) (*(int *)(((long long)(unsigned)(a)) & 0xFFFFFFFFFFFFFFFFLL))\n",
+      "after": "#define LAUNDER_B(a) (*sm64ds::native_abi::pointer<int *>(a))\n"
+    },
+    {
+      "before": "#define LAUNDER_C(a) (*(int *)(((long long)(long)(a))     & 0xFFFFFFFFFFFFFFFFLL))\n",
+      "after": "#define LAUNDER_C(a) (*sm64ds::native_abi::pointer<int *>(a))\n"
+    }
+  ]
+}

@@ -42,6 +42,8 @@ public:
     }
     operator T *() const { return pointer<T *>(address_); }
     T *operator->() const { return pointer<T *>(address_); }
+    template<class I, class U=T, std::enable_if_t<!std::is_void_v<U>, int> = 0>
+    U &operator[](I index) const { return pointer<U *>(address_)[index]; }
     template<class U=T, std::enable_if_t<!std::is_void_v<U>, int> = 0>
     U &operator*() const { return *pointer<U *>(address_); }
     template<class U> explicit operator U *() const { return pointer<U *>(address_); }

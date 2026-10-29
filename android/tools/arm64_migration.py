@@ -81,9 +81,10 @@ def disambiguate(raw):
     # ambiguity without changing evaluation or pointer arithmetic precedence.
     global _header_types
     if _header_types is None:
-        _header_types = set()
+        collected = set()
         for header in (ROOT / "include").rglob("*.h"):
-            _header_types.update(type_names(header.read_text()))
+            collected.update(type_names(header.read_text()))
+        _header_types = collected
     known = _header_types | type_names(raw)
     data = raw.encode()
     edits = []
@@ -131,11 +132,14 @@ def transform(raw):
         raw,
     )
     raw = disambiguate(raw)
+    raw, member_fields = re.subn(
+        r'int \((daOwl_c|daSnowman_c|daObjEwbIce_c)::\*(mEnter|mMain|enter|main|execute|update)\)\(\);',
+        r'sm64ds::native_abi::StoredMember<\1, int()> \2;', raw)
 
     def descriptors(m):
         return re.sub(
-            r"([A-Za-z_][\w:]*) \*(\w+);",
-            r"sm64ds::native_abi::StoredPointer<\1> \2;",
+            r"([A-Za-z_][\w:]*) \*(\w+)(\s*\[[^\]]+\])?;",
+            r"sm64ds::native_abi::StoredPointer<\1> \2\3;",
             m.group(),
         )
 
@@ -259,7 +263,7 @@ def transform(raw):
             at = c.end_byte
         return "".join(result) + b[at : n.end_byte].decode()
 
-    return '#include "runtime/native_abi.h"\n' + rewrite(root)
+    return '#include "runtime/native_abi.h"\n' + ('#include "runtime/stored_member.h"\n' if member_fields else '') + rewrite(root)
 
 
 def checked_inputs(profile):
@@ -362,6 +366,15 @@ def generate(out, clang):
         text = re.sub(
             r"^extern int (_ZTV\w+)\[\];$", r'extern "C" int \1[];', text, flags=re.M
         )
+        file.write_text(text)
+    views = json.loads((ROOT / "android/tools/arm64_header_views.json").read_text())
+    for name, edits in views.items():
+        file = out / "include" / name
+        text = file.read_text()
+        for edit in edits:
+            if text.count(edit["before"]) < 1:
+                raise ValueError("native header view changed: " + name)
+            text = text.replace(edit["before"], edit["after"])
         file.write_text(text)
     result = {}
     frontend = None
