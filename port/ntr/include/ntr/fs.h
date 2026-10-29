@@ -26,6 +26,11 @@ bool fs_mount_dir(const char *dir_path);
 void fs_unmount();
 bool fs_mounted();
 
+// Immutable view valid until fs_unmount(). Native Nitro archive drivers use
+// the cartridge's actual FNT/FAT and byte extents without copying the ROM.
+struct RomView { const uint8_t *bytes; uint32_t size; };
+bool fs_rom_view(RomView &out);
+
 int32_t fs_file_count();
 int32_t fs_overlay_count();          // = the root directory's first file ID
 

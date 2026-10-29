@@ -20,8 +20,8 @@ static_assert(sizeof(ActorProcessMethods)==24);
 int native_fbase_init(uint32_t actor);
 int native_fbase_behavior(uint32_t actor);
 int native_fbase_render(uint32_t actor);
-int native_fbase_before_behavior(uint32_t actor);
-int native_fbase_before_render(uint32_t actor);
+bool native_fbase_before_behavior(uint32_t actor);
+bool native_fbase_before_render(uint32_t actor);
 // Original func_02043fdc: process the intrusive behavior/render list through
 // ARM EABI member callbacks, preserving next-node-before-dispatch semantics.
 uint32_t native_fbase_process_list(uint32_t descriptor);

@@ -50,6 +50,15 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${REPO_ROOT}/android/tools/packed_sources.py"
     "${REPO_ROOT}/android/tools/frontend_manifest.json" ${PACKED_FRONTEND_INPUTS})
 add_library(sm64ds_frontend STATIC ${PACKED_FRONTEND_SOURCES})
+set(STAGE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/stage-src")
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/packed_sources.py"
+    --out "${STAGE_ROOT}" --manifest "${REPO_ROOT}/android/tools/stage_manifest.json"
+    COMMAND_ERROR_IS_FATAL ANY)
+include("${STAGE_ROOT}/sources.cmake")
+target_sources(sm64ds_frontend PRIVATE ${PACKED_FRONTEND_SOURCES})
+include("${STAGE_ROOT}/inputs.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${REPO_ROOT}/android/tools/stage_manifest.json" ${PACKED_FRONTEND_INPUTS})
 # Projected POD headers must never enter native runtime includes.
 target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
@@ -66,7 +75,7 @@ target_compile_options(sm64ds_frontend PRIVATE -Wno-comment -Wno-implicit-fallth
     -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-value)
 set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
-    runtime/packed_memory.cpp runtime/actor_dispatch.cpp runtime/collision_dispatch.cpp)
+    runtime/packed_memory.cpp runtime/packed_fs.cpp runtime/actor_dispatch.cpp runtime/collision_dispatch.cpp)
 target_link_libraries(sm64ds_android PRIVATE sm64ds_frontend dl)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"

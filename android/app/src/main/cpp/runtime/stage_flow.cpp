@@ -1,5 +1,7 @@
 #include "stage_flow.h"
 #include "stage_runtime.h"
+#include "packed_fs.h"
+#include "boot_seams.h"
 #include "collision_dispatch.h"
 #include "resources.h"
 #include "packed_ptr.h"
@@ -17,6 +19,9 @@ int sqrt(unsigned long long);
 s16 atan2(s32, s32);
 s32 fdiv(s32, s32);
 }
+
+namespace sm64ds::frontend { void bind_sources(packed::Space &); }
+namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
 
 namespace {
 u16 buttonMaps[3][16]{};
@@ -104,15 +109,17 @@ void StageFlow::prepare_scene() {
     // these data; this does NOT substitute for them.
     auto nextAssets = std::make_unique<StageAssets>(
         StageAssets::load(cartridge_, static_cast<uint8_t>(data_02092110)));
+    auto nextCommon = std::make_unique<Cartridge::DataImage>(cartridge_.overlay_data(1));
     // The original ARM9 BSS ends before the *first* resident overlay.
     // Mapping it to the level overlay would swallow overlay 2's addresses
     // and collide with the actor dispatch/ID tables on ARM64.
-    const uint32_t overlayBoundary =
-        std::min(nextAssets->overlay().base, nextAssets->object_overlay().base);
+    const uint32_t overlayBoundary = std::min(
+        {nextCommon->base,nextAssets->overlay().base,nextAssets->object_overlay().base});
     auto nextArm9 = std::make_unique<Cartridge::DataImage>(
         cartridge_.arm9_data(overlayBoundary));
     auto nextSpace = std::make_unique<packed::Space>(Resources::active().heap());
     nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
+    nextSpace->map(nextCommon->base,nextCommon->bytes.data(),nextCommon->bytes.size());
     nextSpace->map(nextAssets->overlay().base, nextAssets->overlay().bytes.data(),
                    nextAssets->overlay().bytes.size());
     // Overlay 2 holds the actor factory and category dispatch data used by
@@ -121,6 +128,16 @@ void StageFlow::prepare_scene() {
     const auto &objectOverlay = nextAssets->object_overlay();
     nextSpace->map(objectOverlay.base, const_cast<uint8_t *>(objectOverlay.bytes.data()),
                    objectOverlay.bytes.size());
+    for (auto span : {std::make_pair(ntr::IO_BASE,ntr::IO_SIZE),
+                      std::make_pair(ntr::PLTT_BASE,ntr::PLTT_SIZE),
+                      std::make_pair(ntr::VRAM_BASE,ntr::VRAM_SIZE),
+                      std::make_pair(ntr::OAM_BASE,ntr::OAM_SIZE)})
+        nextSpace->map(static_cast<uint32_t>(span.first),
+                       ntr::host_ptr(static_cast<uint32_t>(span.first)),span.second);
+    // Reuse the real checked SDK/model/particle functions already linked for
+    // the title. Stage methods have their own complete-source ABI bindings.
+    frontend::bind_sources(*nextSpace);
+    stage_sources::bind_sources(*nextSpace);
     // src/unnamed/arm9/0201/func_0201a054.c installs this very table at
     // startup. Keep its cartridge words intact; factories resolve only via
     // explicitly registered native code in the stage's address space.
@@ -148,6 +165,8 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02014fa4u, &native_collision_unlink);
     nextSpace->bind(0x02014aa8u, &native_collision_process);
     bind_stage_runtime(*nextSpace);
+    bind_packed_fs(*nextSpace);
+    initialize_packed_fs(*nextSpace);
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(
@@ -159,7 +178,9 @@ void StageFlow::prepare_scene() {
     addressSpace_.reset();
     assets_ = std::move(nextAssets);
     arm9Image_ = std::move(nextArm9);
+    commonOverlay_ = std::move(nextCommon);
     addressSpace_ = std::move(nextSpace);
+    sync_state(true);
     sceneActor_ = 0;
     sceneInitialized_ = false;
 }
@@ -207,6 +228,7 @@ uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t ki
     // The original post-construction scheduler already runs InitResources.
     // A successful actor has aliveState == 1 and must not initialize twice.
     sceneInitialized_ = *Ptr<uint8_t>(actor+0x0e) == 1;
+    sync_state(false);
     return actor;
 }
 
@@ -214,14 +236,76 @@ void StageFlow::update_scene() {
     if (!sceneActor_ || !addressSpace_)
         throw std::runtime_error("Scene tick without an original scene actor.");
     packed::Space::Scope scope(*addressSpace_);
+    sync_state(true);
     ActorDispatch dispatch(*addressSpace_);
     if (!sceneInitialized_) {
         const int result = dispatch.process(sceneActor_, {{0,1}, {4,1}, {8,1}});
-        if (result != 1) return;
+        if (result != 1) { sync_state(false); return; }
         sceneInitialized_ = true;
     }
     dispatch.process(sceneActor_, {{24,1}, {28,1}, {32,1}});
     dispatch.process(sceneActor_, {{36,1}, {40,1}, {44,1}});
+    sync_state(false);
+}
+
+void StageFlow::sync_state(bool toPacked) {
+    // Only native-owned boot/input/save lanes are marshalled. Every other
+    // stage global and all pointer tables remain in the cartridge data image.
+    // Aliasing a widened native object into that image would corrupt offsets.
+    auto copy=[&](uint32_t address,void *native,size_t bytes) {
+        void *record=addressSpace_->data(address,bytes);
+        if (toPacked) std::memcpy(record,native,bytes);
+        else std::memcpy(native,record,bytes);
+    };
+#define SYNC_STAGE(name, address) copy(address,&name,sizeof name)
+    SYNC_STAGE(data_0208a0e0,0x0208a0e0u);
+    SYNC_STAGE(data_02092110,0x02092110u);
+    SYNC_STAGE(data_02092118,0x02092118u);
+    SYNC_STAGE(data_0209211c,0x0209211cu);
+    SYNC_STAGE(data_02092124,0x02092124u);
+    SYNC_STAGE(data_02092114,0x02092114u);
+    SYNC_STAGE(data_02092128,0x02092128u);
+    SYNC_STAGE(data_02092144,0x02092144u);
+    SYNC_STAGE(data_0209f2f8,0x0209f2f8u);
+    SYNC_STAGE(data_0209f2f4,0x0209f2f4u);
+    SYNC_STAGE(data_0209f1f0,0x0209f1f0u);
+    SYNC_STAGE(data_0209f220,0x0209f220u);
+    SYNC_STAGE(data_0209f26c,0x0209f26cu);
+    SYNC_STAGE(data_0209f200,0x0209f200u);
+    SYNC_STAGE(data_0209f268,0x0209f268u);
+    SYNC_STAGE(data_0209f24c,0x0209f24cu);
+    SYNC_STAGE(data_0209f270,0x0209f270u);
+    SYNC_STAGE(data_0209f2d8,0x0209f2d8u);
+    SYNC_STAGE(data_0209f254,0x0209f254u);
+    SYNC_STAGE(data_0209f228,0x0209f228u);
+    SYNC_STAGE(data_0209f498,0x0209f498u);
+    SYNC_STAGE(data_0209fc50,0x0209fc50u);
+    SYNC_STAGE(data_0209fc5c,0x0209fc5cu);
+    SYNC_STAGE(data_0209fc64,0x0209fc64u);
+    SYNC_STAGE(data_0209f21c,0x0209f21cu);
+    SYNC_STAGE(data_0209f350,0x0209f350u);
+    SYNC_STAGE(data_0209f294,0x0209f294u);
+    SYNC_STAGE(data_0209f2c4,0x0209f2c4u);
+    SYNC_STAGE(data_0209f20c,0x0209f20cu);
+    SYNC_STAGE(data_020a1166,0x020a1166u);
+    SYNC_STAGE(data_0209f368,0x0209f368u);
+    SYNC_STAGE(data_0209d660,0x0209d660u);
+    SYNC_STAGE(data_0209d454,0x0209d454u);
+    SYNC_STAGE(data_0209d45c,0x0209d45cu);
+    SYNC_STAGE(data_ov002_02111180,0x02111180u);
+#undef SYNC_STAGE
+    // The original stage views this flag as a word. Its native boot owner
+    // exposes a byte; copy the value with its proper width on each side.
+    if (toPacked) {
+        const uint32_t value=data_0209fc48;
+        std::memcpy(addressSpace_->data(0x0209fc48u,4),&value,4);
+    } else {
+        uint32_t value=0;
+        std::memcpy(&value,addressSpace_->data(0x0209fc48u,4),4);
+        if (value>UINT8_MAX) throw std::runtime_error("Invalid stage music-control flag.");
+        data_0209fc48=static_cast<uint8_t>(value);
+    }
+    copy(0x0209caa0u,data_0209caa0,0x32c);
 }
 
 std::vector<StageAssets::PlayerSpawnCommand> StageFlow::player_spawn_commands(

@@ -1,9 +1,14 @@
 #include "stage_runtime.h"
 #include "actor_dispatch.h"
+#include "boot_seams.h"
 #include "packed_ptr.h"
+#include "platform/arm9_services.h"
 #include <cstring>
 #include <unordered_set>
 #include <stdexcept>
+
+extern "C" uint8_t GetControllerMode(int);
+extern "C" int GetOwnerLanguage();
 
 namespace sm64ds {
 namespace {
@@ -50,6 +55,39 @@ bool stage_before_init(uint32_t actor) {
     // The complete dScStage_c::BeforeInitResources body. The real scene
     // method must be bound separately; an unknown method never succeeds.
     return Ptr<bool(uint32_t)>(0x0202e66cu)(actor);
+}
+
+bool fbase_before_init(uint32_t actor) {
+    (void)packed::Space::current().data(actor,0x50);
+    return true;
+}
+
+bool scene_reset_faders_and_sound(uint32_t actor) {
+    // Complete dScene_c::ResetFadersAndSound. The shared color fader is
+    // native-owned by GameProgram, so its actual C++ methods use the host
+    // object. The current scene remains a checked cartridge actor handle.
+    at<uint32_t>(0x0209f5c0u)=actor;
+    if (!fbase_before_init(actor)) return false;
+    dScene_c::SetFaders(&data_0209f5e8);
+    at<uint32_t>(0x0209f1e4u)=0;
+    Ptr<void()>(0x02011b7cu)();
+    return true;
+}
+
+void stage_flush_fifo(uint32_t port) {
+    // The original hand-unrolled func_020553c0 writes 32 groups of four
+    // zero words to a fixed destination. Reuse its verified native primitive.
+    void *destination;
+    if (port>=ntr::IO_BASE && uint64_t(port)+16<=ntr::IO_BASE+ntr::IO_SIZE)
+        destination=reinterpret_cast<void *>(static_cast<uintptr_t>(port));
+    else destination=packed::Space::current().data(port,16);
+    const uint32_t zeros[128]{};
+    platform::copy_fixed(zeros,destination,sizeof zeros,16);
+}
+
+void stage_fill(uint32_t destination,int value,int bytes) {
+    if (bytes<0) throw std::runtime_error("Negative stage memory fill extent.");
+    if (bytes) std::memset(packed::Space::current().data(destination,static_cast<uint32_t>(bytes)),value,static_cast<uint32_t>(bytes));
 }
 }
 
@@ -199,5 +237,11 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02039894u,&native_mesh_collider_construct);
     space.bind(0x020433b8u,&native_actor_post_construct);
     space.bind(0x0202ddc8u,&stage_before_init);
+    space.bind(0x02043c78u,&fbase_before_init);
+    space.bind(0x0202e66cu,&scene_reset_faders_and_sound);
+    space.bind(0x020553c0u,&stage_flush_fifo);
+    space.bind(0x0205a588u,&stage_fill);
+    space.bind(0x02020054u,&GetControllerMode);
+    space.bind(0x0203d880u,&GetOwnerLanguage);
 }
 }

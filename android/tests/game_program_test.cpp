@@ -3,6 +3,7 @@
 #include "runtime/save_store.h"
 #include "pc_audio/stream.h"
 #include "runtime/boot_seams.h"
+#include "runtime/packed_ptr.h"
 #include "ntr/lz77.h"
 #include <cassert>
 #include <climits>
@@ -73,6 +74,54 @@ void narc_bounds() {
         rejected = true;
     }
     assert(rejected);
+}
+
+void packed_card_io(sm64ds::packed::Space &space) {
+    using sm64ds::packed::Ptr;
+    sm64ds::packed::Space::Scope scope(space);
+    const auto file=space.allocate(0x44),path=space.allocate(20),target=space.allocate(64);
+    std::memcpy(space.data(path,19),"/ARCHIVE/arc0.narc",19);
+    Ptr<void(uint32_t)>(0x0205d874u)(file); // original FS_InitFile
+    assert(Ptr<int(uint32_t,uint32_t)>(0x0205d518u)(file,path)==1);
+    const uint32_t top=*Ptr<uint32_t>(file+0x20),bottom=*Ptr<uint32_t>(file+0x24);
+    assert(bottom>top && *Ptr<uint32_t>(file+0x28)==top);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,target,16,0)==16);
+    assert(std::memcmp(space.data(target,4),"NARC",4)==0);
+    assert(*Ptr<uint32_t>(file+0x28)==top+16);
+    *Ptr<uint32_t>(file+0x28)=bottom-4;
+    std::memset(space.data(target,64),0xa5,64);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,target,64,1)==4);
+    assert(*Ptr<uint32_t>(file+0x28)==bottom);
+    assert((*Ptr<uint32_t>(file+0xc)&0xf)==0 && *Ptr<uint32_t>(file+0x14)==0);
+    for(unsigned i=4;i<64;++i) assert(*Ptr<uint8_t>(target+i)==0xa5);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,0,16,0)==0);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,0,-1,0)==0);
+    assert(Ptr<int(uint32_t)>(0x0205d4ccu)(file)==1);
+    assert(*Ptr<uint32_t>(file+8)==0 && *Ptr<uint32_t>(file+0x10)==0xc);
+    assert(Ptr<int(uint32_t)>(0x0205d4ccu)(file)==0);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,target,4,0)==-1);
+    // FS_LoadArchiveTables changes FAT/FNT lanes to absolute handles and
+    // sets TABLE_LOAD. Exercise the same public open/read/close operations.
+    const uint32_t archive=*Ptr<uint32_t>(0x020a804cu);
+    const uint32_t base=*Ptr<uint32_t>(archive+0x1c),flags=*Ptr<uint32_t>(archive+0x10);
+    const uint32_t fat=*Ptr<uint32_t>(archive+0x20),fatSize=*Ptr<uint32_t>(archive+0x24);
+    const uint32_t fnt=*Ptr<uint32_t>(archive+0x28),fntSize=*Ptr<uint32_t>(archive+0x2c);
+    const uint32_t tables=space.allocate(fatSize+fntSize,32);
+    std::memcpy(space.data(tables,fatSize),space.data(base+fat,fatSize),fatSize);
+    std::memcpy(space.data(tables+fatSize,fntSize),space.data(base+fnt,fntSize),fntSize);
+    *Ptr<uint32_t>(archive+0x20)=tables;
+    *Ptr<uint32_t>(archive+0x28)=tables+fatSize;
+    *Ptr<uint32_t>(archive+0x10)=flags|4;
+    Ptr<void(uint32_t)>(0x0205d874u)(file);
+    assert(Ptr<int(uint32_t,uint32_t)>(0x0205d518u)(file,path)==1);
+    assert(Ptr<int(uint32_t,uint32_t,int,int)>(0x0205d688u)(file,target,16,0)==16);
+    assert(std::memcmp(space.data(target,4),"NARC",4)==0);
+    assert(Ptr<int(uint32_t)>(0x0205d4ccu)(file)==1);
+    *Ptr<uint32_t>(archive+0x20)=fat;
+    *Ptr<uint32_t>(archive+0x28)=fnt;
+    *Ptr<uint32_t>(archive+0x10)=flags;
+    space.release(tables);
+    space.release(target);space.release(path);space.release(file);
 }
 
 void stage_controls(const char *rom) {
@@ -342,6 +391,7 @@ int main(int argc, char **argv) {
             }
             auto *stageSpace = game.stage_address_space();
             assert(stageSpace);
+            packed_card_io(*stageSpace);
             assert(stageSpace->data(assets->descriptor().levelAddress, 0x1c) ==
                    assets->overlay_at(assets->descriptor().levelAddress, 0x1c));
             assert(stageSpace->address(assets->overlay_at(
@@ -386,7 +436,11 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0202e66cu);
+                    "Unlinked native code handle: " + std::to_string(0x0202ded4u);
+                if (std::getenv("SM64DS_TRACE_STAGE")) {
+                    std::cerr << "Actual stage dependency: " << e.what() << '\n';
+                    reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
+                }
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
@@ -415,6 +469,30 @@ int main(int argc, char **argv) {
             assert(stageWord(actor+0x91c+12)==uint32_t(-0x1000));
             assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x91c+20,1))==0x18);
             assert(stageWord(actor+0x9c4)==0);
+            assert(stageWord(0x0209f5c0u)==actor);
+            assert(stageWord(0x0209f314u)==actor+0x8bc);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x0209f2f8u,1))==1);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x0209f21cu,1))==1);
+            // Original LoadArchive/func_02018934 and NARC mounting ran. These
+            // point at genuine owned archive bytes, never residency sentinels.
+            const unsigned languageArchive=GetOwnerLanguage()==2?9:GetOwnerLanguage()==3?10:
+                                           GetOwnerLanguage()==4?11:GetOwnerLanguage()==5?12:8;
+            for (unsigned archive : {0u,6u,7u,languageArchive}) {
+                const uint32_t record=stageWord(0x0208ecf4u+archive*20);
+                assert(record && (record&15)==0);
+                assert(stageSpace->allocation_size(record)>0x60);
+                assert(stageWord(record+0x50)==record+0x60);
+                assert(std::memcmp(stageSpace->data(record+0x60,4),"NARC",4)==0);
+                assert((stageWord(record+0x10)&2)!=0);
+                assert(stageWord(record+0x54)>=record+0x60);
+                assert(stageWord(record+0x58)>stageWord(record+0x54));
+            }
+            for (unsigned character=0;character<3;++character) {
+                const bool unlocked=(uint32_t(expected[selected][8])&(1u<<character))!=0;
+                assert(*static_cast<uint8_t *>(stageSpace->data(0x020ad628u+character,1))==
+                       (unlocked?0x10:0));
+                assert(stageWord(0x020ad634u+character*4)==0);
+            }
             assert(game.requested_scene() == 3); // failed spawn never publishes success
             // This source path previously wrote the DS +0xc offset into the
             // native fader's speed. Verify the actual native color member.

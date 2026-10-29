@@ -1,4 +1,40 @@
-# Current checkpoint — 2026-10-29, original packed stage construction
+# Current checkpoint — 2026-10-29, stage resources and native card I/O
+
+The complete original dScStage_c::InitResources body now executes as checked
+native C++ against its 0x9c8 cartridge record. The committed stage manifest
+contains 45 bindings from 38 source units, with source/header hashes and native
+code lookups for all imports. No branch or missing callee is replaced by a
+success value. The regular build applies this manifest without parser packages.
+
+Private-ROM execution now passes the scene fader/audio reset, full scene/3D
+register setup, input reset, level-state initialization, archive loading and
+cap-icon setup. The next genuine missing binding is LoadLevelOverlays at
+0x0202ded4, still within the original initialization call and spawn phase 5.
+The actor has not completed initialization; gameplay is not yet running.
+
+Overlay 1 is now loaded alongside overlay 2 and the level overlay. Previously
+its entire interval was incorrectly exposed as zero-filled ARM9 BSS. The native
+card provider maps the immutable cartridge, registers its actual FNT/FAT through
+the recovered SDK, and performs real file open/read/close operations. The original
+LoadArchive, archive allocation, NARC parser, registry and mounting functions run
+unchanged through their checked views. Common, text/language and castle archives
+are genuine owned allocations, with real NARC bytes and FAT/FIMG pointers.
+The allocator preserves signed alignment; current default-heap ownership is
+explicit and checked. Native-owned boot/input/save lanes are marshalled into
+the stage image without aliasing widened C++ records onto DS layouts.
+
+ASan/UBSan private-ROM checks pass for all four file/character launches and
+verify the constructed stage plus those mounted archives. Card checks exercise
+FNT lookup, content reads, EOF clamping, immediate async completion, negative
+length, close/reclose, and relocated FAT/FNT tables. Platform arithmetic/context
+and native address/member migration regressions also pass. The preceding
+constructor checkpoint 5245da5af6b8a9c181d0c4c046dc96f46b5cd516 passed the full
+[Android APK/lint workflow](https://github.com/RonyxDumb/sm64ds-android/actions/runs/40866286900).
+The APK workflow runs again for this runtime checkpoint.
+
+---
+
+# Original packed stage construction
 
 The recovered source checkpoint 5d349ff28241be67f9500e8089f2625e5bb3347b
 passes both the full 2407/2407 ARM64 census and the complete Android APK/lint

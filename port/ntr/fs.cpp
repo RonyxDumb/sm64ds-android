@@ -170,6 +170,11 @@ void fs_unmount() {
 }
 
 bool fs_mounted() { return g.mounted; }
+bool fs_rom_view(RomView &out) {
+    if (!g.mounted || g.from_dir || g.rom.empty()) { out={nullptr,0}; return false; }
+    out={g.rom.data(),static_cast<uint32_t>(g.rom.size())};
+    return true;
+}
 int32_t fs_file_count() { return static_cast<int32_t>(g.files.size()); }
 int32_t fs_overlay_count() { return g.overlays; }
 

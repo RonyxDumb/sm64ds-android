@@ -29,13 +29,13 @@ int native_fbase_render(uint32_t actor) {
     (void)packed::Space::current().data(actor, 0x50);
     return 1;
 }
-int native_fbase_before_behavior(uint32_t actor) {
+bool native_fbase_before_behavior(uint32_t actor) {
     // fBase_c::shouldBeKilled at +0x0f, pauseFlags at +0x13.
     const auto *state = static_cast<const uint8_t *>(
         packed::Space::current().data(actor, 0x50));
     return state[0x0f] || (state[0x13] & 2u) ? 0 : 1;
 }
-int native_fbase_before_render(uint32_t actor) {
+bool native_fbase_before_render(uint32_t actor) {
     const auto *state = static_cast<const uint8_t *>(
         packed::Space::current().data(actor, 0x50));
     return state[0x0f] || (state[0x13] & 8u) ? 0 : 1;

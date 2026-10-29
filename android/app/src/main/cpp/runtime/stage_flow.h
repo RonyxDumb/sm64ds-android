@@ -39,10 +39,12 @@ private:
     // Original ARM9 + level overlay data, exposed at unchanged DS addresses
     // through checked native handles (not raw ARM64 pointer narrowing).
     std::unique_ptr<Cartridge::DataImage> arm9Image_;
+    std::unique_ptr<Cartridge::DataImage> commonOverlay_;
     std::unique_ptr<packed::Space> addressSpace_;
     void reset_input();
     void check_camera_input(u32 cameraFlags);
     void check_input();
+    void sync_state(bool toPacked);
     bool inputEnabled_ = false;
     uint32_t sceneActor_ = 0;
     bool sceneInitialized_ = false;

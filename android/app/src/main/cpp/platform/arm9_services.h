@@ -25,7 +25,8 @@ struct Services{
 inline uint32_t mask_update(uint32_t mask,uint32_t value){
  uint32_t old=ntr::rt_irq_masked()?0x80:0;
  if(mask&0x40)old|=Services::current().fiq.exchange(value&0x40);else old|=Services::current().fiq.load();
- if(mask&0x80)ntr::rt_irq_restore(value&0x80);return old&mask;
+ if(mask&0x80) ntr::rt_irq_restore(value&0x80);
+ return old&mask;
 }
 inline uint32_t processor_status(){return 0x1f|(ntr::rt_irq_masked()?0x80:0)|Services::current().fiq.load();}
 inline void cache_fence(){std::atomic_thread_fence(std::memory_order_seq_cst);}

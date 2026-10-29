@@ -25,6 +25,17 @@
     "src/engine/collision/d_bg_ch_sph_crr_query.cpp": "9b60cb2a7ff9c44094a5167474e1360131d43ae3c96854f548f61f9b6cd9729e",
     "src/func_0203b244.c": "bff674e6a883036e3742a34e595558d9a50a8da2baf3443bf83ae34f17753245",
     "src/unnamed/arm9/0204/func_0204335c.c": "aafc9dcda60d7ca874b082b79b7a819721fa611f4205809cfcb576d4d00fee44",
-    "config/arm9/symbols.txt": "b41cde3a0514bcb64250ee61d2da0b33e99e6194462fe14ab53f1009fb63a273"
+    "config/arm9/symbols.txt": "b41cde3a0514bcb64250ee61d2da0b33e99e6194462fe14ab53f1009fb63a273",
+    "src/unnamed/arm9/0205/func_020553c0.c": "de38d34679a231161669e73ed3a2b7c41b34f065bd64e1f89ebbee366305d609",
+    "android/app/src/main/cpp/platform/arm9_services.h": "dd6e99e2d963a9bb1cd6eb4202dfa37e320a69394ddfd9aa138bd07530c9e01a",
+    "src/FS_InitFile.c": "ba2c89e29a0ca0b8f4d6b5810bf6418e333ff1df5c25b763df943497e5d97527",
+    "src/FS_CloseFile.c": "c593a727f3bf3a83329506811428cf97c07804c4d5d05afbc4ae00ce0f77254c",
+    "src/unnamed/arm9/0205/func_0205d518.c": "2e5884de64ec3d83780788692dd9bdd36de884cf70d8069d991bb77a5a933c66",
+    "src/unnamed/arm9/0205/func_0205d568.c": "23a088bc8fe25d4b0a9f85eeb4c82224cc0eaf6066b131bcc39eedda539b9b0f",
+    "src/unnamed/arm9/0205/func_0205d688.c": "ae4bf6ee32690d820516d3bcbec0c740838994e5b3c6c01f4da6ee4245dc6637",
+    "src/GetOwnerLanguage.c": "0a06b436dbf8347cf33cb001c5cea891c5d3596830dde31299b58036443fe7d1",
+    "include/Heap.h": "03773b4bb164aebcb4e9eb51b118b0f75f6e3705649fcb3495c13b3979e9861b",
+    "include/CapIconMgr.h": "ebeaec9dd537f5753276f3c04e59daa0bad2ef5aae27c2560d7670c0d520fadc",
+    "src/unnamed/arm9/0205/func_0205c9b8.c": "067064e38de39354a1b9525a353f26477374d946348dbf1fb79dd815a5e805f8"
   }
 }

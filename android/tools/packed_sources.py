@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -11,6 +12,9 @@ def generate(out, manifest=None):
     data = json.loads((manifest or ROOT/'android/tools/frontend_manifest.json').read_text())
     if data['version'] != 1:
         raise ValueError('unsupported frontend manifest')
+    namespace = data.get('namespace', 'frontend')
+    if not re.fullmatch(r'[a-zA-Z_][a-zA-Z_0-9]*', namespace):
+        raise ValueError('invalid source binding namespace')
     sources = []
     inputs = set()
     for path,digest in data.get('dependencies',{}).items():
@@ -32,7 +36,7 @@ def generate(out, manifest=None):
         else:
             dest = out/(source.stem + '.cpp')
             text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n'
-                    'namespace sm64ds::frontend::unit_' + source.stem + ' {\n'
+                    'namespace sm64ds::' + namespace + '::unit_' + source.stem + ' {\n'
                     'using namespace sm64ds::packed;\n#pragma pack(push, 4)\n' +
                     ('#define bool int\n' if source.suffix == '.c' else '') + row['source'] +
                     '\n#undef bool\n#pragma pack(pop)\n}\n')
@@ -44,7 +48,7 @@ def generate(out, manifest=None):
         symbols = sorted({binding['symbol'] for binding in data['bindings']})
         text = '#include "runtime/packed_memory.h"\nextern "C" {\n'
         text += ''.join('void '+name+'();\n' for name in symbols)+'}\n'
-        text += 'namespace sm64ds::frontend {\nvoid bind_sources(packed::Space &space) {\n'
+        text += 'namespace sm64ds::' + namespace + ' {\nvoid bind_sources(packed::Space &space) {\n'
         text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol']) for b in data['bindings'])
         text += '}\n}\n'
         dest.write_text(text)

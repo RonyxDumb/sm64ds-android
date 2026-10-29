@@ -26,7 +26,7 @@ public:
     void map(uint32_t address, void *memory, size_t size);
     void *data(uint32_t address, size_t bytes) const;
     uint32_t address(const void *pointer);
-    uint32_t allocate(uint32_t bytes);
+    uint32_t allocate(uint32_t bytes, int alignment = 4);
     uint32_t allocation_size(uint32_t address) const;
     void release(uint32_t address);
     size_t allocations() const { return allocations_.size(); }

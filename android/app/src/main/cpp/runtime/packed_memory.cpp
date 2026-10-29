@@ -183,8 +183,8 @@ uint32_t Space::address(const void *p) {
             << " (not in a registered span or a readable/writable native allocator mapping)";
     throw std::runtime_error(message.str());
 }
-uint32_t Space::allocate(uint32_t n) {
-    void *p=heap_.allocate(n,4);
+uint32_t Space::allocate(uint32_t n, int alignment) {
+    void *p=heap_.allocate(n,alignment);
     if (!p) throw std::runtime_error("Native frontend heap is full.");
     std::memset(p,0,heap_.size_of(p));
     uint32_t a=0x10000000+heap_.offset_of(p);
