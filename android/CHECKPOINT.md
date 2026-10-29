@@ -1,3 +1,37 @@
+# Current checkpoint — 2026-10-29, title capture timing and unobstructed menu input
+
+Version `0.4.2-video-capture` (versionCode 6) fixes a concrete timing bug:
+`GameProgram::frame` could run up to four native ticks before rasterizing once.
+The original title (`ov007_020b0358` / `ov007_020b6eb4`) requests a one-shot
+capture on one tick and changes the BG/VRAM use on the next. A pending capture
+now forces scanout at the end of its native tick, including inside catch-up
+batches. Ordinary frames retain one final presentation per Android callback.
+This prevents skipped captures from leaving tiled data in a captured bitmap.
+
+The boot and title/save menus now show only a small START control. Stick,
+A/B/X/Y, shoulders and camera overlays are enabled from the actual active
+scene-3 state, not a timer. Hidden controls do not intercept menu stylus input.
+Physical gamepads remain connected. Touch conversion now matches the renderer's
+integer full-surface viewports even when display cutouts/navigation insets move
+the virtual controls.
+
+The PPU regression covers the title's actual capture control value 0x80370010,
+the destination at bank D+0x8000, one-shot completion and all 49,152 pixels after
+D is remapped to a mode-3 bitmap. Java coverage includes menu controls, physical
+gamepads and odd-size landscape surfaces with asymmetric insets. These checks
+are part of the existing Android workflow; see this commit's workflow result
+for execution evidence. Both engines' BG registers, capture state and all nine
+VRAM bank controls are now included in the exported VIDEO log.
+
+Work in this checkpoint was prepared through GitHub because the attached local
+execution environment was unavailable. No on-phone visual verification or
+private-ROM execution was possible in this session. The screenshot's complete
+rendering issue is therefore not declared resolved solely from compilation.
+The two title LCDs remain visible; full-screen gameplay/minimap work and the
+existing stage LoadLevelOverlays integration blocker remain separate work.
+
+---
+
 # Current checkpoint — 2026-10-29, correct ARM9 startup data and module bindings
 
 The ARM9 data image now follows the original CRT0 module parameters and

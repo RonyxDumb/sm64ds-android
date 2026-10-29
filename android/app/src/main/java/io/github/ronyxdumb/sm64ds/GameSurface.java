@@ -7,6 +7,14 @@ final class GameSurface extends GLSurfaceView implements GLSurfaceView.Renderer 
     interface Failure {
         void report(String text);
     }
+    interface Presentation {
+        void gameplayControls(boolean visible);
+    }
+    private volatile Presentation presentation;
+    private int lastPresentation = -1;
+    void presentation(Presentation listener) {
+        presentation = listener;
+    }
     private final String rom;
     private final Failure failure;
     private long handle, lastFrame, lastHeartbeat;
@@ -76,8 +84,17 @@ final class GameSurface extends GLSurfaceView implements GLSurfaceView.Renderer 
                 axisX = x;
                 axisY = y;
             }
-            NativeBridge.drawRenderer(handle, width, height, dt, keys, axisX, axisY, inputTx,
-                                      inputTy, audioEnabled);
+            boolean gameplay = NativeBridge.drawRenderer(
+                handle, width, height, dt, keys, axisX, axisY, inputTx, inputTy, audioEnabled);
+            int next = gameplay ? 1 : 0;
+            if (next != lastPresentation) {
+                lastPresentation = next;
+                post(() -> {
+                    Presentation listener = presentation;
+                    if (listener != null)
+                        listener.gameplayControls(gameplay);
+                });
+            }
         } catch (Throwable e) {
             // Save the complete Java/JNI exception BEFORE cleanup can fail.
             CrashReport.failure("RENDER-ERROR", e);

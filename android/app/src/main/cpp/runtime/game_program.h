@@ -86,7 +86,8 @@ private:
     bool complete_ = false;
     uint64_t ticks_ = 0;
     double accumulated_ = 0;
-    bool batchFrame_ = false; // draw once after all native 59.826 Hz simulation ticks
+    bool batchFrame_ = false; // ordinary presentation is deferred, captures are not
+    void finish_tick();
     void scanout();
 };
 }

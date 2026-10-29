@@ -395,6 +395,15 @@ void GameProgram::frame(double seconds, uint32_t keys, float x, float y, int tx,
         scanout();
     }
 }
+void GameProgram::finish_tick() {
+    ++ticks_;
+    // The title captures one frame, then reuses that VRAM bank as a bitmap
+    // on the next tick (ov007_020b0358 / ov007_020b6eb4). Even inside an
+    // Android catch-up batch, that write must complete BEFORE the next tick
+    // changes the bank or display mode. Only ordinary presentation can wait.
+    if (ntr::ppu_frame_required(!batchFrame_))
+        scanout();
+}
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     input_.update(keys, x, y, tx, ty, data_02092664 != 3);
     if (data_02092664 == 3)
@@ -407,7 +416,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     }
     if (activeScene_ == 3 && data_02092664 == NoScene) {
         stage_.update_scene();
-        ++ticks_; if (!batchFrame_) scanout(); return;
+        finish_tick(); return;
     }
     if (activeScene_==1 && data_02092664==NoScene) {
         if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
@@ -416,7 +425,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         const int result=frontend_->update(input_.raw_buttons(),tx,ty);
         frontend_->render();
         accept_title_result(result);
-        ++ticks_; if (!batchFrame_) scanout(); return;
+        finish_tick(); return;
     }
     if (data_02092664 != NoScene) {
         if (data_0209f5bc->IsAtStart())
@@ -437,14 +446,14 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 activeScene_=1; data_02092664=NoScene;
                 const int result=frontend_->update(input_.raw_buttons(),tx,ty);
                 frontend_->render(); accept_title_result(result);
-                ++ticks_; if (!batchFrame_) scanout(); return;
+                finish_tick(); return;
             }
             if (data_02092664 == 3) {
                 if (dScene_c::SpawnIfNecessary()) {
                     activeScene_ = 3;
                     stage_.update_scene();
                 }
-                ++ticks_; if (!batchFrame_) scanout(); return;
+                finish_tick(); return;
             }
             throw std::runtime_error("Scena originale non collegata: " +
                                      std::to_string(data_02092664));
@@ -452,8 +461,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     }
     boot_.Behavior();
     data_0209f5bc->AdvanceFade();
-    ++ticks_;
-    if (!batchFrame_) scanout();
+    finish_tick();
 }
 void GameProgram::scanout() {
 #if defined(__ANDROID__)
@@ -478,15 +486,19 @@ void GameProgram::scanout() {
             io(0x04000240u, 1), io(0x04000241u, 1),
             io(0x04000242u, 1), io(0x04000243u, 1),
             io(0x04000248u, 1), io(0x04000249u, 1));
-        char snapshot[230];
+        char snapshot[384];
         std::snprintf(snapshot, sizeof snapshot,
-            "tick=%llu subDISPCNT=%08x BG0=%04x BG1=%04x BG2=%04x BG3=%04x "
-            "VRAM_A=%02x B=%02x C=%02x D=%02x H=%02x I=%02x",
-            static_cast<unsigned long long>(ticks_), io(0x04001000u, 4),
-            io(0x04001008u, 2), io(0x0400100au, 2),
+            "tick=%llu lcd=%04x CAP=%08x MAIN=%08x BG=%04x,%04x,%04x,%04x "
+            "SUB=%08x BG=%04x,%04x,%04x,%04x VRAM=%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x",
+            static_cast<unsigned long long>(ticks_), io(0x04000304u, 2),
+            io(0x04000064u, 4), io(0x04000000u, 4),
+            io(0x04000008u, 2), io(0x0400000au, 2),
+            io(0x0400000cu, 2), io(0x0400000eu, 2),
+            io(0x04001000u, 4), io(0x04001008u, 2), io(0x0400100au, 2),
             io(0x0400100cu, 2), io(0x0400100eu, 2),
             io(0x04000240u, 1), io(0x04000241u, 1),
-            io(0x04000242u, 1), io(0x04000243u, 1),
+            io(0x04000242u, 1), io(0x04000243u, 1), io(0x04000244u, 1),
+            io(0x04000245u, 1), io(0x04000246u, 1),
             io(0x04000248u, 1), io(0x04000249u, 1));
         sm64ds::diagnostics::note("VIDEO", snapshot);
     }

@@ -176,5 +176,45 @@ int main() {
     assert(*static_cast<const uint8_t *>(ntr::host_ptr(0x06200000u)) != 0x6b);
     assert(physicalH[0] == 0x6b);
 #endif
-    std::puts("NDS BG modes, sprite blending and native VRAM bank routing passed.");
+    // Original title transition: capture a 256x192 image at bank D+0x8000,
+    // then remap D to BG VRAM and display it as mode-3 direct-color BG3.
+    // This capture must run even on a tick with deferred presentation.
+    ntr::io_write(0x04000064u, 0, 4);
+    assert(!ntr::ppu_frame_required(false));
+    assert(ntr::ppu_frame_required(true));
+    ntr::io_write(0x04000240u, 0, 1); // remove bank A's BG alias
+    ntr::io_write(0x04000243u, 0x80, 1); // bank D -> LCDC capture destination
+    ntr::Framebuffer captured{}, geometry{};
+    for (int y = 0; y < ntr::SCREEN_H; ++y)
+        for (int x = 0; x < ntr::SCREEN_W; ++x)
+            captured.px[y][x] = (x < 128) ?
+                (y < 96 ? 0xffff0000u : 0xff0000ffu) : 0xff00ff00u;
+    ntr::io_write(0x04000064u, 0x80370010u, 4);
+    assert(ntr::ppu_frame_required(false));
+    ntr::ppu_capture(captured, geometry);
+    assert(!ntr::ppu_frame_required(false)); // one-shot capture is complete
+    const auto *bankD = static_cast<const uint16_t *>(ntr::host_ptr(0x06860000u));
+    assert(bankD[0x4000] == 0x801fu);
+    assert(bankD[0x4000 + 96 * 256] == 0xfc00u);
+    assert(bankD[0x4000 + 191 * 256 + 255] == 0x83e0u);
+    // The next native tick changes the bank and interprets those exact bytes
+    // as a bitmap; deferring capture until here would leave old tile data.
+    ntr::io_write(0x04000243u, 0x81, 1);
+    ntr::io_write(0x0400000eu, 0x4285, 2);
+    ntr::io_write(0x04000030u, 256, 2);
+    ntr::io_write(0x04000032u, 0, 2);
+    ntr::io_write(0x04000034u, 0, 2);
+    ntr::io_write(0x04000036u, 256, 2);
+    ntr::io_write(0x04000038u, 0, 4);
+    ntr::io_write(0x0400003cu, 0, 4);
+    ntr::io_write(0x04000000u, (1u << 16) | (1u << 11) | 3u, 4);
+    ntr::ppu_scanout(ntr::ENGINE_A, frame);
+    for (int y = 0; y < ntr::SCREEN_H; ++y)
+        for (int x = 0; x < ntr::SCREEN_W; ++x)
+            assert(frame.px[y][x] == captured.px[y][x]);
+    // Later deferred ticks must not accidentally recapture over the bitmap.
+    captured.px[0][0] = 0xffffffffu;
+    ntr::ppu_capture(captured, geometry);
+    assert(bankD[0x4000] == 0x801fu);
+    std::puts("NDS BG modes, blending, bank routing and title capture transition passed.");
 }

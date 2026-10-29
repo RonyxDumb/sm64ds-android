@@ -24,6 +24,50 @@ public final class ControllerState {
     }
     private final Map<Integer, Pointer> pointers = new LinkedHashMap<>();
     private int joystick = -1;
+    private boolean gameplayControls = true;
+    private boolean surfaceConfigured;
+    private float touchLeft, touchTop, touchWidth, touchHeight;
+    public boolean gameplayControls() {
+        return gameplayControls;
+    }
+    public void gameplayControls(boolean visible) {
+        if (gameplayControls == visible)
+            return;
+        gameplayControls = visible;
+        cancelTouch();
+    }
+    public boolean visibleButton(int index) {
+        return gameplayControls || BITS[index] == START;
+    }
+    public float buttonX(int index) {
+        return gameplayControls ? CX[index] : .5f;
+    }
+    public float buttonY(int index) {
+        return gameplayControls ? CY[index] : .95f;
+    }
+    public float buttonRadius() {
+        return gameplayControls ? .063f : .035f;
+    }
+    // Match ScreenRenderer's INTEGER viewport in full surface coordinates,
+    // then translate it into the safe-area coordinates used by the controls.
+    // Insets move buttons; they must never move the emulated touch LCD.
+    public void surface(int width, int height, int left, int top, int right, int bottom) {
+        if (width <= 0 || height <= 0) {
+            surfaceConfigured = false;
+            return;
+        }
+        float safeWidth = Math.max(1, width - left - right);
+        float safeHeight = Math.max(1, height - top - bottom);
+        int half = width / 2;
+        int w = Math.min(half, height * 4 / 3);
+        int h = w * 3 / 4;
+        touchLeft = (half + (half - w) / 2 - left) / safeWidth;
+        touchTop = ((height - h) / 2 - top) / safeHeight;
+        touchWidth = w / safeWidth;
+        touchHeight = h / safeHeight;
+        surfaceConfigured = w > 0 && h > 0;
+        rebuild(safeWidth / safeHeight);
+    }
     private int hardwareButtons;
     private float hardwareX, hardwareY, lastAspect = 1;
     public int buttons, touchX = -1, touchY = -1;
@@ -37,7 +81,8 @@ public final class ControllerState {
     }
     public void down(int id, float px, float py, float aspect) {
         pointers.put(id, new Pointer(px, py));
-        if (joystick < 0 && Math.hypot((px - .16f) * aspect, py - .70f) < .23f)
+        if (gameplayControls && joystick < 0 &&
+            Math.hypot((px - .16f) * aspect, py - .70f) < .23f)
             joystick = id;
         rebuild(aspect);
     }
@@ -84,7 +129,9 @@ public final class ControllerState {
             } else {
                 boolean button = false;
                 for (int i = 0; i < BITS.length; i++)
-                    if (Math.hypot((p.x - CX[i]) * aspect, p.y - CY[i]) < .067f) {
+                    if (visibleButton(i) &&
+                        Math.hypot((p.x - buttonX(i)) * aspect, p.y - buttonY(i)) <
+                            (gameplayControls ? .067f : .04f)) {
                         buttons |= BITS[i];
                         button = true;
                     }
@@ -93,10 +140,14 @@ public final class ControllerState {
                     // Match the letterboxed 4:3 viewport in ScreenRenderer:
                     // mapping against the entire Android view caused presses
                     // on the upper, non-touch LCD to select a save file.
-                    final float viewportWidth = Math.min(.5f, 4f / (3f * aspect));
-                    final float viewportHeight = viewportWidth * aspect * .75f;
-                    final float left = .75f - viewportWidth * .5f;
-                    final float top = (1f - viewportHeight) * .5f;
+                    final float viewportWidth = surfaceConfigured ? touchWidth :
+                        Math.min(.5f, 4f / (3f * aspect));
+                    final float viewportHeight = surfaceConfigured ? touchHeight :
+                        viewportWidth * aspect * .75f;
+                    final float left = surfaceConfigured ? touchLeft :
+                        .75f - viewportWidth * .5f;
+                    final float top = surfaceConfigured ? touchTop :
+                        (1f - viewportHeight) * .5f;
                     if (p.x >= left && p.x < left + viewportWidth &&
                         p.y >= top && p.y < top + viewportHeight) {
                         touchX = Math.min(255, (int)((p.x - left) / viewportWidth * 256));

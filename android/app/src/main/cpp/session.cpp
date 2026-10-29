@@ -19,7 +19,7 @@ Session::Session(const char *path) {
         path, [this](uint32_t a, uint32_t b) { return audio_->effect(a, b); },
         [this](const SoundRequest &request){return audio_->native(request);});
 }
-void Session::frame(int width, int height, float dt, uint32_t buttons, float x, float y, int tx,
+bool Session::frame(int width, int height, float dt, uint32_t buttons, float x, float y, int tx,
                     int ty, bool enabled) {
     if (!enabled) {
         if (audioReady_)
@@ -36,5 +36,6 @@ void Session::frame(int width, int height, float dt, uint32_t buttons, float x, 
     // on the left; the physical bottom/touch LCD is on the right.
     const bool mainOnTop = (ntr::io_read(0x04000304u, 2) & 0x8000u) != 0;
     renderer_.draw(game_->main_screen(), game_->sub_screen(), width, height, mainOnTop);
+    return game_->active_scene() == 3;
 }
 }

@@ -37,6 +37,7 @@ public final class RuntimeActivity extends Activity implements InputManager.Inpu
                     .show();
             });
         controls = new ControlsView(this, surface);
+        surface.presentation(controls::gameplayControls);
         FrameLayout root = new FrameLayout(this);
         root.addView(surface);
         root.addView(controls);

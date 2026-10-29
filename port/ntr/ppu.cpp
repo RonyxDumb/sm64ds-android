@@ -182,6 +182,10 @@ bool sample_bg(const BgConfig &c, const uint32_t *palette, int x, int y, uint32_
 
 }  // namespace
 
+bool ppu_frame_required(bool presenting) {
+    return presenting || (io_read(0x04000064u, 4) & 0x80000000u) != 0;
+}
+
 void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     // Direct native/overlay writes to VRAMCNT bypass io_write; resynchronize
     // bank routing before any BG tile, bitmap or palette access.

@@ -13,13 +13,30 @@ final class ControlsView extends View {
     ControlsView(Context context, GameSurface surface) {
         super(context);
         this.surface = surface;
+        state.gameplayControls(false);
         setFocusable(true);
         setOnApplyWindowInsetsListener((v, insets) -> {
             safe.set(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
                      insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            updateGeometry();
             clear();
             return insets;
         });
+    }
+    private void updateGeometry() {
+        state.surface(getWidth(), getHeight(), safe.left, safe.top, safe.right, safe.bottom);
+    }
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        updateGeometry();
+        clear();
+    }
+    void gameplayControls(boolean visible) {
+        if (state.gameplayControls() != visible) {
+            state.gameplayControls(visible);
+            publish();
+        }
     }
     private float areaWidth() {
         return Math.max(1, getWidth() - safe.left - safe.right);
@@ -76,21 +93,26 @@ final class ControlsView extends View {
         canvas.save();
         canvas.translate(safe.left, safe.top);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0x55486484);
-        canvas.drawCircle(w * .16f, h * .70f, h * .18f, paint);
-        paint.setColor(0xaa9abfff);
-        canvas.drawCircle(w * .16f + state.x * h * .14f, h * .70f - state.y * h * .14f, h * .065f,
-                          paint);
+        if (state.gameplayControls()) {
+            paint.setColor(0x55486484);
+            canvas.drawCircle(w * .16f, h * .70f, h * .18f, paint);
+            paint.setColor(0xaa9abfff);
+            canvas.drawCircle(w * .16f + state.x * h * .14f,
+                              h * .70f - state.y * h * .14f, h * .065f, paint);
+        }
         for (int i = 0; i < ControllerState.BITS.length; i++) {
+            if (!state.visibleButton(i))
+                continue;
             paint.setColor((state.buttons & ControllerState.BITS[i]) != 0 ? 0xcc7cafff
                                                                           : 0x55486484);
-            canvas.drawCircle(w * ControllerState.CX[i], h * ControllerState.CY[i], h * .063f,
-                              paint);
+            canvas.drawCircle(w * state.buttonX(i), h * state.buttonY(i),
+                              h * state.buttonRadius(), paint);
             paint.setColor(0xffeeeeff);
             paint.setTextAlign(Paint.Align.CENTER);
-            paint.setTextSize(h * (i == 6 || i == 7 ? .027f : .043f));
-            canvas.drawText(ControllerState.LABELS[i], w * ControllerState.CX[i],
-                            h * ControllerState.CY[i] + h * .014f, paint);
+            paint.setTextSize(h * (state.gameplayControls() ?
+                (i == 6 || i == 7 ? .027f : .043f) : .018f));
+            canvas.drawText(ControllerState.LABELS[i], w * state.buttonX(i),
+                            h * state.buttonY(i) + h * (state.gameplayControls() ? .014f : .006f), paint);
         }
         canvas.restore();
     }

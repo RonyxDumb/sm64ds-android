@@ -29,14 +29,17 @@ struct Framebuffer {
     uint8_t layer[SCREEN_H][SCREEN_W]{};
 };
 
-// Rasterise one engine's current register state into fb. Text-mode BGs only for
-// now; affine, bitmap, sprites and the blend/window units are not implemented.
+// A pending capture writes game-visible VRAM and must finish on its native
+// tick even when the Android host defers ordinary presentation.
+bool ppu_frame_required(bool presenting);
+
+// Rasterise one engine's text/affine/bitmap BG layers and blend effects.
 void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry=nullptr);
 
 // Rasterise one engine's OBJ layer (sprites) from its OAM + OBJ VRAM over
 // whatever fb already holds. Plain and affine sprites, 16- and 256-color
-// tiles, 1D mapping; bitmap OBJs, mosaic, windows and blending are not
-// implemented. Transparent color-0 texels leave fb untouched.
+// tiles, bitmap OBJ and blending. Mosaic and windows remain unsupported.
+// Transparent color-0 texels leave fb untouched.
 void ppu_scanout_obj(Engine eng, Framebuffer &fb);
 void ppu_capture(const Framebuffer &composited,const Framebuffer &geometry);
 

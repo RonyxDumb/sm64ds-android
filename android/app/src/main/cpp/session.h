@@ -13,7 +13,7 @@ public:
     void surface() {
         renderer_.create();
     }
-    void frame(int width, int height, float dt, uint32_t buttons, float x, float y, int touchX,
+    bool frame(int width, int height, float dt, uint32_t buttons, float x, float y, int touchX,
                int touchY, bool audioEnabled);
     void release(bool contextValid = true) {
         audio_->close();

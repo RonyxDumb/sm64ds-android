@@ -7,7 +7,7 @@ final class NativeBridge {
     static native boolean configureCrashLog(String path);
     static native String probe(String path) throws IOException;
     static native long createRenderer(String path) throws IOException;
-    static native void drawRenderer(long handle, int width, int height, float dt, int buttons,
+    static native boolean drawRenderer(long handle, int width, int height, float dt, int buttons,
                                     float x, float y, int touchX, int touchY, boolean audioEnabled);
     static native void destroyRenderer(long handle, boolean contextValid);
     private NativeBridge() {}
