@@ -1,3 +1,71 @@
+# Android checkpoint — 2026-10-29, ARM64 source migration and scene factory
+
+**Not a finished or verified playable port.** All 2,407 original `src/` C/C++
+units were compiled with Android NDK 27.2.12479018 (`aarch64-linux-android26`).
+With the checked complete-source views, **2,286 compile and 121 fail**, down
+from 1,884 compiled / 523 failed at the start. This is 402 additional successful
+units. All 407 selected projections pass; no source was skipped or replaced by
+a successful stub. `src/` and `include/` remain unchanged.
+
+- `Player.cpp` now compiles in its entirety as an AArch64 object. Its block-local
+  ABI declarations retain their original linker labels, with typed references
+  to byte-labelled data storage where local struct types cannot have external
+  linkage. Exact repairs preserve the original goto paths, replace the MWCC
+  clear builtin with `memset`, and declare the actual missing palette helper.
+- Native pointer/integer round trips use checked 32-bit data/code handles.
+  `SharedFilePtr` and reviewed resource descriptor views retain their asserted
+  DS extents using stored pointer cells. C record views retain their layout
+  assertions and every source function body. Parser disambiguation preserves
+  cast/arithmetic precedence; unparsed expressions are retained verbatim.
+- The source migration profile pins all selected sources and input headers.
+  These **compile-only objects are not automatically linked into the APK**.
+  Native polymorphic layouts, raw byte offsets, member-function pointer tables,
+  linker-defined integer constants and cross-unit call signatures still need
+  runtime work. A successful Player object is not a running Player actor.
+- Removed the unconditional scene-3 stop in `GameProgram::tick`. The recovered
+  `dScene_c::SpawnIfNecessary` now calls the scene-spawn path through the original
+  `ACTOR_SPAWN_TABLE`. The checked factory chain preserves pre-spawn hooks,
+  parameters, phases, null returns and the post-construction hook. Missing code
+  fails at its actual unbound native function address. There is no fallback
+  character, synthetic scene success or jump into cartridge ARM instructions.
+- The full Android native shared library links with `--no-undefined` after the
+  scene-spawn change. Host ASan/UBSan checks cover high-address data/callback
+  round trips, pointer adjustment, macro arithmetic and member-call retention.
+  Local LeakSanitizer is disabled because this environment denies its process
+  inspection; CI retains its normal enabled default.
+- With the private EU ROM, the recovered boot/frontend/file-launch regression
+  passes for all four save/character setups. Each scene-3 request resolves the
+  real `g_profile_STAGE` and reaches `dScStage_c_classInit` at 0x0202e088,
+  stopping on that specific missing native binding with spawn phase 4. The
+  failed creation leaves the scene request pending and never publishes success.
+  This is host execution evidence; no Android device is connected.
+
+Reproduce the complete census (no ROM required):
+
+```sh
+python3 -m pip install -r android/tools/requirements-migration.txt
+python3 android/tools/compile_all_src.py \
+  --ndk "$ANDROID_NDK_HOME" --out build/compile-audit \
+  --apply-projections --require-projections-pass --keep-objects
+```
+
+`summary.json`, `failures.txt`, one log per original source, and the successful
+AArch64 objects remain in that output directory. Add `--require-all-pass` to
+make the still-incomplete entire folder a hard failure. A green census workflow
+only establishes that its checked projections compile; it does not hide the
+remaining failures.
+
+The next scene dependency is the native `dScStage_c_classInit` factory at
+**0x0202e088**, referenced by `g_profile_STAGE` at **0x0209213c**. It must construct
+the real packed stage/actor layout, then connect original initialization,
+Player, camera, collision and rendering. Do not bind the newly compiled native
+C++ factory to a packed factory signature without porting its object ABI.
+Of the 121 remaining compile failures, 92 contain ARM9 assembly/platform code;
+the other 29 include member-pointer/state record widths and inconsistent
+recovered declarations. Resume from the per-file census rather than the old CSV.
+
+---
+
 # Android checkpoint — 2026-10-26, native title execution
 
 Production connects original `b7138` initialization, `b7090`/`aed98` input and

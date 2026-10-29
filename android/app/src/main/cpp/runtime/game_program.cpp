@@ -59,7 +59,12 @@ extern "C" {
 dFdColor_c data_0209f5e8;
 dFdBrightness_c *data_0209f5bc = &data_0209f5e8, *data_0209d4ac = &data_0209f5e8;
 u16 data_02092664 = NoScene;
+u8 data_02092660 = 0;
 u32 data_0209f5b8 = 0;
+int func_02013edc(u32 sceneID, u32 parameter, int kind) {
+    return static_cast<int>(sm64ds::GameProgram::active().spawn_scene(
+        sceneID, parameter, static_cast<uint8_t>(kind)));
+}
 u8 data_0209f1e8 = 0, data_0209d454 = 0, data_0209d45c = 0;
 int data_0208ee44 = 1;
 alignas(4) u8 data_020914e0[0x48], data_02091570[0x168], data_020916d8[0x1ec], data_020918c4[0x84c],
@@ -249,6 +254,7 @@ GameProgram::GameProgram(const char *path, Sound sound,FrontendCore::Audio audio
         data_0209f1e8 = data_0209d454 = data_0209d45c = 0;
         data_0208ee44 = 1;
         data_02092664 = NoScene;
+        data_02092660 = 0;
         data_0209f5b8 = 0;
         data_0209f5bc = data_0209d4ac = &data_0209f5e8;
         data_0209f5e8.currInterp = 0x1000;
@@ -399,6 +405,10 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         callback(argument_);
         complete_ = true;
     }
+    if (activeScene_ == 3 && data_02092664 == NoScene) {
+        stage_.update_scene();
+        ++ticks_; if (!batchFrame_) scanout(); return;
+    }
     if (activeScene_==1 && data_02092664==NoScene) {
         if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
             native_audio({SoundOp::Music,0,0,pendingMusic_}); pendingMusic_=-1;
@@ -429,10 +439,13 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 frontend_->render(); accept_title_result(result);
                 ++ticks_; if (!batchFrame_) scanout(); return;
             }
-            if (data_02092664 == 3)
-                throw std::runtime_error(
-                    "StartFile originale completato. La scena di gioco dScStage_c e il runtime "
-                    "degli attori non sono ancora collegati.");
+            if (data_02092664 == 3) {
+                if (dScene_c::SpawnIfNecessary()) {
+                    activeScene_ = 3;
+                    stage_.update_scene();
+                }
+                ++ticks_; if (!batchFrame_) scanout(); return;
+            }
             throw std::runtime_error("Scena originale non collegata: " +
                                      std::to_string(data_02092664));
         }

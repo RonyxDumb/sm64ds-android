@@ -1,0 +1,2137 @@
+{
+  "version": 1,
+  "purpose": "Compile-only ARM64 migration. These objects are not yet linked into the production game.",
+  "sources": {
+    "src/FS_CloseFile.c": {
+      "mode": "packed_c",
+      "sha256": "c593a727f3bf3a83329506811428cf97c07804c4d5d05afbc4ae00ce0f77254c"
+    },
+    "src/IRQ.cpp": {
+      "mode": "native_cpp",
+      "sha256": "5b88042055b52cb173ec474c250761aa0a11715a8f20bec991f7edb5fc771d34"
+    },
+    "src/IRQ2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e8096770d14623b5b9558ca3e02afae04da304e45dd75fc2208600377a505c9c"
+    },
+    "src/LoadOverlay.c": {
+      "mode": "packed_c",
+      "sha256": "5bbd86e0898bfd012e7968b4cb823711b4990e82772d3631ecf7f61c3d778247"
+    },
+    "src/Message.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8c2d509fa6ab892849e6e0b405b1c8c0c85060d7c871811bfa442116e32c0fb6"
+    },
+    "src/Message2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bb107feeb6a8533b1c6f2429fd14702fb5b7816f51576c3255ab00409667e693"
+    },
+    "src/Message3.cpp": {
+      "mode": "native_cpp",
+      "sha256": "46f5223371c7664a423378055a68df26bcff2053daefd13f364597b0249f378a"
+    },
+    "src/RequestScreenFade.c": {
+      "mode": "packed_c",
+      "sha256": "42c5e5401a4ab3f7074d3970361eff333bef6b24368cb2ca4f37603858dde966"
+    },
+    "src/SharedFilePtr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "007d81c582743fa46bae3b6e2827a226940c9cf08970a65a384cb58b1550515e"
+    },
+    "src/cstd3.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b2b31e4cfa6da88f9eb20e2e7fdb894bc7070d37254074c5eba78c8f3bf4af5d"
+    },
+    "src/cstd6.cpp": {
+      "mode": "native_cpp",
+      "sha256": "99fae8f3cf13ecf02612c9b87a0fbf149074757b43a8fa27a05a2d31f33ffae8"
+    },
+    "src/engine/animation/dExtFrameCtrl_c_UpdateFileOffsets.cpp": {
+      "mode": "native_cpp",
+      "sha256": "dcd06cfbe796f5679266e5f61af0b9f2f08572a2fdb1ca6f2779a85598f5759a"
+    },
+    "src/engine/animation/d_ext_frame_ctrl.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c135933f7cca7826c66b24a85a170f1e1a8b61694d4d2b8f1067a0a1dd4314ef"
+    },
+    "src/engine/collision/d_bg_ch_actr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "781d750188d0ba387556f71fddcdfdb6dd9ce48f0c9fd8ce875a60e421275a7b"
+    },
+    "src/engine/collision/d_bg_ch_sph_crr_query.cpp": {
+      "mode": "native_cpp",
+      "sha256": "9b60cb2a7ff9c44094a5167474e1360131d43ae3c96854f548f61f9b6cd9729e"
+    },
+    "src/engine/collision/d_bg_w.cpp": {
+      "mode": "native_cpp",
+      "sha256": "db8ac8e79591b7b09788532d65358dab7271daa73a0161682d085b47b9a262bc"
+    },
+    "src/engine/collision/d_bg_w_kc.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4bfdefa4dec02f69292a7578827c57c4e335bc632b840273a74053d76d8541d3"
+    },
+    "src/engine/gx/GX.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e7753d721fa972243d0ecaeee8ceef4ce3111d8f6f2def29fd4f07bae071e719"
+    },
+    "src/engine/gx/GXS.cpp": {
+      "mode": "native_cpp",
+      "sha256": "20b8e1e08a52a7fb89fe9dcce2c65c045983e21fb119bf72604885ed3e10ec7e"
+    },
+    "src/engine/heap/ExpandingHeapAllocator.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c5ce0bf924be864df31c7e9686b4923420fb3ced9500ff06f42b575387785745"
+    },
+    "src/engine/heap/NestedHeapIterator.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1be6ecefc2b05daeaf0c3d17f355e993c6ea228e6e03543bab51441d4ece78fa"
+    },
+    "src/engine/heap/SolidHeapAllocator.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d575d24b7965115650340b8d84b72d00ecf0947d0656a43ce545ac80be183172"
+    },
+    "src/engine/model/Model4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "60f18cd6b05cc5582f533644777bff27315ceb849b838170ba089bfab72debb6"
+    },
+    "src/engine/model/ModelComponents.cpp": {
+      "mode": "native_cpp",
+      "sha256": "39fc9ae6ebdf84c05e6d2eab730c9b7633b6e7c279fa05e826c7d9fe85976bf4"
+    },
+    "src/engine/model/dExtAnmTexPat_c_UpdateFileOffsets.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f871c2ff7567ef96fb00fe6815479ec559419aebaa83a5ce4ff8dbb55c3c0cda"
+    },
+    "src/engine/model/d_ext_anm2_model.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b381e8b2f9e5cb72b569ee76fe36e3c84186a10bafa37ad2dd0b60a527c477db"
+    },
+    "src/engine/model/d_ext_blend_anm_model.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ffbb392c3862bbda16608700f2e1e1a442e5f66a6ed64e0e3ccfe5434e1d47a8"
+    },
+    "src/engine/oam/OAM.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4d47c606d3d8dd7b98363fc526351f8ab6dd06435fcd4103a7be28306492e731"
+    },
+    "src/engine/particle/Particle.cpp": {
+      "mode": "native_cpp",
+      "sha256": "064686706dc741ce118b76ac498bbc1209e2b36fbf4520c7d126561a5cadfb84"
+    },
+    "src/engine/particle/Particle_Manager.cpp": {
+      "mode": "native_cpp",
+      "sha256": "fac58f9d4d441b8d0790140aff24882600ec2974c203b91b5974f9c5aefa7479"
+    },
+    "src/engine/path/PathPtr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e83e939346db6be6acb2f048ded5cc20f6db19a0c9258fe96242fb55f81ee9df"
+    },
+    "src/engine/save/SaveData2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bc0a08ab13a78561dd855fec817fc01ae99b40fd4e6881c76eaeda78d4791893"
+    },
+    "src/engine/sound/Sound.cpp": {
+      "mode": "native_cpp",
+      "sha256": "5694ae3cbc0e014da341a1d00d2f7611282841c827fccfb62649855bf26daf06"
+    },
+    "src/engine/view/d_camera.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ac6d4ca1efa33144cbefa7969cd873fd9e657a97bd1f08926cb00831d16feea7"
+    },
+    "src/func_ov007_020c0078.c": {
+      "mode": "packed_c",
+      "sha256": "36347dc57e85b21527c1e2ac7533e832f29df0de328945f6528645cc25062742"
+    },
+    "src/game/actors/d_a_1up.cpp": {
+      "mode": "native_cpp",
+      "sha256": "df32154e38477d51e2b5f8ef60066f6939766811da9be07dff2c28e3d40af5ca"
+    },
+    "src/game/actors/d_a_b_donketu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a5088574660acd2a99f5e358fca1f7e4e7cfa72e49877da61aad50192ef15997"
+    },
+    "src/game/actors/d_a_bbl.cpp": {
+      "mode": "native_cpp",
+      "sha256": "337a192a4d732e902f442c1bb3767a99eb1b0ee791aa1b326dbc25dc507f24f4"
+    },
+    "src/game/actors/d_a_bmb.cpp": {
+      "mode": "native_cpp",
+      "sha256": "53c9c905ebf7c8c9398de69d54f8a612c9f57e257745ceb89308c26d4edb1d50"
+    },
+    "src/game/actors/d_a_btfly.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f39758b20e8872af258bfbb5ff3bca3bf2fed958fa8243b2d87d926486b73b9f"
+    },
+    "src/game/actors/d_a_c_jugem.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b02a5b372ff3e94a4a8202f6418d2ea7864d9fe70cd5051c23465450143e73ac"
+    },
+    "src/game/actors/d_a_chair.cpp": {
+      "mode": "native_cpp",
+      "sha256": "34f78722c86a59230f698147463f73aec5cbd625f1c8857d08d7b5ac7f892cfe"
+    },
+    "src/game/actors/d_a_choropu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4f4ead5bb245d2282d2bb3c396caa3dd7a1eb71be8a0f60216611adc5cfe2301"
+    },
+    "src/game/actors/d_a_cnn.cpp": {
+      "mode": "native_cpp",
+      "sha256": "5577653e631169ec158c10fbc7f702c0c4690cd839ce7e4ced5572007ae7286a"
+    },
+    "src/game/actors/d_a_coin.cpp": {
+      "mode": "native_cpp",
+      "sha256": "74ad254d8c0fb108c75fe323508abd28fa22fe7905fbb54865681f39c9f7b8b2"
+    },
+    "src/game/actors/d_a_demo.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d769bbb90eee687e707e2c0dbbf8ad06981cdb17270e809456bec40cf8fbb572"
+    },
+    "src/game/actors/d_a_dgr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f41e0a9ee907eb46f3c2ed7f3a2c093d0a0d79f8e6efe19a2269579a02e216c0"
+    },
+    "src/game/actors/d_a_dkk.cpp": {
+      "mode": "native_cpp",
+      "sha256": "08400aac4d80ac723717e7ac87925933aed2f33716a3e8c9085a7a10cbae5dc9"
+    },
+    "src/game/actors/d_a_donketu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "433e1fc95615812ed9ab76feedafe14a270c79a79030f2a3b7a78cc8e4ac448f"
+    },
+    "src/game/actors/d_a_door.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c157c4f92e8f0f1fe117618383dbeea938fb6df07b025fe144af28b80d112c4c"
+    },
+    "src/game/actors/d_a_dossy.cpp": {
+      "mode": "native_cpp",
+      "sha256": "beddada3dc0e4a7b32a30de75a23dc7936fe26850865d5bff013b57fb737061a"
+    },
+    "src/game/actors/d_a_dp_lift.cpp": {
+      "mode": "native_cpp",
+      "sha256": "55c60b359018d5a9e3cf3ce446a1311eef05053190c7a78450a3c63e4c584222"
+    },
+    "src/game/actors/d_a_dsn.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1142060968610bcab0a9d7e2efcdff9c90ebcd796d86ec6e9fe2d7ad961be710"
+    },
+    "src/game/actors/d_a_dsn_base.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c39465979559476f573e764a71a41a02b23574ee1f70d59a8a856dcf7553d339"
+    },
+    "src/game/actors/d_a_f_pkn_ball.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f4f8efbffa0170c8d7f409332bf318b2e6e2f4fab67d02c2e9eb541748eeea5f"
+    },
+    "src/game/actors/d_a_gmch.cpp": {
+      "mode": "native_cpp",
+      "sha256": "915bb97bd4bb534f83383f95ef1e25a3c09f16bbd43b2a6b6daf960f4bd3fb77"
+    },
+    "src/game/actors/d_a_grock.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ce53c1931e5399e080a450efec5a1319dc588af7972c4c7f2d9b950f35d9de3f"
+    },
+    "src/game/actors/d_a_hanachan.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b8e9296500b533583e11b694cfae0f11ee3be6451e05e57b4c7da2b650848aa1"
+    },
+    "src/game/actors/d_a_holhei.cpp": {
+      "mode": "native_cpp",
+      "sha256": "449ede41ae4ce357184008794319a21634d22de64096d7ce2616cac60ceeca00"
+    },
+    "src/game/actors/d_a_huwa.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d92f8c2a7f9c926d3f9b1dc6be49356c97c983e82eb149b9599439e8eb0caabf"
+    },
+    "src/game/actors/d_a_i_donketu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0ab8c5d88f10da439b9a7dea521e49fb957c1bda69ee61436b3dbc8d7850ee7c"
+    },
+    "src/game/actors/d_a_iwante.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d4f1366b2bcc8dadfff878561e7a697f58d9de61e01d4e728ba42e7cee6828ef"
+    },
+    "src/game/actors/d_a_jango.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1dd0e6db86054fb7588d2c487fa108e986063effb08ed05be8d034922207adab"
+    },
+    "src/game/actors/d_a_kinopio.cpp": {
+      "mode": "native_cpp",
+      "sha256": "aace5278a8f1a440dcb76ac53c9b0e29b740088a1719fa36c7a566cecd1d0159"
+    },
+    "src/game/actors/d_a_kpa.cpp": {
+      "mode": "native_cpp",
+      "sha256": "5595363ff6e757c75cce5cc3797980b3929893d66b349cfd65c845636882c72b"
+    },
+    "src/game/actors/d_a_kpa3_bg.cpp": {
+      "mode": "native_cpp",
+      "sha256": "98a95069fa7312d76eee192f7e58ffc72880f309d16147def4c837f067280564"
+    },
+    "src/game/actors/d_a_kuri_king.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f7e1b6b26b5df3805e5620cd4b67aa27d0b4407e72d68c92d3f4fe6d62ac6bb3"
+    },
+    "src/game/actors/d_a_linelift2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "044861742f9ab8dd6a496adf24bb2ae7c8f778375e414f333b3b506a4548d5c3"
+    },
+    "src/game/actors/d_a_luigi.cpp": {
+      "mode": "native_cpp",
+      "sha256": "2a7bb0349ebbeb712c20a091ecdb451a836da7acb450e0bd7c42e529450d848a"
+    },
+    "src/game/actors/d_a_manta.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1997d3d27b5d27e890a4946361cf5f23ca233c2810bf2ebf429af8bfddc7dac8"
+    },
+    "src/game/actors/d_a_menbo.cpp": {
+      "mode": "native_cpp",
+      "sha256": "eecb523ee0d5c8c093ecadc44a8b58c0c97352bcbe08153179e3ddc650874a6f"
+    },
+    "src/game/actors/d_a_mip.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a1a32123fa0efd022d68b244447ea6f426fc4922cdedb9fc39907cb141bd6a94"
+    },
+    "src/game/actors/d_a_mky.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4eeba98dbbd21e72a8346802d44e1193ec0fb688570cf576723b83f634eeed11"
+    },
+    "src/game/actors/d_a_mugen_bgm.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8f9a1f68cf5169a2ac209f34f0f2a405bc7421eaebf79ae3a8cdebea6c044981"
+    },
+    "src/game/actors/d_a_nknk.cpp": {
+      "mode": "native_cpp",
+      "sha256": "eb77afb22effecb4cbfdd1a20a8c6f50c42a1a455bd93318db144c3f9da324bd"
+    },
+    "src/game/actors/d_a_obj_b_swdoor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "7984c70919969f7a07786df6bdcb9f1fbbdfadbd712197ed79f6eb6a08faf1d2"
+    },
+    "src/game/actors/d_a_obj_bc_switch.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b323eca32fa17b7b4f9bf9bd6987a362cff898f5ba99a96a75963447af9ecc51"
+    },
+    "src/game/actors/d_a_obj_bk_dossunbar.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ad7c944779f564154faaecc3ac4e73c1856643bf82d3889b2002d620650e910d"
+    },
+    "src/game/actors/d_a_obj_bk_fall_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cc4a7fe0437e087d0dd9c7e8fc780160e432b60d4d64c2fcd8231209315fae28"
+    },
+    "src/game/actors/d_a_obj_bk_killerdai.cpp": {
+      "mode": "native_cpp",
+      "sha256": "9193cde9e7387e182f0b40e04f6e16b2ed9acd75af61b6fbf92ea6fa9a2bf832"
+    },
+    "src/game/actors/d_a_obj_bk_ukisima.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d47e7ef51055a690cbcc453a2dcfa53015d272e1a322fedb802d602152ad9e5c"
+    },
+    "src/game/actors/d_a_obj_block_s.cpp": {
+      "mode": "native_cpp",
+      "sha256": "18e00d25f67564934404fb7c42c26228af100d05fce3f7f1b65dce64f7383d57"
+    },
+    "src/game/actors/d_a_obj_casket.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a5bb18b6b76c4b4d4ec4adbb791eeea6efaa2228dbbf421aa19c7003f57529a0"
+    },
+    "src/game/actors/d_a_obj_ct_kaitendai.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ac56cf033ec1ac311c3cd3749f2f5081537b14e966fc1ddba5446bf5819f933f"
+    },
+    "src/game/actors/d_a_obj_cv_shutter.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bb3fa1296326e3177ec81f375bc3b2a5a272d14d36dce9ebe5982d8faf92a409"
+    },
+    "src/game/actors/d_a_obj_dl_pyramid.cpp": {
+      "mode": "native_cpp",
+      "sha256": "6658296415164bc386d0582bee8c1783c97e4b41559e126bfde8aabb160a6c77"
+    },
+    "src/game/actors/d_a_obj_dorifu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d583189be6a0227540bbc481150eabbc67ab4cd5b2b224fa779503a0a881f736"
+    },
+    "src/game/actors/d_a_obj_dp_brock.cpp": {
+      "mode": "native_cpp",
+      "sha256": "7c9325654662f605daadf9432bfd3d59a483289ac6e14f044ec797ad71a5a3aa"
+    },
+    "src/game/actors/d_a_obj_emm_yuka.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cece7abb5cc9adc685aa226a3f834bb18c2e797898c6a1ac045c6c0a36c4fafd"
+    },
+    "src/game/actors/d_a_obj_fall_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "832de1bce44f5077440f7fbef2231c22c3086a15a390b3172ce7eb0fecb97598"
+    },
+    "src/game/actors/d_a_obj_fl_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "737676fdc48614a75599491abb9e8cc64a40b4ecd6f1f0f8dcd5434b5735e069"
+    },
+    "src/game/actors/d_a_obj_fl_coin.cpp": {
+      "mode": "native_cpp",
+      "sha256": "98e9b040f71c9f4b444f1edfbd552d6e71b1ad0033f95daa2797fb8be871de67"
+    },
+    "src/game/actors/d_a_obj_fl_fall_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "60900a08dd289dd752063a0536571317f5056d9d17575d4888623562df9a4f9d"
+    },
+    "src/game/actors/d_a_obj_fl_gura.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c1b9fd86e14f3e041816b447bca3f7033a642c8d94be503a14413095f2d42f6a"
+    },
+    "src/game/actors/d_a_obj_fl_koma_d.cpp": {
+      "mode": "native_cpp",
+      "sha256": "7058ef331b25ccef44cb39e37cb62464c6d8322b44ffadcfda7dc06abfe3d1f5"
+    },
+    "src/game/actors/d_a_obj_fl_koma_u.cpp": {
+      "mode": "native_cpp",
+      "sha256": "816b6a584af8eb10b3a72f7124bafcba7d44fe725884a10ca90f3e2fa20fc2eb"
+    },
+    "src/game/actors/d_a_obj_fl_maruta.cpp": {
+      "mode": "native_cpp",
+      "sha256": "9bd20813b49ec94730fcd1fe18c988628af4ad4cb560321d5727a8d33a91b444"
+    },
+    "src/game/actors/d_a_obj_fl_seesaw.cpp": {
+      "mode": "native_cpp",
+      "sha256": "75a96445c7ded50bcd50f8f3ceef287239e4d7ab4c1f61a36d2d3c2e6abe9b1f"
+    },
+    "src/game/actors/d_a_obj_fl_ukiyuka.cpp": {
+      "mode": "native_cpp",
+      "sha256": "10777c87eb3baf7301f5097e4b9479b5c12205eb1dce14a191aac484e252d8dc"
+    },
+    "src/game/actors/d_a_obj_float_board.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d792637658dd09371a6488edf0110a2ce9725b195bbbd0762bfe49fccd1626aa"
+    },
+    "src/game/actors/d_a_obj_fm_battan.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3d070e9db567716d452cea136b4574f1dccf9066e75fb28ef18cbcf2ab6bffad"
+    },
+    "src/game/actors/d_a_obj_guragura.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0b7a7064f5f7e67fec259e29315e52b4f25b5341e37de0770cdd62a7a5f6e89f"
+    },
+    "src/game/actors/d_a_obj_hm_maruta.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4eb898e2d62a4da9147d7b4004e04db2ad10837620215d7b0458e0374bee53a4"
+    },
+    "src/game/actors/d_a_obj_hs_billboard.cpp": {
+      "mode": "native_cpp",
+      "sha256": "36d013d6b9b9bc68a117db73c2dfaff560b20b6de9590180534a1dd8d4946590"
+    },
+    "src/game/actors/d_a_obj_kaitendai.cpp": {
+      "mode": "native_cpp",
+      "sha256": "953bd4636910eb313e9e7918074a2a75b7f37fce32c158cff5feac37eaa7ff9b"
+    },
+    "src/game/actors/d_a_obj_ki_fune.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0dde6b3afa45814b99a5c12c087065a0bc139da40bba58d005979c7dafa51cc2"
+    },
+    "src/game/actors/d_a_obj_km1_kuruma.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b2c0ed848e3212825426eafcb9336bacd3766000e798e189fb20604c1106f357"
+    },
+    "src/game/actors/d_a_obj_km1_kurumajiku.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0969a145abeb881d453389f4dacb95c2a9345e77541fd299ce2f597163a33e10"
+    },
+    "src/game/actors/d_a_obj_km1_ukishima.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bcf96a8cc5dd44dbd5995bb377c64a15c7e393129d7cf86a04f219965833d254"
+    },
+    "src/game/actors/d_a_obj_km2_agaru.cpp": {
+      "mode": "native_cpp",
+      "sha256": "794aaedaa6e1a24a1411923a99f6d814247ac8d5f13f79a8a1acd8fde53da74a"
+    },
+    "src/game/actors/d_a_obj_km2_fall_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f0de4998acfcad873572e3598be16ba6932cbe47fcc9d70a5e48e94cf5ddfb33"
+    },
+    "src/game/actors/d_a_obj_km2_gura.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1a6fc6ef8d87879ddaa368a0f94e558601d2ce8e87c476a1e06fc63fcb2dca91"
+    },
+    "src/game/actors/d_a_obj_km2_ukishima.cpp": {
+      "mode": "native_cpp",
+      "sha256": "72f2969a469263024d29937523629e01fb1ac76a164be3cfe32ff0368fb7290c"
+    },
+    "src/game/actors/d_a_obj_km3_dorifu.cpp": {
+      "mode": "native_cpp",
+      "sha256": "42770d602ecca3e696af793fcc1e3536c72c5863d6cf728e213b7e898437ba65"
+    },
+    "src/game/actors/d_a_obj_km3_kaitendai.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a0fb0811047d357a00591a6006cfebf5c3d7463323cb09e2f101907965f075b6"
+    },
+    "src/game/actors/d_a_obj_km3_kuruma.cpp": {
+      "mode": "native_cpp",
+      "sha256": "15d1d9c134a387394b3b49807e5325c02eed10b86fc99343b9b66ded68d538f2"
+    },
+    "src/game/actors/d_a_obj_km3_kurumajiku.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1a52e891d73c03dfbd07234c84e8a589ee56ddb497d4b8d0a75fedfeaa6ab32b"
+    },
+    "src/game/actors/d_a_obj_kuruma.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e051b7d4aa54e7d85d2099ccc64424f77de9cb24e1a698e5f3d42687634b92cd"
+    },
+    "src/game/actors/d_a_obj_mario_cap.cpp": {
+      "mode": "native_cpp",
+      "sha256": "7be70e39ca518782f828b2d41c81fa6318436799c4212b3dfb48d12c7c9bdb7f"
+    },
+    "src/game/actors/d_a_obj_maruta.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4c9390d8eefc63edca23b23a2c2fd432cf69bc74f695ae09092e94b136733f06"
+    },
+    "src/game/actors/d_a_obj_power_up_item.cpp": {
+      "mode": "native_cpp",
+      "sha256": "37c0a64b135dcdfc236f2c960cfb362c085c0e0db5e7333ba6c182f170a011d5"
+    },
+    "src/game/actors/d_a_obj_rc_buranko.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bc153494818b2829bc2d71debe44e22ef0da36e7fe8c73d036464768b2eb77f2"
+    },
+    "src/game/actors/d_a_obj_rc_carpet.cpp": {
+      "mode": "native_cpp",
+      "sha256": "9b588bd751ef178b8722e29692ed96adb3db4837b6c7b69597a741a1564f2d37"
+    },
+    "src/game/actors/d_a_obj_rc_hane.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3433f67397835905b6188501f4b98d214bc5d29b96dc6bc19d5748bd5f460cdb"
+    },
+    "src/game/actors/d_a_obj_rc_kaitendai.cpp": {
+      "mode": "native_cpp",
+      "sha256": "48c9bc3368882bc62ffc1be5baa86baebfccc15d2181912776d754ce79da4d1a"
+    },
+    "src/game/actors/d_a_obj_rc_tikuwa.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ae341227ab51b4fbaf8d29cf392adfbb5706b1236a14e07d7daa295bee75f8a6"
+    },
+    "src/game/actors/d_a_obj_simple_bg.cpp": {
+      "mode": "native_cpp",
+      "sha256": "71741afdf8d349aafcc2ce38ac0e16ae3eb32c47f684c853ec652c712ee655b3"
+    },
+    "src/game/actors/d_a_obj_sl_ice_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "51082ce08a09c8a04734371d6ed69702b26e87dbb80b1915b55b315bf56872b4"
+    },
+    "src/game/actors/d_a_obj_sm_lift.cpp": {
+      "mode": "native_cpp",
+      "sha256": "03789c20261f80e4b3731716b7d4a87d81480a8f795e9d6199f7c4aa497c9b11"
+    },
+    "src/game/actors/d_a_obj_swdoor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0a76c5722d468af0fc95fd938e111c7539e438c9c99d0d5c7c98f5eb80216776"
+    },
+    "src/game/actors/d_a_obj_switch.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0f5bb610cb6b4298e933da6fbb664313464f689603497b2c8ac68c2f4418935d"
+    },
+    "src/game/actors/d_a_obj_th_fall_block.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f7f4042591106ce9fb35af367e8107dfc5a140bb8b227021bf841643529d74c4"
+    },
+    "src/game/actors/d_a_obj_ukiyuka.cpp": {
+      "mode": "native_cpp",
+      "sha256": "64027354d6922f25cf86e0866eb494fa578bab4e92e588ae25d85ecd4595cc80"
+    },
+    "src/game/actors/d_a_obj_wakame.cpp": {
+      "mode": "native_cpp",
+      "sha256": "88d6f89b26fb7ea5462f7aed27c8d5541956b85346b223c8a0b44bb9e4e14d81"
+    },
+    "src/game/actors/d_a_obj_wanwan_shutter.cpp": {
+      "mode": "native_cpp",
+      "sha256": "46b3de2e66c7f9bacb808b26121deea16c031ce6b8075a7984abaa9b3ec0935e"
+    },
+    "src/game/actors/d_a_obj_wc_obj04.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8621667408f2051f0b26b48fd33d3d23d891b040d9a4814a53163b82dc013f56"
+    },
+    "src/game/actors/d_a_obj_wc_obj07.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a21049a0b94454d31a73f85767cb73287c2b01c2470c943d5811e93b39739e5a"
+    },
+    "src/game/actors/d_a_obj_wl_koopa_shutter.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1bf5dad048bd57fd0f1bc0cb917d77d20aee5faf23c510a908f675a269569db0"
+    },
+    "src/game/actors/d_a_obj_wl_submarine.cpp": {
+      "mode": "native_cpp",
+      "sha256": "720a0440c62f2ba145263198466f662fb4b10f4f4733f1a9bb8e6c3ded5edb6e"
+    },
+    "src/game/actors/d_a_ots.cpp": {
+      "mode": "native_cpp",
+      "sha256": "fb88de341f767300ea321d1e070dc272fee8d798e253c88da58282e39e81fda1"
+    },
+    "src/game/actors/d_a_peach.cpp": {
+      "mode": "native_cpp",
+      "sha256": "790606d4d5a9359e1d4b04f19a4e97f4d2c42667aef740167d83abf1984a48e8"
+    },
+    "src/game/actors/d_a_pg_bby.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cd3187b2d57507eed574c10e2fa0c15c42fe944a236c4ffb28282d3beeb9bb97"
+    },
+    "src/game/actors/d_a_pg_dfdr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "87e94843d59cecc267da5e7b358826be860fcb97e0b443c4df5197f7498eeacf"
+    },
+    "src/game/actors/d_a_pg_mthr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0b7286601384fb0b76253ba3f46658adfdfec7700939fd0f21e67f689b04558e"
+    },
+    "src/game/actors/d_a_piano.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a0f8bfd29f1a3886735e6881f410b8079013356069fb3a382f707bd4e5ff510a"
+    },
+    "src/game/actors/d_a_pic_gate_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "202d8fa29f4c0323dc5ae2c9662e057c5061ad890020b1a7d282a53f7c5d92cc"
+    },
+    "src/game/actors/d_a_pkn.cpp": {
+      "mode": "native_cpp",
+      "sha256": "873220eb440e0b2eb49b82b6b9482f48ca2c24838b7ec9d79538c8c2bcacadec"
+    },
+    "src/game/actors/d_a_red_bombhei.cpp": {
+      "mode": "native_cpp",
+      "sha256": "959108e65b294e94f0b19f7cde7c4a55e088a883b91240be0a7e165562469098"
+    },
+    "src/game/actors/d_a_sanbo.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e0e3310f63228a2fa30a6b125165bd3ee3b522ffc5e79a36f6e3324cd64e2032"
+    },
+    "src/game/actors/d_a_slide_box.cpp": {
+      "mode": "native_cpp",
+      "sha256": "086dfe5bb5072d8afde9af85038904235ebdbf7cc79106dec9c60d04e0bd4236"
+    },
+    "src/game/actors/d_a_tgz.cpp": {
+      "mode": "native_cpp",
+      "sha256": "781a18990708abe6a75efdcbfdd6935bb190e40ddee50af276c5e723a39e8ab3"
+    },
+    "src/game/actors/d_a_tor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "df209faacd72435f9aad0d192ecaad8f5ccc81181d6f0b341bfe7082d563d562"
+    },
+    "src/game/actors/d_a_trs.cpp": {
+      "mode": "native_cpp",
+      "sha256": "29b49d5c120bf61520d4d4775a3fa7334524b244cbdd5a2dffc92826fe780be8"
+    },
+    "src/game/actors/d_a_trs_trap.cpp": {
+      "mode": "native_cpp",
+      "sha256": "baeb9f4b4da18bca75fc7138297ad5bbcb1432e05c5ceb9b7d748f53177be3d8"
+    },
+    "src/game/actors/d_a_wanwan2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "acf2138a6d5c2287d4d6c60b666053cd2fc70f6b6ead353fd32a7dc0fd205f3d"
+    },
+    "src/game/actors/d_a_water_hakidasi.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ef28f053fb8d4396d8b66d8ddb558c14535a5536d1ab8d5391e720dd8f235eef"
+    },
+    "src/game/actors/d_a_yegg.cpp": {
+      "mode": "native_cpp",
+      "sha256": "71e65194f81e22b0656a54583f66fbe048d4da1a2004ce9f1eebb87e8e7cddd6"
+    },
+    "src/game/actors/d_a_yurei_mucho.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ffc8d1d6284ffa7f4f43c388a9afed7ae804d8055a10bfeae97e0703eda86881"
+    },
+    "src/game/player/Player.cpp": {
+      "mode": "native_cpp",
+      "sha256": "734b1b3c2cecb1a81e71d817e94c2885753fae5ed437629407ed93590cabd42d"
+    },
+    "src/game/stages/LevelObjects.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a878678c07b10a1fe28e531521155ce7f72450669f70f9208ac4660bb754b80b"
+    },
+    "src/game/stages/d_s_boot_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b14897bf17fc367c901196afa1369ff5d609b70c045f1a45422a7faf7c90db8c"
+    },
+    "src/game/stages/d_s_dsmt.cpp": {
+      "mode": "native_cpp",
+      "sha256": "fe15e62788b7894ebe0636a4fc704166b92634512ffa9ad0e3d429893a6e2ea2"
+    },
+    "src/game/stages/d_s_entry_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4a31efb0df0edb49024e38a4c207391c172d0375d0bead945386ee051868bfe1"
+    },
+    "src/game/stages/d_s_game_over.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0a4d2919868a394b923805ecb7a009c1fe31a9d26413d38c87b52dd635e276b4"
+    },
+    "src/game/stages/d_s_mb.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f4152d3c778cc4f523489d6a883ab08d08c745ba2ce1e539d3bcd7ee1d5dd03a"
+    },
+    "src/game/stages/d_s_star_sel_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8607f7bb1db1b2045c88b4dc325f76c79705acf9fb46380e60b79c6a63985ed7"
+    },
+    "src/minigames/d_mg3d_esp_anim_set.cpp": {
+      "mode": "native_cpp",
+      "sha256": "56b858fe1de075a2181271ccc40e766a475f4beee257700543f3a08ddf1c5b3e"
+    },
+    "src/minigames/d_mg_jump3d_mario.cpp": {
+      "mode": "native_cpp",
+      "sha256": "82c12cd42dc46d64bf1b85423230f60d6f3b369203adb5384db71cb96fcffc8c"
+    },
+    "src/minigames/d_s_mg_amida.cpp": {
+      "mode": "native_cpp",
+      "sha256": "61a786d122c5cfa39ac0fc74f20718a4535b81f19eb5dcdc7a8f0de37da5c06b"
+    },
+    "src/minigames/d_s_mg_bomroom.cpp": {
+      "mode": "native_cpp",
+      "sha256": "2fbb39a5bf341583750d49568f04e47e957a85b601a3e7b8154a898b08d03bca"
+    },
+    "src/minigames/d_s_mg_bsc.cpp": {
+      "mode": "native_cpp",
+      "sha256": "480aae6ceff93cc34f23d5488826c5a279ede9963bf8274107203f33f0227ac1"
+    },
+    "src/minigames/d_s_mg_card.cpp": {
+      "mode": "native_cpp",
+      "sha256": "18a81dbbb11a846b851ae0c3953313f7e53edef704a7937358e2e480c8fab068"
+    },
+    "src/minigames/d_s_mg_coin.cpp": {
+      "mode": "native_cpp",
+      "sha256": "61b5c4a944395d9dadcf599d75d806c3e3c29fe0e8d63ff622ce96077343d72c"
+    },
+    "src/minigames/d_s_mg_cup.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4014d552089bf1ce4d961c2216af230f0e31b266e5def46d0e618a67d0562c37"
+    },
+    "src/minigames/d_s_mg_curling.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0dd0614abeacfaf1b2ba5083ceddd0eea6e1d1d560e66d8c07cfe0b15242b6be"
+    },
+    "src/minigames/d_s_mg_curling2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "42df6541aaa5008a8b5545f8d87e69a7c379fd20f007abca963753290d5e0b4f"
+    },
+    "src/minigames/d_s_mg_d3d_base.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c601522f438ea0ec5f1357a293077e4a9fbea3b51a00a5200313117819c5e4a7"
+    },
+    "src/minigames/d_s_mg_flower.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ffc760e76487ea2e6b44051f36ebed015d6f3fc51cfa795d2ea7d8950b5f382b"
+    },
+    "src/minigames/d_s_mg_hanachan.cpp": {
+      "mode": "native_cpp",
+      "sha256": "05a5dc89348c30a7f15518fb87ee235dc3102d909f02558fc9f4e63185c39f1f"
+    },
+    "src/minigames/d_s_mg_hanachan_methods.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d54b75190ddce6c995d2c74b1eeb3394b600a1fdf1fdfdc6ba9bc919bc551c48"
+    },
+    "src/minigames/d_s_mg_jump2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "51359546f5f61c68d60964da83ba0d79dc2bab1a85abb6cae11d9aac52b35576"
+    },
+    "src/minigames/d_s_mg_luigi.cpp": {
+      "mode": "native_cpp",
+      "sha256": "13679d214bec8063cb8c6caf39f4e6c00648e89e351c409979fd2b6e35edadd6"
+    },
+    "src/minigames/d_s_mg_m_carlo.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ef4670360b326fb8473612685d4a2aaf831acb082837dbbeb83e7a47c3d9400c"
+    },
+    "src/minigames/d_s_mg_memory.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bffe9c54210a4cdfdee445e43443863876942e778d476cf8696b8b77c2580271"
+    },
+    "src/minigames/d_s_mg_memory2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "20134f0c206fdb5c38fd2c3060278b37a07db93829175356b6e604079b539424"
+    },
+    "src/minigames/d_s_mg_pachinko.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1893aec6152bcc562151940903546d649f52c03d62d4e155d123126e528ef245"
+    },
+    "src/minigames/d_s_mg_pachinko2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "cb1e8d22c12d84fcf033a7d4d0d302e35b534b8ff272d8390f75eb3ea2f6d0eb"
+    },
+    "src/minigames/d_s_mg_single3d_base.cpp": {
+      "mode": "native_cpp",
+      "sha256": "938216dbba7727f16333d20e6a9a3686fbadaa45bb651af3642ebc716ef012e4"
+    },
+    "src/minigames/d_s_mg_slots.cpp": {
+      "mode": "native_cpp",
+      "sha256": "783e9337bab81c9e31aa9a6cf7463ca39139c68831535b14838d2f295c51a9a7"
+    },
+    "src/minigames/d_s_mg_sound.cpp": {
+      "mode": "native_cpp",
+      "sha256": "39e64dac22a3fc1c73b3eede9dea906c50ebd96232f915be5176a1cf5682d94c"
+    },
+    "src/minigames/d_s_mg_trampoline.cpp": {
+      "mode": "native_cpp",
+      "sha256": "2febd98642932ae8a8a488e88ff5d5a6bf1012de6e61eba188347d7982afaa49"
+    },
+    "src/minigames/d_s_mg_trampoline2.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4951ce117f2cc44d172445d49ab36cb93bd93a54b16e281d37d9a6a7872c15d6"
+    },
+    "src/minigames/d_s_mini_gm.cpp": {
+      "mode": "native_cpp",
+      "sha256": "2b4725150ebdfe75ff82057d0e00fc74d7c25fdc8fa717871dc7c6056cafbbea"
+    },
+    "src/minigames/unit020b4aa4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "4f329f0d0e59dbfa819d06e9af398812b5e63769f337278cc39dd7fd13bb7423"
+    },
+    "src/runtime/actor/ActorBase.cpp": {
+      "mode": "native_cpp",
+      "sha256": "51a050b040491912011373e7698914d4b21cf0777b5d2849b88edfb41cabd524"
+    },
+    "src/runtime/actor/ActorBase_SceneNode.cpp": {
+      "mode": "native_cpp",
+      "sha256": "66f1368fa1da02a9f83ffd132030f07cd2f096499ab0ffc2bf263c5a0b12a84a"
+    },
+    "src/runtime/actor/d_actor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "9a106841d3ef4e0b40aed8246002d80b9b8042514177cc0146ad81e99a47619c"
+    },
+    "src/runtime/actor/d_bg_actor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "81b99c01b39f3f0b479fafab588098d0c170ad654385a13245f627d7e69d8932"
+    },
+    "src/runtime/actor/d_cap_enemy.cpp": {
+      "mode": "native_cpp",
+      "sha256": "f60352096fba6def2e0fe221f42a097fcef164387c3a3348d3e7d3e9101f5b00"
+    },
+    "src/runtime/actor/d_cap_enemy_arm9.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c20f2cf01b9df60ea4f8e37c3ab8fb67bd1152043f7dbb9f1958f854500b8ede"
+    },
+    "src/runtime/actor/d_enemy_base.cpp": {
+      "mode": "native_cpp",
+      "sha256": "e7d4c1caa7961838a0d75814d90ac8d32af7ce083fa3605b3ea18678b42966c4"
+    },
+    "src/runtime/actor/d_path_lift_actor.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3735b42f67fed99bbb0a89efd744fe12863777a61fc887fb52cf8476f6f3edcf"
+    },
+    "src/runtime/graphics/fader/d_fader.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d6dd07ac255f907f220557247543608321190707ba5c7e623337bd1c4277d356"
+    },
+    "src/runtime/graphics/fader/d_wipe.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0190ac0b196e6b78bb1ca04aca16355c76e115f85dcdd6612367e1fb465aef8b"
+    },
+    "src/ui/hud/CapIconMgr.cpp": {
+      "mode": "native_cpp",
+      "sha256": "87feae6576f56a09c3d96cf2ba985d586a9424c9c61c5171e88d601cf36f8996"
+    },
+    "src/ui/hud/d_map.cpp": {
+      "mode": "native_cpp",
+      "sha256": "94f0ab6994e09f8a23c4bba466eea59b71828217de8d0af78130dddaa608688e"
+    },
+    "src/ui/hud/d_meter.cpp": {
+      "mode": "native_cpp",
+      "sha256": "479439d6ecb7909202d63f9fb300ff004fc10fb371e181d221061ff4ce813628"
+    },
+    "src/unnamed/arm9/0204/func_02040aa4.c": {
+      "mode": "packed_c",
+      "sha256": "236ecf7e44fb138526f99804664ef284f564abe846b9b2bd32934c821e2b9132"
+    },
+    "src/unnamed/arm9/0204/func_02040bb0.c": {
+      "mode": "packed_c",
+      "sha256": "7448c4994dc2f0ee2125a9abe2176c79449a2f7d96f34644cf33dee081fe5800"
+    },
+    "src/unnamed/arm9/0204/func_02040c34.c": {
+      "mode": "packed_c",
+      "sha256": "227a385f2a7ace16c1524cc7b074c679c78ab98e9ff2aed2edb179f250fad589"
+    },
+    "src/unnamed/arm9/0204/func_02040f30.c": {
+      "mode": "packed_c",
+      "sha256": "fef3329460d03efd797dd6042e09c7bfa9ce66987384226b1adba7833e70b791"
+    },
+    "src/unnamed/arm9/0204/func_02041224.c": {
+      "mode": "packed_c",
+      "sha256": "ca4674a54071147e35f687401de5a401cc506f1b476d0002f73a0b47318ae48f"
+    },
+    "src/unnamed/arm9/0204/func_020412f0.c": {
+      "mode": "packed_c",
+      "sha256": "8e458684843d4776da2d20a6c4077b8d1b7ce7598a21b0a5c462016779cada9e"
+    },
+    "src/unnamed/arm9/0204/func_020417d0.c": {
+      "mode": "packed_c",
+      "sha256": "63f91c12adf1e0958d5a062283bc9e0d1d0cb38d02863418e4a5cc780d1c7150"
+    },
+    "src/unnamed/arm9/0204/func_02041930.c": {
+      "mode": "packed_c",
+      "sha256": "2ede2bf8889d9065961b77bdbf291cecfd52336b5821b83fcde811fc4432a96f"
+    },
+    "src/unnamed/arm9/0204/func_02041a94.c": {
+      "mode": "packed_c",
+      "sha256": "dcb547eceaf4e326f16fffd82c47a4f573d857c4258aa5cabfeef8dbf1884aee"
+    },
+    "src/unnamed/arm9/0204/func_02041ae8.c": {
+      "mode": "packed_c",
+      "sha256": "eef794cd9b8d403a532c28ce67499111d99bb194092d1b3e7a7d4af6439e2b13"
+    },
+    "src/unnamed/arm9/0204/func_02041b24.c": {
+      "mode": "packed_c",
+      "sha256": "7323213ed71943d3e9ff7b1e312997f606fde280ea745c481c52b8551e27481a"
+    },
+    "src/unnamed/arm9/0204/func_02041b60.c": {
+      "mode": "packed_c",
+      "sha256": "e6dceb1bf3f2a43efbde6ac9e0fa8d099e923bba9b1e095f2c2ed9ddd9d4c34e"
+    },
+    "src/unnamed/arm9/0204/func_02041bbc.c": {
+      "mode": "packed_c",
+      "sha256": "d3a875cadc48814bb3dff3c9f4191898a966e5c8f069781852eb3b61b2cb8134"
+    },
+    "src/unnamed/arm9/0204/func_02041c2c.c": {
+      "mode": "packed_c",
+      "sha256": "741762f8ebdbdd13fe923a78bdc2f99e9c026ed20329b875916268598c62c22c"
+    },
+    "src/unnamed/arm9/0204/func_02041c64.c": {
+      "mode": "packed_c",
+      "sha256": "6cdfca375008309fd4d0d5412decd21181baaeeada226f35e25a219d1011cabf"
+    },
+    "src/unnamed/arm9/0204/func_02041d28.c": {
+      "mode": "packed_c",
+      "sha256": "a5cac73b55f09ce0d7483bc9f40f3acc425b36223bca2be3eb87b60819660e2b"
+    },
+    "src/unnamed/arm9/0204/func_02041e14.c": {
+      "mode": "packed_c",
+      "sha256": "6188b25afccb9026df05ab422847ee80a133e97f8f7511d30bbd38d2de2adb04"
+    },
+    "src/unnamed/arm9/0204/func_02042160.c": {
+      "mode": "packed_c",
+      "sha256": "1a1d54ceb9780a0104525a06f0d45738d99d17894ef0fbe8b46db471f39c3128"
+    },
+    "src/unnamed/arm9/0204/func_02042254.c": {
+      "mode": "packed_c",
+      "sha256": "02e917938a404d05da3c1973ac8806f952844955f1d36e098cace5fe27921db3"
+    },
+    "src/unnamed/arm9/0204/func_0204dab4.c": {
+      "mode": "packed_c",
+      "sha256": "7d8903831cbe33abb84e3a60199468ac6607275599b200f70f5435b8be671ba6"
+    },
+    "src/unnamed/arm9/0205/func_020581a8.cpp": {
+      "mode": "native_cpp",
+      "sha256": "d28d9ecd939cf4a9c1029b2fc323a238aff9c9960a1f4456024645fe9514bcf7"
+    },
+    "src/unnamed/arm9/0205/func_0205c048.c": {
+      "mode": "packed_c",
+      "sha256": "fd6e72fe536643b3b15d54c8282a902f815a6c8c50144111db56e34788f5abfe"
+    },
+    "src/unnamed/arm9/0205/func_0205d044.c": {
+      "mode": "packed_c",
+      "sha256": "6a17b335448ca4fee0b69ff0f6e9bfed80301f96a7d579b96a445a4a71610319"
+    },
+    "src/unnamed/arm9/0206/func_020603c8.cpp": {
+      "mode": "native_cpp",
+      "sha256": "30869c2c76ed64ad09a29c39858c80c347e5b106d4527b05b075b592eff8b3f7"
+    },
+    "src/unnamed/arm9/0206/func_02060558.cpp": {
+      "mode": "native_cpp",
+      "sha256": "bbb625f63e98674a99538de95aba4c64c005c4be11898e4a5a9b671262952522"
+    },
+    "src/unnamed/arm9/0206/func_0206062c.cpp": {
+      "mode": "native_cpp",
+      "sha256": "7872337be0df526227175fbe98b2b4fcb407fa5e4bbe389f4257b5b639363769"
+    },
+    "src/unnamed/arm9/0206/func_02060f60.cpp": {
+      "mode": "native_cpp",
+      "sha256": "aa759d143893e7b6a7ac1c9cf2203e8013c77e7f450de1e2d170fcfa2b755728"
+    },
+    "src/unnamed/arm9/0206/func_02061ee4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3b0f0e6d17de9a44cdc1d90dcee17a456555a4f12ce5467eab6f0a863abb42e7"
+    },
+    "src/unnamed/arm9/0206/func_02062024.c": {
+      "mode": "packed_c",
+      "sha256": "a90fcaa102165b14375210b6e869480351f2de9b9a631b61406494d33318b15f"
+    },
+    "src/unnamed/arm9/0206/func_020620b0.c": {
+      "mode": "packed_c",
+      "sha256": "4ad8154dcb4dae0dddfcdab8ccfed7676ea6a33609b072ae086debe182cd99ff"
+    },
+    "src/unnamed/arm9/0206/func_02062aa4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0ee8031fc7bb035271a66aba420b3debc45ffffec3c29ca96ac80fce54acf00e"
+    },
+    "src/unnamed/arm9/0206/func_02062bdc.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3abc3ef42b14d509de65e887e3dfb899a925350770d1de2f999b3c7c6ce184e8"
+    },
+    "src/unnamed/arm9/0206/func_02062d10.cpp": {
+      "mode": "native_cpp",
+      "sha256": "ab121bd7e6ca0e57a0e4665dbd424ab326f2173e4fce7ce449ef96f1e33bf94d"
+    },
+    "src/unnamed/arm9/0206/func_0206879c.c": {
+      "mode": "packed_c",
+      "sha256": "386318b10c9e0e7f80f9586a59cb20cede1ec58c3e614cbdaac232d3c9235ccc"
+    },
+    "src/unnamed/arm9/0206/func_020687f8.c": {
+      "mode": "packed_c",
+      "sha256": "2419cbd5771421dace1f4b34064306588967d75ad115acd4825bab3c693673da"
+    },
+    "src/unnamed/arm9/0206/func_0206881c.c": {
+      "mode": "packed_c",
+      "sha256": "e32d6dca688cf4502cea5803dbb00d70cc83127548c216c7c158ff07093b0373"
+    },
+    "src/unnamed/arm9/0206/func_02068844.c": {
+      "mode": "packed_c",
+      "sha256": "2d4eed89d8a1f6ba4740f524160ad223486c12bf391c861ae669709fedc65894"
+    },
+    "src/unnamed/arm9/0206/func_020688b4.c": {
+      "mode": "packed_c",
+      "sha256": "241684e449772b8845842d42116c6f037ae6bdc7d74a8a05b4f93a64a74d5459"
+    },
+    "src/unnamed/arm9/0206/func_020688cc.c": {
+      "mode": "packed_c",
+      "sha256": "eba8ed883aa7737214b35f20e7f8086ad8c0e789e1e383f805dd51bfe565b245"
+    },
+    "src/unnamed/arm9/0206/func_020688e4.c": {
+      "mode": "packed_c",
+      "sha256": "b22ddb033f449efaf3580fb01eaacfb85f3313543370c1e9b6b8f185d5a955d2"
+    },
+    "src/unnamed/arm9/0206/func_020688fc.c": {
+      "mode": "packed_c",
+      "sha256": "62aa1e93ce2139f2a57ac1a6edfb8845f7f5a3df5d2012ce8148ee0e8cf5abc6"
+    },
+    "src/unnamed/arm9/0206/func_02068a74.c": {
+      "mode": "packed_c",
+      "sha256": "595a3a8e6c91bfc8a616bbc2c96dc23300e05908330ae4ed79044deb827a2505"
+    },
+    "src/unnamed/arm9/0206/func_02068ae8.c": {
+      "mode": "packed_c",
+      "sha256": "ea8c7cd4290786a36e5632fcc60e686fe9f00023eb9459bf7a07af1ae32d97ad"
+    },
+    "src/unnamed/arm9/0206/func_02068d08.c": {
+      "mode": "packed_c",
+      "sha256": "46b12776f403f55e879485f2c2625d403bb4d09a2a2e534a7a32b1219390238a"
+    },
+    "src/unnamed/arm9/0206/func_02068dc8.c": {
+      "mode": "packed_c",
+      "sha256": "570780909a07fcaa069c73550893f3157d14cc10440feca7c86a017186542286"
+    },
+    "src/unnamed/arm9/0206/func_02068e4c.c": {
+      "mode": "packed_c",
+      "sha256": "8da6caf58e924e76608d2f9e38c29a3bdb79323c85875f5cb0660a0680da6556"
+    },
+    "src/unnamed/arm9/0206/func_020690b0.c": {
+      "mode": "packed_c",
+      "sha256": "8961c84f9f29ae621a91b86c8d0c5d25a63a790419233d89337e78305788e567"
+    },
+    "src/unnamed/arm9/0206/func_02069918.c": {
+      "mode": "packed_c",
+      "sha256": "239819f34edde5ce4bc9d6a39eabe3377d3e8020aa6fa8c40d3f830948089713"
+    },
+    "src/unnamed/arm9/0206/func_02069994.c": {
+      "mode": "packed_c",
+      "sha256": "cd0b5a3fef4a08ec0c2de864c3081289369011911338f55fc4897f5af41493e4"
+    },
+    "src/unnamed/arm9/0206/func_0206a230.c": {
+      "mode": "packed_c",
+      "sha256": "bd24c0b2ba95cb43316510f38137d47c6b5470d4c56c9d0502f3789fa0737d12"
+    },
+    "src/unnamed/ov001/func_ov001_020ab41c.c": {
+      "mode": "packed_c",
+      "sha256": "deaeba9b6ee37a6d2b0a48ed31840809a83d1d66050e85ea0fe18345554fe156"
+    },
+    "src/unnamed/ov007/func_ov007_020ad660.c": {
+      "mode": "packed_c",
+      "sha256": "7c7e247f5e11e89fa1027a344bd5b27e5cc97200f6605381009c5a8ed826c7da"
+    },
+    "src/unnamed/ov007/func_ov007_020ada70.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "14dc3d645fee989622a614f8237f9593d370f2bf613076b336e6a2961b4993a6"
+    },
+    "src/unnamed/ov007/func_ov007_020adc08.c": {
+      "mode": "packed_c",
+      "sha256": "05c6b9a8715a8dbe4c0921d6d2044caa38108dbb1019afdd3819d000e902bec6"
+    },
+    "src/unnamed/ov007/func_ov007_020ade58.c": {
+      "mode": "packed_c",
+      "sha256": "72906a2a0282041f6c814d912de62f48874c632d3b9b2255ac243d985b728627"
+    },
+    "src/unnamed/ov007/func_ov007_020ae070.c": {
+      "mode": "packed_c",
+      "sha256": "ee65a57f06fc6c731e15f2085315a2b13956b9cc6b54f59585714100335fcce2"
+    },
+    "src/unnamed/ov007/func_ov007_020ae2d0.c": {
+      "mode": "packed_c",
+      "sha256": "6aa7cbb03e5a509755a669620cd004f9110bc7486ff5263f00e3e1c46d3636f2"
+    },
+    "src/unnamed/ov007/func_ov007_020ae454.c": {
+      "mode": "packed_c",
+      "sha256": "165a15e79bc50a6794c62802306ee0bed938d6207fece59da330a06ab50635d9"
+    },
+    "src/unnamed/ov007/func_ov007_020ae558.c": {
+      "mode": "packed_c",
+      "sha256": "6511f08a38b0614621706090eff294d66d554ac2e8f2134977856df565ed4df0"
+    },
+    "src/unnamed/ov007/func_ov007_020ae810.c": {
+      "mode": "packed_c",
+      "sha256": "495bfef991ed5ea07e150bede4aab5a751445b997674980c0bf88aeb0ab69edd"
+    },
+    "src/unnamed/ov007/func_ov007_020aea6c.c": {
+      "mode": "packed_c",
+      "sha256": "aa1245e7ac9662145da063c2913dbbcaa4a172062ca456705720dc66859d0ff4"
+    },
+    "src/unnamed/ov007/func_ov007_020aec94.c": {
+      "mode": "packed_c",
+      "sha256": "965103a9a5e067f70e3e7399e18ee70b8e7c6266e186c55b96d2c009485313fd"
+    },
+    "src/unnamed/ov007/func_ov007_020aed98.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "b0db6c59b06c9ef2c8b4d4ed759b268a9ac1c556e80fc5fa3268878b7fb4b2a8"
+    },
+    "src/unnamed/ov007/func_ov007_020aef84.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c760bdedf7887de31942f355ff78559f3387b9972e3c706aaffc5389d9434010"
+    },
+    "src/unnamed/ov007/func_ov007_020aefb4.c": {
+      "mode": "packed_c",
+      "sha256": "f88d7546b0ab874a2ca50819d69d46617334dd924b128f0386d7fc7a3a78e263"
+    },
+    "src/unnamed/ov007/func_ov007_020af434.c": {
+      "mode": "packed_c",
+      "sha256": "67518b5206fdb462f43eccad0c34597d8b340bc5c21457cb890277cbfeb322b3"
+    },
+    "src/unnamed/ov007/func_ov007_020af4dc.c": {
+      "mode": "packed_c",
+      "sha256": "e1b00e2c3093bf4d9a716ebf14a82001a9c8e5a6f5841f10f304e049add296f5"
+    },
+    "src/unnamed/ov007/func_ov007_020afc44.c": {
+      "mode": "packed_c",
+      "sha256": "f478353eaa810c10ae0cf8c187caa537b4ef21d9655e13b1b0b7032e1407289c"
+    },
+    "src/unnamed/ov007/func_ov007_020b0244.c": {
+      "mode": "packed_c",
+      "sha256": "5ea78764fb188fcd9efb258b6d7afdf074b2594f3c15fd45910451bb2eb50c6f"
+    },
+    "src/unnamed/ov007/func_ov007_020b0358.c": {
+      "mode": "packed_c",
+      "sha256": "811f384e46a166471e44fdd08f41e2ebe300b63b39c83069ea1a24bee9b4dae7"
+    },
+    "src/unnamed/ov007/func_ov007_020b066c.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "d381f574ce6b73fddc78ede45f730c5304ca7a202d46464a7178dba459e7e306"
+    },
+    "src/unnamed/ov007/func_ov007_020b0da0.c": {
+      "mode": "packed_c",
+      "sha256": "435d02d6a4a2ddc3ab9df7ce9027380f67193d2ad954e63b1acbfb834d579baa"
+    },
+    "src/unnamed/ov007/func_ov007_020b1224.c": {
+      "mode": "packed_c",
+      "sha256": "61176eabf712fe01b94038c8c3233d62c37917b4249eace1bbeb7ca82d570c31"
+    },
+    "src/unnamed/ov007/func_ov007_020b131c.c": {
+      "mode": "packed_c",
+      "sha256": "698fdf7aff738ffd155c3185444744d86ffa85da2007c4b05c0a12ea9f591296"
+    },
+    "src/unnamed/ov007/func_ov007_020b1390.c": {
+      "mode": "packed_c",
+      "sha256": "61b68e948c9c9a94be5579d963c3a78ca7840df2e5091413016934ae5f66e1fa"
+    },
+    "src/unnamed/ov007/func_ov007_020b1718.c": {
+      "mode": "packed_c",
+      "sha256": "9a09dd4e49a953a5b7e36f7539fd1b7411539668b57f192ae915ed91d2d46c97"
+    },
+    "src/unnamed/ov007/func_ov007_020b2308.cpp": {
+      "mode": "native_cpp",
+      "sha256": "82995d69176ad6dcf740132f27c9abbb56047b160485e51e08c3c60402d356fd"
+    },
+    "src/unnamed/ov007/func_ov007_020b2370.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "bb55a24c946e21471c5185153c88e36754c4f1fd9da557ddf4cdb7b9ddb586e4"
+    },
+    "src/unnamed/ov007/func_ov007_020b257c.c": {
+      "mode": "packed_c",
+      "sha256": "e76d5baba04a88bdd3804459996fa45864ab36b3d93a354f9dec02377bf4082c"
+    },
+    "src/unnamed/ov007/func_ov007_020b2614.c": {
+      "mode": "packed_c",
+      "sha256": "2bc5b620ae21a16098b2c530bee7aec39e00fd474032fd7597f2487f57db4de3"
+    },
+    "src/unnamed/ov007/func_ov007_020b2764.c": {
+      "mode": "packed_c",
+      "sha256": "84a897e3d5cf03e9150a6b4245b04422075ec392a2ed932c1f6598646dc539e1"
+    },
+    "src/unnamed/ov007/func_ov007_020b2e64.c": {
+      "mode": "packed_c",
+      "sha256": "e4e5472f3c9a804555917ac427676307debc2fede0c630d9d433280d7ffc31a2"
+    },
+    "src/unnamed/ov007/func_ov007_020b3190.c": {
+      "mode": "packed_c",
+      "sha256": "ef5ee646b3d869257e45064e7fd7231542c88a06b63f56519b705da6d1194e78"
+    },
+    "src/unnamed/ov007/func_ov007_020b3d30.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "8238a92da8ac83484a489524a609d7bf64f99ba8f10cc6b32cd7e789e4b10e88"
+    },
+    "src/unnamed/ov007/func_ov007_020b46b0.c": {
+      "mode": "packed_c",
+      "sha256": "8a498fa100ff7beaba1f06d578bd8563ad56e6c033a0f22c307a2040cea76b35"
+    },
+    "src/unnamed/ov007/func_ov007_020b4b5c.c": {
+      "mode": "packed_c",
+      "sha256": "dcbccbd1e5b653c9ec00fe1555e63c31c215c61d1b252749d131be144c83b84e"
+    },
+    "src/unnamed/ov007/func_ov007_020b4bd4.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3f3182f99fd625177f2ba7dc6ce29d58be43bb09cff680d7377a5f0b03afbdb8"
+    },
+    "src/unnamed/ov007/func_ov007_020b4c04.c": {
+      "mode": "packed_c",
+      "sha256": "b4b541d254d6955a71fbbfb7fd281bd19a51963119839c21787e69efa9dcc2f8"
+    },
+    "src/unnamed/ov007/func_ov007_020b50e8.c": {
+      "mode": "packed_c",
+      "sha256": "5038f8ab772d3e221751061b000bda67c13ebdac5cfe79d2fbb86517068e2fc7"
+    },
+    "src/unnamed/ov007/func_ov007_020b58e4.c": {
+      "mode": "packed_c",
+      "sha256": "b20535287815628d0fb48185a8d24cca82843dc9a08a200f225e135552c8ab4c"
+    },
+    "src/unnamed/ov007/func_ov007_020b5bf0.c": {
+      "mode": "packed_c",
+      "sha256": "8e76bf562e4417d7b68c2a2d60dda4c6bb39229c044bd7262024dcf78da40717"
+    },
+    "src/unnamed/ov007/func_ov007_020b5f64.c": {
+      "mode": "packed_c",
+      "sha256": "0a1c560d333f4b665fcfb0f2c78b5e7c92d26e01b7abfd260057f8c0be3de0e5"
+    },
+    "src/unnamed/ov007/func_ov007_020b6134.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "694830a8e78beff61363d3a8ad40d46705a39cc211039ee231c5a6d5663916da"
+    },
+    "src/unnamed/ov007/func_ov007_020b6208.c": {
+      "mode": "packed_c",
+      "sha256": "33d49f765d6554474d6ab663188fe4b2c505d7ad62856e7744aebac7ceaa7a45"
+    },
+    "src/unnamed/ov007/func_ov007_020b6544.c": {
+      "mode": "packed_c",
+      "sha256": "cf35c54d8eb6cc3d4e9c1647a02c5901f510e9762d8150384fa853edb1e61a81"
+    },
+    "src/unnamed/ov007/func_ov007_020b69c4.c": {
+      "mode": "packed_c",
+      "sha256": "8980ae26c06284993d3b8feb2b50c74ab1fbad87d24de4452b36cf9e03aae1fd"
+    },
+    "src/unnamed/ov007/func_ov007_020b6a84.c": {
+      "mode": "packed_c",
+      "sha256": "9551e48d790e68ca9488a7dc3944e80c67cc348a1d98f428144182fb7ccb440d"
+    },
+    "src/unnamed/ov007/func_ov007_020b6d40.c": {
+      "mode": "packed_c",
+      "sha256": "57a43babc9cf79ffe3dcda8e4f5252beaf452dad0a6fbd30cb4f99dbace738b8"
+    },
+    "src/unnamed/ov007/func_ov007_020b7320.c": {
+      "mode": "packed_c",
+      "sha256": "4b8004dd5d53ebc2299b25087218aa599a5f220b712313c40e9daa2436f4fe47"
+    },
+    "src/unnamed/ov007/func_ov007_020b782c.cpp": {
+      "mode": "native_cpp",
+      "sha256": "beefc0aed434860a97bc912fb47ef22d40a8a563ba2ea25d7087895515853b09"
+    },
+    "src/unnamed/ov007/func_ov007_020b8548.cpp": {
+      "mode": "native_cpp",
+      "sha256": "a3818fe431b4eeabf0012b8acc210f0eca571c0ade616c0c7e6776473c3073b8"
+    },
+    "src/unnamed/ov007/func_ov007_020b8690.cpp": {
+      "mode": "native_cpp",
+      "sha256": "c62b7e8e587942aaefd4b54ffcc2049cea62d75ee160c20440d6375feedc540f"
+    },
+    "src/unnamed/ov007/func_ov007_020b88c0.c": {
+      "mode": "packed_c",
+      "sha256": "07451098c5300e42db1d39708c8a528c5ef78753b376c59de7e4ad3f53784774"
+    },
+    "src/unnamed/ov007/func_ov007_020b8d48.cpp": {
+      "mode": "native_cpp",
+      "sha256": "b3c9bf66054190511a635030d39063892bc5979170e908fbe93fc90d4105b00c"
+    },
+    "src/unnamed/ov007/func_ov007_020b8fd4.c": {
+      "mode": "packed_c",
+      "sha256": "f77ceff2abff6e9f3ed4bed6e683945d880338b335a68eda91028eb4579891b3"
+    },
+    "src/unnamed/ov007/func_ov007_020b91b4.c": {
+      "mode": "packed_c",
+      "sha256": "ee2d77e89464235044bebcb8ea1fb36980c7436cdf71f2aa9c2a5cbf43108491"
+    },
+    "src/unnamed/ov007/func_ov007_020b9880.c": {
+      "mode": "packed_c",
+      "sha256": "b16f8ea0fee466fe5ac6abfda7146c7f3d4005045fe1c82da3c0b68ea639fe27"
+    },
+    "src/unnamed/ov007/func_ov007_020b9f0c.c": {
+      "mode": "packed_c",
+      "sha256": "11e66043e30dcef079924d128f920fb9d85c14121c8353bc2072e9ddf40f35f2"
+    },
+    "src/unnamed/ov007/func_ov007_020b9fc0.c": {
+      "mode": "packed_c",
+      "sha256": "c740d9530b2314944996e90dd4fbda5e89e156fa816a21533320efc7141b7bd2"
+    },
+    "src/unnamed/ov007/func_ov007_020ba05c.c": {
+      "mode": "packed_c",
+      "sha256": "a60d7c9bf502ee66a3883591a9fcff8173ec90a1a2cf0f281f767253ccd6b50d"
+    },
+    "src/unnamed/ov007/func_ov007_020ba2e0.c": {
+      "mode": "packed_c",
+      "sha256": "21ff21343a1852198f426216e4a207646be11aac9abd944c7b8947cf24ba3120"
+    },
+    "src/unnamed/ov007/func_ov007_020ba368.c": {
+      "mode": "packed_c",
+      "sha256": "41979ac3db7c64ca73e263d49b76b6e85e6c667b0bfefae37b9a73b48ac243fe"
+    },
+    "src/unnamed/ov007/func_ov007_020bad8c.c": {
+      "mode": "packed_c",
+      "sha256": "0692a71c98b4bd1beeaad7b86ba6c65d71c93982c73af5d2e1dd111b4b77d48c"
+    },
+    "src/unnamed/ov007/func_ov007_020bb09c.c": {
+      "mode": "packed_c",
+      "sha256": "bf0269a537ce5eb86532afcf654b342b481cc9b64c6ef11b29477ae913f8ec36"
+    },
+    "src/unnamed/ov007/func_ov007_020bb4b0.c": {
+      "mode": "packed_c",
+      "sha256": "a2e8259d2d3f455208940871b439bedc53fcd59629dd65ef5778b133715bca45"
+    },
+    "src/unnamed/ov007/func_ov007_020bbd24.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "91a3da7eadc80fedb82970daf0616175b44bfbeff933415137d6df497492c067"
+    },
+    "src/unnamed/ov007/func_ov007_020bc374.c": {
+      "mode": "packed_c",
+      "sha256": "67420982a2496f0963fa9b05ce33495513148669024e9619372965909c594bcf"
+    },
+    "src/unnamed/ov007/func_ov007_020bc47c.cpp": {
+      "mode": "frontend_complete",
+      "sha256": "c73170cd4eb1f78043643def748b5c486327a4eec4bc5ef54feefa19a32a7240"
+    },
+    "src/unnamed/ov007/func_ov007_020bc53c.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "f5cf8ca4977e02008352254a8bd3ffead12875ef9b5efe720650b97bb2c29a11"
+    },
+    "src/unnamed/ov007/func_ov007_020bc5fc.c": {
+      "mode": "packed_c",
+      "sha256": "1bdf40a508d6ae5fa86e68b3cda7bb4c4bb6b3d720add67cc9e615a060908c43"
+    },
+    "src/unnamed/ov007/func_ov007_020bc6d4.c": {
+      "mode": "packed_c",
+      "sha256": "7ac0b1a0827ff7a4663539053242ebd502b60ef15cb72c2bbff76519326574ec"
+    },
+    "src/unnamed/ov007/func_ov007_020bc7dc.c": {
+      "mode": "packed_c",
+      "sha256": "a74966a607e7d062cfe1918a9848ef91a2f2aced3fbe9ab35c7c45921981cfad"
+    },
+    "src/unnamed/ov007/func_ov007_020bc894.cpp": {
+      "mode": "frontend_complete",
+      "sha256": "75dd4addc7f1f84b4b99901f35acbf6b80dff643f199c99e352c41c2c3631b80"
+    },
+    "src/unnamed/ov007/func_ov007_020bcba8.c": {
+      "mode": "packed_c",
+      "sha256": "49a32e9de9d030569230b23240b9a942cec4e343c7df0ef98a7d920f02070e80"
+    },
+    "src/unnamed/ov007/func_ov007_020bcdb8.cpp": {
+      "mode": "frontend_complete",
+      "sha256": "83764a306b1a2cdcca724357985c4d31967a994d45f0149e28ac76986ef8fb33"
+    },
+    "src/unnamed/ov007/func_ov007_020be00c.cpp": {
+      "mode": "native_cpp",
+      "sha256": "3a803b5d370f83e8c64824b5e923ea36bae88da278b96479b60b3cb04530d9f9"
+    },
+    "src/unnamed/ov007/func_ov007_020be50c.c": {
+      "mode": "packed_c",
+      "sha256": "23acb637f86cf4d2dcf5151239510e427c0c82a6f78928bb80cffe984df6a60d"
+    },
+    "src/unnamed/ov007/func_ov007_020be684.c": {
+      "mode": "packed_c",
+      "sha256": "a8da66465079e3478380297696971e15a444bda1afbecffb44b7cd0ab0707866"
+    },
+    "src/unnamed/ov007/func_ov007_020be850.c": {
+      "mode": "packed_c",
+      "sha256": "4ee64c5ad12f8aa3d96bbd40abf5621bca231bc36eb8f65995a03595ca07b1fb"
+    },
+    "src/unnamed/ov007/func_ov007_020be9ac.c": {
+      "mode": "packed_c",
+      "sha256": "f263768895b8d46b0bc7afb275fae7f2d70cc38ceece569328a2e2ae9be5a28d"
+    },
+    "src/unnamed/ov007/func_ov007_020beb80.c": {
+      "mode": "packed_c",
+      "sha256": "f2d0b29f5150d523ef2190edde4095bb9da4df52ccc551e1e30be7bf157a3b50"
+    },
+    "src/unnamed/ov007/func_ov007_020beeb0.c": {
+      "mode": "packed_c",
+      "sha256": "0a0deaf9ddff8ac3dd70c05a423738128854fab8796ce471c90074bf28327a14"
+    },
+    "src/unnamed/ov007/func_ov007_020bf304.c": {
+      "mode": "packed_c",
+      "sha256": "51cc3d1605e80674bee85046393c7159035f9f6d46b78f586fe243f881ff5362"
+    },
+    "src/unnamed/ov007/func_ov007_020bf57c.c": {
+      "mode": "packed_c",
+      "sha256": "84952f73d28f8dff6781fdad49c869bda449a587d7d74aa65b87a0d68756265c"
+    },
+    "src/unnamed/ov007/func_ov007_020bfaf0.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "3faf138f5b74e7070ca9aad3a20bb0cc3e217cf0f0aff91e8df8253c3115e493"
+    },
+    "src/unnamed/ov007/func_ov007_020bfcec.c": {
+      "mode": "packed_c",
+      "sha256": "9b5a8934a8d1e52284bdb32f8580f4b466b1d9a6a9109b30fcfecfeb26549d12"
+    },
+    "src/unnamed/ov007/func_ov007_020bfd70.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "a80459b3280a6c9b51b5d4ef7ee0945e6651276c431def56992133c008d468b3"
+    },
+    "src/unnamed/ov007/func_ov007_020c0128.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "8340ba7794ee09dbb62d974b8542aea0b6d8489bceb3d2036a9eff19dbe8e39a"
+    },
+    "src/unnamed/ov007/func_ov007_020c023c.c": {
+      "mode": "packed_c",
+      "sha256": "46c648dfde250605cf826a55666d73c4240d721c71ba40d9206cd0b5e8b3a742"
+    },
+    "src/unnamed/ov007/func_ov007_020c0b78.c": {
+      "mode": "packed_c",
+      "sha256": "3d21f2041507d2ef54cf78471e8db61c60167eabbc6d8da06f8edd8b8ee76c2f"
+    },
+    "src/unnamed/ov007/func_ov007_020c10ec.c": {
+      "mode": "packed_c",
+      "sha256": "e35bb0713fad4c42986c39f77380d90cc05cac2486791326978200a42c4da275"
+    },
+    "src/unnamed/ov007/func_ov007_020c26fc.c": {
+      "mode": "packed_c",
+      "sha256": "f95e414786a0999eadc31e05d6355cb3d542a1bf9ae58f301d338fef1a4d6cc0"
+    },
+    "src/unnamed/ov007/func_ov007_020c29b4.c": {
+      "mode": "packed_c",
+      "sha256": "dd87530897f3e6469987916988990a34a1754bcd36ef5a567f969c67f3d8b49b"
+    },
+    "src/unnamed/ov007/func_ov007_020c2acc.c": {
+      "mode": "packed_c",
+      "sha256": "9bf6025ef43abc9ef95c750f6a878e0f7972890f39deb775d1568441946534c0"
+    },
+    "src/unnamed/ov007/func_ov007_020c2b38.c": {
+      "mode": "packed_c",
+      "sha256": "ee78bef107b31f34d52ffa9fa7ce5d3831267888db7693234fafec6b73ca13ca"
+    },
+    "src/unnamed/ov007/func_ov007_020c2b9c.c": {
+      "mode": "packed_c",
+      "sha256": "0bf0a7a0ce71f43834b5d60f9be6abd9b3d3cdaf5a277c874d5a25df45445624"
+    },
+    "src/unnamed/ov007/func_ov007_020c2c68.c": {
+      "mode": "packed_c",
+      "sha256": "1729f5b1fcaa8fc8cec2236081c540d78fd101a4dae9526dd67149f5642191bc"
+    },
+    "src/unnamed/ov007/func_ov007_020c2dfc.c": {
+      "mode": "packed_c",
+      "sha256": "cdfdaa3064314df0a6daf671b6352d23e3d6fb82b55c56b82b04bd85dc142d8f"
+    },
+    "src/unnamed/ov007/func_ov007_020c3d40.cpp": {
+      "mode": "native_cpp",
+      "sha256": "8c27bb18408023e4701fc754ca6e776edffc66b0dcd2403abe9a8c865b2b9dfc"
+    },
+    "src/unnamed/ov007/func_ov007_020c3f00.c": {
+      "mode": "packed_c",
+      "sha256": "db36a66dbc02f01b529b4e89fd8898a7703d6f9431c3b50b35d8b56a825764ea"
+    },
+    "src/unnamed/ov007/func_ov007_020c4128.c": {
+      "mode": "packed_c",
+      "sha256": "64aa2395e5d57520697984a6fad5e166cc26b32b938c0e47111e6ba8173079ff"
+    },
+    "src/unnamed/ov007/func_ov007_020c41dc.c": {
+      "mode": "packed_c",
+      "sha256": "46383dab3d24d00551d494b2147a3dddb956030aa2e5c7998976eb0a615b19d1"
+    },
+    "src/unnamed/ov007/func_ov007_020c421c.c": {
+      "mode": "packed_c",
+      "sha256": "7df7ef1ae3cff3d8aac763e5e3564ec1cbb712a55348240ca3db28e5cce28c62"
+    },
+    "src/unnamed/ov007/func_ov007_020c42f8.c": {
+      "mode": "packed_c",
+      "sha256": "e8d89887f88cf5d8a13db50d07b4049925b8334e1c2d42dbcd5e8cc613684bdf"
+    },
+    "src/unnamed/ov007/func_ov007_020c44e4.c": {
+      "mode": "packed_c",
+      "sha256": "b9e07a29bac50b748739335e3d0a3126736b11476f6ccef5a0e2b713a526ceef"
+    },
+    "src/unnamed/ov007/func_ov007_020c4684.c": {
+      "mode": "packed_c",
+      "sha256": "45e216920403bd018e7e6d1b1a65b0b7cce7af1d71d09f31e27b1d17ac007e09"
+    },
+    "src/unnamed/ov007/func_ov007_020c4dfc.c": {
+      "mode": "packed_c",
+      "sha256": "ca20169fb919e6c47f9a7ef62e9c7fce045145779aa67148c7c759a26bde988f"
+    },
+    "src/unnamed/ov007/func_ov007_020c4e98.c": {
+      "mode": "packed_c",
+      "sha256": "eb9ad947ac273c5ecfb199110f40c8ad1afe69c67c0c0c1adfcacf4554c5c211"
+    },
+    "src/unnamed/ov007/func_ov007_020c5014.c": {
+      "mode": "packed_c",
+      "sha256": "f1566902f1d53c322aef619eef8bb09b5fc0d661436daff6494a32eae201f7f1"
+    },
+    "src/unnamed/ov007/func_ov007_020c5854.c": {
+      "mode": "packed_c",
+      "sha256": "4bbe0c06bba5abf929b549f538242c22b8172bec0afd4f6194ecd6986f62f368"
+    },
+    "src/unnamed/ov007/func_ov007_020c5c14.c": {
+      "mode": "packed_c",
+      "sha256": "9f4ecad73168fcdc9994f28de5bf6053d605ded375775edd731f38744dc3049c"
+    },
+    "src/unnamed/ov007/func_ov007_020c5fc8.c": {
+      "mode": "packed_c",
+      "sha256": "c846d3f5051f5f7326efa5c8da8f7b499d7f80862dc71479a679940ff5fb6a04"
+    },
+    "src/unnamed/ov007/func_ov007_020c6550.c": {
+      "mode": "packed_c",
+      "sha256": "2559bf470216ca4dc1938e304eaee392df1bc6c5e659754880b0ea8981b5385c"
+    },
+    "src/unnamed/ov007/func_ov007_020c6684.c": {
+      "mode": "packed_c",
+      "sha256": "70d8ee4809428a694cdd557ed8659adf46cec2022fc55b55fd7a5b64c2629d18"
+    },
+    "src/unnamed/ov007/func_ov007_020c6724.c": {
+      "mode": "packed_c",
+      "sha256": "df8f02a43e14244e2a62820580397f023b7d26c8490203633cb8b563e3fc3df6"
+    },
+    "src/unnamed/ov007/func_ov007_020c690c.c": {
+      "mode": "packed_c",
+      "sha256": "3b1295af72c4e60135f63d9c3c850920c8f51fcdf7f8265c975f7fcd1d7fd099"
+    },
+    "src/unnamed/ov007/func_ov007_020c6d20.c": {
+      "mode": "packed_c",
+      "sha256": "15e27e280409e61a83282f2349315876983afaa5c5f5dab3c2a9324b3553754a"
+    },
+    "src/unnamed/ov007/func_ov007_020c6e68.c": {
+      "mode": "packed_c",
+      "sha256": "2e920f52ce952f2d93a365b048715b225ce466640f9bd21eae363de86aa461d4"
+    },
+    "src/unnamed/ov007/func_ov007_020c7240.c": {
+      "mode": "packed_c",
+      "sha256": "44747e595ce0fd8a38fecc2cd7943965b6ff79c47faaa71dd11d2308610a20eb"
+    },
+    "src/unnamed/ov007/func_ov007_020c7a84.c": {
+      "mode": "packed_c",
+      "sha256": "756363039cb4578c654056bbf5197823d144b9e9377ed21fa67b90e7ca85d457"
+    },
+    "src/unnamed/ov007/func_ov007_020c7c60.c": {
+      "mode": "packed_c",
+      "sha256": "886060669569d3a05f29898d5d6a1eae25208078fd8a99f6a8b4cbec4cf5aa93"
+    },
+    "src/unnamed/ov007/func_ov007_020c7d60.c": {
+      "mode": "packed_c",
+      "sha256": "3c8f2e675371f7d2265380904f48c9d9414d6ffa28a3e8249ad0b4eea6102ec8"
+    },
+    "src/unnamed/ov007/func_ov007_020c80c8.c": {
+      "mode": "packed_c",
+      "sha256": "32b069b60cd237e57abc514f66f6747cee6291f63c7a828687fc3d236e3f61fe"
+    },
+    "src/unnamed/ov007/func_ov007_020c83fc.c": {
+      "mode": "packed_c",
+      "sha256": "ed8cf70dc9b4085b1b1df9e24ccfc85018235a73ea5acc5fe6d38dfd6bdd23e4"
+    },
+    "src/unnamed/ov007/func_ov007_020c8ac0.c": {
+      "mode": "packed_c",
+      "sha256": "46f7c83223d01e334fd1174e0bf7c1673e612496c99ecf4f3e32ffe3998d1ef4"
+    },
+    "src/unnamed/ov007/func_ov007_020c8f64.c": {
+      "mode": "packed_c",
+      "sha256": "496eee9884ce56ca55aa095bcd846eafb8c706e67e543be5424260c7d923e40d"
+    },
+    "src/unnamed/ov007/func_ov007_020c8f98.c": {
+      "mode": "packed_c",
+      "sha256": "41d2c75b949423a44456b4cfc340e8e1c4a99d41f0d4175570494eb98562f6fc"
+    },
+    "src/unnamed/ov007/func_ov007_020c908c.c": {
+      "mode": "packed_c",
+      "sha256": "a213379755762bc701fe949652fe1130d7ab753c454e8db0d93c8cf3d9a7720a"
+    },
+    "src/unnamed/ov007/func_ov007_020c90c0.c": {
+      "mode": "packed_c",
+      "sha256": "6381e413882a16c03c5239e8426ad7512dc605325c2385fdcc562e0708039338"
+    },
+    "src/unnamed/ov007/func_ov007_020c90f8.c": {
+      "mode": "packed_c",
+      "sha256": "b1b56271b3766570ceea71dc94ced37ad5dcbdd1542a4c6474f0763d64c11b8b"
+    },
+    "src/unnamed/ov007/func_ov007_020c95fc.c": {
+      "mode": "packed_c",
+      "sha256": "d4226b0f3fc95972cdd0e4ee976891c3122ae6119632ecbf6b768f296a647217"
+    },
+    "src/unnamed/ov007/func_ov007_020c99d8.c": {
+      "mode": "packed_c",
+      "sha256": "44ae00fe19b15c4fbdcbad7f9fc66a466ab944d9d4610aadbf5942e057c2ffa2"
+    },
+    "src/unnamed/ov007/func_ov007_020c9a2c.c": {
+      "mode": "packed_c",
+      "sha256": "7670e11841d2749b75cd1ee22d89e6c904312e9e8f58f192658216db240e956f"
+    },
+    "src/unnamed/ov007/func_ov007_020c9a84.c": {
+      "mode": "packed_c",
+      "sha256": "72a9b81f0056b9743fc7b34118455f4f2deebe73fa8a8b259e0786537e1ccdd3"
+    },
+    "src/unnamed/ov007/func_ov007_020c9c24.c": {
+      "mode": "packed_c",
+      "sha256": "6474ee75d5774c4d3e03ec79e4a5c9ea4e8afeaa90091755fe843692af89e5b6"
+    },
+    "src/unnamed/ov007/func_ov007_020c9fa0.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "32169d2ccc905cf9125d7fb30bb685f0d8eb8a09acd025dce0423e14437757c7"
+    },
+    "src/unnamed/ov007/func_ov007_020ca308.c": {
+      "mode": "packed_c",
+      "sha256": "41cebcf47c88a9fc288a8b1c17516ea84f8f852c3303706fc85ee1386ed7baca"
+    },
+    "src/unnamed/ov007/func_ov007_020ca578.c": {
+      "mode": "packed_c",
+      "sha256": "dc6fd938fb7a1dbfec329f47587a1b2611d5a07b8a343000c3cbf5dc947da92d"
+    },
+    "src/unnamed/ov007/func_ov007_020ca5f0.c": {
+      "mode": "packed_c",
+      "sha256": "b272def2a9195d0bf9afa12e87f8a2287488fcfbfc40e327c896bb13ebdc7689"
+    },
+    "src/unnamed/ov007/func_ov007_020caeac.cpp": {
+      "mode": "native_cpp",
+      "sha256": "0f4fa5560c0c34786dcf7a4027d86f62b7ae718b362875577c409907c84ffac4"
+    },
+    "src/unnamed/ov007/func_ov007_020cb3dc.c": {
+      "mode": "packed_c",
+      "sha256": "ef4899715126538ee5c38141c0d01c07ccd63fa907aa46178480e5e753e434c5"
+    },
+    "src/unnamed/ov007/func_ov007_020cba78.c": {
+      "mode": "packed_c",
+      "sha256": "57b591b4cd3e9b45e2cb368413fcb1d2984045dd195615d680b1286e3cabfef0"
+    },
+    "src/unnamed/ov007/func_ov007_020cbb04.cpp": {
+      "mode": "packed_cpp",
+      "sha256": "53003a7d8b39497bc9cee1dee1b84ea1024c6bee1f35284bdd3ef877cf90535a"
+    },
+    "src/unnamed/ov007/func_ov007_020cbf8c.c": {
+      "mode": "packed_c",
+      "sha256": "54f1f96c352632f7d08f74157e517647de8298cb6e90cf0df085e920e8a85bf3"
+    },
+    "src/unnamed/ov075/func_ov075_02117b58.cpp": {
+      "mode": "native_cpp",
+      "sha256": "31425ff41438129d2cfbbfe66fbac24d4d06b8c63f24c41a9953a3c982bc692d"
+    },
+    "src/unnamed/ov075/func_ov075_0211addc.cpp": {
+      "mode": "native_cpp",
+      "sha256": "1e8f498dfaa1f6720a5d759622137c3114fda256900b9205aa93f3ef6d0ac0d8"
+    }
+  },
+  "headers": {
+    "include/ActorBase__SceneNode.h": "2f847e0fe986f3e11647980592b11d3b7156c210c99e4d9bb6f9f953ec0b09d5",
+    "include/AsyncJob.h": "481d8cbc43bf3997f1dd0376cb9a8f14a6109b37aaa49b9a44098ca09724efe1",
+    "include/BMD_File.h": "93cf2b742cefaa1eee54a3569029a7c91f7dd6bea9ae3993e4d7760b4af12860",
+    "include/CLPS.h": "ce01733b49b64a4e148f751b4af8dc0aacbed030eca90c902baf92a5bb984330",
+    "include/CLPS_BlockRef.h": "5e0e90a47e02bd06b6dc7160cba217ed1e1756a8d43f0909bee596950375a58e",
+    "include/CapIcon.h": "16795cdbb1c146e21cadef4f4451df0ba72d926fae8443ede9bab074ae33afd0",
+    "include/CapIconMgr.h": "ebeaec9dd537f5753276f3c04e59daa0bad2ef5aae27c2560d7670c0d520fadc",
+    "include/Dealer.h": "fbb740ab763593aa7a023fb22b2c06c0e33e4f156e68253585a925936ccd18a7",
+    "include/Decimal.h": "6114ec44596962a4ce0aab4fdde5d7ada140ff60c7863b6eda7085d6b256b090",
+    "include/EnemySpawner.h": "9f471b6b4d3242739b06dbb08f22fcb1a8aa633f64695c4a3d8f8b49bbae706e",
+    "include/EnemySwitchTag.h": "7f57ec6ad5880c953a47b373bb2b990d3b743deb4639cda8ba31e89b536e6abe",
+    "include/Event.h": "b4f1463cd0a8dc38c30ced20b87c1515e34c9bc32d4e271f85fd2bbd531d1ae0",
+    "include/ExpandingHeap.h": "1fac8946e4588dd5da69877edbcb5a5f9901bb3a52777f686205d088781a9eb0",
+    "include/ExpandingHeapAllocator.h": "41c0e50f92a199313b3e2629ab07d50d52f05c920f94093a15288aebd33e7916",
+    "include/Eyerok.h": "03fbd49c841c10279967445be9c1459bdc0a1f46cfc4db4b37eabd9ba6aec6b0",
+    "include/FlowerFace.h": "1e7dbf811cd50b82f6873aeb99a2884b5317cf3166ac50a8fcefc8039b31413e",
+    "include/Fog.h": "8a24a429d93b76f54c2ee228f2b5a8f3d4bc017bd415e48adbc317e61ecd49dd",
+    "include/G2x.h": "f190d13547e3b675fd0cc5b7d5eb099fcef9166dc8ac6ab7e611f297abbc728a",
+    "include/G3X.h": "e4fc6912aacb0f40fca89329b98b310417722bd2e945862e0a9992f588161a00",
+    "include/G3i.h": "052e926d75205991478d48e4f541764322bf5318d0048e7fa7ca86bdc3b18183",
+    "include/Heap.h": "03773b4bb164aebcb4e9eb51b118b0f75f6e3705649fcb3495c13b3979e9861b",
+    "include/HeapAllocator.h": "623a1ba409ecc6c1f700d24ab56787dab3c448f94f149429ad00ec0f773c8da5",
+    "include/Heyho.h": "1b1c1e6e0162e172048cc19a303f8e2112e183ae7fc58a4e72cdca5c56dd675f",
+    "include/IRQ.h": "9d062ef430c8eb75392ddb400650ec4b5163605884ccd7cc4b460e68031f0f50",
+    "include/Jump2Popup.h": "4738a9a29e5ccc39d47f76f81f769e4a86e4583bcb704aca4352e0126507a0d3",
+    "include/Koopa.h": "2951c179eac67ffb3fd5eb5c063019092fefb89614f883906b6a859f1e59250e",
+    "include/LVL_Overlay.h": "14948cbbbe64f2f38825d045f9f8486275b4e3e07242138fdc84567600d706d2",
+    "include/Mascot.h": "ab631c3519cb05e989a61bc7030862c48a2a1af50a9a2039815decb20e025d7e",
+    "include/MascotWalker.h": "7c33931cab3fd3b4afe4314f1c038fbda192d26a58b4f80d543d03645985d832",
+    "include/Memory.h": "052b344c2f0b0aaf937d00a4968db2ae35956e3ad3d00c39d4ef76d5e9f1f01b",
+    "include/MemoryNode.h": "51ac35a8083e075bf6189a624ecc9915042c0e9eb99becb4b15923509c9b29ee",
+    "include/Message.h": "e3633a70b0194ce4ca56a63efa895ad260d72a8df666df69f76e86ae828b1e65",
+    "include/MessageBank.h": "4f48db339a8156232ca1cd767aafcc60e6e03939afb569c633372b9a30f8bc66",
+    "include/MgMenuRow.h": "521d38db8f7f279a79052b1367b2478679050ccf8375c0f8c3fe377cd5e187e3",
+    "include/NestedHeapIterator.h": "bafd3063b4c885a8c20e53b96910eb7e2a14f933cd6b2ce357c0effec2bfea07",
+    "include/OAM.h": "d308cee973da00834763b78e0e26646f7a09cb98cd44d1a5e3e680e9ddfd8958",
+    "include/OamAnimation.h": "a85112790540cb647285cc85b86455d1d03927c84d7c3d8fcf4ac71e63f00b0b",
+    "include/OamAttr.h": "4edb7458264239901a4f272a3f5fb08e38597135895be6d96cc1ba8d8fcf9dab",
+    "include/Ov007MenuState.h": "0dcaf2c2a05d26f1ca4e18b9bb515ec1a44c067a955641cb6d2629ecd72062bc",
+    "include/Ov007Sprite.h": "e5184db157031c9c010642e99bf8fb93b5f687ccbd92a833ce2f5a728b8ed1e2",
+    "include/Ov007StrokePath.h": "405dfdb74aaf88b25237771d11d72fc9636081ad7f55e633837ede923d5c5d01",
+    "include/Ov007Touch.h": "97b4594015182350f09e9b2e3967b9ab465bbd22f9ff3d7cd98ae62cb3f2a947",
+    "include/Ov007Tween.h": "a1a35ba0b9b476cda60e91ef755c3b6249ed2cb91775b55402650ba6bdd80b67",
+    "include/Particle.h": "93c7b32afe9cc53abb41a5367cf514fee31ab62cd9c79bda08d205473133efc4",
+    "include/Particle__Behavior.h": "c625cb90af200cca7120994c03161250e1f446b1c42cf7e8d22f3e44398d6455",
+    "include/Particle__Element.h": "4c8a5faf7c9a8e00d8cb06f71060e79638e2bafdbf05ec70ebfddaa022b80276",
+    "include/Particle__Manager.h": "bb347f4739aa6f34d70f0d17e941474881368f56b4b7cf47422f0a1bdecbe085",
+    "include/Particle__SysTracker.h": "c866fc28d4649cabe2a63fafdb941cbae1b1edcca0c7c7e76b409fec22e43f44",
+    "include/Particle__System.h": "6ca3f55391f32cae5757301588f8758fd1c284f13ce423160a498baded6260ea",
+    "include/Particle__Texture.h": "42f057025ea141d5d7acb212f946b6779c28a5da60663dfd4080b66044705b4b",
+    "include/PathLift.h": "11940fe678dc4b484fb8d5970c31768b2abc57ef8c71f8591d7d3e9f0674b509",
+    "include/PathPtr.h": "685563007bbede01d70593f867378cccb6450baa1a03f7cb78fe18f4f60c49a3",
+    "include/Player.h": "460405dc9950c5ede7dda79e2a7dad6cffb56ed67ecaa97972b4da5e6ef9dc21",
+    "include/PlayerInput.h": "d823d7dc2b63c987fd0e96642be69edb8d8f0f3f8181743cb4bf759653fe3b7d",
+    "include/Presenter.h": "6e31d59a8510a9941c63d5860eefad0e0309608cb421373bae6259095156a328",
+    "include/SaveData.h": "70b7c7cc2b4bedc5851ca58c5f7d4f49f7edd7782cf0ad831a17c6e9cb547ba9",
+    "include/Scuttlebug.h": "a7baf362e94997b96a9ae9629111819dec6123a578a36b16517deaffc6f3922b",
+    "include/SharedFilePtr.h": "aadccd29051dc9bb44477c2abe79c3a0cdeec1934219872f38e92eef26207c6c",
+    "include/SolidHeap.h": "f8219d63d16fb30d15beb149b4129900b82723a77362a11e0c3c8c8c970270d0",
+    "include/SolidHeapAllocator.h": "3a8e396f4f5e1c5baeaf25411ab739d7fa04b5a97ad5321a8f1df005035a3f21",
+    "include/Sound.h": "4a1b1b4d6394c545ba3d4dd5687c020cea10ebf0e104264c6a08e8cb8fe046f6",
+    "include/SoundPlayerRecord.h": "177d74b38de20a3cb7a8d8166c323bb9b32505b1b3ac9c3ef55f64549e964237",
+    "include/SpawnInfo.h": "499c168a03be32ec6866136b99969b52203ac5b4064487fcb1f6faf0800c574f",
+    "include/SurfaceInfo.h": "6c40467dff2b15bee2b5b9328e4c77f30af834d5cf32bd2b0da9f97d87bd7ee3",
+    "include/Timer.h": "b016b40f6747996ef9463a589fb7ac4cde772253d51efac4bac4dbbfa6cf560f",
+    "include/Trmp2Spinner.h": "0b33963638d4eccb8219540ecf46bfee968bde1a3b93a6e2375866d613e46740",
+    "include/TrmpItem.h": "30505ee67af5c566a023674bb18f866162d4678d357aea9351bdd3c0baf40ba1",
+    "include/TrmpLine.h": "3b0e3397b63bd034dece978747f975917c0f8d801a73e7241dfbee9618d6c7ff",
+    "include/TrmpScorePopup.h": "7cb10b82ba8108ed4062a65a08b50c24c7ca6e4efc84a8be569b05fd95e109cd",
+    "include/Vector3s.h": "2153bc20073e64f15cd7cda7fda3be10e27ebde8886e66214a10735a4b1153ea",
+    "include/WmWork.h": "65ab63f4530a71ff58844fe5166918f7e5e289be9c8b8539a27df8d03b91549e",
+    "include/cMgSmartball_ana_c.h": "533e79782b509b8a41261b80a2abedc71c56ca968af698e30a74a99ac29988d9",
+    "include/cMgSmartball_ball_c.h": "d3c110a6f11d1042364acef821717f95d5c80e8ccc038b04325f9dc15a0e3411",
+    "include/cMgSmartball_board_c.h": "c1e933d4221086e2974720f1609d9eefa15232c7191d9388c3e10296b5951b28",
+    "include/cMgSmartball_dokan_c.h": "c1f2c982b2d284e3f26a47c479b357d1f629cf3af3babe046f6161b875846dd4",
+    "include/cMgSmartball_kinoko_c.h": "0cff015368d07dc0768d3b80a5e4bd7eb9973fc1f4451b9807d9af6a1ef372f5",
+    "include/cMgSmartball_object_c.h": "99e2b1d99287ba6c9b2bc6b4f6e115c707f62f57ccf0676249d27fc7b862a453",
+    "include/cMgSmartball_pakkun_c.h": "f82222d5522b67a85b6c3ba318c7ddfb069b807d5922028f9a35f5bd04710b4e",
+    "include/cMgSmartball_propeller_c.h": "6511fa4a1c1b658867733f47ac0f5d21ecae36b686ca715e40f5e6c6420041c3",
+    "include/cMgSmartball_pushswitch_c.h": "9450442b0d8f674200b222d930e7f8d8fcea2a17aa26b9af49db7d2ab0002e32",
+    "include/cMgSmartball_slot_c.h": "bd69996bbcaf19e396e5fb09eeff36504ab9e0728ad00a712ed5f2d55574d93c",
+    "include/cMgSmartball_spring_c.h": "9c99c4d603215ed8cdc35da38b4c7b1b902e9eaf11e58625b32d10b6e87263af",
+    "include/cMgSmartball_wing_c.h": "99250ec7a5231d4ed8cfc0403eb39c4fae694fdcbd029357f50b9eb5f7e2b683",
+    "include/common.h": "68abc7f23916f4d124efc82b58d3dc11a69e63206ebca4538b40d04efb4db1e4",
+    "include/dActor_c.h": "b75860677c0701223c1b8f67bf6e2dc73210ccddc279b6e8aafa82f379fc0b69",
+    "include/dBase_c.h": "b1a5169ac0f6dd23e629871a33391d1e6f82c69ba7c36036c52f36b91d1f8265",
+    "include/dBgActor_c.h": "ef4a2ec5aef6c7dc9b112a188ddadc23b932e3edcffec7f7450714da5ba3205c",
+    "include/dBgCh.h": "2c717ee48cedc82980c5cfb8f9cf1b90c6df70303fb96e434a80fbcaf882c33e",
+    "include/dBgCh_Actr.h": "4c5868468063d9e1849b913acca21eccffecbdaa59d13f36c669987b5a768d2c",
+    "include/dBgCh_Gnd.h": "c9230c7098fc222af2a78f0398483f435faedf6a622ce3bbca0560804db95abc",
+    "include/dBgCh_Lin.h": "499f8979f56a4a5d70fa8f94fe62411331cd53ebea502d7155be17e24f130c79",
+    "include/dBgCh_SphCrr.h": "98e63bf08bf45825279230adea969c360e576cb1dc2ef8bac8845bd50f182305",
+    "include/dBgPc.h": "453cb9344d83d9ac6f67f6ce023cd9e6a30048b9c779f38070b45f2dcab7e051",
+    "include/dBgPi.h": "0bf8760d75aa3aeb01edef34745314643a82b8a42bcbf7490c2a10adf82b46f2",
+    "include/dBgW.h": "dbddaafe743575076983d788c007607e6bc4266fdc49ae527b33ecf5b1c57d79",
+    "include/dBgW_Kc.h": "3f9303f6920508a7a372f8e3375188e016ee8c95d13c2b511d860c40c14981cb",
+    "include/dBgW_KcMbg.h": "61eb1c1cc26cb76370d3dcee7c4652bb64b977d9d17488c43dbdb363be730114",
+    "include/dBgW_KcMbgSclY.h": "75ce2079d1f07210dce2161b683a93124ce9cc459ce4fa5c35aa194d858a73ce",
+    "include/dCamera_c.h": "869cc1d0ef4ff5a95aa76b0e3dc98c043a137fb423cdde973ef8ba1d3256398d",
+    "include/dCapEnemy_c.h": "aefc86a6a530cb8dc82461e8d4d09c4b688c24dcee1d37e23b8f5fc5d97369a9",
+    "include/dCcAcPos_c.h": "9d8407a3c8572193dd919cacd79570f81feb3c28b4edfd5b7ebae5a3cbaf3fd4",
+    "include/dCcAc_c.h": "0eb0dfd15444e86adb7e67058badb4afa4a4bf4e89579fcb162d3eb47f4b8493",
+    "include/dCcPos_c.h": "737a064ccc9a7566520fc1437ceafe5484c3b3b2d92b8fff93b03a1d545b9c11",
+    "include/dCc_c.h": "6e438c6cee9a5920f7ee6bd535bfddb96e46132a7a4285d376ac55d3a098731f",
+    "include/dClipper.h": "3673c1354968fb878f8d8900a98981fa41ce48f660cd11b23c83ec3dd0d91a74",
+    "include/dEnemyBase_c.h": "dde1d658ff989a67897141cbdf6764ea995294e830d5033e11ff9d5d93f7d1ca",
+    "include/dEntObj_c.h": "0b4ade9154ccd6351e4cc1a520c84e71878e297616571d1068f0cb7e73fc241f",
+    "include/dExtAnm2Model_c.h": "3b27b34a887311f7b3bbdb7e218bd4116b459b641a123fa3799069e49e3f3246",
+    "include/dExtAnmMaterial_c.h": "eb04dae530aecfc263cf8ddaddced658c7b316f89781800767b5cc1229204ebf",
+    "include/dExtAnmModel_c.h": "4dace62d9c4a0b0dc4674c2d7845c28c4a0eec4536674050aa829bc19e98aeb5",
+    "include/dExtAnmTexPat_c.h": "6522af3f9702b3cf498d2481ba6eba31a890f9b5f714c4859aa382ce879b7528",
+    "include/dExtAnmTexSRT_c.h": "0968ceb740d9b2db1025f4110f764efe0f55ae58b8a334765ba68c75d1fc13d2",
+    "include/dExtBlendAnmModel_c.h": "6ccc613031c654f5199bbc16352edcee87197418a9c9ca6ecb6415781bd5baa3",
+    "include/dExtCommonModel_c.h": "929c9f0b3c4f60a2643df2e9c45886ec396acdb9c31aaeca4356b4cd03806db1",
+    "include/dExtFrameCtrl_c.h": "6110364d610f575cfe6f218c2a46c1a5d156601c3e76561a1a29e7836ee74a4a",
+    "include/dExtModel_c.h": "49f47b23e6f4ca32731a23c74e4b86e26acb126ed26afceda3237a7c358fc9f9",
+    "include/dExtShadowModel_c.h": "0f64d2a4a9000e75770c4b6a6a993d94fc6f215564c061544f98a57ceef0f887",
+    "include/dExtSimpleModel_c.h": "fa35adc8edf4ee9bfde7df3a57791c00b562c0430f85e6a2a9e9c0056c44de31",
+    "include/dFader_c.h": "c2f119d21d5b0256378c021e2d8b345db392f319eacfaa4976dfdba00c569c9d",
+    "include/dFdBrightness_c.h": "7ccf5904736046a4d5679153d42906e5d26e76ae14392a5dadadf18664070dbd",
+    "include/dFdColor_c.h": "52de31ac611d97fb0234c6b16845c5348574cc5aed3e1153e0ffa8a3084a2093",
+    "include/dFdDummy_c.h": "bf6508ce694027dbd449a14fae385642d8ca345bb1e7cd0e3d6d64c87d5c6dd0",
+    "include/dFdWipe_c.h": "4b34a89b651bee27b3e5eff59cc250c136f9cbc5b6b19d6773f389a1b517cc8e",
+    "include/dGraph_c.h": "fc3408e27de67edad4d61d6638efca6cf9465e1666d2a34e0a6a7f46ff5f3a5c",
+    "include/dM3dGLin.h": "731f9d55cd8dae780b2cc090a7af7f1cc2de78a90f5e0879dc3bb5bb4c1b9c84",
+    "include/dM3dGSph.h": "cd78aea2e8f5b76af1835b17d86caf1397f6487b5f68be2e75e5c1d95b2a2096",
+    "include/dMap_c.h": "610875c2496e42dab759cddda88581e8cbfaa98ecb4fff648456c5b00dff958a",
+    "include/dMeter_c.h": "bc04f32d514cf98ee5d53b88dbbec8baf1b916e604bfced8b4ca940036094e0a",
+    "include/dMg3DEspAnimSet_c.h": "a795b9f565c31bb6199991f7d273f5587fd3fa59178ad66a39a1e96f4e9d2dad",
+    "include/dMg3DEspModel_c.h": "5622daef37cb69021ac55092fbf91873a3d28b4225fe3a322429d7c2c82f1bc5",
+    "include/dMgJump3DMario_c.h": "02af2df846b84997088cb80dd65db9c6a25d0b71fdc5a4908b43200feae12eff",
+    "include/dMgPsOpt_c.h": "de7fcf770073a3f1140340eb337f43df0ef50e5afd3a186344db3db4aba3f7c6",
+    "include/dMgState_c.h": "a2517ddc504a11368024bea0d167585e41dcc48d8fa5ed75430ada0192f40947",
+    "include/dMgTrmpObjAdapter_c.h": "74652ce37f503bc4a65c69cea6d3f0314af62e7ba4178b69bdb07ceaa22bfc60",
+    "include/dMgTrmpln2Mario_c.h": "01dcb1cdfba6de892d87a94f6023f3d9ea82caccdcb4312e3eec6f8a1c5b0bfa",
+    "include/dMgTrmpln3DMario_c.h": "cbc490c90d614cc02a4cdfa6cb179a086e70c211254d45cf267fc6e13fb91cc6",
+    "include/dPa_c.h": "3d1e9af1aaadce6d2c99d5c72907d00bae2b84eb15def6af3d3618f241f63b16",
+    "include/dScBoot_c.h": "77448a98349fba1b1b5991c0ea096bcf5b461747a41c702a1f94c8b11bcd7537",
+    "include/dScDSMT_c.h": "8c67dd54be1575d5ec9153fdd1d5bee552808a158ae8c65d79a42f3a3af76293",
+    "include/dScEntry_c.h": "bb9e7fee6137c3deca368d91b00327bd36abe58259154d6753f0cb338e229d33",
+    "include/dScGameOver_c.h": "283ee1611eee992d3ee8717b6dd93eaa6c9779dc56abae288f0a9a0436ef5147",
+    "include/dScMB_c.h": "97d459567e73b919938609d08eb9ac9c19589bc75ababae67d10c34ba82a8dd7",
+    "include/dScMg3DEsp_c.h": "e54455dfe88aa7658f5f86d1786cc3d41cf6a4bd1978cfd9e4e0782d49b7c054",
+    "include/dScMgAmida_c.h": "5c944da033787f39b8f4efc30c7e2b490f4ae81833e9828bf2a3e5c29bd2730d",
+    "include/dScMgBSC_c.h": "bb79643b7bcd51330f338e39487577fc2e97b58097ab53158ef9e5a51d20a6bf",
+    "include/dScMgBase_c.h": "8bee3961553a1e9d30952ab028fcbb097338845d9adaab773f22a1e5c6ac1a83",
+    "include/dScMgBomroom_c.h": "7fe0d2146c0e01ceb8685e8ba56299b7a7edaa7d17bb5d196a61efeddef1f812",
+    "include/dScMgCard_c.h": "ae2e07e081346f8fb5ea3eefbc3bbd3278caa6181961790690a52ce5cf2ef0a9",
+    "include/dScMgCoin_c.h": "ad9af4aeff6c3ef9003c87f6b5cce215c1949a30e5a020f2ba9ddc60f00022cd",
+    "include/dScMgCup_c.h": "eb9c6065971bb1808dc06c4272f3b08cd9b388f0ce84a18c7dacf74e7a78deec",
+    "include/dScMgCurling2_c.h": "01acd0cf2cae689f3b812a1ed95be1cd5ab99ed6f42d40b0ea3c71f9ebfcd513",
+    "include/dScMgCurling_c.h": "e5fab0e710d9ae6bb247c9d18fd8300781ca417682b4a54c7560b77fa8934a5f",
+    "include/dScMgD3DBase_c.h": "5c112de8fc3ef4ea8dbdfc51ce2bb526c9e7dc65b4f60e5a31b86f2d9b0a5374",
+    "include/dScMgFlower_c.h": "9446873924e05e5d9f1547cbbd91d3456d08bc02ca53eac276bcc88cb4d56015",
+    "include/dScMgHanachan_c.h": "9f56d270ec0679e346af944a6ddc4664c466dbf49ac72ef1be54f54df434a97a",
+    "include/dScMgJump2_c.h": "49dfa8e0b5ea9e4dae2c9819d0f41d8a22071582ec29ab10d83f0f8623834549",
+    "include/dScMgJump_c.h": "4fbfa2b9868105a04aef9fd74b1c0c9f6990b1d824f5c29b8530e05271b1c899",
+    "include/dScMgLuigi_c.h": "5a8fed66d185e2f5a0a0181e4ee6a95aebd20f3e1df54be3dec11502f4d367e5",
+    "include/dScMgMCarlo2_c.h": "cabd4210b95a0e0b3ab7576b1208cd0ea827d3b73cb8523d7589ca48957b3d36",
+    "include/dScMgMCarlo_c.h": "61c50ba65e989d22764fc31e6cf237f661542811827bcf6c3b8c6243ef22d4d6",
+    "include/dScMgMemory2_c.h": "44577ba833a7ac317f807c76773a7e36414d98d316dac140465f05ec1052f525",
+    "include/dScMgMemory_c.h": "5c9990815d7e60ac6200e705f0c2b03b55ceb42c125fd5a2a58575a70cb1e059",
+    "include/dScMgPachinko2_c.h": "80535e94d390f0cd4d249d839d2f39ffa8399e446507dfa56af6c3a5a4b115c5",
+    "include/dScMgPachinko_c.h": "ff21a347c307d9ebe46b11d3fdef6654e7f6dff2cb480f3cbaa50627e8ed78de",
+    "include/dScMgPanel_c.h": "0d0a5783b5f68c1368c780794976799f425aee5f025b22d10c3168671ad5103e",
+    "include/dScMgRoulette_c.h": "4c6fab82f667d9b8c521142d19a0263631ccd5aca84a6efcb3692dbc7ad7a7a9",
+    "include/dScMgSingle3DBase_c.h": "6f1ba6e305181b4b266b9832437a2e2750a45f8fbf42cdf18f15fd6319e8ec4f",
+    "include/dScMgSlot1_c.h": "3b74a72d0b8f4c8c0d6b2351a9ad8eb05ec9164671a04d065d84b4f4fac30431",
+    "include/dScMgSlot3_c.h": "ba9e054fd163b36407f52d53a1ba254d045967fa56be384d5484f4cfd726bd2d",
+    "include/dScMgSmartball_c.h": "9b6c1a2b75d09a47e06358686fe375ab6be4b1b342f9648b442947ea6d615c98",
+    "include/dScMgSnowball_c.h": "9c6d2a5469bde11d611809b31df233133752c548fd1be69299d74504b2786819",
+    "include/dScMgSound_c.h": "ce64af91f68dc1e2ac9d269882e633f8516258e378036bd28d6585994d79f476",
+    "include/dScMgTeresa_c.h": "4c731a5b4754cf5ec35266d6bce1d1f8c1438a8dccf6e21caccaff67351e7ed0",
+    "include/dScMgTrampoline2_c.h": "bd5e46067a86b28a6136805f38dbca46ba7884edb1a46a3c133fabcbb9a8c9ab",
+    "include/dScMgTrampoline_c.h": "fd48630ab9c240dd896f95c0d4cfaa89ec3fab554465fc7d68453f7834dd5aef",
+    "include/dScMiniGm_c.h": "9ced23de4e5ce6514a3513816801678663c01f4f6a67cf6cb6559e13dc21c42c",
+    "include/dScStage_c.h": "0d0bcd8a1c43b753b3d61559c1a6c28db927eb18a0b4907c546a6f8cc4564e7f",
+    "include/dScStarSel_c.h": "b6d44da51dad1f26124ec63000fe6f0777a1ba92dd8322ecf5fa84ad5014e287",
+    "include/dScTitle_c.h": "9ba61e667da880c22c277d01a70c028e650b149c3db376101addf2697fc692c9",
+    "include/dScene_c.h": "1d7903d852f100c4531b49d6d5125e810c35157587658231e764f8a7cb3e5c09",
+    "include/dThIcon_c.h": "f7805562966e418016940c1ed16ce240f3732b3de408cbba8bfee03790e9995a",
+    "include/dView_c.h": "72193e23e31f13c9278001cd7560266a7b680273fb39d89852f1dfad492e34a2",
+    "include/dWipe_c.h": "dd2d8d0c19103cebd9517fc0720e310147bb2efdd40a4874ff7505e5f429a083",
+    "include/da1up_c.h": "0d7feef67096a2557c9f4a7476648bde477374466505865efc2ec6cae532d233",
+    "include/daBDonketu_c.h": "6468ce1e181124afa3c37b149f7ec3bab77e214b9dff3e2eeb04b3834b6be81d",
+    "include/daBakubaku_c.h": "03ab3539e8d7fc8a51f2c7fab27f16fe319daeb81622dbbcd09fd0fbda617eb0",
+    "include/daBar_c.h": "2996303a7d1adbc251e61aedf932e330f9915a9a01e828bbeee476cb2b8c0c22",
+    "include/daBasabasa_c.h": "cf028bd8a357d6bc5786d54252f8794fdcfb6998ae1e58b5023a219f53843932",
+    "include/daBbl_c.h": "e4618865ba82c413b1674b10165ad78a5fb1eeaaad3acf94d7830ee6d0cd0a84",
+    "include/daBgSnmBdy_c.h": "53005089ef1a624ec4252e08fa8642f00874d1efb66779dbd6ff5949a68c14d1",
+    "include/daBgSnmHed_c.h": "036b92eefc3eaecc51667ef444f94303d19bca12157cb7133632f315561697d5",
+    "include/daBgSnwmn_c.h": "2cfc43f2bba3bd06eb8b788109ecde28cac2ca1dbf0da0d0482df33768747dd5",
+    "include/daBmb_c.h": "97c189b6261f36c2d4854b582c635ad2bc4fbb74de8db3a6f2175286ec05e5ae",
+    "include/daBombking_c.h": "5832b2cb0b8d23563d3a139e7d5e73bc94dd7226cc597f782802763a8303035a",
+    "include/daBookGen_c.h": "dd2545f5accf4e44d6badb47883b5cf5d39acc53e93ab2ef6377e099c822d2f3",
+    "include/daBook_c.h": "f03113fef3509d6830098c81bfdeef459eb08a5061f1bac5d66a841a7fb790e5",
+    "include/daBrq_c.h": "70b851dbc7e40f994a1bcdea622dd7d08795bbf22b1d3b6753b8a62a9b746caf",
+    "include/daBtfly_c.h": "ba0995116fb1163b8181cb75d90746009776185089206e34d90ed0aafc5c1ce0",
+    "include/daBtn_c.h": "2d8c5943bf4cd8ec623a44f1aa9c98ccd9ad6a4f70d6b8b8726a528682acfb31",
+    "include/daBttBk_c.h": "def891a7c11e8ebc06f0cbb5c43dfc828e3dd7176e7cea046a63d5266375deea",
+    "include/daC_Jugem_c.h": "9efc00b904a0b2b7cbb5da7a098316d7f86a40a8acea849692be05648e414d07",
+    "include/daCamTag_c.h": "96198ea187a1aac08aaec9132efdea1f0450e105a112c83b6e89da79a9ef63a0",
+    "include/daChRoom_c.h": "ebe8915fd8de7c66becc336368ff57ff580de33ed359d90858db2de9898ddba3",
+    "include/daChScene_c.h": "f8376929af027686107cb4b8ee8a8ddbe5be4e32652a12f825853b84f1673956",
+    "include/daChair_c.h": "6b9219dde2820534de6438c311a75495eb93417db8959a01b6d053a433f6a4ee",
+    "include/daChoro_Rock_c.h": "82b1eb1c88c1eefbf45cc92367104882e4f431e042f41ed72998a9c1f84c4a49",
+    "include/daChoropu_c.h": "4197cd83f8152e53cb8c9c58c9aca0b77e058d3e0c897d273433f7e1889a7138",
+    "include/daCnn_c.h": "9080ae8b6915258a8c0079951f33e1f74d2b8bf945f40df32aaa19c00f17b07f",
+    "include/daCoin_c.h": "22355135a4c7e4d4d2ad1a3a41c3bab9d6b03d471e6e0f14b80375009782be04",
+    "include/daDemo_c.h": "294389e02f28c5e039dab1e97914a23e9d590bbb8d20b2887fbd6aeb26541a3c",
+    "include/daDgr_c.h": "56d392231320d3a24f920678c839d86c7c4e077eb65f25978944d3627b02c033",
+    "include/daDkk_c.h": "875f40d20c0d19bad890fb4c4dc16da7395537c73752a70abfc1656de445613e",
+    "include/daDonketu_c.h": "a8dd3df5155e14bded0b3f1234ce50d38ae3333a87e35e488f8b7ee73c1db767",
+    "include/daDoor_c.h": "7896310e13912bdaa54273adfa12797f5ef58c106eecae5441c5fa62cb67aea7",
+    "include/daDossyCap_c.h": "a7964e3ebe62a7532f105f4adbea713eab11e83d7b8c877754927973cff90360",
+    "include/daDossy_c.h": "b09abf44b699fe3c11c16f8856d68916be3529d6699887ded0e2c979af950a27",
+    "include/daDpLift_c.h": "32a04cce9051727d1cddadddcbbbbb49cd2d251f0945b298c25afb00ddef64bd",
+    "include/daDsnBase_c.h": "507163869d423586d3618e4c6143bebf2953a3f7b508f81ff32bd18d334d0ab1",
+    "include/daDsn_c.h": "508589f8385c25b9a043ecd049dd3cf8507d821fbd306a32b25a1d0310d0d55f",
+    "include/daEyBm_c.h": "2e693c84e3e5bb22cc8e63062cd9830c83a04612cf4b11403ba7c31423578edd",
+    "include/daEykn_c.h": "c362b9e860bb6ab7dbf0a6b1eb3c2982fe68c45d886501a1234a0989e30555fa",
+    "include/daFPknBall_c.h": "a8229b7ed7d735e633c76d043984f970e6183eea89fbd2ffbf3900c6872176e6",
+    "include/daFPkn_c.h": "f61fe491170cad3522ad86e541f49c36d6abf845faad1db31ce4d065ef7c07a7",
+    "include/daFRing_c.h": "c2eea663d7de0025811fada15d92dd1806ac39269ef5a7a983ec18e9a90834c7",
+    "include/daFeather_c.h": "8bdfbbaf3be845d7143bc296f0bcd2c61fe6e64989d51051d4fd57b284293a36",
+    "include/daFish_c.h": "f362aea782c3fe91b0d1e9dff3a252f4a74791bf29bc74817676efd552066327",
+    "include/daGmch_c.h": "0f234ea23e89e08ea82714aa57a2835959f379fed8ba80cd836a03dfdb709c81",
+    "include/daGrock_c.h": "091554a97d85418f933e52b87b3426aba301d6b5c9e27547cd755febf1574133",
+    "include/daHanachan_c.h": "4ef7f9581a307c330be8e324f78084174d8c9a81255d7f6565d77e342b600ed4",
+    "include/daHolhei_c.h": "3735a4fe9561614d1ff71ef2fc83db563b2a439c46e54ac232ee12708655c4cd",
+    "include/daHuwa_c.h": "b19112994caccb4f2423254b718a51dcfa7f398e4fe9f8b420f438929d472de7",
+    "include/daHyuhyu_c.h": "f020e1f29d4df25db11053a262f060a94da2670649fcb15d53888b40ff37359e",
+    "include/daIDonketu_c.h": "06aec3dbf86b43a7d76e7ae97b2989b2d3477eb6e0b51f8499732198919dcadb",
+    "include/daIbl_c.h": "38de5970c4398b71f169387125317656ef86f72590b241841f7abe2fca84cb92",
+    "include/daJango_c.h": "e7bd8cda8b89df3397d42246fa20d54773d3ffaa1396ab8f8ccb3ae94cd31ac1",
+    "include/daJgm_c.h": "563b1a34594d2c4f6249187f1a1df1f69454ccd32391d5f041963d00aaa80dae",
+    "include/daKing_Donketu_c.h": "5a44b622099cb8fb642c94147cfacd80d3c28c4afd9b8145aee2cbe1d5690b4a",
+    "include/daKinopio_c.h": "cb99233902969e386163e2ad55b4e487882f25d8fa38bf2f84c2880b43e72fcd",
+    "include/daKirai_c.h": "b85117fad1979a7bf97c3ec4458b689efa70b378284cfec51ab465bab28225f4",
+    "include/daKlr_c.h": "4d790bb9e428a9b10b01559979b79fc0bfdaac34951f264b21f6b7f9b613e651",
+    "include/daKpFr_c.h": "819d9c2a5daacc1d53ce3e6229b67051fe06c6e685f1ac93c4a10c9e87fbf3b2",
+    "include/daKpa2Bg_c.h": "9147b3fe2c6755c45a5027cdd9e22cadf620e8efb286608cf3cf53e300506c74",
+    "include/daKpa3Bg_c.h": "c1077c2e22a3dc091fdeb1482b540c064fbf9a07468206211ea20d0011a5eff6",
+    "include/daKpaFire_c.h": "6742524abb3dffda45920497e63347a431be14d749aa814e1e3ec18f0fa99ecf",
+    "include/daKpaTail_c.h": "03bb173d1f979c11fa45a5c372a467737a0019a94e2ed1f5f5c39dc2629c97ab",
+    "include/daKpa_c.h": "ba99c607eebcf04018f36d71d9008d03f3fe85b22470113446a1473590d3bded",
+    "include/daKrb_c.h": "f24dfba5e7e29ec6473c7b930fe974a8c92384e6bd107aa41046df5045c0d4db",
+    "include/daKrpa_c.h": "808feff4cf51ea061ebbd3625049ca82caaa159baf7bf4ecbf2c5a72b6c71603",
+    "include/daKuriKing_c.h": "6dbc341e98f451bd9b39fbdbf22fb221a675b19e702b24a1459e3612aef2ba62",
+    "include/daLinelift2_c.h": "13bb9346413598162109580558c17a4deea818f4cd0ed08e8a1058c95c2a037f",
+    "include/daLuigi_c.h": "acda876dad4955e95a601c37b9d3208c0b6b3bc39335f6983ea3b9f0a03fc1e8",
+    "include/daManta_c.h": "fdd387c3f8b5ae5484aaf9ae97ffb86a44c62a74eaf7ea50b6d3efe66d443a40",
+    "include/daMcFlag_c.h": "57766de89e781ec8ccddf46c495bdbf2109c0baf294c79e5b0644020b3edde00",
+    "include/daMenbo_c.h": "f4ea946dc058abe6fa5cf407ecaca171c4230e11b8c118e59070f91bcb0e9659",
+    "include/daMip_c.h": "6ed9c71a3c7c02b0f7a16b37a34b55196d818ac1999a31005a58bdd0b1dc34dd",
+    "include/daMky_c.h": "d21bbff8cd72e16c712060d4b218b4d4536d3e7367cc3c6e29b453e59f89ad61",
+    "include/daMoray_c.h": "92de31239786ce10d42385eb8c6b1432598e5a782c13f92defa9b58eeede80e8",
+    "include/daMugenBGM_c.h": "35e0d6e0ee7a7786c1b0d0f4adcc2ffb43847e29b94ed582af720a1695b9a41b",
+    "include/daObj1UpLogo_c.h": "e432cce2810a94237107d0bd0bfad5c107304f70ee43ba8452df28d6f1323271",
+    "include/daObjAbuku_c.h": "7a9ba176153b4f27cad764ab3f4c594eafc8224f6f116657ce2f792d798887fd",
+    "include/daObjBC_Switch_c.h": "e993636a36cc37c9560a8de674466735a3d0ff725224c2ccc11e92c932de8c46",
+    "include/daObjBSwdoor_c.h": "7d372ec7b7fa9ee25d96cb61bbf1cb725928f205054728490b2d8dd2c719300d",
+    "include/daObjBkBillboard_c.h": "9b782095edb488e19736da1423b449863ce81078ea3c78de53b927e13b7eb6f4",
+    "include/daObjBkKillerdai_c.h": "201132e1e1bb8d29d41e4844f381cf8f976b042ac2beb4b685bbba94cc69054a",
+    "include/daObjBk_Botaosi_c.h": "ba63682775152ad3f1d9f6d878a76a78f9cfc453c031c34d0171d5381c4dec52",
+    "include/daObjBk_Dossunbar_c.h": "b09390337a6e374d9cfb68c814fb17a0376072923643bbd52208da5b68c95bb0",
+    "include/daObjBk_Fall_Block_c.h": "23490d84501bb228f813b27c6a2285a988ed4fa034cc5245ae74c32b2d307244",
+    "include/daObjBk_Kabe_c.h": "469cb522dc27f53029d37ac250b760093c7fd820225004464c6aa6732c32ca7e",
+    "include/daObjBk_Lift_c.h": "bed430b0b4f6721cb0b23db69f228f567e348df0bdedf8e1b84762f3bbd651b6",
+    "include/daObjBk_Rotebar_c.h": "02676361e227666538559af83af1419cf4c52a4a23b1fc5526271dd2b19f3c19",
+    "include/daObjBk_Ukisima_c.h": "d36950c0d88988677b18f4bac06a31d20efe5af8b37849cbb5b564838ec1b789",
+    "include/daObjBlockItemTag_c.h": "b0a0b96a198618694d071bd78f0e716fc98becd87d566464f419b8858d4fb7a8",
+    "include/daObjBlockL_c.h": "53bdcb691771f3dc0a2d0efb7a4f646b09e04930143b31bb874dfa147db59589",
+    "include/daObjBlockS_c.h": "78fa09dfefdcf396e17a3b9dc3d1a88db7229fc3710afe0d6290d6416e481ea3",
+    "include/daObjC0Water_c.h": "38be8de4edac130574b331da08e92d213ece60298994b718be7b3096f0022781",
+    "include/daObjC0_Switch_c.h": "707bc460a7fd85f1ee1731a58872fdd15bc67a8566a5be7b690679949ef2fb7e",
+    "include/daObjC1Hikari_c.h": "5971868edf0346f9afa3527a6c8fb5cabcdde5860f755babe5ba2e8a30989418",
+    "include/daObjC1Peach_c.h": "98f87815c776aa21c53859d325fb505017b21240a7ef5eaf8ee0a2a590b5c9f8",
+    "include/daObjC1_Trap_c.h": "f0c7c0bb2406753ff04c1ef6fd309c3a2648f304aeaace80c0640b6c3a4ca3ca",
+    "include/daObjCannonShutter_c.h": "432e7809db0322a2e91c350f0d0ea1ad02e5cdeae26e8797bf69917c338a7ab0",
+    "include/daObjCasket_c.h": "d886499f61406a1e8338a48b315086a6a3fd5ac7f9be194543bb7255af7b2ded",
+    "include/daObjClockHuriko_c.h": "2285fe4b20ec597cca731afb4218a24cbb6e80bc0ba1b40bc126a2291f4d4280",
+    "include/daObjClock_c.h": "ee4486e5225f4fc9ba9f90a8a9c1bc165586a052367862674eb3a625cf8c612d",
+    "include/daObjCloset_c.h": "8b9f0d8e0e8a350662f0d48202c3627da0e7ab35dfdced6957d3f4033342c457",
+    "include/daObjCtKaitendai_c.h": "b4e6715118bcdf76ab4262309ee2e4974a207f2bdbfe9f52ec2ba3f0e8ad7704",
+    "include/daObjCtMecha03_c.h": "0b935a191f73e951d0ea8ff78fdaa80a54c70f1c231d2325418e9c1e31e565e9",
+    "include/daObjCtMecha04_c.h": "f09b865b12f623558ce22040f47c85d34bcc8fdf97f0d7bedd27eda93720bef2",
+    "include/daObjCtMecha05_c.h": "929d2465bd74cfe57b730068612e9b9573f3dc8a10d899eaeb79ab07aba53f33",
+    "include/daObjCtMecha08_c.h": "8dcb1f02fdfd0245f65905eaf052beb883f721cf5e37d0cddff4ab258c08b2b9",
+    "include/daObjCtMecha09_c.h": "1c4fe4f3a34dc5201028aa73b61344612bd9fdb6dd9d7aa5978866c302635efa",
+    "include/daObjCtMecha10_c.h": "d662a3dc1f74590965ba9f62d368c2666cea0f5bd21252fd4e62bcf6c10f8fb3",
+    "include/daObjCtMecha11_c.h": "8bcc58af98f91b03a7808425f229a041acb9c4095664dd4a6a5bc3fe3f40970d",
+    "include/daObjCtRotateBlock_c.h": "ec9679b2fd9c32340adef493efd0295bc171688f012a3209f676607bb6803aca",
+    "include/daObjCvNewsLift_c.h": "eb94ef748a602cf53a5f55c689efa85453a0df97a4b00925690dd378b6327495",
+    "include/daObjCvShutter_c.h": "18fedd944e0fbaaedf7d1da3db9c2e367de7e417741b2e647f1b7f8e11c60842",
+    "include/daObjDlPyramidDummy_c.h": "cd9bdfdec9be6cbc8fae19a9f93114e657278403a5f8600466bbbb98c8d681cb",
+    "include/daObjDlPyramid_c.h": "3ce259c52d6399a544140aca9e7a2643c6103dfa9b0a759824f82c5c2d98a3f4",
+    "include/daObjDorifu_c.h": "1cbc88d72d4280bfb2bb0d47c7474600ce73983883ef1fb0e5386862ccc1d926",
+    "include/daObjDpBrock_c.h": "31c4c09aeb4925b093aa05c5fd675a51b86540246134b3c589647a71084f199a",
+    "include/daObjEmmLog_c.h": "c54fdd619e1fcf8d448c24fab3f1eb11b975faaf1148c04ee3374a8298e78850",
+    "include/daObjEmmYuka_c.h": "d6b6d614093cf9d3f3d11a6009049a14b6e88cbfda2301894b9bead8653308e7",
+    "include/daObjEwbIce_c.h": "e44850ca41f465f33d0fcc9060529a6ac0b029adbb0a46d5460308839822a1f4",
+    "include/daObjEwmIceBlock_c.h": "d9baa243977829aaaccee14f661b2d4c11814530c89b3bbc7658a18e2ed7a71e",
+    "include/daObjFallBlock_c.h": "4e4d7da5339f4ad384f254f126e397015e44ed5ea999321131526c802b3610f0",
+    "include/daObjFire_c.h": "6ce98ced876ae5a14ac387d9da99b448386f082e6fda739fb2b5085a9039fc20",
+    "include/daObjFlMaruta_c.h": "271a30764205a0755f7b485ffa1c6687f6c1810d6b1ae803315237e568317607",
+    "include/daObjFl_Amilift_c.h": "7653cd381aabf2fd951dd1081137888dcc38dae9cf6392d63ae3f92cd77a22f7",
+    "include/daObjFl_Block_c.h": "3960e7f86277c2054319a04b724a1617f24315c21a8f191641844ef00b8c5b23",
+    "include/daObjFl_Coin_c.h": "90431ceaa0c37ebc3ebccff538e3df52a45d1c690ab0a3ccff870479b3a32fe1",
+    "include/daObjFl_Fall_Block_c.h": "5e766b36966df869b231c4fed40c7b6f61d4fde302853ee20af724932dc272c4",
+    "include/daObjFl_Gura_c.h": "235919a81d36df91149d1492dd73e52f04d0a948c06d9815b7e270b1662e0a5d",
+    "include/daObjFl_KomaU_c.h": "10ad0d1c2d088e3eead1f67355472b0592eb731cc375d458e8d4a2efa502ff40",
+    "include/daObjFl_Koma_D_c.h": "5f16439a4cc017e18e61f2f0ca9259298af27d984b2d68d03208ff872992cc44",
+    "include/daObjFl_London_c.h": "2ffca11169132fdd4fbaf7d7ab5bc787b435b1789b6d24ad1c99feef7cc8c3c5",
+    "include/daObjFl_Puzzle_c.h": "761cccba4afe27243c718d66c4cd41b9973b68b3b435629ea29de5cdf7856455",
+    "include/daObjFl_Ring_c.h": "218be8465f88f9a17a75c24877821887618e2f03d4eba59a9b617f25c3674d03",
+    "include/daObjFl_Seesaw_c.h": "dd58eb895581d0ae9ad9f618c94535c884aa12676a0d8f0a7bdf820516fbd56e",
+    "include/daObjFl_UkiKi_c.h": "87ccbc2828e016f84bf3570c0de4327c2720e5ace7d28053279435b082069738",
+    "include/daObjFl_Ukiyuka_c.h": "9d93047288a1db02a5c33b16430f2bd0bd5a776161e2f759998505eb3dfc3e9d",
+    "include/daObjFlamethrower_c.h": "8ca8d6cd8584a32620538d4c98deb1ae7abceeeedac316ad88b356e0541f9b98",
+    "include/daObjFloatBoard_c.h": "fdecccaabf19c7313a590b346c28018a3daa0536f3593b1ed0483907c23b54f7",
+    "include/daObjFm_Battan_c.h": "fcb80fd3b49b2f14572660b65e0b3c0b33fceee360da764e7d579e70700d4f4d",
+    "include/daObjGuragura_c.h": "a16484dd361054f47edc2c8287d4b4f357bc2d77456d736e73da70577365ba29",
+    "include/daObjHatenaBlock_c.h": "4cbe19cf266306265d85f1bd6fbc0f746cb002529a4694b5d5c93c5b122e4c74",
+    "include/daObjHatenaSwitch_c.h": "1f2200905cca6f8a2a910597c6b380b2e0f072e1df449cffa701b37de5cbacf0",
+    "include/daObjHeart_c.h": "f1d92d415a5f82ee84af3bde1bca68ff009a947d8db4c66d9ce9924c20f1791b",
+    "include/daObjHmBskt_c.h": "7108f538ebcc91bf14a2707359f6b48462440f03536565c19e8a4bb676393a9a",
+    "include/daObjHmMaruta_c.h": "bbff99975053f949440f79969bcf7c8a99a07cba43972503d820af36a31cc8df",
+    "include/daObjHsBillboard_c.h": "624c4dbb27f2e3783e9ee196282f38dc3d3a7a784badf22dbc880d3c10e45631",
+    "include/daObjIceBlock_c.h": "9bd3863524569bebe424e603896b35c6b15591bbfa794647787e6e101c98728d",
+    "include/daObjIceBoard_c.h": "f38ac1936c4a2158ecffbfe029fc2ec897c4bb6a83d202e315dd34878c9f45f4",
+    "include/daObjKaitendai_c.h": "25fb82a359d0ef23f4b89f0a6dbd04e0fca82a59b6c9589b6cc2dc89bd2b0d98",
+    "include/daObjKanban_c.h": "c12dbf5b92676ea0d424908fd648d1f95ec51ccb0182fdc47ea3661f8230308f",
+    "include/daObjKb1Billboard_c.h": "06adb269a62abfb0b85bbd606d9127e5b982476076dcfd146d958848680fb986",
+    "include/daObjKey_c.h": "986e875c62ee8a963e5c58b5ed6d3f36e20a103fb021d05397c6cef3175a3c72",
+    "include/daObjKi_Fune_c.h": "af112e476c5abd65a2c54c2d8f22393f15508d48f2bdb4cc8c60c492f699f7f3",
+    "include/daObjKi_Hasira_c.h": "52d7b120d253231d04e1566fcefe82afac31ee4d26ec347910ece29480e8b60a",
+    "include/daObjKi_Ita_c.h": "9b61ea7e2a24017c1031e15de537f9d8739813ef82425e0c1ee220f0e10255dc",
+    "include/daObjKinokoTag_c.h": "b84bc4aca1ddf49dc1cdd888c293b3a02ec600480e6afad444ccce917b8c8161",
+    "include/daObjKm1_Dorifu_c.h": "c89310690a7b3dc2973bc2ae3a1ae05b32be926aad363d42e9823ac25af9db98",
+    "include/daObjKm1_Kuruma_c.h": "757cbb7cbc8bc1e67bf0072a3a4ccced5ec47fe1a7e8481967a58192041e2d48",
+    "include/daObjKm1_Kurumajiku_c.h": "9e058315dbb66f4d0c1b8055984ec058bc3cc7504e8e5c7bef73943b1480b115",
+    "include/daObjKm1_Ukishima_c.h": "24d70f67297b9ed5bbf6cd5d47cd1ac9dbc39c1aff34a0f3434759780fce8bee",
+    "include/daObjKm1_Ukishima_c_fields.h": "28a81af9d501931b9229221bcb2f2341e9220df86035d549ddaed04872972c77",
+    "include/daObjKm2_Agaru_c.h": "8e3b25638f63f7df2b326f390ec46da317623247c1eea212231f08f4e2c1de82",
+    "include/daObjKm2_Ami_Bou_c.h": "7f9deb73163cfb0cf76207fb73985536ba4889f204467f1db588dc59a103c51e",
+    "include/daObjKm2_Fall_Block_c.h": "b7fc8271bdc75ac26a7a91fcdf2c3cdf97a217b163f6d6cc9f4cc4b263860fd8",
+    "include/daObjKm2_Gura_c.h": "2bc00129c5f302ff3b4dbc8cfde7eeea30439adfdeb7bf80214a1c8655a69b0c",
+    "include/daObjKm2_Nobiru_c.h": "2b4de4c225ab5af29b44c38134b279170020631eb5ff123efb1d79a2570351e9",
+    "include/daObjKm2_Ukishima_c.h": "77e6b7fb46e0475c55ce4cc9f0f27e293a95cc5c18ba64eb6b0d4f072f724cec",
+    "include/daObjKm3_Dorifu_c.h": "f8b3e1c2676e359a89b5ae89eca0aa86c9655c24e422c66a93034963b353a458",
+    "include/daObjKm3_Kaitendai_c.h": "c01e94ff9b2e8ce7df7c48657a4bfc144503584d5578a10716fcbe5825544477",
+    "include/daObjKm3_Kuruma_c.h": "edfa4bf7ab49a248253d92a2b3500ce2bb5dd8062e4a84a8074760e5705d0e59",
+    "include/daObjKm3_Kurumajiku_c.h": "bd25dfdc10b69ca59d51b41a201be0bdb1ecc9272726b55c378127a5fa91fb35",
+    "include/daObjKsWater_c.h": "8511b6b04441d136fc3a992455a046aa08d9b1cff4f9e9734ae60dfd1d7689ad",
+    "include/daObjKumo_c.h": "fdbff14cd26006ff148d23dd4359b43413976c8b41934f7d07c9c43b930b2882",
+    "include/daObjKuruma_c.h": "46b119bd6adb00d0e475c2efb9d8fb3c44052ff5e9add149a44bcab1bdcffed2",
+    "include/daObjKurumajiku_c.h": "8bd7bcbd92901a29e47d088dcdefef7704ca8488334ea7bd5ea179a549a254be",
+    "include/daObjLava_c.h": "d31390181b6a2826a06a2c01ccfed1cb1f052baff4b9bf3ffafe626ae0a8366e",
+    "include/daObjMarioCap_c.h": "5d95a92816c862f26222d2b4f820de7d0ff1638498c74d14390496821037fce7",
+    "include/daObjMaruta_c.h": "2050bbf18425c3bd05b5ad34506fd3b41a9e624e55220423f7c3af875e264337",
+    "include/daObjMcWater_c.h": "9b3e3778d115465b5b1b0021f914e6db8e432f068a06adbd039915cc875f72e6",
+    "include/daObjMc_Metalnet_c.h": "abc529ddef66c93c131a63248a16217ebcbd4683561373d3478d2b42198ef807",
+    "include/daObjNumber_c.h": "2181cf6e49f3213f02af563917e7fe447a1b29a970cd1072b02f57d215e2f735",
+    "include/daObjPathLift_c.h": "0beb64968162034f9cd1861bb6f552ef482741160e90dba345338d2fb0437a9c",
+    "include/daObjPile_c.h": "daa31871cc37084651ef24dc442539124538da231a8658441539b17e12ef7ce7",
+    "include/daObjPowerUpItem_c.h": "8ecc568199b49cd717bcbaf69870d2035473a84d009a333d78b931a1612603dd",
+    "include/daObjPushblock_c.h": "748f33623c7c6b56b3c357f7489fa7b17275ada928c8bded9adb3c415d9c36d3",
+    "include/daObjRcBuranko_c.h": "3931a9578775f5404b9930d10b794d79574467dc0d4a8dbc5a260dcbd69c2402",
+    "include/daObjRcCarpet_c.h": "abd0aae3ed275390d4af784e7cc8440c8246d9bb49c4ddf82e67513102eb1197",
+    "include/daObjRc_Dorifu_c.h": "2e990f6692d32e5deb80ada51d1cddf8a8d350f8c7e999ed065cdcd509a54ed5",
+    "include/daObjRc_Guruguru_c.h": "5aae9685c7396393c5c2bef72924ffc0f19e6f041850a2abf1f6425fc1022a15",
+    "include/daObjRc_Hane_c.h": "338d5df53d5d169ba0b6a3517c9a8ee190dd8783edc8f90299b1d8dce38fd1f1",
+    "include/daObjRc_Kaitendai_c.h": "00ec138417a09b58b77e84cc205849f6457d5c71d338a9b7d9da322b8b945329",
+    "include/daObjRc_Tikuwa_c.h": "da1657f909fce5c8c246d91afa7e1447ab94a7983a8a0efdf6729f4adfb102c6",
+    "include/daObjRotateUpdownLift_c.h": "1352057e33ec4a6177a6d1db9ffdf0faab2c2e1212bb5dbf934ec0e682d42e1d",
+    "include/daObjSeesaw_c.h": "60c6b8e77029c3019bfcf4da5698fc39777723e2af7a005601d085bc29a517bf",
+    "include/daObjShell_c.h": "5781bbee3b6710686f5d2777f5a8781f0eba01f0bc1360cef66e387aa77766bb",
+    "include/daObjSimpleBg_c.h": "18e166aa73dcd2e4c0de1d82a41a7c58aa857510ac93b4f332d9d303bdc453a3",
+    "include/daObjSimpleLift_c.h": "070eb65c4a2499ee3d58813f6a78b0e5a9affe8d4ed143308b62802750ba0c8e",
+    "include/daObjSlIceBlock_c.h": "2fde485d83eaaf6b8e5375905730b545047a881c3e529923738ebc6973adabda",
+    "include/daObjSm_Lift_c.h": "ad85be82019c1f1d2a82d3cc1978a6f1c3a44f50b26f544dce56b80cc91c6e12",
+    "include/daObjSwdoor_c.h": "b08aa1259fb7db08fc1b30c92a82be704b30c99069324e1c8406bae0465eb153",
+    "include/daObjSwitch_c.h": "0df66e6b3189a076b5e5f1b145fca639497d629106f83c0e5a281f46f60790de",
+    "include/daObjTatefuda_c.h": "574e22e3b55ce5958921161563567cdc9b438f27b391c603f68fb7670387f942",
+    "include/daObjTbox_c.h": "3ea8ac72ccfc4570beb62a335020f6d0014c50f7cdc3055a8813b7ff739e1f8f",
+    "include/daObjTdFuta_c.h": "a2d78cc300d8a37f4f0c9d34276dc16befb1e3f012ba66f3f6b036a7cffc7326",
+    "include/daObjTdWater_c.h": "fb3d50fecc5b2142f19f261c37ffdf6b0636acd17951d56f9c5239c81f06767b",
+    "include/daObjTh_Fall_Block_c.h": "23f126e56b55b62896c952060f719fc5c7c447a8921cd78eca5b5feedb4b2e47",
+    "include/daObjTtFuta_c.h": "3882441e898c697c33778190288fcdf67aad20f75b3c228236bfa18e4b723789",
+    "include/daObjTtWater_c.h": "d7a3b49836974dca579961a5553b70d0cfaaccca784af5779e1b3ee47e0c4692",
+    "include/daObjUkiyuka_c.h": "6549231302681baca7a8d9aa95572463a1a9ef89b8dcaa31749d34205d5ff490",
+    "include/daObjWakame_c.h": "10437d318900e11923a8fbae4754f921dfd6903dd595a687c5107dfa06d3a815",
+    "include/daObjWanwanShutter_c.h": "a114007134aecea5d7a088cbe8795a54bae888f506f07d9d848e442edb8cfa2f",
+    "include/daObjWaterfall_c.h": "3e6d5755cf60e8ebe26aa964caf8227d7ea03c7569ed8d36a1635e76d2b47e41",
+    "include/daObjWcObj01_c.h": "fafd5b4de3b7fb560cf27e198b73f7b7030d273813f72503a670546e3de9e885",
+    "include/daObjWcObj06_c.h": "4d96239c9ed8788e2f9fe5b1a579a442ee6b79960c49ddfcf0c2e14a91927671",
+    "include/daObjWc_Mizu_c.h": "a918e9ed042df75f0530a9aa8f21138cf87ec8fb885177902f029f1378b50470",
+    "include/daObjWc_Obj02_c.h": "828a4f8f7bc7c284d172480a63a31ee342b1704bb1a46a05d6f89e5ef96c9fb3",
+    "include/daObjWc_Obj03_c.h": "5141b53d4717bbd820e83afe0e41b860e8efb22675076573c4f90db1684d2268",
+    "include/daObjWc_Obj04_c.h": "ab144cb20238195e7ee2cbc37ed54d12061a34256df5768b91d68ae24ca50ff5",
+    "include/daObjWc_Obj05_c.h": "de28fdd8fed55544fe19866f84c76b85519ca17fd923210dcbd14dabea6561cd",
+    "include/daObjWc_Obj07_c.h": "55ca589508cb0673f021d13daf4e21d51d68e72f0b8ce57276b59c3111498c07",
+    "include/daObjWlKoopaShutter_c.h": "4768d5b7358b3134bb4553ab273c311cda217f3bf6f8b9e3a7ad6bdbe84a8ecd",
+    "include/daObjWlPolelift_c.h": "2a2b78fa9fc7903e54a808dd3d88294e25efe7d8c1806b6ff593ca9be2f12adc",
+    "include/daObjWlSubmarine_c.h": "767997fd9826add29624021df0d5d1c1d28a84203d22ea25611707402e64a266",
+    "include/daObjYajirusi_c.h": "eba2786f24fc469605e70f1d20e57910be8fc9ce09aeab8663f0a63d7c868c05",
+    "include/daObj_Mip_Key_c.h": "cfb0f56ac61cbf4ee74542da12feec0be5b0d09ac2ed624fd7408aef8017b05a",
+    "include/daObj_volcanoCannon_c.h": "3e3e8755636dad2d30368c7d3a056eda803b952ef3ba6faeca7fa377f47740d6",
+    "include/daOnms_c.h": "ac632d9ff3d4953f178c3737ed00cc5d8a6630534c53871647e3746fd957c9fd",
+    "include/daOts_c.h": "2ce484b66a0e313a39be757a0c10230289c6527cf7ffeed46014f8201871118e",
+    "include/daOwl_c.h": "af642cf5c77d7bcc13de3fdfe1cb866831338032c573515edc4d3245bc64b9ec",
+    "include/daPeach_c.h": "8a43918b05948cf2fcce7e86cd39cb3f6d18728c514283f927b22c132a8a9317",
+    "include/daPgBby_c.h": "b614021f4f7182faff162be4bec812dfd76bae73563db6c6474acc2e1d790d4e",
+    "include/daPgDfdr_c.h": "146ff4786935b32cf6b3fa8f93f7f8eac4bc6fbb204a34b220bec53d08f0a9ce",
+    "include/daPgMthr_c.h": "0d00ea3b36e579a4856bcb0ebb21b3be3624468ee51b7deb8416d21eedcbd496",
+    "include/daPgRcer_c.h": "1eb1c0c937374071040b41ef735a74d0fbe571ebadb6b1a4cab74e86671e6c02",
+    "include/daPiano_c.h": "f777d449f288fcbdf5dcd93652b0d18410a88f47f60e023604008431f3067355",
+    "include/daPiano_c_resources.h": "8a7118450d781371919037b5e14681f9a732d41d7e1f927af4606fcbcb7f4cd9",
+    "include/daPicGate_c.h": "9e6b1c43f09ed6f752158bc7e7edfafad4fefb69ce2024351f16615da0d97fe0",
+    "include/daPkn_c.h": "3dbfc075993da937ec4fcd292f7ab310a62550ae6298a02596447058a56c733f",
+    "include/daPopoi_c.h": "8497570df175a1ea9d14f2ea980656a9d8c96358c4c912df64caac342a498322",
+    "include/daPropeller_Heyho_Fire_c.h": "73af72ef3034dd32ff132a1b1985008b22e402664eb22f3d7ec83d42a39a44b3",
+    "include/daPropeller_Heyho_c.h": "9a54d616c0294b6a679560a6730b8476dbab5fc9fc7ab7740aedd6148a02fa7e",
+    "include/daPukupuku_c.h": "686ef7dc695bcd049db9f677d066c747b88055ef22869d8fee264bea9acde6e4",
+    "include/daRFlag_c.h": "45109fd8b755b3efef58ea380d0201bebb834c7b7ad4609413ed06191915c736",
+    "include/daRNk_c.h": "34aed30e7c36bc7e7c93b904070dd4b83f93cc3500e37cb9dabb172926cfb3b7",
+    "include/daRedBombhei_c.h": "56ec1e7065909e6e0f19733b156c2078363d5939eca894cd8497747c658db4a6",
+    "include/daSBird_c.h": "a9a1fb3825b1123ec88fa1e6fd83e2a8aecc6b9fe02bbc721478761b8d5cd0fb",
+    "include/daSCoin_c.h": "ca30caf2d9669a56728a69703039405c04ff8f2a79cab9a2a45bcc0d2b512850",
+    "include/daSCre_c.h": "a244a7f9f063c9f1aaee6a430ce75f6363dcb981ee1551e4c1058731c9fc0891",
+    "include/daSanbo_c.h": "0c7f6bfaf1cc849cfd27d78b937a3bad1d335c962a0552b4c083e8c61708cebf",
+    "include/daSetSE_c.h": "95bd0a08b338cf577037b287f715e529afcbeb3d7f17092323234af486353de1",
+    "include/daShark_c.h": "0fa3c9bb7b57f9ceda2153b28abc44cfd10f8772f974f30967b33d4478de6e36",
+    "include/daShl_c.h": "ac087ef4b6a821bb18e9cd16df24cd5474ff8980e8c225d66b935cf5d1f6d0cb",
+    "include/daSldMng_c.h": "45ad483af541dbac4597ccb34b48ef92a394f89dbbb99de4f6b58131889749e0",
+    "include/daSlide_Box_c.h": "0bba8b03f270156b8b33aa006a9ec534c2c3ac4a39ca5d9cb4552b1bb64c578a",
+    "include/daSnmBth_c.h": "3bd164ea6e9b4af1b23b6549dac2726a1887f84764b1197b97002af37108c119",
+    "include/daSnowball_c.h": "46496e7e795314d1978a965dbad397636f226c119ada8aa988aac4e69249ddf2",
+    "include/daSnowman_c.h": "8ce63570c73d2974a8549d8b9fed8e72f76ddfe7ea6f27cb756d7ebbe162cdc0",
+    "include/daSoundObj_c.h": "e4dcaa29a3aa59f5ab2130644d18f893fc598ebb9ede81cf96ec416ebbae4940",
+    "include/daStarBase_c.h": "7cd5ab9b74558db2578ed29c8b5893a9b95fcb367764c01a9b50a532d198a11d",
+    "include/daStarGate_c.h": "e3ba5b665d34a8e9d26a4a6050b2396418aa90fa18cf32037cddda06df99ece8",
+    "include/daStar_c.h": "c2a4a4f053c26340e5b4075b1f943813eb16b3ce60b4163c1c1861ad34b4fd46",
+    "include/daTBasket_c.h": "1aeac0a200f69a0f50b0f96974b5d953d1c429f9276fd4ff892bd5fd5b0616fd",
+    "include/daTgz_c.h": "e6eaaceff4fe5c99bf62a8fd1a82a696e36bbc9c8e48d435ffa8fbc52dd10958",
+    "include/daTor_c.h": "e3ab58b5bd04d0f0515eb0e58c691ffd7932fe1b174d8aa6f49e3cd969a7cad1",
+    "include/daTree_c.h": "ea124f3679d3fc83d3a6cb278bba7557534281b6e089da9bccee16c1a849dca2",
+    "include/daTrsIcon_c.h": "de289aec4294f123cde66f4215ed71a757ff89e0bb7a91a01e996163017d7eaa",
+    "include/daTrsTrap_c.h": "2ff3c43a6cc6e44c0a6dc5d76beda80a4145d66bd1304cd3e53a20aaad77d3fa",
+    "include/daTrs_c.h": "2ce774e483d1f58b62422227d4c7cf48ae796796edeab994492914b4ca2081f0",
+    "include/daUdlift_c.h": "1857a19719c4d7434bb410d829c126986f49db0adc4ff34af019dada9013cc57",
+    "include/daWanwan2_c.h": "e39ea95ecdd804a3577aa87616b7945310e0f78c57b360252e9ed9690312b2de",
+    "include/daWanwan_c.h": "8eb018f7f494e29715b6a23463bfdfda8e438084be7a3530a60ed33577e843dc",
+    "include/daWarpkun_c.h": "f1dda628a483e96206118ac70c4dd4294404908f20a8371b9881c48175c5caa0",
+    "include/daWater_Hakidasi_c.h": "2876ce2b0a71a5d95ae38cc217f6ea8f0871a1b5937bf590a8bc227139d4e1a7",
+    "include/daWater_Ring_c.h": "0b1110268153cc846cd9e6da2d4c9e629d8a80c893f76abd2a4eb1f780d5f0f7",
+    "include/daWater_Suikomi_c.h": "c2411c6567dad7fd892bb07b240babb986c389091876aa2a0f90eb155a173fce",
+    "include/daWater_Tatumaki_c.h": "4961d5544dbc3051af7cbc166e648c870b2a265729b243c1e3925ac7fe8857eb",
+    "include/daWbm_c.h": "200e5241f25dda0dff333a663c5777d9259c7f01a7dd8d217f5d5d10b584cbaa",
+    "include/daYegg_c.h": "db2f6740f486781f72115bd7c88223686dee6d6a4f2f3513ee846a60f481b075",
+    "include/daYurei_Mucho_c.h": "bade72f84bf4a806605cd8e0b0c643941e65b567455c74e849e9ef50e66bc1e3",
+    "include/decl_Actor.h": "0ce1c58bf96fb751981811dc244c3fe50cd7c142fb7839fcf7fc4b4b562d7468",
+    "include/decl_ActorBase.h": "cc4da4d74be07308b52c2062aa72030749fc28d08c1ac273b097f42b9e8f25a8",
+    "include/decl_Animation.h": "d27c8e2b3bb83818cc9080ac45cf932c2d6b73d44bbd960a02ef9163464aa0b8",
+    "include/decl_Enemy.h": "a4d9da19424bf37802a91da009805e41477c9b2222ac6dca264631dfdb38e4b9",
+    "include/decl_ExpandingHeapAllocator.h": "807d2a100d4fda8e3171f5bbcf1636313382387dfdc0e2c9cd3c5442587f7853",
+    "include/decl_Fader.h": "616cb40235708191c8494545aebc109ebeb2d713b5ddda478a871e64c1836f9f",
+    "include/decl_FaderBrightness.h": "7fb79abdb1fec394f8abebc0d29d2442982feec49af5d2e31bc9280ec26dabc9",
+    "include/decl_FaderColor.h": "83757619fb3e6f5c64c95c0fbfed1ca69f205db93cd51dcf89f4629c0ee01abe",
+    "include/decl_Heap.h": "ed4d5fa12df39ef3126953d8c56008a7186de979f32a715e26220791473c048c",
+    "include/decl_HeapAllocator.h": "56c4afc6b19a148b4bcaa1794b4f3ed2978e52dc5144a28636425b0cf60a3818",
+    "include/decl_Message.h": "b9aff6a39ff2c976e54eb2ecda68081b31c9566f89fdcfb4ae5e2ba1bf9b6001",
+    "include/decl_Model.h": "835e4421a6b343e6742b40ac93f81502ed2ea596be84f77ab838c72fa962e04a",
+    "include/decl_ModelAnim.h": "a9830397208de10be4da4e8b8eee9facfed402d37895292edba8c2cca0e834e6",
+    "include/decl_NestedHeapIterator.h": "6a496f6cc8f2884f5ff939a392c1cc6f96819908db04ae0d93a4e5e0de98f5be",
+    "include/decl_OAM.h": "1330bfb23f6c4333e9f057557fc2aa23fe8955b82de431ece9f68307792b5449",
+    "include/decl_Particle.h": "8531b784d4db08da492b9f9a20aeb7248e7df4dd045e11075c9ace7ea46918ee",
+    "include/decl_PathPtr.h": "98d1e6b35f9e61581683702358f245eb6c7521743da2ae47929489633cb2e7ea",
+    "include/decl_Platform.h": "578326a86d2e2e781a371d06a3cd7f59640a235fefd3f47e27abf47950c18e4b",
+    "include/decl_Player.h": "37ce0bab68060ab076d63f3508d66823ed6518e4913f728f6004a1f47383b3eb",
+    "include/decl_SaveData.h": "93e8e7a80ba9911c6d360774680c2ff699ba8ca78c1155ca3d509736db92665b",
+    "include/decl_Scene.h": "e5cd8b25b7437e83deab9596d2c14b5d04f0ab40ce3b871c6553a92cab990cdc",
+    "include/decl_ShadowModel.h": "c427efdc2a5274a7d3c0eb72917156572aa888ab8c7274643b4960acd897d939",
+    "include/decl_SolidHeapAllocator.h": "34227c5fc2dc95050b7fadb115dab7817de5e073f764179f9d037cdebcfc0ecb",
+    "include/decl_Stage.h": "94e7d811f5dfdcf6b9f5ebc0ce7d656a29222fb8be04d5f164af82e6bd873a12",
+    "include/decl_Timer.h": "8097554189909c21657957157c848d424ab15f51075e9c452b36d15b096058f5",
+    "include/decl_common.h": "710c05b4e576195e7e25e5e2186ab47bacd211ccb5bcde9817074d2d6fb20b59",
+    "include/decl_dBgCh_Actr.h": "780cdae242df535165eb1a82e61b9856e58eed6c94e5a6fd90fe8b0f12c92808",
+    "include/decl_dBgCh_SphCrr.h": "838efbb7a476e20913fea74597f1fc062f30a89ad60afb377e6a3dc2a67f8337",
+    "include/decl_dBgPi.h": "3b01250f8e93f27b83bc83466e8c941ce220abaa94fd747c49e79ca3a1469377",
+    "include/decl_dBgW_KcMbg.h": "cd8a0e91975bb6e01fb0bbb2a01715d77e0830cba9faba6398929bb3e2b747b7",
+    "include/decl_dBgW_KcMbgSclY.h": "a0f59c739408ed9156b1798a708e2b038759b7b6d47505d0848b00b94defc1d8",
+    "include/decl_dCapEnemy_c.h": "694e2e8fff381df3cd6157ee3afff9cf18fc602ca1f66fa50871041ff3068724",
+    "include/decl_dCcAcPos_c.h": "77027df2732fc3b466d030ad6792de2ab9567b8003125d21b97747227dafcb1c",
+    "include/decl_dCcAc_c.h": "0e9ed940c0dc28beea0099f3f765ead964289ce7cccc3dd8be75f8c14e54d96d",
+    "include/decl_dCc_c.h": "bd113190937296d3c8bda7254285121beaf0c67f63536c7960733011ad7506ad",
+    "include/fBase_c.h": "527f216c0fcd8dd0a474ed889fb0716a253b7da0b490aa82f409f49df8b6e9a7",
+    "include/fListNode.h": "f105a5e1c04525cc8b7a5dac659134cc85bc0360004acfdb620318a7db6ef72c",
+    "include/launder.h": "42d95f71145231fba58e6d968ba240f48799f7f75aae3854d0e9390ce95861ed",
+    "include/math/Fix12.h": "218f3db19767dc0c4a7251c9b2a4cfb23f94ff913714b850d5fa78316b4ab8ba",
+    "include/math/Matrix.h": "11958e7e2acce1f78c24a50972c41104e92ad78c5cfe54d49253142edbb82d32",
+    "include/nitro/fx/fx.h": "3da877764de4b331991db3b20db1f2856bbcbbc3f293fe5360930e4585a235f2",
+    "include/nitro/hw/registers.h": "33254c8ac5a6633e62686f2d822491b7e4a5b3eb14a16ec8f45bbc669c64ff8c",
+    "include/private/Ov080Mat.h": "196b95816c52560521e679e1ba7dc513c55f75fb411d7ad3235ef77a8bb8c2b3",
+    "include/private/arm9_a1fc0_file_share.h": "2e7b3ca2da8f0e513e3b5b1ca50c620fd8ba3bdb9756ec02ea8b1ec614c7ebe9",
+    "include/private/arm9_a9db8_mb_parent.h": "a82e974d61fdf9d59e0f615a08362bd33552c5fecec2316367f1ae55d0e94257",
+    "include/private/arm9_wbt.h": "709eb07c9b19bb650ce0a48dee4595637ab2d1ea8e2d9c42265a06fcd137d482",
+    "include/private/disp_obj_vtbl.h": "cb29f4e14407b23e0c276cbe76aba8a6dc6f6c727106b18406bd88403fa2827b",
+    "include/private/mtx43.h": "9dfe9001e83fd52a933db87ea98e96dbd4b92150308a37b5f3b8f15d030e4df3",
+    "include/private/ov006_ec4dc_obj.h": "099c8a5d7da1f1524c79bed2c985f2fe54e0d69025a7a7a2bdbfca7d26b2fcee",
+    "include/private/ov006_m8c.h": "4da8dc210ee24cd9dd967185e027f187746a1c2081e71e54c0dcd260bbd55a93",
+    "include/private/ov006_slotgrid.h": "86af042663e9e161abb4efb847aa8a7867ccc35ec079e526d32e7708f5dd3c88",
+    "include/private/ov006_smartball_pair.h": "b0079fc2f4fcd1ec15897f0e1c6f05f32177d9788f6d163ed7a148a638fc858d",
+    "include/private/ov075_entry_mesh.h": "d1ce83ce700017b56937722dcca8a802d1e49fd57e2073947e5c0f5b3638a32b",
+    "include/typeinfo.h": "a340c7d0a6df32b2b19c1beb8dcb9749b179917df421cabfd45297eb7a832a1c",
+    "include/types.h": "d02733a5530459ca5cd8da02c6c5b2e5ddc380a38ebe36b985df363977a6f434"
+  }
+}

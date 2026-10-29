@@ -35,6 +35,8 @@ extern u8 data_0209f1e8, data_0209d454, data_0209d45c;
 extern int data_0208ee44;
 extern u16 data_020a0e58[], data_020a0e5a[], data_02092664;
 extern u32 data_0209f5b8;
+extern u8 data_02092660;
+int func_02013edc(u32 sceneID, u32 param, int kind);
 extern u8 *data_0209d6e8, *data_0209d6ec, *data_0209d6fc, *data_0209d708, *data_0209d70c;
 extern u8 data_020914e0[0x48], data_02091570[0x168];
 extern u8 data_020916d8[0x1ec], data_020918c4[0x84c], data_0209d3ac[2];

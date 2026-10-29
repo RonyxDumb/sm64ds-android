@@ -127,6 +127,7 @@ extern "C" void _ZN3G2x18SetBlendBrightnessEPVtts(volatile u16 *, u16, int);
 def scene_transitions(text):
     signatures = ('int dScene_c::SetSceneToSpawn(u32 sceneID, u32 param)',
         'void dScene_c::StartSceneFade(u32 sceneID, u32 param, u16 fadeColor)',
+        'int dScene_c::SpawnIfNecessary()',
         'void dScene_c::SetFaders(dFdBrightness_c *fader)', 'void dScene_c::SetAndStopColorFader()')
     return '#include "runtime/boot_seams.h"\n' + '\n\n'.join(function(text, sig) for sig in signatures)
 

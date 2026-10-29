@@ -1,6 +1,7 @@
 #include "stage_flow.h"
 #include "collision_dispatch.h"
 #include "resources.h"
+#include "packed_ptr.h"
 #include "PlayerInput.h"
 #include "nitro/fx/fx.h"
 #include <algorithm>
@@ -119,6 +120,11 @@ void StageFlow::prepare_scene() {
     const auto &objectOverlay = nextAssets->object_overlay();
     nextSpace->map(objectOverlay.base, const_cast<uint8_t *>(objectOverlay.bytes.data()),
                    objectOverlay.bytes.size());
+    // src/unnamed/arm9/0201/func_0201a054.c installs this very table at
+    // startup. Keep its cartridge words intact; factories resolve only via
+    // explicitly registered native code in the stage's address space.
+    const uint32_t spawnTable = 0x02090864u; // ACTOR_SPAWN_TABLE, EU symbol map
+    std::memcpy(nextSpace->data(0x020a4bb8u, 4), &spawnTable, 4);
     // Actual recovered fBase_c methods. Bind original ARM9 addresses from
     // config/arm9/symbols.txt to host-native implementations. Unported
     // subclass methods still cause an explicit missing-code failure.
@@ -152,6 +158,66 @@ void StageFlow::prepare_scene() {
     assets_ = std::move(nextAssets);
     arm9Image_ = std::move(nextArm9);
     addressSpace_ = std::move(nextSpace);
+    sceneActor_ = 0;
+    sceneInitialized_ = false;
+}
+
+uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {
+    if (!addressSpace_)
+        throw std::runtime_error("Scene spawn before original stage resources are loaded.");
+    packed::Space::Scope scope(*addressSpace_);
+    using packed::Ptr;
+    // Source chain: func_02013edc -> func_02042fe4 -> func_02043098.
+    // Expose the live r0 return value which the recovered void veneers lose.
+    // func_02043060's optional pre-spawn hook consumes the scene ID.
+    *Ptr<uint16_t>(0x020a4b50u) = static_cast<uint16_t>(sceneID);
+    *Ptr<uint8_t>(0x020a4b4cu) = 2;
+    const uint32_t hook = *Ptr<uint32_t>(0x020a4b58u);
+    if (hook && Ptr<int(uint32_t)>(hook)(sceneID) == 3)
+        return 0;
+    *Ptr<uint8_t>(0x020a4b4cu) = 3;
+    // func_02043180(sceneID, parent=0, parameter, kind).
+    *Ptr<uint32_t>(0x020a4b60u) = parameter;
+    *Ptr<uint16_t>(0x020a4b54u) = static_cast<uint16_t>(sceneID);
+    *Ptr<uint8_t>(0x020a4b48u) = kind;
+    *Ptr<uint32_t>(0x020a4b64u) = 0;
+    *Ptr<uint8_t>(0x020a4b4cu) = 4;
+    const uint32_t table = *Ptr<uint32_t>(0x020a4bb8u);
+    if (uint64_t(table) + uint64_t(sceneID) * 4 > UINT32_MAX)
+        throw std::runtime_error("Scene profile index overflows its cartridge address.");
+    const uint32_t profile = *Ptr<uint32_t>(table + sceneID * 4);
+    const uint32_t factory = *Ptr<uint32_t>(profile);
+    // A missing factory now fails at its actual native-code binding, rather
+    // than an unconditional stop at every scene-3 transition. Never execute
+    // a cartridge ARM address or replace an unported class with a dummy actor.
+    const uint32_t actor = Ptr<uint32_t()>(factory)();
+    if (!actor) {
+        *Ptr<uint8_t>(0x020a4b4cu) = 0;
+        *Ptr<uint16_t>(0x020a4b50u) = 0xffff;
+        return 0;
+    }
+    (void)addressSpace_->data(actor, 0x50);
+    *Ptr<uint8_t>(0x020a4b4cu) = 5;
+    Ptr<void(uint32_t)>(0x020433b8u)(actor); // original post-construction scheduler hook
+    *Ptr<uint8_t>(0x020a4b4cu) = 0;
+    *Ptr<uint16_t>(0x020a4b50u) = 0xffff;
+    sceneActor_ = actor;
+    sceneInitialized_ = false;
+    return actor;
+}
+
+void StageFlow::update_scene() {
+    if (!sceneActor_ || !addressSpace_)
+        throw std::runtime_error("Scene tick without an original scene actor.");
+    packed::Space::Scope scope(*addressSpace_);
+    ActorDispatch dispatch(*addressSpace_);
+    if (!sceneInitialized_) {
+        const int result = dispatch.process(sceneActor_, {{0,1}, {4,1}, {8,1}});
+        if (result != 1) return;
+        sceneInitialized_ = true;
+    }
+    dispatch.process(sceneActor_, {{24,1}, {28,1}, {32,1}});
+    dispatch.process(sceneActor_, {{36,1}, {40,1}, {44,1}});
 }
 
 std::vector<StageAssets::PlayerSpawnCommand> StageFlow::player_spawn_commands(

@@ -7,6 +7,11 @@ on:
       - include/**
       - android/tools/compile_all_src.py
       - android/tools/arm64_projections.py
+      - android/tools/arm64_migration*
+      - android/tools/requirements-migration.txt
+      - android/app/src/main/cpp/runtime/native_abi.h
+      - android/tests/*migration*
+      - android/tests/native_abi_test.cpp
       - .github/workflows/android-compile-audit.yml
   workflow_dispatch:
 permissions:
@@ -31,6 +36,11 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install pinned ARM64 compiler
         run: sdkmanager 'ndk;27.2.12479018'
+      - name: Install pinned source projection parser
+        run: python3 -m pip install -r android/tools/requirements-migration.txt
+      - name: Check full-width data and callback round trips
+        if: matrix.shard == 0
+        run: bash android/tests/run-migration-tests.sh
       - name: Compile all raw src translation units, never stop on file errors
         shell: bash
         run: |

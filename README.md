@@ -2,7 +2,7 @@
 
 This repository focuses on building a native **ARM64 Android** port of *Super Mario 64 DS* using recovered game source. It is not an emulator. **The port is still in development and is not yet a complete, verified playable game.**
 
-The Android runtime currently executes recovered boot and title/menu logic, including save-file selection and the transition request to scene 3. Full stage execution, actors, Player, collision, camera, HUD/minimap and final graphics fidelity remain integration work.
+The Android runtime currently executes recovered boot and title/menu logic, including save-file selection and the original scene-spawn dispatcher. Scene 3 now reaches its cartridge profile/factory lookup; the native `dScStage_c` factory and full stage execution remain unlinked. Actors, Player, collision, camera, HUD/minimap and final graphics fidelity still need runtime integration.
 
 ## Build an APK
 
@@ -28,6 +28,8 @@ The debug APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
 - `external/sm64ds-pc`: pinned upstream PC audio/sequencer dependency (Git submodule)
 
 A diagnostic Android ARM64 compilation of all raw `src/` units is available through the [compile census workflow](https://github.com/RonyxDumb/sm64ds-android/actions/workflows/android-compile-audit.yml). Compile-only success is not equivalent to correct linkage or runtime behavior.
+
+The checked source views currently compile **2,286 / 2,407** complete source units with NDK `27.2.12479018`, including all of `Player.cpp`. **121 units still fail**; the unmodified raw-source baseline has 523 failures. See the current checkpoint for the exact command and remaining ABI boundaries.
 
 ## Assets and credits
 

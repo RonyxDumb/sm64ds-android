@@ -22,6 +22,8 @@ public:
     const StageAssets *assets() const { return assets_.get(); }
     packed::Space *address_space() const { return addressSpace_.get(); }
     void prepare_scene();
+    uint32_t spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind);
+    void update_scene();
     std::vector<StageAssets::PlayerSpawnCommand> player_spawn_commands(uint8_t savedCharacter) const;
     void prepare_input();
     void update_input(u32 cameraFlags, float stickX = 0, float stickY = 0);
@@ -42,6 +44,8 @@ private:
     void check_camera_input(u32 cameraFlags);
     void check_input();
     bool inputEnabled_ = false;
+    uint32_t sceneActor_ = 0;
+    bool sceneInitialized_ = false;
 };
 }
 

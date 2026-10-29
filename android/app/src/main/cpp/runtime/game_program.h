@@ -50,6 +50,9 @@ public:
     // Receives the real frontend's return code (3..5), never raw UI coordinates.
     // The title dispatcher and stage actor scene still need native link closure.
     bool accept_title_result(int result);
+    uint32_t spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {
+        return stage_.spawn_scene(sceneID, parameter, kind);
+    }
     void *load(uint32_t handle);
     void release(void *pointer);
     size_t bytes_at(const void *pointer) const;

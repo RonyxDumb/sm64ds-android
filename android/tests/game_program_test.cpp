@@ -378,12 +378,19 @@ int main(int argc, char **argv) {
                 assert(data_0209fc64[slot] == (slot == 0 ? 0 : -1));
             }
             bool reachedStage = false;
+            uint32_t profile = 0, factory = 0;
+            std::memcpy(&profile, stageSpace->data(0x02090864u + 3 * 4, 4), 4);
+            std::memcpy(&factory, stageSpace->data(profile, 4), 4);
+            assert(profile == 0x0209213cu && factory == 0x0202e088u);
             try {
                 game.tick();
             } catch (const std::runtime_error &e) {
-                reachedStage = std::string(e.what()).find("dScStage_c") != std::string::npos;
+                reachedStage = std::string(e.what()) ==
+                    "Unlinked native code handle: " + std::to_string(factory);
             }
             assert(reachedStage);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 4);
+            assert(game.requested_scene() == 3); // failed spawn never publishes success
             // This source path previously wrote the DS +0xc offset into the
             // native fader's speed. Verify the actual native color member.
             data_02092110 = -1;
