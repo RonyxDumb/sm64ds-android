@@ -50,7 +50,22 @@ def generate(out, manifest=None):
         text += ''.join('void '+name+'();\n' for name in symbols)+'}\n'
         text += 'namespace sm64ds::' + namespace + ' {\nvoid bind_sources(packed::Space &space) {\n'
         text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol']) for b in data['bindings'])
-        text += '}\n}\n'
+        text += '}\n'
+        if namespace == 'frontend':
+            # Overlay 7 shares its DS addresses with the playable overlay 2.
+            # A stage may reuse the ARM9/ITCM SDK routines, never title code
+            # merely because an unported player method has the same address.
+            common = set()
+            for rel in ('config/arm9/symbols.txt','config/arm9/itcm/symbols.txt'):
+                inputs.add(ROOT/rel)
+                for line in (ROOT/rel).read_text().splitlines():
+                    match=re.match(r'\S+ kind:function.*?addr:0x([0-9a-f]+)',line)
+                    if match: common.add(int(match[1],16))
+            text += 'void bind_arm9_sources(packed::Space &space) {\n'
+            text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol'])
+                            for b in data['bindings'] if b['address'] in common)
+            text += '}\n'
+        text += '}\n'
         dest.write_text(text)
         sources.append(dest)
     (out/'sources.cmake').write_text('set(PACKED_FRONTEND_SOURCES\n' +

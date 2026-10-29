@@ -49,6 +49,8 @@ FrontendCore::FrontendCore(GameHeap &heap, Cartridge::DataImage data, int ownerL
     space_.map(ntr::VRAM_BASE,ntr::host_ptr(ntr::VRAM_BASE),ntr::VRAM_SIZE);
     space_.map(ntr::OAM_BASE,ntr::host_ptr(ntr::OAM_BASE),ntr::OAM_SIZE);
     if (!arm9_.bytes.empty()) space_.map(arm9_.base,arm9_.bytes.data(),arm9_.bytes.size());
+    for(auto &segment:arm9_.relocated)
+        space_.map(segment.base,segment.bytes.data(),segment.bytes.size());
     space_.map(image_.base,image_.bytes.data(),image_.bytes.size());
     frontend::bind_sources(space_);
     space_.bind(0x020ccab4,pk_frontend_allocate);

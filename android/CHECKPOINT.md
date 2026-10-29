@@ -1,4 +1,31 @@
-# Current checkpoint — 2026-10-29, stage resources and native card I/O
+# Current checkpoint — 2026-10-29, correct ARM9 startup data and module bindings
+
+The ARM9 data image now follows the original CRT0 module parameters and
+autoload/Entry operations. The static data ends at 0x0209b000; bytes after it in
+the expanded file contain ITCM/DTCM payloads and are **not initialized main RAM**.
+The main BSS through 0x020aa420 is now cleared, ITCM data is relocated, and the
+native DTCM data window is cleared with the original IRQ return word installed.
+Previously opcode bytes occupied save, stage and OS globals. No cartridge
+instructions execute; callable entries still require registered native code.
+
+Stages now import only ARM9/ITCM shared routines from the frontend. Overlay 7's
+title methods are excluded because overlay 2 reuses their addresses for player
+and actor code. An unported gameplay method therefore reports its real missing
+binding instead of resolving an unrelated title method. The native ROM archive
+also occupies the SDK's actual inline data_020a8074 record, as overlay file IDs
+require.
+
+The private-ROM ASan/UBSan launch checks pass for all four saves, including BSS,
+autoload, IRQ data, actual archive mounts and card I/O. The ROM-free frontend
+regression also passes and verifies that stage-shared registration excludes
+the title factory. The next stage dependency remains LoadLevelOverlays at
+0x0202ded4. The prior resource checkpoint 6ffd05e58aebe109fdd67d5071e7ff551c789faa
+passed both the [2407/2407 source census](https://github.com/RonyxDumb/sm64ds-android/actions/runs/40871349860)
+and [APK/lint workflow](https://github.com/RonyxDumb/sm64ds-android/actions/runs/40871349845).
+
+---
+
+# Stage resources and native card I/O
 
 The complete original dScStage_c::InitResources body now executes as checked
 native C++ against its 0x9c8 cartridge record. The committed stage manifest

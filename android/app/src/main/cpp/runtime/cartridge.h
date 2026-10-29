@@ -7,7 +7,13 @@ namespace sm64ds {
 // Cartridge offsets are checked data spans, never native code or objects.
 class Cartridge {
 public:
-    struct DataImage { uint32_t base; std::vector<uint8_t> bytes; };
+    struct DataImage {
+        uint32_t base;
+        std::vector<uint8_t> bytes;
+        // Data copied by the original ARM9 CRT0 autoload table. Code bytes
+        // are data here; only separately registered native functions execute.
+        std::vector<DataImage> relocated{};
+    };
     explicit Cartridge(const char *path);
     DataImage overlay_data(uint32_t id) const;
     DataImage arm9_data(uint32_t end) const;

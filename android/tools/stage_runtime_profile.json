@@ -36,6 +36,9 @@
     "src/GetOwnerLanguage.c": "0a06b436dbf8347cf33cb001c5cea891c5d3596830dde31299b58036443fe7d1",
     "include/Heap.h": "03773b4bb164aebcb4e9eb51b118b0f75f6e3705649fcb3495c13b3979e9861b",
     "include/CapIconMgr.h": "ebeaec9dd537f5753276f3c04e59daa0bad2ef5aae27c2560d7670c0d520fadc",
-    "src/unnamed/arm9/0205/func_0205c9b8.c": "067064e38de39354a1b9525a353f26477374d946348dbf1fb79dd815a5e805f8"
+    "src/unnamed/arm9/0205/func_0205c9b8.c": "067064e38de39354a1b9525a353f26477374d946348dbf1fb79dd815a5e805f8",
+    "src/Entry.c": "9431c2641abdc172e84e58b43f705f74ddf3e1ffbdc08bb484ccd8bd57bc4959",
+    "src/unnamed/arm9/0200/func_0200497c.c": "3509261240ad7fd1d5e6f8be68e9066d2f66d99d4f4f807ee5da9ab9349844a2",
+    "src/unnamed/arm9/0205/func_0205e088.c": "18b88629abfd286b0179cffd9e611496c81fa5604504b38af6f18a85ed6bddd3"
   }
 }

@@ -103,6 +103,7 @@ void packed_card_io(sm64ds::packed::Space &space) {
     // FS_LoadArchiveTables changes FAT/FNT lanes to absolute handles and
     // sets TABLE_LOAD. Exercise the same public open/read/close operations.
     const uint32_t archive=*Ptr<uint32_t>(0x020a804cu);
+    assert(archive==0x020a8074u); // SDK's inline ROM archive, used by overlays
     const uint32_t base=*Ptr<uint32_t>(archive+0x1c),flags=*Ptr<uint32_t>(archive+0x10);
     const uint32_t fat=*Ptr<uint32_t>(archive+0x20),fatSize=*Ptr<uint32_t>(archive+0x24);
     const uint32_t fnt=*Ptr<uint32_t>(archive+0x28),fntSize=*Ptr<uint32_t>(archive+0x2c);
@@ -122,6 +123,27 @@ void packed_card_io(sm64ds::packed::Space &space) {
     *Ptr<uint32_t>(archive+0x10)=flags;
     space.release(tables);
     space.release(target);space.release(path);space.release(file);
+}
+
+void startup_data(const char *rom) {
+    sm64ds::Cartridge cartridge(rom);
+    const auto runtime=cartridge.arm9_data(0x020aa420u);
+    const auto params=cartridge.arm9(0x02004ad8u,36);
+    auto word=[](const uint8_t *p) {
+        return uint32_t(p[0])|uint32_t(p[1])<<8|uint32_t(p[2])<<16|uint32_t(p[3])<<24;
+    };
+    const uint32_t bss=word(params.data()+12);
+    for(size_t i=bss-runtime.base;i<runtime.bytes.size();++i) assert(runtime.bytes[i]==0);
+    const auto table=cartridge.arm9(0x0208ecf4u,13*20);
+    assert(std::memcmp(runtime.bytes.data()+0x0208ecf4u-runtime.base,table.data(),table.size())==0);
+    assert(runtime.relocated.size()==2);
+    const auto &itcm=runtime.relocated[0],&dtcm=runtime.relocated[1];
+    assert(itcm.base==0x01ff8000u && itcm.bytes.size()==0x5f40);
+    const auto expected=cartridge.arm9(word(params.data()+8),0x5f40);
+    assert(itcm.bytes==expected);
+    assert(dtcm.base==0x023c0000u && dtcm.bytes.size()==0x4000);
+    for(unsigned i=0;i<0x3ffc;++i) assert(dtcm.bytes[i]==0);
+    assert(word(dtcm.bytes.data()+0x3ffc)==0x01ffd97cu);
 }
 
 void stage_controls(const char *rom) {
@@ -240,6 +262,7 @@ int main(int argc, char **argv) {
     }
     for (int repeat = 0; repeat < 4; ++repeat) {
         sm64ds::Resources resources(argv[1]);
+        if (repeat==0) startup_data(argv[1]);
         sm64ds::Cartridge cartridge(argv[1]);
         assert(cartridge.file(0x980e).size() >= 0x4000);
         std::string save = "/tmp/sm64ds-native-boot-" + std::to_string(getpid()) + ".sav";

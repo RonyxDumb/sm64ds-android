@@ -11,6 +11,7 @@
 #include <thread>
 
 using namespace sm64ds;
+namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
 namespace {
 int actorTestMode = 0;
 unsigned actorVisitCount = 0;
@@ -108,6 +109,15 @@ Cartridge::DataImage factory_fixture() {
 int main() {
     GameHeap heap;
     size_t available=heap.memory_left();
+    {
+        packed::Space shared(heap);
+        frontend::bind_arm9_sources(shared);
+        assert(shared.code(0x02053b4cu)); // genuine shared GX_DispOn
+        bool titleExcluded=false;
+        try { (void)shared.code(0x020b68e8u); } // overlay-7 title root factory
+        catch(const std::runtime_error &) { titleExcluded=true; }
+        assert(titleExcluded); // overlay 2 reuses this address during gameplay
+    }
     for (int life=0; life<3; ++life) {
         Cartridge::DataImage image{0x020d0000,std::vector<uint8_t>(0x35000)};
         int one=4096;

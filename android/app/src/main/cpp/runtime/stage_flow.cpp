@@ -20,7 +20,7 @@ s16 atan2(s32, s32);
 s32 fdiv(s32, s32);
 }
 
-namespace sm64ds::frontend { void bind_sources(packed::Space &); }
+namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
 namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
 
 namespace {
@@ -119,6 +119,8 @@ void StageFlow::prepare_scene() {
         cartridge_.arm9_data(overlayBoundary));
     auto nextSpace = std::make_unique<packed::Space>(Resources::active().heap());
     nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
+    for(auto &segment:nextArm9->relocated)
+        nextSpace->map(segment.base,segment.bytes.data(),segment.bytes.size());
     nextSpace->map(nextCommon->base,nextCommon->bytes.data(),nextCommon->bytes.size());
     nextSpace->map(nextAssets->overlay().base, nextAssets->overlay().bytes.data(),
                    nextAssets->overlay().bytes.size());
@@ -136,7 +138,7 @@ void StageFlow::prepare_scene() {
                        ntr::host_ptr(static_cast<uint32_t>(span.first)),span.second);
     // Reuse the real checked SDK/model/particle functions already linked for
     // the title. Stage methods have their own complete-source ABI bindings.
-    frontend::bind_sources(*nextSpace);
+    frontend::bind_arm9_sources(*nextSpace);
     stage_sources::bind_sources(*nextSpace);
     // src/unnamed/arm9/0201/func_0201a054.c installs this very table at
     // startup. Keep its cartridge words intact; factories resolve only via

@@ -37,11 +37,48 @@ std::vector<uint8_t> read_file(int32_t id) {
 }
 namespace sm64ds {
 Cartridge::DataImage Cartridge::arm9_data(uint32_t end) const {
-    require(end>=uint64_t(base_)+image_.size() && end<=0x02400000,
+    // src/func_0200497c and Entry use this exact module-parameter record.
+    // The expanded file contains ITCM/DTCM payloads *at* the main BSS start.
+    // Treating the whole expanded file as initialized RAM leaves instructions
+    // in the save, stage and OS globals that CRT0 actually zeroes.
+    const auto parameters=arm9(0x02004ad8u,36);
+    require(word(parameters.data()+28)==0xdec00621u &&
+            word(parameters.data()+32)==0x2106c0deu,"Invalid ARM9 module parameters.");
+    const uint32_t table=word(parameters.data()),tableEnd=word(parameters.data()+4);
+    const uint32_t payload=word(parameters.data()+8),bss=word(parameters.data()+12),
+                   bssEnd=word(parameters.data()+16);
+    require(bss>=base_ && uint64_t(bss)-base_<=image_.size() &&
+            bssEnd>=bss && end>=bssEnd && end<=0x02400000,
             "Invalid native ARM9 data/BSS boundary.");
-    auto bytes=image_;
-    bytes.resize(end-base_,0);
-    return {base_,std::move(bytes)};
+    require(tableEnd>=table && (tableEnd-table)%12==0 &&
+            table>=base_ && uint64_t(tableEnd)-base_<=image_.size(),
+            "Invalid ARM9 autoload table.");
+    DataImage result{base_,std::vector<uint8_t>(end-base_,0)};
+    std::memcpy(result.bytes.data(),image_.data(),bss-base_);
+    uint32_t source=payload;
+    for(uint32_t at=table;at<tableEnd;at+=12) {
+        const auto row=arm9(at,12);
+        const uint32_t destination=word(row.data()),size=word(row.data()+4),zero=word(row.data()+8);
+        require(!(destination&3) && !(size&3) && !(zero&3) &&
+                uint64_t(destination)+size+zero<=UINT32_MAX,
+                "Invalid ARM9 autoload segment extent.");
+        const bool itcm=destination>=0x01ff8000u && uint64_t(destination)+size+zero<=0x02000000u;
+        const bool dtcm=destination==0x023c0000u && uint64_t(size)+zero<=0x4000;
+        require(itcm || dtcm,"Unsupported ARM9 autoload destination.");
+        auto content=arm9(source,size);
+        require(uint64_t(source)+size<=UINT32_MAX,"ARM9 autoload payload overflow.");
+        source+=size;
+        content.resize(size_t(size)+zero,0);
+        if(dtcm) {
+            // Entry clears DTCM after autoload, then installs its IRQ return
+            // address at the final word. Native stacks live at host width.
+            content.assign(0x4000,0);
+            const uint32_t interruptReturn=0x01ffd97cu;
+            std::memcpy(content.data()+0x3ffc,&interruptReturn,4);
+        }
+        result.relocated.push_back({destination,std::move(content)});
+    }
+    return result;
 }
 Cartridge::DataImage Cartridge::overlay_data(uint32_t id) const {
     ntr::OverlayInfo info{};

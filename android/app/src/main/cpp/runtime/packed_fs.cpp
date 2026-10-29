@@ -226,7 +226,9 @@ void initialize_packed_fs(packed::Space &space) {
     at<uint32_t>(heap+4)=0x10000000u;
     at<uint32_t>(heap+8)=Resources::active().heap().capacity();
     at<uint32_t>(0x020a0ea0u)=at<uint32_t>(0x020a0eacu)=heap;
-    const uint32_t archive=space.allocate(0x60),name=space.allocate(4);
+    // func_0205e088 and SDK overlay file IDs use the original inline ROM
+    // archive at data_020a8074, not an independently allocated substitute.
+    const uint32_t archive=0x020a8074u,name=space.allocate(4);
     std::memcpy(space.data(name,4),"rom",4);
     Ptr<void(uint32_t)>(0x0205cd34u)(archive);
     if (!Ptr<int(uint32_t,uint32_t,int)>(0x0205cc80u)(archive,name,3))
