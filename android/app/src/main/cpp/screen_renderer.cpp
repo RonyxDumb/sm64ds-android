@@ -92,9 +92,6 @@ void ScreenRenderer::draw(const ntr::Framebuffer &main, const ntr::Framebuffer &
     // is NOT inherently the top screen. Earlier builds always showed A on
     // the left, so when the game placed B on top it displayed the menu on
     // the wrong side and mapped the stylus onto the wrong image.
-    const ntr::Framebuffer *frames[] = {
-        mainOnTop ? &main : &sub, mainOnTop ? &sub : &main
-    };
     // Preserve physical LCD routing: POWCNT1 bit 15 selects which engine
     // feeds the upper display. The lower (stylus) display is always the inset.
     const ntr::Framebuffer *top = mainOnTop ? &main : &sub;
@@ -114,16 +111,16 @@ void ScreenRenderer::draw(const ntr::Framebuffer &main, const ntr::Framebuffer &
     glViewport(0, 0, width, height);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-    // Picture-in-picture touch LCD: 24% of device width, bottom-right.
-    // Keep its original 256:192 ratio independently of the host display.
-    const int margin = std::max(4, width / 100);
-    const int insetWidth = std::max(1, std::min(width - 2 * margin, width * 24 / 100));
+    // Screenshot geometry: approximately 120px of 464px game width (26%).
+    // The video caption hides part of the lower LCD; it is not a 2:1 display.
+    // Anchor both inset edges directly to the lower-right surface corner.
+    const int insetWidth = std::max(1, width * 26 / 100);
     const int insetHeight = std::max(1, insetWidth * ntr::SCREEN_H / ntr::SCREEN_W);
     glBindTexture(GL_TEXTURE_2D, textures_[1]);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, ntr::SCREEN_W, ntr::SCREEN_H,
                     GL_RGBA, GL_UNSIGNED_BYTE, bottom->px);
     glUniform2f(crop, 1.0f, 1.0f);
-    glViewport(width - margin - insetWidth, margin, insetWidth, insetHeight);
+    glViewport(width - insetWidth, 0, insetWidth, insetHeight);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 void ScreenRenderer::release() {
