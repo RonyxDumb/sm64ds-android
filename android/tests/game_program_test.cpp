@@ -5,6 +5,7 @@
 #include "runtime/boot_seams.h"
 #include "runtime/packed_ptr.h"
 #include "runtime/packed_fs.h"
+#include "runtime/packed_audio.h"
 #include "runtime/stage_runtime.h"
 #include "ntr/lz77.h"
 #include "ntr/fs.h"
@@ -167,6 +168,78 @@ void overlay_sdk() {
     assert(selectedOverlays.empty());
     space.release(info);
     std::cout << "Original overlay SDK: card/cached metadata, image, BSS, initializer, overlap and selection passed.\n";
+}
+
+void audio_groups() {
+    using sm64ds::packed::Ptr;
+    std::vector<uint8_t> sound(0x100),main(0x020aa420u-0x02004000u);
+    std::memcpy(sound.data(),"SDAT",4);
+    put32(sound,0x18,0x40); put32(sound,0x1c,0x40);
+    put32(sound,0x20,0x80); put32(sound,0x24,12);
+    std::memcpy(sound.data()+0x40,"INFO",4);
+    std::memcpy(sound.data()+0x80,"FAT ",4);
+    put32(sound,0x5c,40); put32(sound,0x68,1); put32(sound,0x6c,48);
+    // A genuine empty common group is legal in the SDK. No sound files or
+    // game assets are needed to exercise its native cache save/restore owner.
+    pc_archive_load_image(std::move(sound));
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map_owned(0x027ffc40u,2);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_packed_audio(space);
+    sm64ds::initialize_packed_audio(space);
+    sm64ds::packed::Space::Scope scope(space);
+    const auto owner=*Ptr<uint32_t>(0x0209b498u);
+    assert(owner && *Ptr<uint32_t>(0x0209b4a8u)==1);
+    assert(*Ptr<uint8_t>(0x0208e428u)==0x20);
+    assert(Ptr<int(uint32_t)>(0x0205117cu)(owner)==2);
+    assert(Ptr<int(uint32_t,int)>(0x020510a4u)(owner,1)==1);
+    assert(Ptr<int(uint32_t,int)>(0x020510a4u)(owner,2)==0);
+    bool rejected=false;
+    try { Ptr<int(uint32_t,uint32_t)>(0x020134d8u)(1,owner); }
+    catch(const std::runtime_error &) { rejected=true; }
+    assert(rejected);
+    pc_archive_close();
+    std::cout << "Original sound-group loader: native SDAT owner, save/restore and missing-group rejection passed.\n";
+}
+
+void controller_glyph_words() {
+    using sm64ds::packed::Ptr;
+    assert(ntr::io_init());
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map(ntr::IO_BASE,ntr::host_ptr(ntr::IO_BASE),ntr::IO_SIZE);
+    space.map(ntr::VRAM_BASE,ntr::host_ptr(ntr::VRAM_BASE),ntr::VRAM_SIZE);
+    sm64ds::frontend::bind_arm9_sources(space);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::packed::Space::Scope scope(space);
+    ntr::io_write(0x04000240u,0x81,1);
+    ntr::io_write(0x04000000u,0,4);
+    ntr::io_write(0x0400000cu,0,2);
+    ntr::io_write(0x0400000eu,0,2);
+    const uint32_t text=space.allocate(2),font=0x0600a040u,target=0x06005020u;
+    *Ptr<uint8_t>(text)=0x41; *Ptr<uint8_t>(text+1)=0xff;
+    *Ptr<uint32_t>(0x0209d6f4u)=text;
+    *Ptr<uint8_t>(0x0209d65cu)=8;
+    *Ptr<uint8_t>(0x0209d6b0u)=12;
+    *Ptr<uint8_t>(0x0208f174u+0x41)=12;
+    for(unsigned row=0;row<16;++row) {
+        const uint32_t source=font+(row/8)*0x400+(row%8)*4;
+        *Ptr<uint32_t>(source)=0xf1234567u;
+        *Ptr<uint32_t>(source+0x20)=0x12345678u;
+    }
+    std::memset(space.data(target,128),0,128);
+    Ptr<void(int)>(0x0201b100u)(1);
+    assert(*Ptr<uint32_t>(target)==0xf1234567u);
+    assert(*Ptr<uint32_t>(target+32)==0x12345678u);
+    assert(*Ptr<uint8_t>(0x0209d65cu)==8);
+    assert(*Ptr<uint32_t>(0x0209d6f4u)==text+1);
+    space.release(text);
+    std::cout << "Original glyph renderer: signed pixel words and logical shift by 32 passed.\n";
 }
 
 void packed_card_io(sm64ds::packed::Space &space) {
@@ -350,6 +423,8 @@ void stage_controls(const char *rom) {
 int main(int argc, char **argv) {
     narc_bounds();
     overlay_sdk();
+    audio_groups();
+    controller_glyph_words();
     if (argc < 2) {
         std::cout << "NARC bounds passed; native boot needs a private ROM.\n";
         return 0;
@@ -557,7 +632,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0202de24u);
+                    "Unlinked native code handle: " + std::to_string(0x02017a3cu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                     reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
@@ -592,6 +667,13 @@ int main(int argc, char **argv) {
             }
             assert(stageWord(0x0209d3c4u+11*12)==UINT32_MAX);
             assert(stageWord(0x02092130u)==9);
+            assert(*static_cast<uint16_t *>(stageSpace->data(0x0209d6d4u,2))==0x282);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x0209d6b0u,1))>0);
+            assert(stageWord(0x0209d6fcu)==stageSpace->address(data_0209d6fc));
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x0209b47cu,1))==
+                   *static_cast<uint8_t *>(stageSpace->data(0x02075768u+3,1)));
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x0208e428u,1))==
+                   *static_cast<uint8_t *>(stageSpace->data(0x02075769u+3,1)));
             for(auto handle : {std::pair<uint32_t,uint32_t>{0x0210da18u,0x3c7},
                                {0x02113c20u,0x438},{0x02113c28u,0x439},
                                {0x02113c68u,0x693},{0x02113c70u,0x694},

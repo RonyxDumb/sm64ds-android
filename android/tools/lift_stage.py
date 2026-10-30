@@ -154,7 +154,15 @@ def projected(rel, body, prototypes, exports, extra='', auto_globals=True):
 def sound():
     rel = 'src/engine/sound/Sound.cpp'
     body = function((ROOT/rel).read_text(), 'extern "C" void func_02011b7c(void)')
-    return projected(rel,body,'void func_0204fa2c(int *,int);',['func_02011b7c'])
+    group=function((ROOT/rel).read_text(),'void LoadGroupAndSetBank(int a, int b)')
+    group=replace_once(group,'void LoadGroupAndSetBank(int a, int b)',
+                       'void _ZN5Sound19LoadGroupAndSetBankEii(int a, int b)')
+    prototypes='''
+void func_0204fa2c(int *,int); int func_0203d974(void); void func_0203d7d4(int);
+int func_020134d8(void *,void *); int func_0205117c(int); int func_020510a4(int,int);
+'''
+    return projected(rel,body+'\n'+group,prototypes,
+                     ['func_02011b7c','_ZN5Sound19LoadGroupAndSetBankEii'])
 
 
 def narc():
@@ -274,6 +282,56 @@ void _ZN3G3X13SetClearColorEtiiib(u16,int,int,int,bool);
 void _ZN3G3i13PerspectiveW_E5Fix12IiES1_S1_S1_S1_S1_bP9Matrix4x3(int,int,int,int,int,int,int,void *);
 '''
     return projected(rel,body,prototypes,['Initialise3dGraphics'],extra=macros+'\n')
+
+
+def controller_text():
+    rel='src/Message.cpp'
+    raw=(ROOT/rel).read_text()
+    body='\n'.join(function(raw,signature) for signature in (
+        'extern "C" void LoadControllerModeText(int param0)',
+        'extern "C" void func_0201d590(void)'))
+    body=body.replace('G2::GetBG2ScrPtr','_ZN2G212GetBG2ScrPtrEv')
+    body=body.replace('G2::GetBG2CharPtr','_ZN2G213GetBG2CharPtrEv')
+    prototypes='''
+void func_0201eaac(void); void func_0201d590(void);
+char *_ZN2G212GetBG2ScrPtrEv(void); void *_ZN2G213GetBG2CharPtrEv(void);
+void func_0201b6f8(int); void func_0201b100(int); void MultiStore_Int(int,int *,int);
+'''
+    return projected(rel,body,prototypes,['LoadControllerModeText','func_0201d590'],
+                     extra='struct StarEntry;\n')
+
+
+def controller_glyphs():
+    rel='src/Message2.cpp'
+    raw=(ROOT/rel).read_text()
+    body='\n'.join(function(raw,signature) for signature in (
+        'void func_0201b100(int mode) {','void func_0201b6f8(int mode) {'))
+    body=body.replace('G2::GetBG2CharPtr','_ZN2G213GetBG2CharPtrEv')
+    body=body.replace('G2S::GetBG0CharPtr','_ZN3G2S13GetBG0CharPtrEv')
+    # Pixel rows are 32-bit words. The ARM register shifter returns zero for
+    # logical shifts of 32; C++ otherwise has UB (and x86 masks the count).
+    data=body.encode()
+    def shifts(node):
+        if node.type=='binary_expression':
+            operator=node.child_by_field_name('operator')
+            if operator and data[operator.start_byte:operator.end_byte] in (b'<<',b'>>'):
+                name='stage_lsl32' if data[operator.start_byte:operator.end_byte]==b'<<' else 'stage_lsr32'
+                return name+'((u32)('+shifts(node.child_by_field_name('left'))+'),(u32)('+shifts(node.child_by_field_name('right'))+'))'
+        result=[];at=node.start_byte
+        for child in node.named_children:
+            result.extend((data[at:child.start_byte].decode(),shifts(child)));at=child.end_byte
+        result.append(data[at:node.end_byte].decode())
+        return ''.join(result)
+    body=shifts(PARSER.parse(data).root_node)
+    helpers='''
+static u32 stage_lsl32(u32 value,u32 shift) { return shift<32 ? value<<shift : 0; }
+static u32 stage_lsr32(u32 value,u32 shift) { return shift<32 ? value>>shift : 0; }
+'''
+    prototypes='''
+int func_02054d88(void); void *_ZN2G213GetBG2CharPtrEv(void);
+u32 _ZN3G2S13GetBG0CharPtrEv(void); void MultiCopy_Int(int *,int *,int);
+'''
+    return projected(rel,body,prototypes,['func_0201b100','func_0201b6f8'],extra=helpers)
 
 
 def collision_reset():
@@ -404,6 +462,14 @@ def stage():
     # The complete controller reset uses its shared, pointer-free 0x18 record.
     controls = re.search(r'struct CamInput \{.*?\n\};',raw,re.S).group()
     reset = function(raw,'extern "C" void ResetInput(void) {')
+    sound_group = function(raw,'extern "C" int GetSoundGroupID(int group, int sub) {')
+    graphics=function(raw,'void dScStage_c::LoadGraphics2D(bool vsMode, int sublevel) {')
+    graphics=replace_once(graphics,'void dScStage_c::LoadGraphics2D(bool vsMode, int sublevel)',
+                          'void _ZN10dScStage_c14LoadGraphics2DEbi(bool vsMode, int sublevel)')
+    for name in ('GetBG0CharPtr','GetBG0ScrPtr','GetBG1ScrPtr','GetBG2ScrPtr'):
+        graphics=graphics.replace('G2S::'+name,'_ZN3G2S'+str(len(name))+name+'Ev')
+    graphics_enum=re.search(r'enum ZN10dScStage_c14LoadGraphics2DEbi_AssetId \{.*?\};',raw,re.S)[0]
+    graphics_macros='\n'.join(line for line in raw.splitlines() if re.match(r'#define BG[0-3]CNT',line))
     overlay_symbols = {
         'LoadLevelOverlays':'_Z17LoadLevelOverlaysi',
         'UnloadLevelOverlays':'_Z19UnloadLevelOverlaysi',
@@ -473,7 +539,7 @@ int func_020308a8(void); int func_0203da9c(void); int func_0203da3c(void);
 u32 func_0203dad4(void); void func_0203b9b4(int *,int);
 void *func_02073470(int,int,int,void *,void *); void func_ov001_020ab2e4(void);
 void *_ZN9dFdWipe_cC1Ev(void *); void _ZN9dFdWipe_cD1Ev(void *);
-void _ZN10dScStage_c14LoadGraphics2DEbi(int,int);
+void _ZN10dScStage_c14LoadGraphics2DEbi(bool,int);
 void _ZN5Sound6Player19SetPlayableSeqCountEii(int,int);
 void _ZN8dScene_c20Initialise3dGraphicsEv(void);
 void _ZN10dScStage_c12SetVramBanksEv(void);
@@ -495,20 +561,31 @@ void _ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc(LVL_Overlay *,
 u8 GetControllerMode(int); void func_0205a588(void *,int,int);
 void Crash(void); void LoadOverlay(int); void UnloadOverlay(int);
 void _Z26LoadOrUnloadObjectOverlaysPFviEi(void (*)(int),int);
+void SetBg0Offset(int,int); void SetSubBg0Offset(int,int);
+void SetSubBg1Offset(int,int); void SetSubBg2Offset(int,int);
+void LoadFont(u8); int GetOwnerLanguage(void); void LoadFont3D(void);
+u32 LoadCompressedFileAt(u16,void *); int LoadFileAt(int,int);
+char *_ZN2G213GetBG2CharPtrEv(void); char *_ZN2G212GetBG2ScrPtrEv(void);
+char *_ZN3G2S13GetBG0CharPtrEv(void); char *_ZN3G2S12GetBG0ScrPtrEv(void);
+char *_ZN3G2S12GetBG1ScrPtrEv(void); char *_ZN3G2S12GetBG2ScrPtrEv(void);
+void LoadControllerModeText(int); void MultiStore16(u16,char *,int);
 '''
-    return projected(rel,reset+'\n'+overlays+'\n'+body,prototypes,
+    return projected(rel,reset+'\n'+sound_group+'\n'+overlays+'\n'+graphics+'\n'+body,prototypes,
                      ['ResetInput','_ZN10dScStage_c13InitResourcesEv',
-                      *overlay_symbols.values(),'func_0202deac'],
-                     extra=controls+'\nstruct OvTbl { u32 t[7]; };\n')
+                      *overlay_symbols.values(),'func_0202deac','GetSoundGroupID',
+                      '_ZN10dScStage_c14LoadGraphics2DEbi'],
+                     extra=controls+'\nstruct OvTbl { u32 t[7]; };\n'+graphics_enum+'\n'+graphics_macros+'\n')
 
 
 if __name__ == '__main__':
     rows,bindings = [],[]
-    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles()]:
+    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),controller_text(),controller_glyphs(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles()]:
         rows.append(row); bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
     for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',
+                'src/SetBg0Offset.c','src/SetSubBg0Offset.c','src/SetSubBg1Offset.c','src/SetSubBg2Offset.c',
+                'external/sm64ds-pc/src/func_0201eaac.c',
                 'src/unnamed/arm9/0201/func_02017e60.c',
                 'src/unnamed/arm9/0201/func_02018a24.c',
                 'src/unnamed/arm9/0201/func_0201973c.c',
@@ -520,6 +597,7 @@ if __name__ == '__main__':
                 'src/unnamed/arm9/0201/func_02018dc4.c',
                 'src/unnamed/arm9/0201/func_02018b64.c',
                 'src/unnamed/arm9/0203/func_0203d7b8.c',
+                'src/unnamed/arm9/0203/func_0203d974.c',
                 'src/unnamed/arm9/0205/func_0205dd9c.c',
                 'src/unnamed/arm9/0205/func_0205e088.c',
                 'src/unnamed/arm9/0205/func_0205e0b0.c',

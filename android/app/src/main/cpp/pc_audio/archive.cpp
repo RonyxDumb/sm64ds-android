@@ -108,6 +108,29 @@ int sdat_seq_priority(const sd_u8 *base, sd_u32 start) {
     }
     return 64;
 }
+bool pc_group_ready(unsigned group) {
+    const auto *entry=sdat_info_entry(SDAT_REC_GROUP,group);
+    if (!entry) return false;
+    const auto count=rd32(entry);
+    const size_t offset=static_cast<size_t>(entry-g_sdat.info);
+    if (count>65536 || !range(offset+4,size_t(count)*8,infoSize)) return false;
+    const int records[]={SDAT_REC_SEQ,SDAT_REC_BANK,SDAT_REC_WAVEARC,SDAT_REC_SEQARC};
+    const char *magic[]={"SSEQ","SBNK","SWAR","SSAR"};
+    for(unsigned i=0;i<count;++i) {
+        const auto *item=entry+4+i*8;
+        const unsigned kind=item[0];
+        if (kind>=4) return false;
+        const auto *info=sdat_info_entry(records[kind],rd32(item+4));
+        if (!info) return false;
+        const auto file=rd32(info);
+        const auto *bytes=sdat_file(file);
+        if (!bytes || sdat_file_size(file)<4 || std::memcmp(bytes,magic[kind],4)) return false;
+        // All SWAR samples and SBNK links were prepared by archive_load_image.
+        // Verify that the group refers to that real playback cache.
+        if (kind==1 && !banks.count(bytes)) return false;
+    }
+    return true;
+}
 int sdat_swar_wave(const sd_u8 *swar, sd_u32 index, SdatWave *out) {
     sd_u32 file = sdat_file_id_of(swar);
     size_t size = sdat_file_size(file);

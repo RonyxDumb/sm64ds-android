@@ -75,7 +75,7 @@ target_compile_options(sm64ds_frontend PRIVATE -Wno-comment -Wno-implicit-fallth
     -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-value)
 set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
-    runtime/packed_memory.cpp runtime/packed_fs.cpp runtime/actor_dispatch.cpp runtime/collision_dispatch.cpp)
+    runtime/packed_memory.cpp runtime/packed_fs.cpp runtime/packed_audio.cpp runtime/actor_dispatch.cpp runtime/collision_dispatch.cpp)
 target_link_libraries(sm64ds_android PRIVATE sm64ds_frontend dl)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"

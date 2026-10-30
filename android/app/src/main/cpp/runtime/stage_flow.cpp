@@ -1,6 +1,7 @@
 #include "stage_flow.h"
 #include "stage_runtime.h"
 #include "packed_fs.h"
+#include "packed_audio.h"
 #include "boot_seams.h"
 #include "collision_dispatch.h"
 #include "resources.h"
@@ -169,6 +170,17 @@ void StageFlow::prepare_scene() {
     bind_stage_runtime(*nextSpace);
     bind_packed_fs(*nextSpace);
     initialize_packed_fs(*nextSpace);
+    bind_packed_audio(*nextSpace);
+    initialize_packed_audio(*nextSpace);
+    // Boot already loaded and parsed the actual language BMG bank. Its
+    // immutable native-owned bytes remain live through gameplay; retain each
+    // original pointer lane without narrowing native heap addresses.
+    for(auto lane : {std::pair<uint32_t,const void *>{0x0209d6e8u,data_0209d6e8},
+                    {0x0209d6ecu,data_0209d6ec},{0x0209d6fcu,data_0209d6fc},
+                    {0x0209d708u,data_0209d708},{0x0209d70cu,data_0209d70c}}) {
+        const uint32_t address=nextSpace->address(lane.second);
+        std::memcpy(nextSpace->data(lane.first,4),&address,4);
+    }
     // The original LVL_Overlay and its CLPS/object pointers must round-trip
     // through the same checked 32-bit address space the actor ABI consumes.
     if (nextSpace->address(nextAssets->overlay_at(

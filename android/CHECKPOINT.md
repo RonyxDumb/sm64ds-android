@@ -1,3 +1,45 @@
+# Current checkpoint — 2026-10-30, stage audio and 2D interface execute
+
+Initializer checkpoint bd65668f1bda862705d1caaafd67a40c999eace4 passed both
+GitHub Actions jobs (run 41027966348). The target remains a genuinely playable
+castle exterior; scene initialization alone is not acceptance.
+
+The complete original GetSoundGroupID, Sound::LoadGroupAndSetBank and
+LoadGraphics2D bodies now run, including all three controller-text strings.
+Native SDAT cache ownership supplies SDK group load/save/restore services;
+groups are checked against real resident SSEQ/SBNK/SWAR/SSAR resources used by
+the existing playback engine. No debug flag forces the loader's early-return
+branch. Native font/video upload providers perform actual validated uploads.
+The original text/BMG cursor lanes reference boot's live language bank without
+narrowing native pointers. Existing frontend G2/G2S getters are reused.
+
+ASan/UBSan found a real ARM semantic dependency in Message2's glyph blitter:
+logical pixel shifts can have count 32, and pixel words can be negative when
+read as signed int. The scoped projection now preserves 32-bit ARM logical
+shift results, including zero at count 32. A no-ROM regression executes the
+original blitter with synthetic glyph words and checks both destination tiles.
+No-ROM tests also execute the original sound-group loader over a synthetic
+SDAT and validate native cache ownership, snapshots and rejection. Music tests
+cover synthetic group metadata/invalid types and genuine ROM PCM/streaming.
+
+All four private-ROM character/save paths pass strict checks through the new
+stop: dExtSimpleModel_c::LoadFile(SharedFilePtr&) at 0x02017a3c. UI/BMG state,
+group/bank selection, all 58 initializers and eleven module records are checked.
+Local tests use ASan/UBSan with LeakSanitizer disabled for process restrictions.
+Original matching sources stay unchanged; ROM, images and decoded assets are
+not committed. Android CI is pending for this checkpoint.
+
+Next: real shared-file/model loads and common-model pool, then faders, level
+model, LoadClsnAndObjects, actual Player/actor initialization and frame loops.
+Known integration work after scene entry: GameProgram currently updates input
+only while scene 3 is requested, renders GX geometry/OBJ only for title scene 1,
+and StageFlow ticks only the scene actor rather than the full original process
+lists. These must be fixed and exercised before calling the castle playable.
+Overlay unload/cleanup also remains incomplete. Version 0.4.6-stage-2d,
+versionCode 10. Do not claim on-phone rendering verification from host tests.
+
+---
+
 # Current checkpoint — 2026-10-30, all castle overlay initializers execute
 
 Loader checkpoint d56e39d6172b3d3ae100c44c2cf06ccae2c9b6eb passed both

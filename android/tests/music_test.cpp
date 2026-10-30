@@ -35,6 +35,7 @@ static void synthetic_sequence() {
     word(0x48, 40);
     word(0x50, 48);
     word(0x54, 56);
+    word(0x5c, 0x58);
     word(0x68, 1);
     word(0x6c, 64);
     word(0x70, 1);
@@ -50,6 +51,12 @@ static void synthetic_sequence() {
     for (size_t at = 0x8e; at < 0x94; at += 2)
         half(at, 0xffff);
     word(0x94, 2);
+    word(0x98, 1);
+    word(0x9c, 0x60);
+    word(0xa0, 3);
+    data[0xa4]=0; word(0xa8,0);
+    data[0xac]=1; word(0xb0,0);
+    data[0xb4]=2; word(0xb8,0);
     magic(0xc0, "FAT ");
     word(0xc8, 3);
     word(0xcc, 0x100);
@@ -88,6 +95,12 @@ static void synthetic_sequence() {
     for (size_t i = 0; i < 64; i++)
         data[0x1cc + i] = (i & 4) ? 0x40 : 0xc0;
     pc_archive_load_image(std::move(data));
+    check(pc_group_ready(0),"synthetic group resources are not ready");
+    check(!pc_group_ready(1),"missing group was accepted");
+    auto *group=sdat_info_entry(SDAT_REC_GROUP,0);
+    group[4]=4;
+    check(!pc_group_ready(0),"invalid group resource type was accepted");
+    group[4]=0;
     check(pc_start_sequence(0, 0), "synthetic sequence start");
     short pcm[512 * 2];
     long long energy = 0;

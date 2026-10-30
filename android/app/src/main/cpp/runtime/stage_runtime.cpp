@@ -9,6 +9,14 @@
 
 extern "C" uint8_t GetControllerMode(int);
 extern "C" int GetOwnerLanguage();
+extern "C" void LoadFont(uint8_t);
+extern "C" int LoadFileAt(int,void *);
+extern "C" uint8_t data_0209d698;
+extern "C" uint8_t data_0209d660;
+extern "C" short data_0209d6d4;
+extern "C" void pk_MultiStore16(unsigned short,sm64ds::packed::Ptr<char>,int);
+extern "C" void pk_MultiStore_Int(int,sm64ds::packed::Ptr<int>,int);
+extern "C" void pk_MultiCopy_Int(sm64ds::packed::Ptr<int>,sm64ds::packed::Ptr<int>,int);
 
 namespace sm64ds {
 namespace {
@@ -88,6 +96,18 @@ void stage_flush_fifo(uint32_t port) {
 void stage_fill(uint32_t destination,int value,int bytes) {
     if (bytes<0) throw std::runtime_error("Negative stage memory fill extent.");
     if (bytes) std::memset(packed::Space::current().data(destination,static_cast<uint32_t>(bytes)),value,static_cast<uint32_t>(bytes));
+}
+int stage_load_file_at(int handle,uint32_t destination) {
+    return LoadFileAt(handle,reinterpret_cast<void *>(static_cast<uintptr_t>(destination)));
+}
+uint32_t stage_load_compressed_at(uint16_t handle,uint32_t destination) {
+    return LoadCompressedFileAt(handle,reinterpret_cast<void *>(static_cast<uintptr_t>(destination)));
+}
+void stage_load_font(uint8_t kind) {
+    LoadFont(kind);
+    at<uint8_t>(0x0209d698u)=data_0209d698;
+    at<uint8_t>(0x0209d660u)=data_0209d660;
+    at<int16_t>(0x0209d6d4u)=data_0209d6d4;
 }
 }
 
@@ -243,5 +263,11 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0205a588u,&stage_fill);
     space.bind(0x02020054u,&GetControllerMode);
     space.bind(0x0203d880u,&GetOwnerLanguage);
+    space.bind(0x020182acu,&stage_load_file_at);
+    space.bind(0x02018100u,&stage_load_compressed_at);
+    space.bind(0x0201fcd4u,&stage_load_font);
+    space.bind(0x0205a448u,&pk_MultiStore16);
+    space.bind(0x0205a47cu,&pk_MultiStore_Int);
+    space.bind(0x0205a490u,&pk_MultiCopy_Int);
 }
 }
