@@ -1,3 +1,38 @@
+# Current checkpoint — 2026-10-30, twelve common models load natively
+
+Published parent: 0bef66b916527aa969d655a5da0e1207c38ae701, stage audio/2D UI.
+The acceptance target is still playable castle grounds, not merely a loaded
+scene. No gameplay success is claimed at this checkpoint.
+
+The original SharedFilePtr LoadFile/Release/refcount-limit, model LoadFile,
+AddToCommonModelDataArr, ReallocateModelFile and func_02017060 bodies now run.
+Native card providers read actual FAT files or registered NARC archives,
+perform genuine LZ77 decoding, cache owned allocations and free them on the
+last release. Checked native heap size/reallocate services preserve DS handles
+while shrinking the real allocation. No prefilled model records or dummy
+success functions replace these game bodies.
+
+No-ROM tests exercise actual shared-file reads, cache reuse, reference counts,
+255-holder refusal, last-reference cleanup and allocation ownership. All four
+private-ROM save/character paths pass strict ASan/UBSan checks through loading
+and rebasing all twelve common BMD models. The common-model pool and each
+SharedFilePtr are checked, and a fresh packed NARC resource read is compared
+byte-for-byte against the independently decoded Cartridge::file result.
+The previous overlay, sound-group, controller-text and glyph-shift tests pass.
+Local LeakSanitizer remains disabled for process-inspection restrictions.
+
+Actual next dependency: func_02073470 at 0x02073470, the original array-new
+helper for seven 0x60-byte wipe faders (8-byte cookie). Continue its genuine
+construct/cleanup path, dFdWipe_c/model file setup, stage LoadModel, collision
+and object spawning, then real actors/Player and full frame processing.
+Known input/process-list/GX presentation integration work is recorded in the
+previous checkpoint and must be exercised before declaring gameplay ready.
+Android CI is pending for this checkpoint. Version 0.4.7-shared-models,
+versionCode 11. Matching sources and the pinned dependency are unchanged.
+ROM, extracted assets, build caches and local test logs remain private.
+
+---
+
 # Current checkpoint — 2026-10-30, stage audio and 2D interface execute
 
 Initializer checkpoint bd65668f1bda862705d1caaafd67a40c999eace4 passed both

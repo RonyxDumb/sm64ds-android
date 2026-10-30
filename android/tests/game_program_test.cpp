@@ -151,6 +151,23 @@ void overlay_sdk() {
         overlap=std::string(e.what())=="Original game graphics invariant failed.";
     }
     assert(overlap && overlayInitializers==1);
+    const uint32_t shared=space.allocate(8);
+    const auto before=space.allocations();
+    const uint32_t loaded=Ptr<uint32_t(uint32_t)>(0x02017bc4u)(shared);
+    assert(loaded && space.allocations()==before+1 && space.allocation_size(loaded)==64);
+    assert(std::memcmp(space.data(loaded,64),card.data()+0x280,64)==0);
+    assert(*Ptr<uint8_t>(shared+2)==1 && *Ptr<uint32_t>(shared+4)==loaded);
+    assert(Ptr<uint32_t(uint32_t)>(0x02017bc4u)(shared)==loaded);
+    assert(*Ptr<uint8_t>(shared+2)==2 && space.allocations()==before+1);
+    *Ptr<uint8_t>(shared+2)=0xff;
+    assert(Ptr<uint32_t(uint32_t)>(0x02017bc4u)(shared)==0);
+    *Ptr<uint8_t>(shared+2)=2;
+    Ptr<void(uint32_t)>(0x02017b64u)(shared);
+    assert(*Ptr<uint8_t>(shared+2)==1 && *Ptr<uint32_t>(shared+4)==loaded);
+    Ptr<void(uint32_t)>(0x02017b64u)(shared);
+    assert(*Ptr<uint8_t>(shared+2)==0 && *Ptr<uint32_t>(shared+4)==0);
+    assert(space.allocations()==before);
+    space.release(shared);
     // The real seven-column object table and its extra shared overlays.
     for(unsigned i=0;i<7;++i) {
         *Ptr<uint8_t>(0x02075998u+7+i)=1;
@@ -632,7 +649,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02017a3cu);
+                    "Unlinked native code handle: " + std::to_string(0x02073470u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                     reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
@@ -680,8 +697,10 @@ int main(int argc, char **argv) {
                                {0x02148934u,0x4a1}}) {
                 assert(*static_cast<uint16_t *>(stageSpace->data(handle.first,2))==
                        resources.file_id(handle.second));
-                assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))==0);
-                assert(stageWord(handle.first+4)==0);
+                if (handle.first==0x0210da18u || handle.first>=0x02113c20u) {
+                    assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))==0);
+                    assert(stageWord(handle.first+4)==0);
+                }
             }
             for(auto pair : {std::pair<uint32_t,uint32_t>{0x0210db80u,0x021081b8u},
                              {0x021097bcu,0x02109758u},
@@ -699,6 +718,22 @@ int main(int argc, char **argv) {
             assert(destructors.size()>100);
             assert(stageWord(0x0210da94u)==0x02017ab4u && stageWord(0x0210da98u)==0x0210da18u);
             assert(stageSpace->code(0x02100560u) && stageSpace->code(0x02112458u));
+            assert(stageWord(0x0209cef8u)==12);
+            for(unsigned i=0;i<12;++i) {
+                const uint32_t holder=stageWord(0x020756f0u+i*4),file=stageWord(holder+4);
+                assert(*static_cast<uint8_t *>(stageSpace->data(holder+2,1))==1);
+                assert(file && stageSpace->allocation_size(file)>=0x40);
+                assert(stageWord(file+8)>=file); // original BMD offsets became checked pointers
+                assert(stageWord(0x0209cefc+i*12)==file);
+            }
+            {
+                sm64ds::packed::Space::Scope scope(*stageSpace);
+                const uint32_t file=sm64ds::packed::Ptr<uint32_t(uint32_t)>(0x0201816cu)(0x8006);
+                const auto expectedFile=cartridge.file(0x8006);
+                assert(stageSpace->allocation_size(file)>=expectedFile.size());
+                assert(std::memcmp(stageSpace->data(file,expectedFile.size()),expectedFile.data(),expectedFile.size())==0);
+                stageSpace->release(file);
+            }
             const uint32_t actor=stageWord(0x020a4b6cu)-0x14;
             assert(stageSpace->allocation_size(actor)==0x9c8);
             assert(stageWord(actor)==0x020921c0u);

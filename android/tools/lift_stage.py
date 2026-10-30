@@ -377,6 +377,7 @@ def shared_file_handles():
         'SharedFilePtr_Destruct_Clsn':'extern "C" int SharedFilePtr_Destruct_Clsn(int self)',
         'SharedFilePtr_Destruct_TexSeq':'extern "C" int SharedFilePtr_Destruct_TexSeq(int self)',
         'SharedFilePtr_Construct_TexSeq':'extern "C" void *SharedFilePtr_Construct_TexSeq(void *self, unsigned int fileID)',
+        'func_02017c24':'extern "C" void func_02017c24(SharedFilePtr *self)',
     }
     body='\n'.join(function(raw,signature) for signature in signatures.values())
     construct=function(raw,'SharedFilePtr &SharedFilePtr::Construct(unsigned int fileID)')
@@ -385,13 +386,68 @@ def shared_file_handles():
     construct=replace_once(construct,'func_02017e48(this, fileID);','func_02017e48(self, fileID);')
     construct=replace_once(construct,'return *this;','return self;')
     body+='\n'+construct
+    methods={
+        '_ZN13SharedFilePtr8LoadFileEv':('void *SharedFilePtr::LoadFile()', 'void *'),
+        '_ZN13SharedFilePtr7ReleaseEv':('void SharedFilePtr::Release()', 'void'),
+        '_ZN13SharedFilePtr19ReallocateModelFileEv':('void SharedFilePtr::ReallocateModelFile()', 'void'),
+    }
+    for symbol,(signature,ret) in methods.items():
+        method=function(raw,signature)
+        method=replace_once(method,signature,ret+' '+symbol+'(SharedFilePtr *self)')
+        for field in ('fileID','numRefs','filePtr'):
+            method=re.sub(r'\b'+field+r'\b','self->'+field,method)
+        method=method.replace('Load()','_ZN13SharedFilePtr4LoadEv(self)')
+        method=method.replace('func_02017c24(this)','func_02017c24(self)')
+        body+='\n'+method
+    model=function(raw,'void *dExtSimpleModel_c::LoadFile(SharedFilePtr &ptr)')
+    model=replace_once(model,'void *dExtSimpleModel_c::LoadFile(SharedFilePtr &ptr)',
+                       'void *_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(SharedFilePtr *ptr)')
+    model=model.replace('ptr.LoadFile()','_ZN13SharedFilePtr8LoadFileEv(ptr)')
+    model=model.replace('ptr.filePtr','ptr->filePtr').replace('ptr.numRefs','ptr->numRefs')
+    model=model.replace('UpdateFileOffsets(*(BMD_File *)filePtr)',
+                        '_ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(filePtr)')
+    model=model.replace('AddToCommonModelDataArr(*(BMD_File *)filePtr)',
+                        '_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(filePtr)')
+    model=model.replace('ptr.ReallocateModelFile()','_ZN13SharedFilePtr19ReallocateModelFileEv(ptr)')
+    body+='\n'+model
+    body=body.replace('Memory::Deallocate','_ZN6Memory10DeallocateEPv')
     body=body.replace('static_cast<SharedFilePtr *>(self)','((SharedFilePtr *)self)')
     body=body.replace('reinterpret_cast<void *>(self)','((void *)self)')
     prototypes='''
 void func_02017e0c(void *,u32); void *func_02017e48(void *,u32);
 void *func_02017e34(void *); u32 func_02018a24(u32);
+void *_ZN13SharedFilePtr4LoadEv(SharedFilePtr *);
+void *_ZN13SharedFilePtr8LoadFileEv(SharedFilePtr *);
+void _ZN13SharedFilePtr19ReallocateModelFileEv(SharedFilePtr *);
+void func_02017c24(SharedFilePtr *); void _ZN6Memory10DeallocateEPv(void *);
+u32 func_02017060(void *);
+void _ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(void *);
+void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(void *);
 '''
-    return projected(rel,body,prototypes,[*signatures,'_ZN13SharedFilePtr9ConstructEj'])
+    return projected(rel,body,prototypes,[*signatures,*methods,
+                     '_ZN13SharedFilePtr9ConstructEj','_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr'])
+
+
+def common_models():
+    rel='src/engine/model/d_ext_simple_model.cpp'
+    raw=(ROOT/rel).read_text()
+    add=function(raw,'void *dExtSimpleModel_c::AddToCommonModelDataArr(BMD_File &file)')
+    add=replace_once(add,'void *dExtSimpleModel_c::AddToCommonModelDataArr(BMD_File &file)',
+                     'void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(void *file)')
+    add=add.replace('&file','file').replace('LoadTexAndPal(file)','_ZN17dExtSimpleModel_c13LoadTexAndPalER8BMD_File(file)')
+    trim=function(raw,'extern "C" u32 func_02017060(void *ptr)')
+    trim=replace_once(trim,'((Heap *)heap)->_Sizeof(ptr)',
+                      '_ZN5mHeap6Heap_t7_SizeofEPv((Heap *)heap,ptr)')
+    trim=replace_once(trim,'((Heap *)heap)->Reallocate(ptr, newSize)',
+                      '_ZN5mHeap6Heap_t10ReallocateEPvj((Heap *)heap,ptr,newSize)')
+    prototypes='''
+void _ZN17dExtSimpleModel_c13LoadTexAndPalER8BMD_File(void *);
+u32 func_020469e0(void *); u32 _ZN5mHeap6Heap_t7_SizeofEPv(Heap *,void *);
+u32 _ZN5mHeap6Heap_t10ReallocateEPvj(Heap *,void *,u32);
+'''
+    return projected(rel,add+'\n'+trim,prototypes,
+                     ['_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File','func_02017060'],
+                     extra='struct CommonModelData { void *file; void *components; void *buffer; };\n')
 
 
 def overlay_initializers():
@@ -579,7 +635,7 @@ void LoadControllerModeText(int); void MultiStore16(u16,char *,int);
 
 if __name__ == '__main__':
     rows,bindings = [],[]
-    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),controller_text(),controller_glyphs(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles()]:
+    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),controller_text(),controller_glyphs(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles(),common_models()]:
         rows.append(row); bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
@@ -590,6 +646,7 @@ if __name__ == '__main__':
                 'src/unnamed/arm9/0201/func_02018a24.c',
                 'src/unnamed/arm9/0201/func_0201973c.c',
                 'src/unnamed/arm9/0203/func_0203b9b4.c',
+                'src/unnamed/arm9/0204/func_020469e0.c',
                 'src/unnamed/arm9/0207/func_020731dc.c',
                 'src/unnamed/arm9/0201/func_02018c00.c',
                 'src/unnamed/arm9/0201/func_02018cbc.c',

@@ -3,6 +3,7 @@
 #include "resources.h"
 #include "ntr/fs.h"
 #include "ntr/rt.h"
+#include "ntr/lz77.h"
 #include <algorithm>
 #include <atomic>
 #include <climits>
@@ -67,6 +68,15 @@ uint32_t heap_set_default(uint32_t heap) {
     at<uint32_t>(0x020a0ea0u)=heap;
     return previous;
 }
+uint32_t heap_size(uint32_t heap,uint32_t allocation) {
+    check_heap(heap);
+    return packed::Space::current().allocation_size(allocation);
+}
+uint32_t heap_resize(uint32_t heap,uint32_t allocation,uint32_t bytes) {
+    check_heap(heap);
+    return packed::Space::current().resize(allocation,bytes);
+}
+void free_allocation(uint32_t allocation) { packed::Space::current().release(allocation); }
 void cache_flush(uint32_t address,uint32_t bytes) {
     if (bytes) (void)packed::Space::current().data(address,bytes);
     std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -228,6 +238,62 @@ int file_close(uint32_t file) {
     return 1;
 }
 
+uint32_t load_file_id(uint32_t id) {
+    auto &space=packed::Space::current();
+    FileId resolved{0x020a8074u,id};
+    if (id>=0x8000) {
+        resolved.archive=0;
+        for(unsigned i=0;i<13;++i) {
+            const uint32_t row=0x0208ecf4u+i*20;
+            const uint16_t first=at<uint16_t>(row+8),end=at<uint16_t>(row+10);
+            if (id>=first && id<end) {
+                resolved={at<uint32_t>(row),id-first};
+                break;
+            }
+        }
+        if (!resolved.archive) throw std::runtime_error("Resource archive is not mounted: "+std::to_string(id));
+    }
+    uint32_t file=0,raw=0,expanded=0;
+    try {
+        file=space.allocate(0x44);
+        Ptr<void(uint32_t)>(0x0205d874u)(file);
+        if (!file_open_id(file,resolved)) throw std::runtime_error("Cannot open native resource file: "+std::to_string(id));
+        const uint32_t size=at<uint32_t>(file+0x24)-at<uint32_t>(file+0x20);
+        if (!size || size>16*1024*1024) throw std::runtime_error("Invalid native resource file length.");
+        raw=space.allocate(size,32);
+        if (file_read(file,raw,static_cast<int>(size),0)!=static_cast<int>(size))
+            throw std::runtime_error("Truncated native resource file read.");
+        file_close(file); space.release(file); file=0;
+        const auto *bytes=static_cast<const uint8_t *>(space.data(raw,size));
+        if (size>=8 && !std::memcmp(bytes,"LZ77",4)) {
+            const int length=ntr::lz77_size(bytes,static_cast<int>(size));
+            if (length<=0 || length>16*1024*1024) throw std::runtime_error("Invalid native resource LZ length.");
+            expanded=space.allocate(static_cast<uint32_t>(length),32);
+            if (ntr::lz77_unpack(bytes,static_cast<int>(size),static_cast<uint8_t *>(space.data(expanded,length)),length)!=length)
+                throw std::runtime_error("Native resource LZ decompression failed.");
+            space.release(raw); raw=0;
+            return expanded;
+        }
+        return raw;
+    } catch (...) {
+        if (expanded) space.release(expanded);
+        if (raw) space.release(raw);
+        if (file) { if(at<uint32_t>(file+8)) file_close(file); space.release(file); }
+        throw;
+    }
+}
+uint32_t shared_load(uint32_t self) {
+    auto &space=packed::Space::current();
+    (void)space.data(self,8);
+    const uint32_t id=at<uint16_t>(self);
+    at<uint32_t>(0x0209d3bcu)=id;
+    if (!at<uint32_t>(self+4)) at<uint32_t>(self+4)=load_file_id(id);
+    return at<uint32_t>(self+4);
+}
+uint32_t load_resource(uint32_t handle) {
+    return load_file_id(Ptr<uint32_t(uint32_t)>(0x02018a24u)(handle));
+}
+
 int overlay_load_image(uint32_t info) {
     auto &space=packed::Space::current();
     (void)space.data(info,0x24);
@@ -269,6 +335,12 @@ void bind_packed_fs(packed::Space &space) {
     space.bind(0x0203c29cu,&heap_allocate);
     space.bind(0x0203c280u,&heap_deallocate);
     space.bind(0x0203c324u,&heap_set_default);
+    space.bind(0x0203c274u,&heap_size);
+    space.bind(0x0203c578u,&heap_resize);
+    space.bind(0x0203c1b4u,&free_allocation);
+    space.bind(0x02018144u,&free_allocation);
+    space.bind(0x02017c54u,&shared_load);
+    space.bind(0x0201816cu,&load_resource);
     // Symbol addresses from the original main/ITCM symbol maps.
     space.bind(0x02059d1cu,&irq_disable);
     space.bind(0x02059d30u,&irq_restore);

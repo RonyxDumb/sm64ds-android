@@ -31,6 +31,7 @@ public:
     uint32_t address(const void *pointer);
     uint32_t allocate(uint32_t bytes, int alignment = 4);
     uint32_t allocation_size(uint32_t address) const;
+    uint32_t resize(uint32_t address,uint32_t bytes);
     void release(uint32_t address);
     size_t allocations() const { return allocations_.size(); }
     size_t largest_free_span() const;
