@@ -1,3 +1,45 @@
+# Current checkpoint — 2026-10-30, resumed device-log investigation
+
+Last implementation checkpoint: da5c8c8c9e6d244347c847f9277e8316f0137375
+(version 0.4.2-video-capture). The user tested that APK: the vertical stripes
+remain on the physical lower/right LCD. The previous capture-timing fix did not
+resolve this device rendering fault.
+
+Verified phone log (Samsung SM-A346B, Android 16, ARM64):
+- At title tick 240: POWCNT1=020e, DISPCAPCNT=00000000,
+  MAIN DISPCNT=08011b00, BG0..3=1712,0005,0210,010d.
+- SUB DISPCNT=00011c00, BG0..3=0284,0314,0087,0187.
+- VRAM A..I=83,8b,84,81,00,83,82,00,82.
+- MAIN BG0 is enabled, but its 3D-select bit (bit 3) is clear. POWCNT1 bit 15
+  is clear, so MAIN drives the lower/right LCD.
+- Launching a save reaches "Unlinked native code handle: 33742548", exactly
+  0x0202ded4 / LoadLevelOverlays, rather than an artificial scene-3 stop.
+
+Strong source-based lead, not yet a reproduced fix:
+GX_SetGraphicsMode requests bg0As3d=1, but GX_Init.cpp accesses REG_DISPCNT
+through include/nitro/hw/registers.h. That header still contains raw fixed DS
+register pointers. Android can relocate the I/O window; these header accesses
+may then bypass ntr::host_ptr/io_write while literal accesses in projected
+sources use the translated window. Existing host checks normally map the DS
+addresses directly and therefore cannot detect this discrepancy.
+
+Resume implementation:
+1. Force an occupied low I/O window in a regression, using the Android
+   relocation path. Exercise the actual projected GX display-mode routines;
+   check that the foreign low mapping is unchanged and the PPU sees 3D BG0.
+2. Route the shared hardware-register header through the audited packed
+   projection, preserving original matching src/ and include/ files.
+3. Save that verified repair on main, build an APK, and retain the exact checks.
+4. Link the complete original LoadLevelOverlays body and its real dependencies
+   through the existing packed stage path. Continue to the next actual missing
+   binding; never substitute success or suppress the original spawn failure.
+
+The previous local environment reset before this work was committed.
+No repair for the raw-header lead or LoadLevelOverlays is claimed in this
+diagnostic checkpoint. Keep publishing incremental code checkpoints on main.
+
+---
+
 # Current checkpoint — 2026-10-29, title capture timing and unobstructed menu input
 
 Version `0.4.2-video-capture` (versionCode 6) fixes a concrete timing bug:
