@@ -48,6 +48,11 @@ g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
     port/ntr/{gx,io,texture}.cpp -o "$TEST_BUILD/gx_depth_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
     UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" "$TEST_BUILD/gx_depth_test"
+g++ -std=c++17 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
+    -Iport/ntr/include android/tests/gx_texcoord_test.cpp \
+    port/ntr/{gx,io,texture}.cpp -o "$TEST_BUILD/gx_texcoord_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
+    UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" "$TEST_BUILD/gx_texcoord_test"
 bash android/tests/run-video-tests.sh
 javac -d "$TEST_BUILD/java" android/app/src/main/java/io/github/ronyxdumb/sm64ds/ControllerState.java android/tests/ControllerStateTest.java
 java -cp "$TEST_BUILD/java" ControllerStateTest

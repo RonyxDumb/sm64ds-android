@@ -110,8 +110,12 @@ float texture_coord(float value) {
 }
 void transform_texcoord(float x,float y,float z,bool texcoord) {
     const auto &m=g.tex.m;
-    g.u=texture_coord(x*m[0]+y*m[4]+z*m[8]+(texcoord?m[12]/16:g.raw_u));
-    g.v=texture_coord(x*m[1]+y*m[5]+z*m[9]+(texcoord?m[13]/16:g.raw_v));
+    // NORMAL/VTX matrix products are in 1/16-texel units. TEXCOORD inputs
+    // were already converted to texels, so only its constant lanes use /16.
+    // Treating all three sources alike repeats a reflected texture 16 times.
+    const float scale=texcoord?1.0f:1.0f/16;
+    g.u=texture_coord((x*m[0]+y*m[4]+z*m[8])*scale+(texcoord?m[12]/16:g.raw_u));
+    g.v=texture_coord((x*m[1]+y*m[5]+z*m[9])*scale+(texcoord?m[13]/16:g.raw_v));
 }
 
 // Project a model-space vertex all the way to screen space.

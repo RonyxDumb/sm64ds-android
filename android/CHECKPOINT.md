@@ -1,7 +1,44 @@
+# Current checkpoint — 2026-10-30, normal/vertex texture-coordinate units
+
+Local parent: 4667bca, the W-depth repair described below. Publication of that
+commit was rejected by automatic approval review, including after retrieving
+the prior user authorization to work directly on main. The remote head was
+checked and remains 748efb4b3719e8121caa4d7761ba6ea56e5a2dd2. Both repairs
+are prepared as local commits; publishing them requires fresh user approval.
+Do not report an uploaded checkpoint or a newly built APK for these changes.
+
+After fixing depth, the opening star retained a repeated gold texture. Its
+decoded renderer texture was compared byte-for-byte with an independent BMD
+load of the private cartridge's face_demo_mariostar.bmd: it was identical.
+Tracing the real normal-source texture matrix found a scale of 256 for the
+32px reflection. NORMAL/VTX matrix products use 1/16-texel units, while the
+native backend stores coordinates in texels. That conversion was missing,
+making the reflection repeat 16 times across the star. The backend now
+converts the matrix contribution before adding the raw TEXCOORD offset.
+TEXCOORD-source matrix and constant-lane units retain their original behavior.
+
+The new no-ROM test covers all four coordinate sources, positive/negative
+normal and vertex products, the two TEXCOORD constant lanes, negative
+sub-texel rounding and NORMAL latching. It fails against the parent renderer
+and passes with this repair under ASan/UBSan. The W/Z regression passes too.
+The four existing private-ROM save/character launch paths pass after both
+repairs. Private host captures show the now smooth gold star and removal of
+the reproduced depth noise; the File Select/menu paths were also exercised.
+
+Remaining: compare the complete title transitions and file-menu backgrounds
+on the phone, and continue the previously recorded stage loader dependency
+at func_02073470. These changes do not establish playable gameplay. No Android
+APK/ARM64 CI or on-phone verification was possible before publication.
+Version 0.4.9-texture-units, versionCode 13. Original matching sources and the
+pinned submodule are unchanged. ROM, decoded assets and test captures remain
+private; local sanitizer checks disable LeakSanitizer as before.
+
+---
+
 # Current checkpoint — 2026-10-30, title W-buffer depth and menu ordering
 
-The six new phone screenshots were reproduced using the supplied private EUR
-cartridge. Isolating BG0 and the geometry framebuffer located the background
+The depth speckles in the new phone screenshots were reproduced using the
+supplied private EUR cartridge. Isolating BG0 and geometry located the background
 speckles in GX, before 2D composition. The original title initialization
 func_ov007_020b6c54 writes SWAP_BUFFERS=2, requesting W depth for subsequent
 geometry. The renderer previously ignored that command and always tested Z.
