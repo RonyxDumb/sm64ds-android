@@ -49,8 +49,20 @@ def generate(out, manifest=None):
         text = '#include "runtime/packed_memory.h"\nextern "C" {\n'
         text += ''.join('void '+name+'();\n' for name in symbols)+'}\n'
         text += 'namespace sm64ds::' + namespace + ' {\nvoid bind_sources(packed::Space &space) {\n'
-        text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol']) for b in data['bindings'])
+        text += ''.join('    space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol'])
+                        for b in data['bindings'] if 'overlay' not in b)
         text += '}\n'
+        modules=sorted({b['overlay'] for b in data['bindings'] if 'overlay' in b})
+        if modules:
+            text += 'void bind_overlay_sources(packed::Space &space, unsigned int id) {\n    switch(id) {\n'
+            for module in modules:
+                if not isinstance(module,int) or module<0 or module>102:
+                    raise ValueError('invalid native overlay binding owner')
+                text += '    case '+str(module)+':\n'
+                text += ''.join('        space.bind(0x%08xu, %s);\n'%(b['address'],b['symbol'])
+                                for b in data['bindings'] if b.get('overlay')==module)
+                text += '        break;\n'
+            text += '    default: break;\n    }\n}\n'
         if namespace == 'frontend':
             # Overlay 7 shares its DS addresses with the playable overlay 2.
             # A stage may reuse the ARM9/ITCM SDK routines, never title code

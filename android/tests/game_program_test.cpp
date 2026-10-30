@@ -7,12 +7,14 @@
 #include "runtime/packed_fs.h"
 #include "runtime/stage_runtime.h"
 #include "ntr/lz77.h"
+#include "ntr/fs.h"
 #include <cassert>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_set>
 #include <unistd.h>
 extern "C" void MultiCopy_Int(int *, int *, int);
 namespace cstd {
@@ -547,11 +549,15 @@ int main(int argc, char **argv) {
             std::memcpy(&profile, stageSpace->data(0x02090864u + 3 * 4, 4), 4);
             std::memcpy(&factory, stageSpace->data(profile, 4), 4);
             assert(profile == 0x0209213cu && factory == 0x0202e088u);
+            bool unloadedInitializer=false;
+            try { (void)stageSpace->code(0x02100560u); }
+            catch(const std::runtime_error &) { unloadedInitializer=true; }
+            assert(unloadedInitializer); // data residency alone must not publish module code
             try {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02112458u);
+                    "Unlinked native code handle: " + std::to_string(0x0202de24u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                     reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
@@ -559,17 +565,58 @@ int main(int argc, char **argv) {
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
-            // Real FS_LoadOverlay read and decompressed the level image before
-            // stopping at its first still-unlinked static initializer.
-            const auto expectedLevel=cartridge.overlay_data(9);
-            assert(std::memcmp(stageSpace->data(expectedLevel.base,expectedLevel.bytes.size()),
-                               expectedLevel.bytes.data(),expectedLevel.bytes.size())==0);
             assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 5);
             auto stageWord = [&](uint32_t address) {
                 uint32_t value=0;
                 std::memcpy(&value,stageSpace->data(address,4),4);
                 return value;
             };
+            // All eleven actual modules and all 58 static initializers ran.
+            // Code stays the real BLZ result. Constructors build handles and
+            // state tables in writable data/BSS instead of fabricated data.
+            const unsigned modules[]={1,2,9,62,69,85,89,94,100,98,102};
+            for(unsigned i=0;i<11;++i) {
+                ntr::OverlayInfo info{};
+                assert(ntr::fs_overlay_info(modules[i],info));
+                const auto expectedImage=cartridge.overlay_data(modules[i]);
+                const uint32_t table=0x08000000u+stageWord(0x027ffe50u)+modules[i]*32;
+                const uint32_t codeEnd=stageWord(table+0x10);
+                assert(codeEnd>=info.ramAddress && codeEnd-info.ramAddress<=info.ramSize);
+                const uint32_t codeBytes=codeEnd-info.ramAddress;
+                assert(std::memcmp(stageSpace->data(expectedImage.base,codeBytes),
+                                   expectedImage.bytes.data(),codeBytes)==0);
+                const uint32_t region=0x0209d3c4u+i*12;
+                assert(stageWord(region)==modules[i]);
+                assert(stageWord(region+4)==info.ramAddress);
+                assert(stageWord(region+8)==info.ramSize+info.bssSize);
+            }
+            assert(stageWord(0x0209d3c4u+11*12)==UINT32_MAX);
+            assert(stageWord(0x02092130u)==9);
+            for(auto handle : {std::pair<uint32_t,uint32_t>{0x0210da18u,0x3c7},
+                               {0x02113c20u,0x438},{0x02113c28u,0x439},
+                               {0x02113c68u,0x693},{0x02113c70u,0x694},
+                               {0x02148934u,0x4a1}}) {
+                assert(*static_cast<uint16_t *>(stageSpace->data(handle.first,2))==
+                       resources.file_id(handle.second));
+                assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))==0);
+                assert(stageWord(handle.first+4)==0);
+            }
+            for(auto pair : {std::pair<uint32_t,uint32_t>{0x0210db80u,0x021081b8u},
+                             {0x021097bcu,0x02109758u},
+                             {0x02148974u,0x02086b58u},{0x0214897cu,0x0214836cu}})
+                assert(std::memcmp(stageSpace->data(pair.first,8),stageSpace->data(pair.second,8),8)==0);
+            std::unordered_set<uint32_t> destructors;
+            for(uint32_t node=stageWord(0x020aa3f0u);node;node=stageWord(node)) {
+                assert(destructors.insert(node).second && destructors.size()<2000);
+                const uint32_t callback=stageWord(node+4);
+                assert(callback==0x02017ab4u || callback==0x02017984u ||
+                       callback==0x02017b34u || callback==0x0201791cu ||
+                       callback==0x020072c0u || callback==0x0201973cu);
+                assert(stageSpace->contains(stageWord(node+8),1));
+            }
+            assert(destructors.size()>100);
+            assert(stageWord(0x0210da94u)==0x02017ab4u && stageWord(0x0210da98u)==0x0210da18u);
+            assert(stageSpace->code(0x02100560u) && stageSpace->code(0x02112458u));
             const uint32_t actor=stageWord(0x020a4b6cu)-0x14;
             assert(stageSpace->allocation_size(actor)==0x9c8);
             assert(stageWord(actor)==0x020921c0u);

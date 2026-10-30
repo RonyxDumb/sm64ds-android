@@ -1,3 +1,45 @@
+# Current checkpoint — 2026-10-30, all castle overlay initializers execute
+
+Loader checkpoint d56e39d6172b3d3ae100c44c2cf06ccae2c9b6eb passed both
+GitHub Actions jobs (run 41025768588), APK/lint and native ARM64 included.
+The user's explicit next acceptance target is playable castle grounds, with
+all dependencies after LoadLevelOverlays resolved. Do not stop at scene spawn,
+resource residency or an actor with missing behavior/render/physics methods.
+
+This implementation executes the original common-overlay 1/2 loading before
+scene construction and all 58 initializers in the eleven castle modules:
+1,2,9,62,69,85,89,94,100,98,102. Bindings are installed by module only when its
+real image has loaded; resident data alone does not publish code. Matching C
+initializer shards come from the pinned PC dependency, guarded by file and
+symbol-map hashes. The single already-folded star-gate initializer is retained
+in android/compat/ with its exact historical source commit/path provenance.
+Original SharedFilePtr construction and destructor registration bodies execute
+on the checked eight-byte records. The real overlay-0 handle catalog supplies
+FAT IDs, while archive handles >=0x8000 remain unchanged as original code says.
+Player's genuine palette-initialization helper and rabbit-save predicate run.
+
+No-ROM overlay SDK tests and all four private-ROM character/save launches
+pass under ASan/UBSan (local LeakSanitizer disabled for process restrictions).
+Private checks verify eleven residency records, unchanged code/decompression,
+real model/animation/collision FAT IDs, initialized PMF state tables (including
+a writable .data table, not just BSS), and the linked destructor list holding
+original 32-bit code handles. These are real constructors, not prefilled BSS.
+
+Actual next dependency: GetSoundGroupID at 0x0202de24, after LoadLevelOverlays
+and every requested initializer has returned. Continue original scene sound
+setup, LoadGraphics2D, model/file/fader loaders, LoadClsnAndObjects and real
+Player/actor behavior/render/collision until castle grounds is playable.
+Overlay unload/replacement and scene cleanup are still incomplete. Gameplay
+has not been reached. The 0.4.3 relocated-MMIO fix still needs on-phone visual
+verification. Android CI is pending for this initializer checkpoint.
+
+Version 0.4.5-native-initializers, versionCode 9. All ROM and extracted asset
+bytes remain private. Regenerate with lift_stage.py (tree-sitter dependencies
+installed), packed_sources.py, and compile_frontend.py for the stage manifest.
+Local cached build and ROM paths are scratch only; GitHub main is authoritative.
+
+---
+
 # Current checkpoint — 2026-10-30, original level-overlay loader executes
 
 Video repair 19716ad79baba6ae82ed8ac03fe1df8928a47b93 passed both GitHub

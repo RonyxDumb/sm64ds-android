@@ -299,7 +299,100 @@ def save_predicate():
     rel='src/engine/save/SaveData.cpp'
     body=function((ROOT/rel).read_text(),'s32 SaveData::IsCharacterUnlocked(u32 character)')
     body=body.replace('SaveData::IsCharacterUnlocked','_ZN8SaveData19IsCharacterUnlockedEj')
-    return projected(rel,body,'',['_ZN8SaveData19IsCharacterUnlockedEj'])
+    body+='\n'+function((ROOT/rel).read_text(),'int SaveData::NumGlowingRabbitsFound()')
+    body=body.replace('SaveData::NumGlowingRabbitsFound','_ZN8SaveData22NumGlowingRabbitsFoundEv')
+    return projected(rel,body,'',['_ZN8SaveData19IsCharacterUnlockedEj',
+                                 '_ZN8SaveData22NumGlowingRabbitsFoundEv'])
+
+
+def shared_file_handles():
+    rel='src/SharedFilePtr.cpp'
+    raw=(ROOT/rel).read_text()
+    signatures={
+        'func_02017e48':'extern "C" void *func_02017e48(void *self, unsigned int fileID)',
+        'func_02017e34':'extern "C" void *func_02017e34(void *self)',
+        'func_02017e0c':'extern "C" void func_02017e0c(void *self, unsigned int fileID)',
+        'func_02017acc':'extern "C" void *func_02017acc(void *self, unsigned int fileID)',
+        'func_02017b4c':'extern "C" void *func_02017b4c(void *self, unsigned int fileID)',
+        'func_02017ab4':'extern "C" int func_02017ab4(int self)',
+        'SharedFilePtr_Destruct_Anim':'extern "C" int SharedFilePtr_Destruct_Anim(int self)',
+        'SharedFilePtr_Destruct_Clsn':'extern "C" int SharedFilePtr_Destruct_Clsn(int self)',
+        'SharedFilePtr_Destruct_TexSeq':'extern "C" int SharedFilePtr_Destruct_TexSeq(int self)',
+        'SharedFilePtr_Construct_TexSeq':'extern "C" void *SharedFilePtr_Construct_TexSeq(void *self, unsigned int fileID)',
+    }
+    body='\n'.join(function(raw,signature) for signature in signatures.values())
+    construct=function(raw,'SharedFilePtr &SharedFilePtr::Construct(unsigned int fileID)')
+    construct=replace_once(construct,'SharedFilePtr &SharedFilePtr::Construct(unsigned int fileID)',
+                           'SharedFilePtr *_ZN13SharedFilePtr9ConstructEj(SharedFilePtr *self, unsigned int fileID)')
+    construct=replace_once(construct,'func_02017e48(this, fileID);','func_02017e48(self, fileID);')
+    construct=replace_once(construct,'return *this;','return self;')
+    body+='\n'+construct
+    body=body.replace('static_cast<SharedFilePtr *>(self)','((SharedFilePtr *)self)')
+    body=body.replace('reinterpret_cast<void *>(self)','((void *)self)')
+    prototypes='''
+void func_02017e0c(void *,u32); void *func_02017e48(void *,u32);
+void *func_02017e34(void *); u32 func_02018a24(u32);
+'''
+    return projected(rel,body,prototypes,[*signatures,'_ZN13SharedFilePtr9ConstructEj'])
+
+
+def overlay_initializers():
+    # The pinned dependency retains complete matching C bodies for initializers
+    # which newer class TUs express as implicit C++ static construction. Keep
+    # those bodies and their module ownership; do not copy initialized ROM data
+    # over the BSS or invoke another overlay's code at a colliding DS address.
+    modules=(2,9,62,69,85,89,94,98,100,102)
+    sources=[]
+    for module in modules:
+        path='external/sm64ds-pc/config/arm9/overlays/ov%03d/symbols.txt'%module
+        for line in (ROOT/path).read_text().splitlines():
+            match=re.match(r'(\S+) kind:(\w+).*?addr:0x([0-9a-f]+)',line)
+            if not match: continue
+            name,kind,address=match[1],match[2],int(match[3],16)
+            if kind!='function':
+                STAGE_DATA[name]=address
+                DATA_SYMBOLS[name]=address
+            elif name.startswith('__sinit_'):
+                if name=='__sinit_d_a_star_gate.cpp':
+                    if module!=100 or address!=0x02147a70:
+                        raise ValueError('star-gate initializer address changed')
+                    name='__sinit_ov100_02147a70'
+                    SYMBOLS[name]=address
+                    sources.append((module,'android/compat/ov100_star_gate_init.c',name))
+                    continue
+                SYMBOLS[name]=address
+                sources.append((module,'external/sm64ds-pc/src/'+name+'.c',name))
+    imports={name:'void *'+name+'(void *,u32);' for name in (
+        'func_02017acc','func_02017b4c','_ZN13SharedFilePtr9ConstructEj',
+        'SharedFilePtr_Construct_TexSeq')}
+    imports.update({'func_020731dc':'void func_020731dc(void *,void *,void *);',
+                    'func_0203b9b4':'void func_0203b9b4(int *,int);',
+                    '_ZN8SaveData22NumGlowingRabbitsFoundEv':'int _ZN8SaveData22NumGlowingRabbitsFoundEv(void);'})
+    destructors=('func_02017ab4','SharedFilePtr_Destruct_Anim','SharedFilePtr_Destruct_Clsn',
+                 'SharedFilePtr_Destruct_TexSeq','_ZN7Vector3D1Ev','func_0201973c')
+    for module,rel,name in sources:
+        raw=re.sub(r'^#include[^\n]*','',(ROOT/rel).read_text(),flags=re.M)
+        if name=='__sinit_ov002_021019d0':
+            # The matching C shard predates the helper's explicit declaration.
+            raw='void *func_ov002_020e6ad4(void *);\n'+raw
+            SYMBOLS['func_ov002_020e6ad4']=0x020e6ad4
+        for imported,declaration in imports.items():
+            raw=re.sub(r'^extern [^;\n]*?\b'+imported+r'\([^;]*;',declaration,raw,flags=re.M)
+        # These references register destructor *code handles*. They are not
+        # data arrays, narrowed host pointers or calls during initialization.
+        for destructor in destructors:
+            raw=re.sub(r'^extern [^;\n]*?\b'+destructor+r'(?:\([^;]*|\[\]);','',raw,flags=re.M)
+            if re.search(r'\b'+destructor+r'\s*\(',raw):
+                raise ValueError('initializer invokes destructor: '+rel)
+            raw=re.sub(r'&\s*\b'+destructor+r'\b','((void *)0x%08xu)'%SYMBOLS[destructor],raw)
+            raw=re.sub(r'\b'+destructor+r'\b','((void *)0x%08xu)'%SYMBOLS[destructor],raw)
+        row,bindings=projected(rel,raw,'',[name],auto_globals=False)
+        for binding in bindings: binding['overlay']=module
+        yield row,bindings
+    rel='src/unnamed/ov002/func_ov002_020e6ad4.c'
+    row,bindings=free_c(rel)
+    for binding in bindings: binding['overlay']=2
+    yield row,bindings
 
 
 def stage():
@@ -411,10 +504,16 @@ void _Z26LoadOrUnloadObjectOverlaysPFviEi(void (*)(int),int);
 
 if __name__ == '__main__':
     rows,bindings = [],[]
-    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),collision_reset(),cap_reset(),save_predicate()]:
+    for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles()]:
+        rows.append(row); bindings.extend(code)
+    for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
     for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',
                 'src/unnamed/arm9/0201/func_02017e60.c',
+                'src/unnamed/arm9/0201/func_02018a24.c',
+                'src/unnamed/arm9/0201/func_0201973c.c',
+                'src/unnamed/arm9/0203/func_0203b9b4.c',
+                'src/unnamed/arm9/0207/func_020731dc.c',
                 'src/unnamed/arm9/0201/func_02018c00.c',
                 'src/unnamed/arm9/0201/func_02018cbc.c',
                 'src/unnamed/arm9/0201/func_02018e00.c',

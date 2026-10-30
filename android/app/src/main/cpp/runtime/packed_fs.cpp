@@ -14,6 +14,7 @@
 
 extern "C" unsigned int abi_func_02018b64(unsigned int);
 extern "C" void pk_Crash();
+namespace sm64ds::stage_sources { void bind_overlay_sources(packed::Space &,unsigned int); }
 
 namespace sm64ds {
 namespace {
@@ -239,7 +240,9 @@ int overlay_load_image(uint32_t info) {
         throw std::runtime_error("Unsupported native overlay image extent.");
     if (!space.contains(base,static_cast<size_t>(total)))
         space.map_owned(base,static_cast<size_t>(total));
-    return static_cast<int>(abi_func_02018b64(info));
+    const int loaded=static_cast<int>(abi_func_02018b64(info));
+    if (loaded) stage_sources::bind_overlay_sources(space,at<uint32_t>(info));
+    return loaded;
 }
 
 void overlay_decompress(uint32_t end) {
@@ -294,6 +297,15 @@ void initialize_packed_fs(packed::Space &space) {
     at<uint32_t>(heap+4)=0x10000000u;
     at<uint32_t>(heap+8)=Resources::active().heap().capacity();
     at<uint32_t>(0x020a0ea0u)=at<uint32_t>(0x020a0eacu)=heap;
+    // InitializeAssetHandleTable resolves precisely these original handles.
+    // Resources already read overlay 0's real catalog; share its FAT IDs with
+    // the original packed func_02018a24 instead of a fabricated residency flag.
+    auto &resources=Resources::active();
+    const size_t count=resources.handle_count();
+    if (!count || count>0x8000) throw std::runtime_error("Invalid native asset handle catalog.");
+    const uint32_t handles=space.allocate(static_cast<uint32_t>(count*2));
+    for (size_t i=0;i<count;++i) at<uint16_t>(handles+static_cast<uint32_t>(i*2))=resources.file_id(static_cast<uint32_t>(i));
+    at<uint32_t>(0x0209d3b8u)=handles;
     // func_0205e088 and SDK overlay file IDs use the original inline ROM
     // archive at data_020a8074, not an independently allocated substitute.
     const uint32_t archive=0x020a8074u,name=space.allocate(4);

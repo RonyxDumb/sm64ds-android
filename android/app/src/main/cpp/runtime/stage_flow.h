@@ -48,6 +48,7 @@ private:
     bool inputEnabled_ = false;
     uint32_t sceneActor_ = 0;
     bool sceneInitialized_ = false;
+    bool overlaysInitialized_ = false;
 };
 }
 

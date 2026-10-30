@@ -185,6 +185,7 @@ void StageFlow::prepare_scene() {
     sync_state(true);
     sceneActor_ = 0;
     sceneInitialized_ = false;
+    overlaysInitialized_ = false;
 }
 
 uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {
@@ -192,6 +193,14 @@ uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t ki
         throw std::runtime_error("Scene spawn before original stage resources are loaded.");
     packed::Space::Scope scope(*addressSpace_);
     using packed::Ptr;
+    if (!overlaysInitialized_) {
+        // The original boot sequence loads both common modules before it
+        // spawns gameplay actors. Their data was mounted by prepare_scene;
+        // now execute genuine LoadOverlay/BSS/static construction as well.
+        Ptr<void(int)>(0x02018028u)(1);
+        Ptr<void(int)>(0x02018028u)(2);
+        overlaysInitialized_=true;
+    }
     // Source chain: func_02013edc -> func_02042fe4 -> func_02043098.
     // Expose the live r0 return value which the recovered void veneers lose.
     // func_02043060's optional pre-spawn hook consumes the scene ID.
