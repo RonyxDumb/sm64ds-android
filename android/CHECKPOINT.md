@@ -1,11 +1,17 @@
 # Current checkpoint — 2026-10-30, normal/vertex texture-coordinate units
 
-Local parent: 4667bca, the W-depth repair described below. Publication of that
-commit was rejected by automatic approval review, including after retrieving
-the prior user authorization to work directly on main. The remote head was
-checked and remains 748efb4b3719e8121caa4d7761ba6ea56e5a2dd2. Both repairs
-are prepared as local commits; publishing them requires fresh user approval.
-Do not report an uploaded checkpoint or a newly built APK for these changes.
+Both graphics repairs are published on main after explicit user approval:
+1fe8b86070618bc201a77cb9b61858c30a8477a1 (W depth) and
+5a650e068bb7a2874dd52a618d703d5d7fbc3fca (generated texture-coordinate units).
+The GitHub connection published the changes because local Git had no write
+credentials. Both source trees were checked against the locally tested trees
+and are identical; the original local IDs were 4667bca and 1c97e5e.
+Android Actions run: https://github.com/RonyxDumb/sm64ds-android/actions/runs/41085791071
+Both jobs passed: native ARM64 frontend execution and the complete build job,
+including host regressions, game dependency checks, frontend execution,
+headless GLES3, debug/release APK compilation and Android lint.
+Download the debug APK from artifact sm64ds-android-debug (ID 12992532010):
+https://github.com/RonyxDumb/sm64ds-android/actions/runs/41085791071/artifacts/12992532010
 
 After fixing depth, the opening star retained a repeated gold texture. Its
 decoded renderer texture was compared byte-for-byte with an independent BMD
@@ -27,8 +33,8 @@ the reproduced depth noise; the File Select/menu paths were also exercised.
 
 Remaining: compare the complete title transitions and file-menu backgrounds
 on the phone, and continue the previously recorded stage loader dependency
-at func_02073470. These changes do not establish playable gameplay. No Android
-APK/ARM64 CI or on-phone verification was possible before publication.
+at func_02073470. These changes do not establish playable gameplay. Android CI
+passed as recorded above; on-phone visual verification is still pending.
 Version 0.4.9-texture-units, versionCode 13. Original matching sources and the
 pinned submodule are unchanged. ROM, decoded assets and test captures remain
 private; local sanitizer checks disable LeakSanitizer as before.
