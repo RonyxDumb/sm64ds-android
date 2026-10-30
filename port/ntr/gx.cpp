@@ -85,6 +85,7 @@ struct State {
     uint32_t light_mask = 0;
     uint32_t polygon_attr = 0x001f00c0;
     uint32_t texture_param=0;
+    bool w_buffer=false;
 
     std::vector<GxTriangle> tris;
 };
@@ -138,6 +139,7 @@ void emit_tri(const GxVertex &a, const GxVertex &b, const GxVertex &c) {
     for (auto &v : t.v) v.color = (v.color & 0x00ffffffu) | (alpha << 24);
     t.tex = g.tex_rgba; t.tw = g.tw; t.th = g.th;
     t.polygon_attr=g.polygon_attr; t.texture_param=g.texture_param;
+    t.w_buffer=g.w_buffer;
     g.tris.push_back(t);
 }
 
@@ -386,7 +388,14 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             g.strip_parity = 0;
             break;
         case 0x41: g.prim = -1; g.strip.clear(); break;          // END_VTXS
-        case 0x50: break;                                        // SWAP_BUFFERS
+        case 0x50:                                              // SWAP_BUFFERS
+            // Like hardware, the parameter applies to geometry AFTER this
+            // command. The title selects W buffering before drawing its UI.
+            // Its perspective projection collapses many different UI depths
+            // to the same float Z; ignoring this bit makes flat panels fight
+            // the background, leaving speckles and obscured menu dialogs.
+            g.w_buffer=(p[0]&2u)!=0;
+            break;
         case 0x60:                                               // VIEWPORT
             g.vp_x = p[0] & 0xFF;
             g.vp_y = (p[0] >> 8) & 0xFF;
@@ -690,18 +699,16 @@ void gx_render(Framebuffer &fb) {
                 if (!((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0)))
                     continue;
                 const float l0 = w1, l1 = w2, l2 = w0;   // barycentric for a, b, c
-                const float z = l0 * a.z + l1 * b.z + l2 * c.z;
+                const float iw=l0*invAw+l1*invBw+l2*invCw;
+                if (iw<=0 || !std::isfinite(iw)) continue;
+                const float z = t.w_buffer ? 1.0f/iw : l0*a.z+l1*b.z+l2*c.z;
                 if (z >= depth[y][x]) continue;
                 // Depth is written only after the texel passes the alpha test
                 // below -- a transparent texel must not occlude what is behind it.
-                // Texture first; the vertex colour modulates it. UVs are
-                // interpolated linearly -- correct here because the projection
-                // is affine (w == 1); perspective-correct division belongs with
-                // a real perspective matrix.
+                // Texture first; the vertex colour modulates it. Texture
+                // coordinates and W depth share perspective-correct 1/W.
                 uint32_t texel = 0xFFFFFFFFu;
                 if (t.tex && t.tw > 0 && t.th > 0) {
-                    const float iw=l0*invAw+l1*invBw+l2*invCw;
-                    if (iw<=0 || !std::isfinite(iw)) continue;
                     const float uu=(l0*au+l1*bu+l2*cu)/iw;
                     const float vv=(l0*av+l1*bv+l2*cv)/iw;
                     auto coordinate=[](float v,int size,bool repeat,bool mirror) {

@@ -40,6 +40,7 @@ struct GxTriangle {
     const uint32_t *tex;   // decoded RGBA, or null for untextured
     int tw, th;
     uint32_t polygon_attr=0x001f00c0,texture_param=0;
+    bool w_buffer=false; // SWAP_BUFFERS.1 selects depth for subsequent geometry
 };
 
 // Feed the engine. `gx_write_port` takes a geometry-port address in

@@ -1,3 +1,32 @@
+# Current checkpoint — 2026-10-30, title W-buffer depth and menu ordering
+
+The six new phone screenshots were reproduced using the supplied private EUR
+cartridge. Isolating BG0 and the geometry framebuffer located the background
+speckles in GX, before 2D composition. The original title initialization
+func_ov007_020b6c54 writes SWAP_BUFFERS=2, requesting W depth for subsequent
+geometry. The renderer previously ignored that command and always tested Z.
+Recorded backdrop and wallpaper vertices share Z=0.499799787998 while their
+W values are 58.605594635 and 58.5327148438. Comparing the collapsed Z values
+caused unstable visibility across flat panels and incorrect menu overlap.
+
+The depth selection now travels with each assembled triangle, persists across
+host frames, and uses perspective-correct W for W mode. Explicit Z selection
+still uses Z. The no-ROM regression checks every pixel of overlapping panels
+in both submission orders, switching back to Z, frame persistence and both
+FIFO/direct-port swap latching. It fails against the previous renderer and
+passes with the repair under ASan/UBSan. Relocated-register and PPU capture
+regressions pass. All four existing private-ROM save/character paths pass.
+
+Host captures confirm removal of the reproduced depth speckles. Further
+texture distortion is still visible on the star and some menu backgrounds;
+this checkpoint does not claim those issues or gameplay are complete. Phone
+verification and Android CI are pending. The previous stage integration stop
+at func_02073470 remains. Version 0.4.8-w-depth, versionCode 12. Local checks
+disable LeakSanitizer as in preceding checkpoints. No private ROM, decoded
+assets, screenshots or temporary captures are committed.
+
+---
+
 # Current checkpoint — 2026-10-30, twelve common models load natively
 
 Published parent: 0bef66b916527aa969d655a5da0e1207c38ae701, stage audio/2D UI.
