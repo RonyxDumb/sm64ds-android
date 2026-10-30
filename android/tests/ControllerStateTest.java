@@ -24,14 +24,18 @@ public class ControllerStateTest {
         check(s.buttons == 0);
         s.up(7, aspect);
         check(s.x == 0);
-        // Only the bottom-right PiP accepts stylus input.
+        // The game's physical bottom/right 4:3 viewport is the sole
+        // touchscreen. The left screen and black letterbox must be inert.
         s.down(128, .25f, .5f, aspect);
         check(s.touchX == -1 && s.touchY == -1);
-        s.move(128, .87f, .79f, aspect);
-        check(s.touchX >= 0 && s.touchY >= 0);
         s.move(128, .75f, .5f, aspect);
+        check(s.touchX == 128 && s.touchY == 96);
+        s.move(128, .51f, .125f, aspect);
+        check(s.touchX >= 4 && s.touchX <= 6 && s.touchY == 0);
+        s.move(128, .75f, .05f, aspect);
         check(s.touchX == -1 && s.touchY == -1);
         s.clear();
+        check(s.buttons == 0 && s.touchX == -1 && s.y == 0);
         s.down(4, .90f, .70f, aspect);
         s.move(4, .80f, .82f, aspect);
         check((s.buttons & ControllerState.A) == 0 && (s.buttons & ControllerState.B) != 0);
@@ -41,11 +45,11 @@ public class ControllerStateTest {
         s.gameplayControls(false);
         for (int i = 0; i < ControllerState.BITS.length; ++i)
             check(s.visibleButton(i) == (ControllerState.BITS[i] == ControllerState.START));
-        s.down(1, .87f, .79f, aspect);
-        check(s.buttons == 0 && s.touchX >= 0 && s.touchY >= 0);
+        s.down(1, .90f, .70f, aspect);
+        check(s.buttons == 0 && s.touchX >= 203 && s.touchX <= 205 && s.touchY >= 146);
         s.up(1, aspect);
         s.down(2, .69f, .18f, aspect);
-        check(s.buttons == 0 && s.touchX == -1 && s.touchY == -1);
+        check(s.buttons == 0 && s.touchX >= 96 && s.touchX <= 98 && s.touchY >= 13);
         s.up(2, aspect);
         s.down(3, .16f, .70f, aspect);
         s.move(3, .25f, .70f, aspect);
@@ -55,20 +59,19 @@ public class ControllerStateTest {
         check(s.buttons == ControllerState.START && s.touchX == -1);
         s.up(4, aspect);
 
-        // PiP at 26% width on a 2401x1081 surface:
-        // rectangle x=1777..2401, y=613..1081 in top-left coordinates.
+        // A landscape cutout and navigation inset affect control positions,
+        // while the two GL viewports still occupy the full surface.
         s.surface(2401, 1081, 80, 0, 24, 32);
         float safeAspect = 2297f / 1049f;
-        s.down(10, (2089f - 80) / 2297f, 847f / 1049f, safeAspect);
-        check(s.buttons == 0 && s.touchX >= 126 && s.touchX <= 129 &&
-              s.touchY >= 94 && s.touchY <= 97);
-        s.move(10, (1777.5f - 80) / 2297f, 613.5f / 1049f, safeAspect);
+        s.down(10, (1800.5f - 80) / 2297f, 540.5f / 1049f, safeAspect);
+        check(s.buttons == 0 && s.touchX == 128 && s.touchY == 96);
+        s.move(10, (1200.5f - 80) / 2297f, 90.5f / 1049f, safeAspect);
         check(s.touchX == 0 && s.touchY == 0);
-        s.move(10, (2400.5f - 80) / 2297f, 1080.5f / 1049f, safeAspect);
+        s.move(10, (2399.5f - 80) / 2297f, 989.5f / 1049f, safeAspect);
         check(s.touchX == 255 && s.touchY == 191);
-        s.move(10, (1776f - 80) / 2297f, 847f / 1049f, safeAspect);
+        s.move(10, (1199f - 80) / 2297f, 540f / 1049f, safeAspect);
         check(s.touchX == -1 && s.touchY == -1);
-        s.move(10, (2089f - 80) / 2297f, 612f / 1049f, safeAspect);
+        s.move(10, (1800f - 80) / 2297f, 89f / 1049f, safeAspect);
         check(s.touchX == -1 && s.touchY == -1);
         s.clear();
         s.surface(1536, 710, 0, 0, 0, 0);

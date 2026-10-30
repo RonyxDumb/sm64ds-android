@@ -28,13 +28,9 @@ void main() {
     const char *fragment = R"(#version 300 es
 precision mediump float;
 uniform sampler2D screen;
-uniform vec2 cropScale;
 in vec2 uv;
 out vec4 color;
-void main() {
-    vec2 mappedUV = (uv - vec2(0.5)) * cropScale + vec2(0.5);
-    color = texture(screen, mappedUV).bgra;
-}
+void main() { color = texture(screen, uv).bgra; }
 )";
     GLuint vs = 0, fs = 0;
     try {
@@ -92,36 +88,19 @@ void ScreenRenderer::draw(const ntr::Framebuffer &main, const ntr::Framebuffer &
     // is NOT inherently the top screen. Earlier builds always showed A on
     // the left, so when the game placed B on top it displayed the menu on
     // the wrong side and mapped the stylus onto the wrong image.
-    // Preserve physical LCD routing: POWCNT1 bit 15 selects which engine
-    // feeds the upper display. The lower (stylus) display is always the inset.
-    const ntr::Framebuffer *top = mainOnTop ? &main : &sub;
-    const ntr::Framebuffer *bottom = mainOnTop ? &sub : &main;
-    const GLint crop = glGetUniformLocation(program_, "cropScale");
-
-    // Fill the device surface while preserving the DS picture's 4:3 aspect:
-    // crop its edges instead of stretching characters or backgrounds.
-    glBindTexture(GL_TEXTURE_2D, textures_[0]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, ntr::SCREEN_W, ntr::SCREEN_H,
-                    GL_RGBA, GL_UNSIGNED_BYTE, top->px);
-    const float screenAspect = static_cast<float>(width) / height;
-    const float nativeAspect = static_cast<float>(ntr::SCREEN_W) / ntr::SCREEN_H;
-    const float cropX = screenAspect < nativeAspect ? screenAspect / nativeAspect : 1.0f;
-    const float cropY = screenAspect > nativeAspect ? nativeAspect / screenAspect : 1.0f;
-    glUniform2f(crop, cropX, cropY);
-    glViewport(0, 0, width, height);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    // Screenshot geometry: approximately 120px of 464px game width (26%).
-    // The video caption hides part of the lower LCD; it is not a 2:1 display.
-    // Anchor both inset edges directly to the lower-right surface corner.
-    const int insetWidth = std::max(1, width * 26 / 100);
-    const int insetHeight = std::max(1, insetWidth * ntr::SCREEN_H / ntr::SCREEN_W);
-    glBindTexture(GL_TEXTURE_2D, textures_[1]);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, ntr::SCREEN_W, ntr::SCREEN_H,
-                    GL_RGBA, GL_UNSIGNED_BYTE, bottom->px);
-    glUniform2f(crop, 1.0f, 1.0f);
-    glViewport(width - insetWidth, 0, insetWidth, insetHeight);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    const ntr::Framebuffer *frames[] = {
+        mainOnTop ? &main : &sub, mainOnTop ? &sub : &main
+    };
+    // Boot has two interface cards. Stage rendering will own the full-screen
+    // viewport and minimap policy once that scene is linked.
+    for (int i = 0; i < 2; ++i) {
+        glBindTexture(GL_TEXTURE_2D, textures_[i]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, ntr::SCREEN_W, ntr::SCREEN_H, GL_RGBA,
+                        GL_UNSIGNED_BYTE, frames[i]->px);
+        int half = width / 2, w = std::min(half, height * 4 / 3), h = w * 3 / 4;
+        glViewport(i * half + (half - w) / 2, (height - h) / 2, w, h);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
 }
 void ScreenRenderer::release() {
     glDeleteTextures(2, textures_);
