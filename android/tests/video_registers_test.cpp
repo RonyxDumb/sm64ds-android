@@ -1,6 +1,7 @@
 #include "runtime/packed_memory.h"
 #include "runtime/packed_ptr.h"
 #include "ntr/mmio.h"
+#include "ntr/gx.h"
 #include "ntr/ppu.h"
 #include <cstdio>
 #include <cstring>
@@ -22,6 +23,7 @@ extern "C" void abi_GX_SetGraphicsMode(unsigned, unsigned, unsigned);
 extern "C" void abi_GXS_SetGraphicsMode(unsigned);
 extern "C" void abi_GX_DispOn();
 extern "C" void abi_func_02053b98();
+extern "C" void abi_func_ov007_020c1404(unsigned);
 
 static void check(bool value, const char *why) {
     if (!value) throw std::runtime_error(why);
@@ -86,11 +88,48 @@ int main() {
         check(ntr::io_read(0x04000247u, 1) == 3, "WRAMCNT used raw MMIO");
         check(ntr::io_read(0x04000100u, 2) == 0x55aau, "Timer used raw MMIO");
         check(ntr::io_read(0x04000210u, 4) == 0x00100001u, "IRQ mask used raw MMIO");
+
+        // The original menu palette binder uses a nonvolatile local pointer.
+        // Reading PLTT_BASE back cannot detect a missed command side effect:
+        // even a plain memory write changes that latch. Check rendered texels.
+        ntr::io_write(0x04000240u, 0x83, 1); // A: texture slot 0
+        ntr::io_write(0x04000245u, 0x83, 1); // F: palette slot 0
+        std::memset(ntr::host_ptr(0x06800000u), 1, 64);
+        auto *palette = static_cast<uint16_t *>(ntr::host_ptr(0x06890000u));
+        palette[1] = 0x001f;
+        palette[9] = 0x03e0;
+        auto texture = space.allocate(40);
+        auto *record = static_cast<uint32_t *>(space.data(texture, 40));
+        record[1] = 4; record[9] = 16;
+        auto draw = [&](unsigned format, unsigned address, uint32_t expected) {
+            ntr::gx_reset();
+            ntr::gx_teximage_param(format << 26); // 8x8 indexed texture
+            record[1] = format; record[9] = address;
+            abi_func_ov007_020c1404(address ? texture : 0);
+            auto command = [](unsigned id, uint32_t value) {
+                ntr::gx_write_port(0x04000400u + id * 4, value);
+            };
+            command(0x40, 1);
+            for (auto point : {0x1000f000u, 0xf000f000u, 0xf0001000u, 0x10001000u}) {
+                command(0x23, point); command(0x23, 0);
+            }
+            frame = {};
+            ntr::gx_render(frame);
+            for (const auto &row : frame.px)
+                for (auto pixel : row)
+                    check(pixel == expected, "Menu palette command did not select the uploaded colours");
+        };
+        draw(4, 16, 0xff00ff00u); // 16-byte palette units
+        std::memset(ntr::host_ptr(0x06800000u), 0x55, 16);
+        draw(2, 16, 0xff00ff00u); // 2-bit format uses 8-byte units
+        std::memset(ntr::host_ptr(0x06800000u), 1, 64);
+        draw(4, 0, 0xffff0000u); // null material resets the palette
+        space.release(texture);
         for (unsigned i = 0; i < ntr::IO_SIZE; ++i)
             check(static_cast<const uint8_t *>(foreign)[i] == 0xa5,
                   "A projected hardware macro modified foreign host memory");
         munmap(foreign, ntr::IO_SIZE);
-        std::puts("Relocated hardware macros, original GX mode calls and BG0 geometry passed.");
+        std::puts("Relocated hardware macros, original GX mode/palette calls and rendered colours passed.");
     } catch (const std::exception &e) {
         std::fprintf(stderr, "%s\n", e.what());
         return 1;

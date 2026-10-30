@@ -87,6 +87,7 @@ private:
     uint64_t ticks_ = 0;
     double accumulated_ = 0;
     bool batchFrame_ = false; // ordinary presentation is deferred, captures are not
+    unsigned reflectionTraceFrames_ = 0;
     void finish_tick();
     void scanout();
 };

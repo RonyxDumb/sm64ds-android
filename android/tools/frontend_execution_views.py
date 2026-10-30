@@ -7,6 +7,13 @@ import re
 
 
 def view_for(rel, raw, view, parser, behaviors, full_particles):
+    if rel == 'src/unnamed/ov007/func_ov007_020c1404.c':
+        # This local points at PLTT_BASE. The matching source omits volatile,
+        # so its projected Ptr would only update the I/O latch, bypassing GX.
+        old = 'unsigned int *reg = (unsigned int*)0x40004ac;'
+        if view.count(old) != 1:
+            raise ValueError('menu palette register binding changed')
+        view = view.replace(old, 'volatile unsigned int *reg = (volatile unsigned int*)0x40004ac;')
     if rel == 'src/unnamed/ov007/func_ov007_020c6b58.c':
         # Each successful search sets the best index and its polygon together.
         # GCC/AArch64 loses that implication across the projected pointer calls.

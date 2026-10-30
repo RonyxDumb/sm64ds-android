@@ -14,6 +14,7 @@ flags=(-std=c++17 -O1 -pthread -Wall -Wextra -Werror -Wno-unknown-pragmas
 g++ "${flags[@]}" -D__ANDROID__ -c port/ntr/io.cpp -o "$VIDEO_BUILD/android_io.o"
 g++ "${flags[@]}" -Wl,--gc-sections android/tests/video_registers_test.cpp \
     "$VIDEO_BUILD/packed/GX_Init.cpp" \
+    "$VIDEO_BUILD/packed/func_ov007_020c1404.cpp" \
     android/app/src/main/cpp/runtime/{packed_memory,game_heap}.cpp \
     port/ntr/{gx,texture,ppu}.cpp "$VIDEO_BUILD/android_io.o" -ldl \
     -o "$VIDEO_BUILD/video_registers_test"

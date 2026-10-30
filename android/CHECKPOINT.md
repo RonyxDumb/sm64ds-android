@@ -1,3 +1,45 @@
+# Current checkpoint — 2026-10-30, menu palette command routing
+
+Parent main: 4610f2cf5f705e84c872fb01292379fe5ae70f5e. The phone now shows
+smooth star reflections but a brief oversized star and corrupted title buttons.
+The button defect was reproduced with the private EUR cartridge. The footer
+atlas indices and its palette in physical VRAM F exactly matched their source
+records, while GX decoded the atlas using F+0 instead of its palette at F+0x390.
+
+The recovered func_ov007_020c1404 keeps PLTT_BASE in a nonvolatile local pointer.
+Its packed Ptr updated the I/O latch without executing the geometry command,
+so later textures inherited the previous palette. A checked Android execution
+view marks this one hardware pointer volatile, using the existing VolatileRef
+command dispatch. The matching src/include trees and submodule remain unchanged.
+The reviewed projection and committed frontend manifest are updated together.
+
+The relocated-register regression now executes the real projected palette
+binder and checks every rendered pixel, rather than just reading the register
+latch. It fails before the repair and passes after it, covering 16-byte palette
+units, format 2's 8-byte units and the null-material reset. BMD, PPU capture,
+W/Z depth, all texture-coordinate modes, hostgen/source audits and all four
+private-ROM save/character launch paths pass with ASan/UBSan (detect_leaks=0).
+An independent decode of the original menu atlas matches all 16,384 renderer
+pixels exactly after this change. The full local host script stops at javac,
+which is absent from this executor; Android CI must provide the Java/APK checks.
+
+The transient oversized star has NOT been reproduced or declared fixed.
+Three 660-callback host probes used single ticks, 30 Hz catch-up and 60 Hz with
+periodic 250 ms stalls. The largest observed star width was 46.174 DS pixels.
+Android now records GX-REFLECTION in the existing exportable diagnostic log:
+three normal reference frames, then oversized/invalid reflected-model geometry,
+up to sixteen records per session. Each includes tick, catch-up/capture context,
+projected bounds, W/Z ranges and display/capture registers. No clamp or hidden
+frame suppresses the reported symptom. A phone retest and that log are needed
+if the enlargement persists.
+
+Version 0.4.10-menu-palettes, versionCode 14. Android build is pending at this
+checkpoint. The stage loader still stops at the previously documented
+func_02073470 dependency; playable gameplay is not established. ROM, decoded
+assets, uploaded screenshots and private captures are not committed.
+
+---
+
 # Current checkpoint — 2026-10-30, normal/vertex texture-coordinate units
 
 Both graphics repairs are published on main after explicit user approval:

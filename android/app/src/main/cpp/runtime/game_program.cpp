@@ -465,6 +465,40 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
 }
 void GameProgram::scanout() {
 #if defined(__ANDROID__)
+    // Catch a one-frame reflected-model projection error on the phone. The
+    // periodic video trace below cannot see a transient between its samples.
+    // Keep a few normal reference frames, then only oversized/invalid ones.
+    if (activeScene_ == 1 && reflectionTraceFrames_ < 16) {
+        size_t count = 0, reflected = 0;
+        const auto *triangles = ntr::gx_polygons(count);
+        float minX=1e30f, maxX=-1e30f, minY=1e30f, maxY=-1e30f;
+        float minW=1e30f, maxW=-1e30f, minZ=1e30f, maxZ=-1e30f;
+        bool invalid = false;
+        for (size_t i=0; i<count; ++i) {
+            // NORMAL-generated compressed reflection, as used by the star.
+            if ((triangles[i].texture_param & 0xfc000000u) != 0x94000000u) continue;
+            ++reflected;
+            for (const auto &v : triangles[i].v) {
+                minX=std::min(minX,v.x); maxX=std::max(maxX,v.x);
+                minY=std::min(minY,v.y); maxY=std::max(maxY,v.y);
+                minW=std::min(minW,v.w); maxW=std::max(maxW,v.w);
+                minZ=std::min(minZ,v.z); maxZ=std::max(maxZ,v.z);
+                invalid |= !std::isfinite(v.x) || !std::isfinite(v.y) ||
+                    !std::isfinite(v.z) || !std::isfinite(v.w) || v.w<=0;
+            }
+        }
+        if (reflected && (reflectionTraceFrames_<3 || invalid ||
+                maxX-minX>ntr::SCREEN_W || maxY-minY>ntr::SCREEN_H)) {
+            ++reflectionTraceFrames_;
+            char snapshot[240];
+            std::snprintf(snapshot, sizeof snapshot,
+                "tick=%llu batch=%u triangles=%zu xy=%.3g,%.3g..%.3g,%.3g W=%.4g..%.4g Z=%.4g..%.4g invalid=%u MAIN=%08x CAP=%08x",
+                static_cast<unsigned long long>(ticks_), unsigned(batchFrame_), reflected,
+                minX,minY,maxX,maxY,minW,maxW,minZ,maxZ,unsigned(invalid),
+                unsigned(ntr::io_read(0x04000000u,4)),unsigned(ntr::io_read(0x04000064u,4)));
+            sm64ds::diagnostics::note("GX-REFLECTION",snapshot);
+        }
+    }
     // This is a real hardware-state trace from the phone, not a simulated
     // scene. It distinguishes an incorrect sub-BG mode/matrix from lost
     // VRAM bank routing if the title still shows vertical stripes.
