@@ -55,19 +55,20 @@ public class ControllerStateTest {
         check(s.buttons == ControllerState.START && s.touchX == -1);
         s.up(4, aspect);
 
-        // Inset PiP on 2401x1081: x=1801..2376, y=625..1056.
+        // PiP at 26% width on a 2401x1081 surface:
+        // rectangle x=1777..2401, y=613..1081 in top-left coordinates.
         s.surface(2401, 1081, 80, 0, 24, 32);
         float safeAspect = 2297f / 1049f;
-        s.down(10, (2088.5f - 80) / 2297f, 840.5f / 1049f, safeAspect);
+        s.down(10, (2089f - 80) / 2297f, 847f / 1049f, safeAspect);
         check(s.buttons == 0 && s.touchX >= 126 && s.touchX <= 129 &&
               s.touchY >= 94 && s.touchY <= 97);
-        s.move(10, (1801.5f - 80) / 2297f, 625.5f / 1049f, safeAspect);
+        s.move(10, (1777.5f - 80) / 2297f, 613.5f / 1049f, safeAspect);
         check(s.touchX == 0 && s.touchY == 0);
-        s.move(10, (2375.5f - 80) / 2297f, 1055.5f / 1049f, safeAspect);
+        s.move(10, (2400.5f - 80) / 2297f, 1080.5f / 1049f, safeAspect);
         check(s.touchX == 255 && s.touchY == 191);
-        s.move(10, (1800f - 80) / 2297f, 840f / 1049f, safeAspect);
+        s.move(10, (1776f - 80) / 2297f, 847f / 1049f, safeAspect);
         check(s.touchX == -1 && s.touchY == -1);
-        s.move(10, (2088f - 80) / 2297f, 624f / 1049f, safeAspect);
+        s.move(10, (2089f - 80) / 2297f, 612f / 1049f, safeAspect);
         check(s.touchX == -1 && s.touchY == -1);
         s.clear();
         s.surface(1536, 710, 0, 0, 0, 0);
