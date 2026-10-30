@@ -71,6 +71,25 @@ void Space::map(uint32_t a, void *p, size_t n) {
     // Clear the hot cache so the lowest DS-handle mapping keeps precedence.
     recentNativeValid_ = false;
 }
+void Space::map_owned(uint32_t a, size_t n) {
+    if (!a || !n || n>UINT32_MAX || uint64_t(a)+n>UINT32_MAX)
+        throw std::runtime_error("Invalid owned packed data span.");
+    auto memory=std::make_unique<uint8_t[]>(n);
+    // Reserve ownership before publishing the address, so allocation failure
+    // cannot leave a region pointing at a destroyed buffer.
+    ownedRegions_.reserve(ownedRegions_.size()+1);
+    map(a,memory.get(),n);
+    ownedRegions_.push_back(std::move(memory));
+}
+bool Space::contains(uint32_t a, size_t n) const {
+    if (!a) return false;
+    auto it=std::upper_bound(regions_.begin(),regions_.end(),a,
+        [](uint32_t addr,const Region &r) { return addr<r.address; });
+    if (it==regions_.begin()) return false;
+    --it;
+    const uint64_t offset=uint64_t(a)-it->address;
+    return offset<=it->size && n<=it->size-offset;
+}
 void *Space::data(uint32_t a, size_t n) const {
     if (!a) throw std::runtime_error("Null packed data handle.");
     // Native ARM64 projection resolves direct DS VRAM pointers through this

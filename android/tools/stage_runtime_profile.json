@@ -39,6 +39,11 @@
     "src/unnamed/arm9/0205/func_0205c9b8.c": "067064e38de39354a1b9525a353f26477374d946348dbf1fb79dd815a5e805f8",
     "src/Entry.c": "9431c2641abdc172e84e58b43f705f74ddf3e1ffbdc08bb484ccd8bd57bc4959",
     "src/unnamed/arm9/0200/func_0200497c.c": "3509261240ad7fd1d5e6f8be68e9066d2f66d99d4f4f807ee5da9ab9349844a2",
-    "src/unnamed/arm9/0205/func_0205e088.c": "18b88629abfd286b0179cffd9e611496c81fa5604504b38af6f18a85ed6bddd3"
+    "src/unnamed/arm9/0205/func_0205e088.c": "18b88629abfd286b0179cffd9e611496c81fa5604504b38af6f18a85ed6bddd3",
+    "src/LoadOverlay.c": "5bbd86e0898bfd012e7968b4cb823711b4990e82772d3631ecf7f61c3d778247",
+    "src/FS_LoadOverlay.c": "a2df5f5628fefa653aeeab55fc064416a074cf6e627816241003a188906cae61",
+    "src/unnamed/arm9/0205/func_0205d5e8.c": "dfabe2587fa0ce6e646a8e31dd15d97149f99d8ecc79257d0869849d750f22a0",
+    "src/unnamed/arm9/0201/func_02018dc4.c": "4c3b5130f2ca24785cb7faab2d7a1a80edd9e2814a9b69769647ea092a35f92c",
+    "src/unnamed/arm9/0205/func_0205dd9c.c": "36330b8427c5b91b481f9d36e70dcb97ebee1bf4e020a4ffdb634f17847b4fa1"
   }
 }

@@ -232,6 +232,30 @@ def free_c(rel):
                            'extern int func_0205d2dc(void *,int,int,int);')
         raw = replace_once(raw,'extern void func_0205d2b0(void);',
                            'extern int func_0205d2b0(void *,const void *,unsigned int,unsigned int);')
+    if rel == 'src/FS_LoadOverlay.c':
+        # This symbol is an absolute DS RAM boundary, never a callable native
+        # function. Preserve the original numeric comparison at host width.
+        raw = replace_once(raw,'extern void func_ov001_020aa420(void);','')
+        raw = replace_once(raw,'(unsigned int)func_ov001_020aa420','0x020aa420u')
+    if rel.endswith('/func_02018b64.c'):
+        raw = replace_once(raw,'extern int func_02018dc4(void *a, Pair bc);',
+                           'extern int func_02018dc4(void *, int, int);')
+        raw = replace_once(raw,'func_02018dc4(&file, v)',
+                           'func_02018dc4(&file, v.a, v.b)')
+    if rel.endswith('/func_02018dc4.c'):
+        # ARM passes the eight-byte FileID as two argument words. Native ABI
+        # locals b/c need not be adjacent, so reconstruct the actual record.
+        raw = replace_once(raw,'int func_02018dc4(int a, int b, int c, ...)',
+                           'int func_02018dc4(int a, int b, int c)')
+        raw = replace_once(raw,'int r = func_0205d568(a, *(struct BC *)&b);',
+                           'struct BC id = {b,c};\n    int r = func_0205d568(a, id);')
+    if rel.endswith('/func_0206d32c.c'):
+        raw = replace_once(raw,'? 0 : data_020a9ec0[type]',
+                           '? (struct Arr *)0 : data_020a9ec0[type]')
+        raw = replace_once(raw,'#define LM(x) ((int*)(long long)(int)(x))',
+                           '#define LM(x) ((int*)(x))')
+        raw = replace_once(raw,'#define LM2(x) ((int*)(long long)(unsigned)(x))',
+                           '#define LM2(x) ((int*)(x))')
     lift = Lift(raw)
     lift.result()
     exports = [name for name,_,_ in lift.exports]
@@ -287,6 +311,21 @@ def stage():
     # The complete controller reset uses its shared, pointer-free 0x18 record.
     controls = re.search(r'struct CamInput \{.*?\n\};',raw,re.S).group()
     reset = function(raw,'extern "C" void ResetInput(void) {')
+    overlay_symbols = {
+        'LoadLevelOverlays':'_Z17LoadLevelOverlaysi',
+        'UnloadLevelOverlays':'_Z19UnloadLevelOverlaysi',
+        'LoadOrUnloadObjectOverlays':'_Z26LoadOrUnloadObjectOverlaysPFviEi',
+    }
+    overlays = '\n'.join(function(raw,signature) for signature in (
+        'void LoadLevelOverlays(int level) {',
+        'void UnloadLevelOverlays(int levelID) {',
+        'void LoadOrUnloadObjectOverlays(void (*fn)(int), int idx) {',
+        'extern "C" void func_0202deac(int levelID) {'))
+    for name,symbol in sorted(overlay_symbols.items(),key=lambda item:len(item[0]),reverse=True):
+        overlays = re.sub(r'\b'+name+r'\b',symbol,overlays)
+    # Absolute linker symbols denote overlay IDs, not pointers to host data.
+    for overlay in (60,98,102):
+        overlays = replace_once(overlays,'(int)&OVERLAY_'+str(overlay)+'_ID',str(overlay))
     substitutions = {
         'Sound::Player::SetPlayableSeqCount':'_ZN5Sound6Player19SetPlayableSeqCountEii',
         'dScene_c::Initialise3dGraphics':'_ZN8dScene_c20Initialise3dGraphicsEv',
@@ -361,16 +400,31 @@ void _ZN10dScStage_c10LoadSkyboxEv(Stage *);
 void _ZN8Particle10SysTracker10InitialiseEv(SysTracker *);
 void _ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc(LVL_Overlay *,u32,MeshCollider *);
 u8 GetControllerMode(int); void func_0205a588(void *,int,int);
+void Crash(void); void LoadOverlay(int); void UnloadOverlay(int);
+void _Z26LoadOrUnloadObjectOverlaysPFviEi(void (*)(int),int);
 '''
-    return projected(rel,reset+'\n'+body,prototypes,
-                     ['ResetInput','_ZN10dScStage_c13InitResourcesEv'],extra=controls+'\n')
+    return projected(rel,reset+'\n'+overlays+'\n'+body,prototypes,
+                     ['ResetInput','_ZN10dScStage_c13InitResourcesEv',
+                      *overlay_symbols.values(),'func_0202deac'],
+                     extra=controls+'\nstruct OvTbl { u32 t[7]; };\n')
 
 
 if __name__ == '__main__':
     rows,bindings = [],[]
     for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),collision_reset(),cap_reset(),save_predicate()]:
         rows.append(row); bindings.extend(code)
-    for rel in ['src/Enable3dEngines.c',
+    for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',
+                'src/unnamed/arm9/0201/func_02017e60.c',
+                'src/unnamed/arm9/0201/func_02018c00.c',
+                'src/unnamed/arm9/0201/func_02018cbc.c',
+                'src/unnamed/arm9/0201/func_02018e00.c',
+                'src/unnamed/arm9/0201/func_02018dc4.c',
+                'src/unnamed/arm9/0201/func_02018b64.c',
+                'src/unnamed/arm9/0203/func_0203d7b8.c',
+                'src/unnamed/arm9/0205/func_0205dd9c.c',
+                'src/unnamed/arm9/0205/func_0205e088.c',
+                'src/unnamed/arm9/0205/func_0205e0b0.c',
+                'src/unnamed/arm9/0206/func_0206d32c.c',
                 'src/unnamed/arm9/0201/func_020190b8.c',
                 'src/unnamed/arm9/0201/func_02019018.c',
                 'src/unnamed/arm9/0203/func_0203da9c.c',
@@ -396,6 +450,10 @@ if __name__ == '__main__':
                 'src/unnamed/arm9/0205/func_0205d2b0.c',
                 'src/unnamed/arm9/0205/func_0205d2dc.c']:
         row,code = free_c(rel)
+        if rel.endswith('/func_02018b64.c'):
+            # Native storage must exist before the unchanged image loader
+            # clears BSS and reads the file. Its provider calls this ABI body.
+            code = []
         rows.append(row); bindings.extend(code)
     rows.append(hardware_registers_row())
     dependencies={}

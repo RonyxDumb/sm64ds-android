@@ -1,3 +1,45 @@
+# Current checkpoint — 2026-10-30, original level-overlay loader executes
+
+Video repair 19716ad79baba6ae82ed8ac03fe1df8928a47b93 passed both GitHub
+Actions jobs, including native ARM64 frontend execution, host regressions,
+GLES and Android APK/lint (run 41022886778). Its private-ROM game tests also
+passed for four save/character selections. An on-phone visual result is still
+needed; do not claim the stripes are visually resolved from host tests alone.
+
+This checkpoint links the complete LoadLevelOverlays, object-overlay selection
+and preload/reuse bodies from d_s_stage_methods.cpp, plus the original
+LoadOverlay, FS_LoadOverlay, metadata lookup, image load, BSS clear, BLZ/start
+and SDK tracking bodies. Native providers supply checked card reads, cache
+coherence, storage ownership and BLZ decompression; they do not execute ARM
+instructions or skip missing initializers. The ARM argument-word pair used by
+FS_OpenFileFast is reconstructed explicitly rather than assuming adjacent host
+ABI locals. Absolute overlay-ID/RAM-bound symbols retain their numeric meaning.
+The actual ROM archive and boot header feed both SDK metadata lookup paths.
+
+No-ROM ASan/UBSan coverage now loads a synthetic overlay through the original
+SDK: direct/cached metadata, out-of-table rejection, file/image bytes, zeroed
+BSS, a real bound initializer, duplicate-region failure, seven-column object
+overlay selection and the special/multiplayer paths. The normal game test
+runs this even without a cartridge. The private-ROM continuation checks the
+level image against Cartridge::overlay_data after original read/decompression.
+
+The actual next scene-3 stop is 0x02112458, the first static initializer in
+castle-grounds overlay 9 (formerly unlinked LoadLevelOverlays at 0x0202ded4).
+The scene is still not playable and must never be published as initialized
+when that call fails. Overlay 1/2 were pre-mounted as data; their full original
+static initialization is also outstanding and must run before actor loading.
+Castle grounds requires overlay IDs 1,2,9,62,69,85,89,94,100,98,102, verified
+from the cartridge's genuine level/object tables. Next: module-scoped native
+initializer bindings (the pinned PC dependency preserves the matching C
+initializer shards folded into newer class TUs), then continue InitResources.
+
+Version 0.4.4-overlay-loader, versionCode 8. Android CI is pending for this
+loader checkpoint. Local private ROM and all extracted asset bytes stay out
+of Git. Changes are limited to the Android port/projection and its tests;
+original matching src/ and include/ sources remain untouched.
+
+---
+
 # Current checkpoint — 2026-10-30, reproduced and repaired relocated MMIO
 
 The shared `include/nitro/hw/registers.h` macros were not part of the packed

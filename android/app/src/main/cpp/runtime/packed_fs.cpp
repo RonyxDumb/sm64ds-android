@@ -10,6 +10,10 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <vector>
+
+extern "C" unsigned int abi_func_02018b64(unsigned int);
+extern "C" void pk_Crash();
 
 namespace sm64ds {
 namespace {
@@ -66,9 +70,33 @@ void cache_flush(uint32_t address,uint32_t bytes) {
     if (bytes) (void)packed::Space::current().data(address,bytes);
     std::atomic_thread_fence(std::memory_order_seq_cst);
 }
+void copy_bytes(uint32_t source,uint32_t destination,uint32_t bytes) {
+    if (!bytes) return;
+    auto &space=packed::Space::current();
+    std::memmove(space.data(destination,bytes),space.data(source,bytes),bytes);
+}
 
 struct FileId { uint32_t archive,index; };
 static_assert(sizeof(FileId)==8);
+int file_open_direct(uint32_t file,uint32_t archive,uint32_t top,uint32_t bottom,int index) {
+    auto &space=packed::Space::current();
+    (void)space.data(file,0x44);
+    if (!archive || !(at<uint32_t>(archive+0x10)&2) || bottom<top) return 0;
+    const uint32_t base=at<uint32_t>(archive+0x1c);
+    if (uint64_t(base)+bottom>UINT32_MAX || !space.contains(base+top,bottom-top)) return 0;
+    at<uint32_t>(file+8)=archive;
+    at<uint32_t>(file+0x2c)=top;
+    at<uint32_t>(file+0x30)=bottom;
+    at<int32_t>(file+0x34)=index;
+    at<int32_t>(file+0x1c)=index;
+    at<uint32_t>(file+0x20)=top;
+    at<uint32_t>(file+0x24)=bottom;
+    at<uint32_t>(file+0x28)=top;
+    at<uint32_t>(file+0x10)=7;
+    at<uint32_t>(file+0x14)=0;
+    at<uint32_t>(file+0xc)=(at<uint32_t>(file+0xc)&~0x2fu)|0x10;
+    return 1;
+}
 int file_open_id(uint32_t file,FileId id) {
     auto &space=packed::Space::current();
     (void)space.data(file,0x44);
@@ -198,11 +226,41 @@ int file_close(uint32_t file) {
     at<uint32_t>(file+0x14)=0;
     return 1;
 }
+
+int overlay_load_image(uint32_t info) {
+    auto &space=packed::Space::current();
+    (void)space.data(info,0x24);
+    const uint32_t base=at<uint32_t>(info+4),size=at<uint32_t>(info+8),bss=at<uint32_t>(info+12);
+    // FS_LoadOverlay's genuine game RAM bounds. ROM instructions remain data;
+    // the original FS_StartOverlay resolves each initializer to native code.
+    const uint64_t total=uint64_t(size)+bss;
+    if (at<uint32_t>(info+0x20)!=0 || !size || base<0x020aa420u ||
+        uint64_t(base)+total>0x0214eaa0u)
+        throw std::runtime_error("Unsupported native overlay image extent.");
+    if (!space.contains(base,static_cast<size_t>(total)))
+        space.map_owned(base,static_cast<size_t>(total));
+    return static_cast<int>(abi_func_02018b64(info));
+}
+
+void overlay_decompress(uint32_t end) {
+    auto &space=packed::Space::current();
+    if (end<8) throw std::runtime_error("Invalid native BLZ image end.");
+    const auto *footer=static_cast<const uint8_t *>(space.data(end-8,8));
+    const uint32_t encoded=rd32(footer)&0xffffffu,extra=rd32(footer+4);
+    if (encoded<8 || encoded>end || uint64_t(encoded)+extra>4*1024*1024)
+        throw std::runtime_error("Invalid native BLZ image extent.");
+    // The footer describes the compressed tail. Its untouched prefix need not
+    // be copied or guessed from an ARM code address.
+    const auto *tail=static_cast<const uint8_t *>(space.data(end-encoded,encoded));
+    auto bytes=unpack_overlay({tail,tail+encoded},encoded+extra,true);
+    std::memcpy(space.data(end-encoded,bytes.size()),bytes.data(),bytes.size());
+}
 }
 
 void bind_packed_fs(packed::Space &space) {
     space.bind(0x0205d518u,&file_open_path);
     space.bind(0x0205d568u,&file_open_id);
+    space.bind(0x0205d5e8u,&file_open_direct);
     space.bind(0x0205d688u,&file_read);
     space.bind(0x0205d4ccu,&file_close);
     space.bind(0x0203c29cu,&heap_allocate);
@@ -212,7 +270,13 @@ void bind_packed_fs(packed::Space &space) {
     space.bind(0x02059d1cu,&irq_disable);
     space.bind(0x02059d30u,&irq_restore);
     space.bind(0x02058c40u,&cache_flush);
+    space.bind(0x02058c08u,&cache_flush);
+    space.bind(0x02058c68u,&cache_flush);
     space.bind(0x02070788u,&cartridge_strlen);
+    space.bind(0x02018b64u,&overlay_load_image);
+    space.bind(0x020048d8u,&overlay_decompress);
+    space.bind(0x02019740u,&pk_Crash);
+    space.bind(0x0205a61cu,&copy_bytes);
 }
 
 void initialize_packed_fs(packed::Space &space) {
@@ -221,6 +285,10 @@ void initialize_packed_fs(packed::Space &space) {
     if (!ntr::fs_rom_view(rom) || rom.size<0x160)
         throw std::runtime_error("Native stage filesystem has no mounted cartridge.");
     space.map(RomBase,const_cast<uint8_t *>(rom.bytes),rom.size);
+    // NitroSDK's uncached overlay-table lookup reads the real card header
+    // copied by the NTR boot environment. Normal DS mode has console type 0.
+    space.map(0x027ffe00u,const_cast<uint8_t *>(rom.bytes),0x160);
+    space.map_owned(0x027ffc40u,2);
     const uint32_t heap=space.allocate(16);
     at<uint32_t>(heap)=NativeHeapTag;
     at<uint32_t>(heap+4)=0x10000000u;
@@ -237,5 +305,6 @@ void initialize_packed_fs(packed::Space &space) {
             archive,RomBase,rd32(rom.bytes+0x48),rd32(rom.bytes+0x4c),
             rd32(rom.bytes+0x40),rd32(rom.bytes+0x44),0,0))
         throw std::runtime_error("Could not mount the native ROM archive.");
+    Ptr<void()>(0x02017e60u)(); // original overlay-region initialization
 }
 }

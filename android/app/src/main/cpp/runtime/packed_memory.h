@@ -1,6 +1,7 @@
 #pragma once
 #include "game_heap.h"
 #include <cstring>
+#include <memory>
 #include <vector>
 
 namespace sm64ds::packed {
@@ -24,6 +25,8 @@ public:
     Space(const Space &) = delete;
     Space &operator=(const Space &) = delete;
     void map(uint32_t address, void *memory, size_t size);
+    void map_owned(uint32_t address, size_t size);
+    bool contains(uint32_t address, size_t bytes) const;
     void *data(uint32_t address, size_t bytes) const;
     uint32_t address(const void *pointer);
     uint32_t allocate(uint32_t bytes, int alignment = 4);
@@ -54,6 +57,7 @@ private:
     struct Region { uint32_t address; size_t size; uint8_t *memory; };
     GameHeap &heap_;
     std::vector<Region> regions_;
+    std::vector<std::unique_ptr<uint8_t[]>> ownedRegions_;
     // Hot reverse lookup for native-to-DS pointer encoding. The frontend
     // repeatedly visits fields in the same mapped stack/heap/overlay region.
     Region recentNative_{};

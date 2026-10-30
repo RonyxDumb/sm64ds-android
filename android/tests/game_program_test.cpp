@@ -4,6 +4,8 @@
 #include "pc_audio/stream.h"
 #include "runtime/boot_seams.h"
 #include "runtime/packed_ptr.h"
+#include "runtime/packed_fs.h"
+#include "runtime/stage_runtime.h"
 #include "ntr/lz77.h"
 #include <cassert>
 #include <climits>
@@ -18,6 +20,8 @@ s16 atan2(s32, s32);
 int sqrt(unsigned long long);
 s32 fdiv(s32, s32);
 }
+namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
+namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
 namespace {
 void put16(std::vector<uint8_t> &v, size_t at, uint16_t x) {
     v[at] = x;
@@ -74,6 +78,93 @@ void narc_bounds() {
         rejected = true;
     }
     assert(rejected);
+}
+
+unsigned overlayInitializers=0;
+void synthetic_initializer() {
+    ++overlayInitializers;
+    *sm64ds::packed::Ptr<uint32_t>(0x020b0004u)=0x55667788u;
+}
+std::vector<int> selectedOverlays;
+void collect_overlay(int id) { selectedOverlays.push_back(id); }
+
+void overlay_sdk() {
+    using sm64ds::packed::Ptr;
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u),card(0x300);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map(0x08000000u,card.data(),card.size());
+    space.map(0x027ffe00u,card.data(),0x160);
+    space.map_owned(0x027ffc40u,2);
+    sm64ds::frontend::bind_arm9_sources(space);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::bind_packed_fs(space);
+    space.bind(0x020b0020u,&synthetic_initializer);
+    space.bind(0x60001000u,&collect_overlay);
+    sm64ds::packed::Space::Scope scope(space);
+    // Synthetic card: one uncompressed overlay, one initializer word and a
+    // nonempty BSS. Every SDK table/file operation below is original code.
+    put32(card,0x50,0x100); put32(card,0x54,32);
+    put32(card,0x100,0); put32(card,0x104,0x020b0000u);
+    put32(card,0x108,64); put32(card,0x10c,32);
+    put32(card,0x110,0x020b0010u); put32(card,0x114,0x020b0014u);
+    put32(card,0x118,0); put32(card,0x11c,0);
+    put32(card,0x200,0x280); put32(card,0x204,0x2c0);
+    std::fill(card.begin()+0x280,card.begin()+0x2c0,0xa5);
+    put32(card,0x290,0x020b0020u);
+    const uint32_t archive=0x020a8074u;
+    *Ptr<uint32_t>(archive+0x10)=2;
+    *Ptr<uint32_t>(archive+0x1c)=0x08000000u;
+    *Ptr<uint32_t>(archive+0x20)=0x200;
+    *Ptr<uint32_t>(archive+0x24)=8;
+    Ptr<void()>(0x02017e60u)();
+    const uint32_t info=space.allocate(0x24);
+    assert(Ptr<int(uint32_t,int,int)>(0x02018c00u)(info,0,0)==1);
+    assert(std::memcmp(space.data(info,32),card.data()+0x100,32)==0);
+    assert(*Ptr<uint32_t>(info+32)==0);
+    assert(Ptr<int(uint32_t,int,int)>(0x02018c00u)(info,0,1)==0);
+    // Also exercise the SDK's cached table path, including the final entry.
+    *Ptr<uint32_t>(0x020a8064u)=0x08000100u;
+    *Ptr<uint32_t>(0x020a8068u)=32;
+    std::memset(space.data(info,0x24),0xa5,0x24);
+    assert(Ptr<int(uint32_t,int,int)>(0x02018c00u)(info,0,0)==1);
+    assert(std::memcmp(space.data(info,32),card.data()+0x100,32)==0);
+    assert(Ptr<int(uint32_t,int,int)>(0x02018c00u)(info,0,1)==0);
+    *Ptr<uint32_t>(0x020a8064u)=0;
+    overlayInitializers=0;
+    Ptr<void(int)>(0x02018028u)(0);
+    assert(overlayInitializers==1 && space.contains(0x020b0000u,96));
+    assert(!space.contains(0x020b0000u,97) && !space.contains(0x020b0000u-1,1));
+    assert(*Ptr<uint32_t>(0x020b0004u)==0x55667788u);
+    for(unsigned i=64;i<96;++i) assert(*Ptr<uint8_t>(0x020b0000u+i)==0);
+    assert(*Ptr<uint32_t>(0x0209d3c4u)==0);
+    assert(*Ptr<uint32_t>(0x0209d3c8u)==0x020b0000u);
+    assert(*Ptr<uint32_t>(0x0209d3ccu)==96);
+    bool overlap=false;
+    try { Ptr<void(int)>(0x02018028u)(0); }
+    catch(const std::runtime_error &e) {
+        overlap=std::string(e.what())=="Original game graphics invariant failed.";
+    }
+    assert(overlap && overlayInitializers==1);
+    // The real seven-column object table and its extra shared overlays.
+    for(unsigned i=0;i<7;++i) {
+        *Ptr<uint8_t>(0x02075998u+7+i)=1;
+        *Ptr<uint32_t>(0x02075804u+i*28+4)=40+i;
+    }
+    selectedOverlays.clear();
+    Ptr<void(uint32_t,int)>(0x0202df70u)(0x60001000u,1);
+    assert((selectedOverlays==std::vector<int>{40,41,42,43,44,45,46,98,102}));
+    selectedOverlays.clear();
+    Ptr<void(uint32_t,int)>(0x0202df70u)(0x60001000u,0x24);
+    assert((selectedOverlays==std::vector<int>{60}));
+    *Ptr<uint8_t>(0x0209f2d8u)=1;
+    selectedOverlays.clear();
+    Ptr<void(uint32_t,int)>(0x0202df70u)(0x60001000u,1);
+    assert(selectedOverlays.empty());
+    space.release(info);
+    std::cout << "Original overlay SDK: card/cached metadata, image, BSS, initializer, overlap and selection passed.\n";
 }
 
 void packed_card_io(sm64ds::packed::Space &space) {
@@ -256,6 +347,7 @@ void stage_controls(const char *rom) {
 }
 int main(int argc, char **argv) {
     narc_bounds();
+    overlay_sdk();
     if (argc < 2) {
         std::cout << "NARC bounds passed; native boot needs a private ROM.\n";
         return 0;
@@ -459,7 +551,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0202ded4u);
+                    "Unlinked native code handle: " + std::to_string(0x02112458u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                     reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
@@ -467,6 +559,11 @@ int main(int argc, char **argv) {
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
+            // Real FS_LoadOverlay read and decompressed the level image before
+            // stopping at its first still-unlinked static initializer.
+            const auto expectedLevel=cartridge.overlay_data(9);
+            assert(std::memcmp(stageSpace->data(expectedLevel.base,expectedLevel.bytes.size()),
+                               expectedLevel.bytes.data(),expectedLevel.bytes.size())==0);
             assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 5);
             auto stageWord = [&](uint32_t address) {
                 uint32_t value=0;
