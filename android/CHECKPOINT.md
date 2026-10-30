@@ -1,5 +1,14 @@
 # Current checkpoint — 2026-10-30, menu palette command routing
 
+Published code: 64c2987cbcf1b51a84974771fae94d102d00e3bc (main), identical
+source tree to the locally tested f9c4c070ab5aea68931660d6430e2e5999ce9a63.
+Android run: https://github.com/RonyxDumb/sm64ds-android/actions/runs/41101493606
+Debug APK artifact sm64ds-android-debug, ID 12999826613, 672493-byte ZIP:
+https://github.com/RonyxDumb/sm64ds-android/actions/runs/41101493606/artifacts/12999826613
+The artifact is present for this exact code commit. At this handoff the overall
+run and both job conclusions are still pending/in_progress; no complete Android
+CI pass is claimed. A fresh run-status check is needed before recording success.
+
 Parent main: 4610f2cf5f705e84c872fb01292379fe5ae70f5e. The phone now shows
 smooth star reflections but a brief oversized star and corrupted title buttons.
 The button defect was reproduced with the private EUR cartridge. The footer
@@ -33,8 +42,9 @@ projected bounds, W/Z ranges and display/capture registers. No clamp or hidden
 frame suppresses the reported symptom. A phone retest and that log are needed
 if the enlargement persists.
 
-Version 0.4.10-menu-palettes, versionCode 14. Android build is pending at this
-checkpoint. The stage loader still stops at the previously documented
+Version 0.4.10-menu-palettes, versionCode 14. The APK is available as above;
+complete CI status and phone verification remain pending. The stage loader
+still stops at the previously documented
 func_02073470 dependency; playable gameplay is not established. ROM, decoded
 assets, uploaded screenshots and private captures are not committed.
 
