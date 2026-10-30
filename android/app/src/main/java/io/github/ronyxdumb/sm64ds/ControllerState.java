@@ -58,11 +58,12 @@ public final class ControllerState {
         }
         float safeWidth = Math.max(1, width - left - right);
         float safeHeight = Math.max(1, height - top - bottom);
-        int half = width / 2;
-        int w = Math.min(half, height * 4 / 3);
-        int h = w * 3 / 4;
-        touchLeft = (half + (half - w) / 2 - left) / safeWidth;
-        touchTop = ((height - h) / 2 - top) / safeHeight;
+        // Match the fullscreen + bottom-right PiP viewport in screen_renderer.cpp.
+        int margin = Math.max(4, width / 100);
+        int w = Math.max(1, Math.min(width - 2 * margin, width * 24 / 100));
+        int h = Math.max(1, w * 192 / 256);
+        touchLeft = (width - margin - w - left) / safeWidth;
+        touchTop = (height - margin - h - top) / safeHeight;
         touchWidth = w / safeWidth;
         touchHeight = h / safeHeight;
         surfaceConfigured = w > 0 && h > 0;
@@ -136,18 +137,17 @@ public final class ControllerState {
                         button = true;
                     }
                 if (!button && touchX < 0) {
-                    // Only the right-hand LCD is the physical DS touch surface.
-                    // Match the letterboxed 4:3 viewport in ScreenRenderer:
-                    // mapping against the entire Android view caused presses
-                    // on the upper, non-touch LCD to select a save file.
-                    final float viewportWidth = surfaceConfigured ? touchWidth :
-                        Math.min(.5f, 4f / (3f * aspect));
-                    final float viewportHeight = surfaceConfigured ? touchHeight :
-                        viewportWidth * aspect * .75f;
+                    // Only the bottom-right PiP rectangle accepts stylus input.
+                    // Fallback is used before the Android surface is configured.
+                    final float fallbackWidth = .24f;
+                    final float fallbackHeight = fallbackWidth * aspect * .75f;
+                    final float fallbackMargin = .01f;
+                    final float viewportWidth = surfaceConfigured ? touchWidth : fallbackWidth;
+                    final float viewportHeight = surfaceConfigured ? touchHeight : fallbackHeight;
                     final float left = surfaceConfigured ? touchLeft :
-                        .75f - viewportWidth * .5f;
+                        1f - fallbackMargin - viewportWidth;
                     final float top = surfaceConfigured ? touchTop :
-                        (1f - viewportHeight) * .5f;
+                        1f - fallbackMargin * aspect - viewportHeight;
                     if (p.x >= left && p.x < left + viewportWidth &&
                         p.y >= top && p.y < top + viewportHeight) {
                         touchX = Math.min(255, (int)((p.x - left) / viewportWidth * 256));
