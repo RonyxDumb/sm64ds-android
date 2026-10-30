@@ -21,3 +21,12 @@ g++ "${flags[@]}" -Wl,--gc-sections android/tests/video_registers_test.cpp \
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
     UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}" \
     "$VIDEO_BUILD/video_registers_test"
+for unit in G3i cstd; do
+    g++ "${flags[@]}" -c "$VIDEO_BUILD/packed/$unit.cpp" -o "$VIDEO_BUILD/$unit.o"
+done
+g++ -Iinclude "${flags[@]}" -Wl,--gc-sections android/tests/math_units_test.cpp \
+    android/app/src/main/cpp/runtime/{native_math,packed_memory,game_heap}.cpp \
+    port/ntr/{gx,texture}.cpp "$VIDEO_BUILD"/{android_io,G3i,cstd}.o -ldl -o "$VIDEO_BUILD/math_units_test"
+ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
+    UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}" \
+    "$VIDEO_BUILD/math_units_test"

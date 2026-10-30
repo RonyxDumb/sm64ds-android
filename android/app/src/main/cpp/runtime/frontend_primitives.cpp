@@ -8,7 +8,7 @@
 
 using sm64ds::packed::Ptr;
 using sm64ds::packed::Space;
-namespace cstd { int fdiv(int,int); }
+namespace cstd { int fdiv(int,int); int div(int,int); int mod(int,int); long long ldiv(int,int); }
 namespace {
 bool port(uint32_t address) { return address>=ntr::IO_BASE && address<ntr::IO_BASE+ntr::IO_SIZE; }
 void copy(uint32_t src,uint32_t dst,int bytes,int width) {
@@ -191,19 +191,20 @@ void pk_func_02052ec8(Ptr<void> p) {
     auto m=Ptr<int>(p); fill32(0,m,64); m[0]=m[5]=m[10]=m[15]=4096;
 }
 int pk__ZN4cstd3divEii(int a,int b) {
-    if (!b) throw std::runtime_error("Native integer division by zero.");
-    return a==INT_MIN && b==-1 ? INT_MIN : a/b;
+    return cstd::div(a,b);
 }
 int pk__ZN4cstd3modEii(int a,int b) {
-    if (!b) throw std::runtime_error("Native integer modulus by zero");
-    return a==INT_MIN && b==-1?0:a%b;
+    return cstd::mod(a,b);
 }
 int pk_cstd_div(int a,int b) { return pk__ZN4cstd3divEii(a,b); }
 int pk_cstd_mod(int a,int b) { return pk__ZN4cstd3modEii(a,b); }
 int pk_cstd_fdiv(int a,int b) { return cstd::fdiv(a,b); }
 int pk_cstd_abs(int a) { return a<0?int32_t(0u-uint32_t(a)):a; }
 int pk__ZN4cstd3absEi(int a) { return pk_cstd_abs(a); }
-int pk___aeabi_idiv(int a,int b) { return pk__ZN4cstd3divEii(a,b); }
+int pk___aeabi_idiv(int a,int b) {
+    if (!b) throw std::runtime_error("Native integer division by zero.");
+    return a==INT_MIN && b==-1 ? INT_MIN : a/b;
+}
 long long pk_ll_sdiv(long long a,long long b) {
     if (!b) throw std::runtime_error("Native long division by zero");
     return a==LLONG_MIN && b==-1?LLONG_MIN:a/b;
@@ -228,9 +229,7 @@ Ptr<void> pk_func_02059170(int arena,int heap,int bytes) {
     return Space::current().allocate(static_cast<unsigned>(bytes));
 }
 long long pk__ZN4cstd4ldivEii(int a,int b) {
-    if (!b) throw std::runtime_error("Native fractional division by zero.");
-    int64_t scaled=int64_t(a)*0x100000000LL;
-    return scaled==LLONG_MIN && b==-1 ? LLONG_MIN : scaled/b;
+    return cstd::ldiv(a,b);
 }
 void pk_SubVec3(Ptr<int> a,Ptr<int> b,Ptr<int> out) {
     for (int i=0; i<3; ++i) out[i]=int32_t(uint32_t(a[i])-uint32_t(b[i]));

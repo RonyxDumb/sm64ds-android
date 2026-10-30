@@ -1,3 +1,24 @@
+# Current checkpoint — 2026-10-30, shared arithmetic-unit state
+
+The phone report sm64ds-crash-report(2).txt ends in a native fixed-point
+zero-divisor exception. Native cstd helpers now submit the original SDK
+operands/modes to the shared arithmetic units, preserving state for recovered
+asynchronous callers such as G3i::PerspectiveW_. Division by zero returns the
+DS arithmetic result; split high-word operand writes restart the units and
+64-bit signed overflow is handled without host undefined behavior.
+
+The relocated-register test and the new recovered-projection arithmetic test
+pass under ASan/UBSan (LeakSanitizer disabled for this executor). The latter
+executes the real projected perspective routine after a different division
+mode, and checks synchronous/async state, zero division, split writes, integer
+rounding and overflow. This verifies the reported arithmetic failure, not a
+claim of playable gameplay. Android CI and phone verification are pending.
+The accepted side-by-side layout and prior texture fixes remain intact.
+Version 0.4.11-native-math, versionCode 15. Stage integration continues from
+the original array-new dependency at 0x02073470; ROM/assets remain private.
+
+---
+
 # Current checkpoint — 2026-10-30, menu palette command routing
 
 Published code: 64c2987cbcf1b51a84974771fae94d102d00e3bc (main), identical

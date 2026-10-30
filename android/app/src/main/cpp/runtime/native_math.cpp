@@ -1,36 +1,39 @@
 #include "types.h"
-#include <climits>
-#include <stdexcept>
+#include "ntr/mmio.h"
 
 namespace cstd {
-// Native counterparts of the two Nitro arithmetic units. Preserve integer
-// rounding; using libm atan2/sqrt here would change the game's input thresholds.
+// Synchronous SDK calls share their register state with async game callers.
+long long ldiv(int numerator, int denominator) {
+    ntr::io_write(0x04000280,1,2);
+    ntr::io_write(0x04000290,u64(u32(numerator))<<32,8);
+    ntr::io_write(0x04000298,u32(denominator),8);
+    return static_cast<s64>(ntr::io_read(0x040002a0,8));
+}
+
 Fix12i fdiv(Fix12i numerator, Fix12i denominator) {
-    if (!denominator)
-        throw std::runtime_error("Fixed-point divide by zero.");
-    const s64 scaled = s64(numerator) * 0x100000000LL;
-    const s64 quotient =
-        scaled == LLONG_MIN && denominator == -1 ? LLONG_MIN : scaled / denominator;
-    return static_cast<s32>((quotient + 0x80000) >> 20);
+    const s64 quotient=ldiv(numerator,denominator);
+    const s64 rounded=static_cast<s64>(static_cast<u64>(quotient)+0x80000);
+    return static_cast<s32>(rounded >> 20);
+}
+
+int div(int numerator, int denominator) {
+    ntr::io_write(0x04000280,0,2);
+    ntr::io_write(0x04000290,u32(numerator),4);
+    ntr::io_write(0x04000298,u32(denominator),8);
+    return static_cast<s32>(ntr::io_read(0x040002a0,4));
+}
+int mod(int numerator, int denominator) {
+    div(numerator,denominator);
+    return static_cast<s32>(ntr::io_read(0x040002a8,4));
 }
 
 int sqrt(unsigned long long value) {
-    // cstd_sqrt.cpp submits value << 2 to the unsigned 64-bit unit, then
-    // returns (integer_root + 1) >> 1. The shift intentionally wraps at 64 bits.
-    u64 remaining = value << 2;
-    u64 root = 0;
-    u64 bit = 1ULL << 62;
-    while (bit > remaining)
-        bit >>= 2;
-    while (bit) {
-        if (remaining >= root + bit) {
-            remaining -= root + bit;
-            root = (root >> 1) + bit;
-        } else {
-            root >>= 1;
-        }
-        bit >>= 2;
-    }
-    return static_cast<s32>(static_cast<u32>(root) + 1u) >> 1;
+    const auto ime=ntr::io_read(0x04000208,2);
+    ntr::io_write(0x04000208,0,2);
+    ntr::io_write(0x040002b0,1,2);
+    ntr::io_write(0x040002b8,value<<2,8);
+    ntr::io_write(0x04000208,ime,2);
+    const auto root=static_cast<u32>(ntr::io_read(0x040002b4,4));
+    return static_cast<s32>(root+1u)>>1;
 }
 }

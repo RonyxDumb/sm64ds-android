@@ -131,7 +131,7 @@ void run_divide() {
     if (mode == 0) {                       // 32 / 32
         n = static_cast<int32_t>(numer);
         d = static_cast<int32_t>(denom);
-    } else if (mode == 1) {                // 64 / 32
+    } else if (mode != 2) {                // modes 1 and 3: 64 / 32
         d = static_cast<int32_t>(denom);
     }
 
@@ -140,14 +140,17 @@ void run_divide() {
         // GBATEK: division by zero leaves remainder = numerator and a sign-based
         // quotient. Mirror that rather than trapping.
         rem = n;
-        quot = (n < 0) ? 1 : -1;
-        if (mode == 0) quot = (n < 0) ? 1 : -1;
+        quot = mode == 0 ? (n < 0 ? -0xffffffffLL : 0xffffffffLL) : (n < 0 ? 1 : -1);
+    } else if (n == INT64_MIN && d == -1) {
+        quot = INT64_MIN;
+        rem = 0;
     } else {
         quot = n / d;
         rem = n % d;
     }
     raw_write(DIV_RESULT, static_cast<uint64_t>(quot), 8);
     raw_write(DIV_REM, static_cast<uint64_t>(rem), 8);
+    raw_write(DIVCNT, mode | (denom == 0 ? 0x4000u : 0), 2);
 }
 
 uint32_t isqrt64(uint64_t v) {
@@ -294,9 +297,10 @@ void io_write(uint32_t addr, uint64_t value, unsigned width) {
     if (addr<0x0400024au && addr+width>0x04000240u) update_vram_banks();
 #endif
 
-    // Writing the low half of the operand is what starts the unit on hardware.
-    if (addr == DIV_DENOM || addr == DIV_NUMER || addr == DIVCNT) run_divide();
-    else if (addr == SQRT_PARAM || addr == SQRTCNT) run_sqrt();
+    // Both halves can be written last by the original SDK routines.
+    if (addr == DIV_DENOM || addr == DIV_DENOM+4 || addr == DIV_NUMER ||
+        addr == DIV_NUMER+4 || addr == DIVCNT) run_divide();
+    else if (addr == SQRT_PARAM || addr == SQRT_PARAM+4 || addr == SQRTCNT) run_sqrt();
     // Geometry: 0x4000400 is the packed FIFO, 0x4000440.. are the command ports.
     // These execute on write and leave nothing readable behind, so unlike every
     // other block they cannot be served by the memory window alone.
