@@ -59,11 +59,10 @@ public final class ControllerState {
         float safeWidth = Math.max(1, width - left - right);
         float safeHeight = Math.max(1, height - top - bottom);
         // Match the fullscreen + bottom-right PiP viewport in screen_renderer.cpp.
-        int margin = Math.max(4, width / 100);
-        int w = Math.max(1, Math.min(width - 2 * margin, width * 24 / 100));
+        int w = Math.max(1, width * 26 / 100);
         int h = Math.max(1, w * 192 / 256);
-        touchLeft = (width - margin - w - left) / safeWidth;
-        touchTop = (height - margin - h - top) / safeHeight;
+        touchLeft = (width - w - left) / safeWidth;
+        touchTop = (height - h - top) / safeHeight;
         touchWidth = w / safeWidth;
         touchHeight = h / safeHeight;
         surfaceConfigured = w > 0 && h > 0;
@@ -139,15 +138,14 @@ public final class ControllerState {
                 if (!button && touchX < 0) {
                     // Only the bottom-right PiP rectangle accepts stylus input.
                     // Fallback is used before the Android surface is configured.
-                    final float fallbackWidth = .24f;
+                    final float fallbackWidth = .26f;
                     final float fallbackHeight = fallbackWidth * aspect * .75f;
-                    final float fallbackMargin = .01f;
                     final float viewportWidth = surfaceConfigured ? touchWidth : fallbackWidth;
                     final float viewportHeight = surfaceConfigured ? touchHeight : fallbackHeight;
                     final float left = surfaceConfigured ? touchLeft :
-                        1f - fallbackMargin - viewportWidth;
+                        1f - viewportWidth;
                     final float top = surfaceConfigured ? touchTop :
-                        1f - fallbackMargin * aspect - viewportHeight;
+                        1f - viewportHeight;
                     if (p.x >= left && p.x < left + viewportWidth &&
                         p.y >= top && p.y < top + viewportHeight) {
                         touchX = Math.min(255, (int)((p.x - left) / viewportWidth * 256));
