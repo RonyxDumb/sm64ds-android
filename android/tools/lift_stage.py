@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from lift_frontend import Lift, PARSER, DATA_SYMBOLS
+from lift_frontend import Lift, PARSER, DATA_SYMBOLS, hardware_registers_row
 from native_sources import function, replace_once
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -397,6 +397,7 @@ if __name__ == '__main__':
                 'src/unnamed/arm9/0205/func_0205d2dc.c']:
         row,code = free_c(rel)
         rows.append(row); bindings.extend(code)
+    rows.append(hardware_registers_row())
     dependencies={}
     for row in rows:
         for name,value in row.pop('dependencies').items():

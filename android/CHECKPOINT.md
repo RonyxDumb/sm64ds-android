@@ -1,3 +1,33 @@
+# Current checkpoint — 2026-10-30, reproduced and repaired relocated MMIO
+
+The shared `include/nitro/hw/registers.h` macros were not part of the packed
+header projection. On Android, an occupied fixed I/O address causes `io_init`
+to allocate translated storage. The original GX display-mode routines then
+wrote through raw header macros into the old mapping while the PPU read the
+translated registers. This explains the device log's missing 3D-select bit.
+
+A no-ROM regression now occupies the low I/O window and compiles the actual
+Android relocation branch of io.cpp. Before the repair, the original
+GX_SetGraphicsMode call fails the translated-window check. After projecting
+the shared header, MAIN DISPCNT is 08011b08 (instead of 08011b00); all 49,152
+pixels use the supplied 3D layer. Display off/on, sub-engine mode, power, BG
+scroll, affine pointers, DMA pointers, timer, memory and IRQ macros also pass,
+and the foreign low mapping remains byte-for-byte unchanged.
+
+The original matching src/ and include/ files are unchanged. Both committed
+manifests and their regeneration paths include the checked register header.
+The normal CI host suite runs the relocation regression. Local ASan/UBSan
+checks pass with LeakSanitizer disabled because this environment denies its
+process inspection; CI retains its normal leak checks.
+
+Version: 0.4.3-relocated-mmio, versionCode 7. Full APK/frontend CI and the
+private-ROM stage continuation are pending for this implementation checkpoint.
+This is a reproduced register-routing repair, not yet an on-phone visual result.
+The remaining actual scene-3 blocker is LoadLevelOverlays at 0x0202ded4;
+continue through its original source and real overlay dependencies.
+
+---
+
 # Current checkpoint — 2026-10-30, resumed device-log investigation
 
 Last implementation checkpoint: da5c8c8c9e6d244347c847f9277e8316f0137375

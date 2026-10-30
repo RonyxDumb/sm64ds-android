@@ -639,7 +639,8 @@
     "include/Particle__Behavior.h",
     "include/Particle__Element.h",
     "include/Ov007StrokePath.h",
-    "include/Particle__System.h"
+    "include/Particle__System.h",
+    "include/nitro/hw/registers.h"
   ],
   "full_model": true,
   "full_particles": true

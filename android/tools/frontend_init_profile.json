@@ -153,7 +153,8 @@
     "include/G3i.h",
     "include/nitro/fx/fx.h",
     "include/Particle__Behavior.h",
-    "include/Particle__Element.h"
+    "include/Particle__Element.h",
+    "include/nitro/hw/registers.h"
   ],
   "full_model": true
 }

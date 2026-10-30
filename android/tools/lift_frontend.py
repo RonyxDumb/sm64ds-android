@@ -290,6 +290,26 @@ class Lift:
         return text
 
 
+def hardware_registers_row():
+    """Project shared MMIO macros, not just literal accesses in .cpp bodies.
+
+    Android may relocate the video window. Leaving this included header raw
+    makes GX_SetGraphicsMode write a foreign low mapping while the PPU reads
+    the translated register file. Host tests with fixed mappings hide it.
+    """
+    rel = 'include/nitro/hw/registers.h'
+    raw = (ROOT/rel).read_text()
+    view = hostgen.transform(raw)[0]
+    lift = Lift(view)
+    source = lift.result()
+    source = re.sub(r'\bPtr<', '::sm64ds::packed::Ptr<', source)
+    if re.search(r'\(volatile\s+\w+\s*\*\)\s*0x', source):
+        raise ValueError('unprojected hardware register pointer')
+    return dict(path=rel, sha256=hashlib.sha256(raw.encode()).hexdigest(),
+                source=source, dependencies={}, globals=lift.globals,
+                functions=sorted(lift.functions), definitions=[], header=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -311,6 +331,9 @@ def main():
     entries = []
     sdk_aliases = {}
     for rel in args.sources + args.headers:
+        if rel == 'include/nitro/hw/registers.h':
+            entries.append(hardware_registers_row())
+            continue
         raw = (ROOT/rel).read_text()
         view = raw
         dependencies = {}
