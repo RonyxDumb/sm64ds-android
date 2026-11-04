@@ -1,4 +1,5 @@
 #include "packed_fs.h"
+#include "stage_runtime.h"
 #include "packed_ptr.h"
 #include "resources.h"
 #include "ntr/fs.h"
@@ -307,7 +308,11 @@ int overlay_load_image(uint32_t info) {
     if (!space.contains(base,static_cast<size_t>(total)))
         space.map_owned(base,static_cast<size_t>(total));
     const int loaded=static_cast<int>(abi_func_02018b64(info));
-    if (loaded) stage_sources::bind_overlay_sources(space,at<uint32_t>(info));
+    if (loaded) {
+        const unsigned id=at<uint32_t>(info);
+        stage_sources::bind_overlay_sources(space,id);
+        bind_stage_overlay_runtime(space,id);
+    }
     return loaded;
 }
 

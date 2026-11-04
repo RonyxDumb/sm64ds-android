@@ -1,3 +1,48 @@
+# Current checkpoint — 2026-11-04, Player resources and entrance-state handoff
+
+Local castle-assets checkpoint: 023c57a. The remote base remains
+dc15df22496e65c278157be0b10f8a2eb3cc1bb1 until publication is approved.
+The goal remains playable castle grounds; this checkpoint is not playable.
+
+The complete original entrance/object dispatch now reaches dActor_c::Spawn,
+the cartridge's Player factory and the actual 0x768-byte Player constructor.
+Native constructors retain the original actor/list records, five body-model
+slots, eight head-model slots, animation arrays, shadow and collision members.
+Player factories publish native bindings only after overlay 2 loads.
+
+The complete original Player::InitResources body is projected with checked
+field lanes. It loads real body/head BMDs, BCA/BTP animations, shadow components
+and the original 50-element trail array. The empty Vector3 constructor's
+under-declared prototype now forwards its real object argument through the
+native array callback. Actor cylinders use the original Q12 yaw/translation
+routine; mesh query configuration retains its original member offsets.
+The recovered Player::ChangeState semantics execute cleanup-veto and init
+member pointers using the existing checked ARM member-pointer dispatcher,
+including the control lock and held-object redirect. No unknown callback is
+replaced by a successful return.
+
+All four private-ROM save/character launches pass ASan/UBSan to the exact next
+missing dependency, Player::St_LevelEnter_Init at 0x020c7838. Checks inspect the
+Player's factory/vtable, entrance position/character, all five body and eight
+head models, shadow, trail cookies, held-object queue and both collider records.
+No-ROM checks also cover cleanup veto, state reset, control lock, carried-object
+redirect and array-construction rollback. The relocated video/math regressions
+pass, including the original projection and shared arithmetic state. Host source
+and generation audits pass. Local LeakSanitizer remains disabled because process
+inspection is unavailable. Android APK/ARM64 CI and phone verification have not
+been run for this checkpoint.
+
+Continue with the complete St_LevelEnter_Init body and its actual callees, then
+finish the remaining InitResources/entrance camera/HUD/object dependencies.
+Before declaring gameplay ready, update the original full actor process lists
+and verify GameProgram's gameplay input and 3D scanout: those title-only/requested-
+scene guards and StageFlow's scene-only frame loop are still unresolved.
+Version 0.4.13-player-resources, versionCode 17. Matching src/include and the
+pinned PC dependency are unchanged. ROM, decoded assets and private test outputs
+are not tracked.
+
+---
+
 # Current checkpoint — 2026-11-04, castle model and collision mesh
 
 Continues main dc15df22496e65c278157be0b10f8a2eb3cc1bb1. The acceptance

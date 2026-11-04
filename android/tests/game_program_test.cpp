@@ -24,7 +24,10 @@ int sqrt(unsigned long long);
 s32 fdiv(s32, s32);
 }
 namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
-namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
+namespace sm64ds::stage_sources {
+void bind_sources(packed::Space &);
+void bind_overlay_sources(packed::Space &,unsigned);
+}
 namespace {
 void put16(std::vector<uint8_t> &v, size_t at, uint16_t x) {
     v[at] = x;
@@ -93,6 +96,55 @@ void construct_array_element(uint32_t element) {
 }
 void destroy_array_element(uint32_t element) {
     arrayDestroyed.push_back(*sm64ds::packed::Ptr<uint32_t>(element));
+}
+bool allowStateCleanup=false;
+unsigned stateCleanups=0,stateInitializations=0;
+int cleanup_player_state(uint32_t) { ++stateCleanups; return allowStateCleanup; }
+int initialize_player_state(uint32_t) { ++stateInitializations; return 1; }
+
+void player_state_runtime() {
+    using sm64ds::packed::Ptr;
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map_owned(0x02110000u,0x2000);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::stage_sources::bind_overlay_sources(space,2);
+    sm64ds::bind_stage_overlay_runtime(space,2);
+    space.bind(0x60003000u,&cleanup_player_state);
+    space.bind(0x60003001u,&initialize_player_state);
+    sm64ds::packed::Space::Scope scope(space);
+    const uint32_t player=space.allocate(0x768),previous=space.allocate(24),next=space.allocate(24);
+    *Ptr<uint32_t>(previous+16)=0x60003000u;
+    *Ptr<uint32_t>(next)=0x60003001u;
+    *Ptr<uint32_t>(player+0x370)=previous;
+    *Ptr<uint32_t>(player+0x628)=123;
+    *Ptr<uint16_t>(player+0x6ce)=0x280;
+    auto change=Ptr<int(uint32_t,uint32_t)>(0x020e30a0u);
+    allowStateCleanup=false; stateCleanups=stateInitializations=0;
+    assert(change(player,next)==0 && stateCleanups==1 && stateInitializations==0);
+    assert(*Ptr<uint32_t>(player+0x370)==previous && *Ptr<uint32_t>(player+0x378)==next);
+    assert(*Ptr<uint32_t>(player+0x628)==123);
+    allowStateCleanup=true;
+    assert(change(player,next)==1 && stateCleanups==2 && stateInitializations==1);
+    assert(*Ptr<uint32_t>(player+0x374)==previous && *Ptr<uint32_t>(player+0x370)==next);
+    assert(*Ptr<uint32_t>(player+0x628)==0 && *Ptr<uint16_t>(player+0x6ce)==0x80);
+    assert(*Ptr<int32_t>(player+0x9c)==-0x4000 && *Ptr<int32_t>(player+0xa0)==-0x4b000);
+    *Ptr<uint32_t>(player+0x370)=0x0211022cu;
+    *Ptr<uint8_t>(player+0x709)=1;
+    *Ptr<uint32_t>(player+0x2ec)=4;
+    assert(change(player,next)==0 && *Ptr<uint32_t>(player+0x370)==0x0211022cu);
+    assert(change(player,0x0211013cu)==1);
+    assert(*Ptr<uint8_t>(player+0x709)==0 && *Ptr<uint32_t>(player+0x2ec)==0);
+    *Ptr<uint32_t>(player+0x358)=123;
+    assert(change(player,0x0211013cu)==1);
+    assert(*Ptr<uint32_t>(player+0x370)==0x02110364u && *Ptr<uint8_t>(player+0x6e3)==1);
+    assert(*Ptr<uint32_t>(player+0x378)==0x0211013cu);
+    space.release(next); space.release(previous); space.release(player);
+    assert(space.allocations()==0);
+    std::cout << "Original Player state transition: cleanup veto, native PMFs, reset, control lock and carried-object redirect passed.\n";
 }
 void synthetic_initializer() {
     ++overlayInitializers;
@@ -479,6 +531,7 @@ int main(int argc, char **argv) {
     overlay_sdk();
     audio_groups();
     controller_glyph_words();
+    player_state_runtime();
     if (argc < 2) {
         std::cout << "NARC bounds passed; native boot needs a private ROM.\n";
         return 0;
@@ -682,14 +735,17 @@ int main(int argc, char **argv) {
             try { (void)stageSpace->code(0x02100560u); }
             catch(const std::runtime_error &) { unloadedInitializer=true; }
             assert(unloadedInitializer); // data residency alone must not publish module code
+            bool unloadedPlayer=false;
+            try { (void)stageSpace->code(0x020e6c0cu); }
+            catch (const std::runtime_error &) { unloadedPlayer=true; }
+            assert(unloadedPlayer);
             try {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02010e2cu);
+                    "Unlinked native code handle: " + std::to_string(0x020c7838u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
-                    reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
                 }
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
@@ -755,10 +811,10 @@ int main(int argc, char **argv) {
             assert(destructors.size()>100);
             assert(stageWord(0x0210da94u)==0x02017ab4u && stageWord(0x0210da98u)==0x0210da18u);
             assert(stageSpace->code(0x02100560u) && stageSpace->code(0x02112458u));
-            assert(stageWord(0x0209cef8u)==20);
+            assert(stageWord(0x0209cef8u)>=20);
             for(unsigned i=0;i<12;++i) {
                 const uint32_t holder=stageWord(0x020756f0u+i*4),file=stageWord(holder+4);
-                assert(*static_cast<uint8_t *>(stageSpace->data(holder+2,1))==1);
+                assert(*static_cast<uint8_t *>(stageSpace->data(holder+2,1))>=1);
                 assert(file && stageSpace->allocation_size(file)>=0x40);
                 assert(stageWord(file+8)>=file); // original BMD offsets became checked pointers
                 assert(stageWord(0x0209cefc+i*12)==file);
@@ -809,6 +865,41 @@ int main(int argc, char **argv) {
             assert(std::memcmp(stageSpace->data(kcl+16,assets->collision().size()-16),
                                assets->collision().data()+16,assets->collision().size()-16)==0);
             assert(stageWord(actor+0x9c4)==0);
+            // The real entrance loader constructed and initialized the Player
+            // through its state transition. The next state body is still unlinked.
+            const uint32_t playerNode=stageWord(0x0209b468u),player=stageWord(playerNode+8);
+            assert(playerNode==player+0x50 && stageSpace->allocation_size(player)>=0x768);
+            assert(stageWord(player)==0x0210a83cu);
+            assert(*static_cast<uint16_t *>(stageSpace->data(player+12,2))==0xbf);
+            assert(*static_cast<uint8_t *>(stageSpace->data(player+0x6d8,1))==0);
+            assert(*static_cast<uint8_t *>(stageSpace->data(player+0x6d9,1))==request.character);
+            for (auto position : {std::pair<unsigned,int32_t>{0x5c,firstEntrance.x},
+                                   {0x60,firstEntrance.y},{0x64,firstEntrance.z}})
+                assert(stageWord(player+position.first)==static_cast<uint32_t>(position.second));
+            assert(stageWord(player+0x370)==0x021104b4u && stageWord(player+0x378)==0x021104b4u);
+            const uint32_t trail=stageWord(player+0x578);
+            assert(trail && stageWord(trail-8)==12 && stageWord(trail-4)==50);
+            assert(stageSpace->allocation_size(stageWord(player+0x57c))>=50);
+            const uint32_t heldQueue=stageWord(player+0x588);
+            assert(stageSpace->allocation_size(heldQueue)>=20);
+            for (unsigned i=0;i<20;++i)
+                assert(*static_cast<uint8_t *>(stageSpace->data(heldQueue+i,1))==0);
+            for (unsigned i=0;i<5;++i) {
+                const uint32_t model=stageWord(player+0xdc+i*4);
+                assert(model && stageSpace->allocation_size(model)>=0x78);
+                assert(stageWord(model)==0x0208e9b4u && stageWord(model+8));
+            }
+            for (unsigned i=0;i<8;++i) {
+                const uint32_t model=stageWord(player+0x154+i*4);
+                assert(model && stageWord(model)==(i==3?0x0208e980u:0x0208e90cu));
+                assert(stageWord(model+8));
+            }
+            assert(stageWord(player+0x2ac)==0x0208e868u && stageWord(player+0x2ac+8));
+            assert(stageWord(player+0x2d4+0x30)==player);
+            assert(stageWord(player+0x2d4+4)==0x28000 && stageWord(player+0x2d4+8)==0x96000);
+            assert(stageWord(player+0x380+0x14)==player && stageWord(player+0x380+0x18)==0x32000);
+            assert(stageWord(player+0x380+0x10c)==0x28000);
+            assert(stageWord(player+0xa0)==uint32_t(-0x4b000));
             assert(stageWord(0x0209f5c0u)==actor);
             assert(stageWord(0x0209f314u)==actor+0x8bc);
             assert(*static_cast<uint8_t *>(stageSpace->data(0x0209f2f8u,1))==1);

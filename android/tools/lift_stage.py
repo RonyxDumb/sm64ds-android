@@ -15,11 +15,12 @@ from native_sources import function, replace_once
 
 ROOT = Path(__file__).resolve().parents[2]
 SYMBOLS = {}
-for path in ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt'):
+for path in ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
+             'external/sm64ds-pc/config/arm9/symbols.txt'):
     for line in (ROOT/path).read_text().splitlines():
         match = re.match(r'(\S+) kind:function.*?addr:0x([0-9a-f]+)', line)
         if match:
-            SYMBOLS[match[1]] = int(match[2], 16)
+            SYMBOLS.setdefault(match[1], int(match[2], 16))
 SYMBOLS['func_ov001_020ab2e4'] = 0x020ab2e4
 SYMBOLS['_ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc'] = 0x020fe190
 for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov002/symbols.txt').read_text().splitlines():
@@ -47,6 +48,7 @@ typedef unsigned int u32;
 typedef int s32;
 typedef unsigned long long u64;
 typedef long long s64;
+typedef int Fix12i;
 struct Matrix2x2 { int m[4]; };
 struct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; void *filePtr; };
 struct LVL_Overlay { u8 bytes[0x1c]; };
@@ -250,6 +252,8 @@ void func_0205583c(void); void Initialise3dGraphics(int);
 
 def free_c(rel):
     raw = re.sub(r'^#include[^\n]*','',(ROOT/rel).read_text(),flags=re.M)
+    if '#include "nitro/fx/fx.h"' in (ROOT/rel).read_text():
+        raw='#include "nitro/fx/fx.h"\n'+raw
     shared = (ROOT/'include/decl_common.h').read_text()
     used = set(re.findall(r'\b(?:data_\w+|func_\w+|SUBLEVEL_LEVEL_TABLE)\b', raw))
     imports = [m.group() for m in re.finditer(r'^extern [^;\n]+;',shared,re.M)
@@ -431,6 +435,19 @@ def shared_file_handles():
                         '_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(filePtr)')
     model=model.replace('ptr.ReallocateModelFile()','_ZN13SharedFilePtr19ReallocateModelFileEv(ptr)')
     body+='\n'+model
+    animation_loaders=[]
+    for cls,ret,kind in [('dExtFrameCtrl_c','char *','BCA'),('dExtAnmTexPat_c','void *','BTP')]:
+        symbol='_ZN'+str(len(cls))+cls+'8LoadFileER13SharedFilePtr'
+        signature=ret+cls+'::LoadFile(SharedFilePtr &ptr)'
+        loader=replace_once(function(raw,signature),signature,
+                             ret+symbol+'(SharedFilePtr *ptr)')
+        loader=loader.replace('ptr.LoadFile()','_ZN13SharedFilePtr8LoadFileEv(ptr)')
+        loader=loader.replace('ptr.numRefs','ptr->numRefs').replace('ptr.filePtr','ptr->filePtr')
+        update='_ZN'+str(len(cls))+cls+'17UpdateFileOffsetsER8'+kind+'_File'
+        loader=loader.replace('UpdateFileOffsets(*('+kind+'_File *)file)',update+'(file)')
+        loader=loader.replace('UpdateFileOffsets(*('+kind+'_File *)filePtr)',update+'(filePtr)')
+        body+='\n'+loader
+        animation_loaders.append(symbol)
     body=body.replace('Memory::Deallocate','_ZN6Memory10DeallocateEPv')
     body=body.replace('static_cast<SharedFilePtr *>(self)','((SharedFilePtr *)self)')
     body=body.replace('reinterpret_cast<void *>(self)','((void *)self)')
@@ -444,8 +461,10 @@ void func_02017c24(SharedFilePtr *); void _ZN6Memory10DeallocateEPv(void *);
 u32 func_02017060(void *);
 void _ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(void *);
 void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(void *);
+void _ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(void *);
+void _ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(void *);
 '''
-    return projected(rel,body,prototypes,[*signatures,*methods,
+    return projected(rel,body,prototypes,[*signatures,*methods,*animation_loaders,
                      '_ZN13SharedFilePtr9ConstructEj','_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr'])
 
 
@@ -461,14 +480,25 @@ def common_models():
                       '_ZN5mHeap6Heap_t7_SizeofEPv((Heap *)heap,ptr)')
     trim=replace_once(trim,'((Heap *)heap)->Reallocate(ptr, newSize)',
                       '_ZN5mHeap6Heap_t10ReallocateEPvj((Heap *)heap,ptr,newSize)')
+    pooled=function(raw,'extern "C" void *func_02016e70(void *file)')
+    pooled=pooled.replace('dExtSimpleModel_c::AddToCommonModelDataArr(*(BMD_File *)file)',
+        '_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(file)')
+    pooled=pooled.replace('::operator new(0x14)','_Znwj(0x14)')
+    pooled=pooled.replace('Memory::operator_new2','_ZN6Memory13operator_new2Ej')
+    pooled=pooled.replace('Memory::operator_delete2','_ZN6Memory16operator_delete2EPv')
+    pooled=re.sub(r'#ifdef _MSC_VER.*?#else\n(.*?)#endif',r'\1',pooled,flags=re.S)
     prototypes='''
 void _ZN17dExtSimpleModel_c13LoadTexAndPalER8BMD_File(void *);
 u32 func_020469e0(void *); u32 _ZN5mHeap6Heap_t7_SizeofEPv(Heap *,void *);
 u32 _ZN5mHeap6Heap_t10ReallocateEPvj(Heap *,void *,u32);
+void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(void *);
+void *_Znwj(u32);
+void *_ZN6Memory13operator_new2Ej(u32); void _ZN6Memory16operator_delete2EPv(void *);
+int func_02046564(void *); void func_020462d0(ModelComponents *,void *,void *);
 '''
-    return projected(rel,add+'\n'+trim,prototypes,
-                     ['_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File','func_02017060'],
-                     extra='struct CommonModelData { void *file; void *components; void *buffer; };\n')
+    return projected(rel,add+'\n'+trim+'\n'+pooled,prototypes,
+                     ['_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File','func_02017060','func_02016e70'],
+                     extra='struct CommonModelData { void *file; ModelComponents *components; void *buffer; };\n')
 
 
 def model_instances():
@@ -607,6 +637,66 @@ extern short data_ov002_0211118c;
     return row,bindings
 
 
+def player_init():
+    rel='src/game/player/Player.cpp'
+    body=function((ROOT/rel).read_text(),'s32 Player::InitResources()')
+    body=replace_once(body,'s32 Player::InitResources()',
+                       's32 _ZN6Player13InitResourcesEv(void *object)')
+    body=body.replace('(void*)this','object')
+    # The empty retail Vector3 constructor was under-declared as void(void).
+    # Array callbacks still carry 'this' in r0; preserve it in the native thunk.
+    body=body.replace('void func_0203d384(void);','void *func_0203d384(void *);')
+    body=body.replace('((Player *)(c))->func_ov002_020beabc()',
+                       'func_ov002_020beabc(c)')
+    body=body.replace('((Player *)(c))->func_ov002_020c7dd0(n8)',
+                       'func_ov002_020c7dd0(c,n8)')
+    body=body.replace('((dBgCh_Gnd *)rc)->mProbeHeight','(*(s32 *)(rc+0x4c))')
+    body=body.replace('__builtin__clear((void*)mHeldObjQueue, 0x14)',
+                       'func_0205a588((void*)mHeldObjQueue,0,0x14)')
+    # Named lanes of the original Player/dActor/fBase records. Their source
+    # headers stay unchanged; every byte offset remains checked by the profile.
+    fields={
+        'param1':('u32',8),'mPlayerNo':('u8',0x6d8),'mCharacter':('u8',0x6d9),
+        'mTrailPos':('Vector3 *',0x578),'mTrailFlags':('u8 *',0x57c),
+        'mHeldObjQueue':('s32',0x588),'mMeshClsn':('StageMeshQuery',0x380),
+        'mScaleX':('s32',0x80),'mScaleY':('s32',0x84),'mScaleZ':('s32',0x88),
+        'mTerminalVelocity':('s32',0xa0),'mPosX':('s32',0x5c),
+        'mPosY':('s32',0x60),'mPosZ':('s32',0x64),'mAngleY':('s16',0x8e),
+        'mSpawnPosX':('s32',0x53c),'mSpawnPosY':('s32',0x540),
+        'mSpawnPosZ':('s32',0x544),'mSpawnAngleY':('s16',0x698),
+        'mGroundY':('s32',0x644),'mWaterSurfaceY':('s32',0x64c),
+        'mToxicSurfaceY':('s32',0x650),'mOpacity':('u8',0x6f5),
+        'mClpsWord1Lo':('s32',0x670),'mPrevAreaId':('u16',0x6a2),
+        'mAreaId':('s8',0xcc),'mEggParams':('u8',0x704),
+        'mLoadedResourceFlags':('u8',0x718),'mUseFarCamera':('u8',0x715),
+        'mPeakY':('s32',0x684),
+        'mAngle':('Vector3_16',0x8c),'mPrevAngle':('Vector3_16',0x92),
+    }
+    for name,(typ,offset) in fields.items():
+        body=re.sub(r'\b'+name+r'\b','(*('+typ+' *)((char *)object+0x%x))'%offset,body)
+    extra='struct Vector3 { s32 x,y,z; }; struct Vector3_16 { s16 x,y,z; }; struct StageMeshQuery { u8 bytes[0x1bc]; };\n'
+    declarations='''
+void func_ov002_020beabc(void *); void func_ov002_020c7dd0(void *,int);
+void func_0205a588(void *,int,int);
+'''
+    row,bindings=projected(rel,body,declarations,['_ZN6Player13InitResourcesEv'],
+                           extra=extra,auto_globals=False)
+    for binding in bindings: binding['overlay']=2
+    return row,bindings
+
+
+def player_preload():
+    rel='src/game/player/Player.cpp'
+    body=function((ROOT/rel).read_text(),'void func_ov002_020bec2c(void)')
+    body=body.replace('dExtFrameCtrl_c::LoadFile(*data_ov002_020ff480[',
+                       '_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(data_ov002_020ff480[')
+    row,bindings=projected(rel,body,
+        'char *_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(SharedFilePtr *);',
+        ['func_ov002_020bec2c'],auto_globals=False)
+    for binding in bindings: binding['overlay']=2
+    return row,bindings
+
+
 def overlay_initializers():
     # The pinned dependency retains complete matching C bodies for initializers
     # which newer class TUs express as implicit C++ static construction. Keep
@@ -674,6 +764,7 @@ def stage():
                    'func_0202b060','func_0202b044','func_0202af80']
     table_bodies='\n'.join(function(raw,'extern "C" void '+name+'(int a, int b)')
                            for name in table_setters)
+    table_bodies+='\n'+function(raw,'extern "C" u32 DeathTable_GetBit(s32 id)')
     body = replace_once(body, 'int dScStage_c::InitResources()', 'int _ZN10dScStage_c13InitResourcesEv(u32 actor)')
     body = replace_once(body, 'dScStage_c *scene = this;', 'Stage *scene = (Stage *)actor;')
     # The complete controller reset uses its shared, pointer-free 0x18 record.
@@ -747,6 +838,7 @@ def stage():
     # Remove parameter names from the imported prototypes.
     prototypes = '''
 void Enable3dEngines(void); void ResetInput(void); int SublevelToLevel(int);
+int GetLevelPart(int);
 void UnloadArchive(int); void LoadTextNarcs(void); int LoadArchive(int);
 void Initialise3dGraphics(int); void InitialiseVramGlobals(void);
 void func_02039218(void); void ResetKuppaScript(void);
@@ -790,7 +882,7 @@ void LoadControllerModeText(int); void MultiStore16(u16,char *,int);
     return projected(rel,reset+'\n'+sound_group+'\n'+overlays+'\n'+graphics+'\n'+body+'\n'+table_bodies,prototypes,
                      ['ResetInput','_ZN10dScStage_c13InitResourcesEv',
                       *overlay_symbols.values(),'func_0202deac','GetSoundGroupID',
-                      '_ZN10dScStage_c14LoadGraphics2DEbi',*table_setters],
+                      '_ZN10dScStage_c14LoadGraphics2DEbi',*table_setters,'DeathTable_GetBit'],
                      extra=controls+'\nstruct OvTbl { u32 t[7]; };\n'+graphics_enum+'\n'+graphics_macros+'\n')
 
 
@@ -801,13 +893,26 @@ if __name__ == '__main__':
     # Distinct execution slices of the same original TU retain its source hash.
     for unit,(row,code) in [('stage_model_instances',model_instances()),
                             ('stage_level_model',stage_model()),
-                            ('stage_level_objects',level_objects())]:
+                            ('stage_level_objects',level_objects()),
+                            ('stage_player_init',player_init()),
+                            ('stage_player_preload',player_preload())]:
         row['unit']=unit
         rows.append(row)
         bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
+    for name in ['func_ov002_020e5948','func_ov002_020e63a4',
+                 'func_ov002_020e6330','func_ov002_020e6350','func_ov002_020e6780',
+                 'func_ov002_020e6bb0']:
+        row,code=free_c('external/sm64ds-pc/src/'+name+'.c')
+        for binding in code: binding['overlay']=2
+        rows.append(row); bindings.extend(code)
+    for name in ['_ZN10ModelAnim213Func_020162C4Eji5Fix12IiEt',
+                 '_ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj']:
+        row,code=free_c('external/sm64ds-pc/src/'+name+'.c')
+        rows.append(row); bindings.extend(code)
     for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',
+                'src/Vec3_RotateYAndTranslate.c',
                 'src/SetBg0Offset.c','src/SetSubBg0Offset.c','src/SetSubBg1Offset.c','src/SetSubBg2Offset.c',
                 'external/sm64ds-pc/src/func_0201eaac.c',
                 'src/unnamed/arm9/0201/func_02017e60.c',

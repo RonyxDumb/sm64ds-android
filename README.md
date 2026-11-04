@@ -2,7 +2,7 @@
 
 This repository focuses on building a native **ARM64 Android** port of *Super Mario 64 DS* using recovered game source. It is not an emulator. **The port is still in development and is not yet a complete, verified playable game.**
 
-The Android runtime currently executes recovered boot and title/menu logic, including save-file selection and the original scene-spawn dispatcher. Scene 3 now reaches its cartridge profile/factory lookup; the native `dScStage_c` factory and full stage execution remain unlinked. Actors, Player, collision, camera, HUD/minimap and final graphics fidelity still need runtime integration.
+The Android runtime executes recovered boot and title/menu logic, save-file selection and scene construction. The castle model, collision mesh, wipe faders and Player models/animations now load natively. All four save/character paths reach the Player's original entrance-state initializer; that state body, the remaining actors/camera and complete frame scheduling/rendering still need integration. **Playable castle gameplay has not yet been verified.** See the current checkpoint for the exact runtime frontier and validation.
 
 ## Build an APK
 
