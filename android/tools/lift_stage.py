@@ -22,6 +22,11 @@ for path in ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt'):
             SYMBOLS[match[1]] = int(match[2], 16)
 SYMBOLS['func_ov001_020ab2e4'] = 0x020ab2e4
 SYMBOLS['_ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc'] = 0x020fe190
+for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov002/symbols.txt').read_text().splitlines():
+    match=re.match(r'(\S+) kind:(\w+).*?addr:0x([0-9a-f]+)',line)
+    if match:
+        if match[2]=='function': SYMBOLS[match[1]]=int(match[3],16)
+        else: DATA_SYMBOLS[match[1]]=int(match[3],16)
 # EU ov001: literal pool 0x020ab35c..0x020ab370 in the original reset.
 STAGE_DATA = {'gCapIconFlashTimer':0x020ad620, 'gCapIconDispatchLocked':0x020ad624,
               'gCapIconRequestFlags':0x020ad628, 'gCapIconDispatchFlags':0x020ad62c,
@@ -47,7 +52,18 @@ struct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; void *filePtr; };
 struct LVL_Overlay { u8 bytes[0x1c]; };
 struct MeshCollider { u8 bytes[0x50]; };
 struct SysTracker { u8 bytes[0x81c]; };
-struct Model { u8 bytes[0x50]; };
+struct BMD_Bone;
+struct BMD_File;
+struct BMD_Material;
+struct Matrix4x3 { s32 m[12]; };
+struct ModelComponents {
+    BMD_File *modelFile; BMD_Material *materials; BMD_Bone *bones;
+    Matrix4x3 *transforms; void *unk_10;
+};
+struct Model {
+    void *vtable; BMD_File *modelFile; ModelComponents data;
+    Matrix4x3 mat4x3; void *transformsBuf;
+};
 struct StageTexAnimSlot { void *mTransformer; u8 mActive; u8 pad[3]; void *mBlockList; };
 struct Stage {
     u8 base[0x50]; SysTracker mSysTracker; Model mModel;
@@ -65,6 +81,11 @@ static_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);
 static_assert(offsetof(Stage,mMeshCollider)==0x91c);
 static_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);
 static_assert(sizeof(SharedFilePtr)==8);
+static_assert(sizeof(Model)==0x50);
+static_assert(sizeof(ModelComponents)==0x14);
+static_assert(offsetof(Model,data)==8);
+static_assert(offsetof(Model,mat4x3)==0x1c);
+static_assert(offsetof(Model,transformsBuf)==0x4c);
 '''
 
 
@@ -450,6 +471,142 @@ u32 _ZN5mHeap6Heap_t10ReallocateEPvj(Heap *,void *,u32);
                      extra='struct CommonModelData { void *file; void *components; void *buffer; };\n')
 
 
+def model_instances():
+    rel='src/engine/model/d_ext_simple_model.cpp'
+    raw=(ROOT/rel).read_text()
+    specs=[('void dExtSimpleModel_c::LoadAndSetFile(u16 ov0ID, int a, int b)',
+            'void _ZN17dExtSimpleModel_c14LoadAndSetFileEtii(Model *self,u16 ov0ID,int a,int b)'),
+           ('int dExtSimpleModel_c::DoSetFile(char *file_, int a, int b)',
+            'int _ZN17dExtSimpleModel_c9DoSetFileEPcii(Model *self,char *file_,int a,int b)'),
+           ('extern "C" void func_02016b24(dExtSimpleModel_c *model, u32 mask)',
+            'void func_02016b24(Model *model,u32 mask)')]
+    bodies=[]
+    for signature,replacement in specs:
+        body=replace_once(function(raw,signature),signature,replacement)
+        body=body.replace('::LoadFile','LoadFile').replace('this','self')
+        body=body.replace('modelFile = file','self->modelFile = file')
+        body=body.replace('AddToCommonModelDataArr(*file)',
+            '_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(file)')
+        body=body.replace('Memory::operator_new2','_ZN6Memory13operator_new2Ej')
+        body=re.sub(r'(?<!->)\btransformsBuf\b','self->transformsBuf',body)
+        body=body.replace('&data,','&self->data,')
+        body=body.replace('data.UpdateVertsUsingBones()',
+            '_ZN15ModelComponents21UpdateVertsUsingBonesEv(&self->data)')
+        body=body.replace('SetPolygonID(b & 0xff)','_ZN17dExtSimpleModel_c12SetPolygonIDEi(self,b & 0xff)')
+        bodies.append(body)
+    setfile=function(raw,'extern "C" int func_02016ff4(dExtModel_c *self, BMD_File *file, int c, int d)')
+    setfile=setfile.replace('dExtModel_c *self','Model *self')
+    setfile=setfile.replace('dExtSimpleModel_c::UpdateFileOffsets(*file)',
+        '_ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(file)')
+    setfile=setfile.replace('self->DoSetFile((char *)file, c, d)',
+        '((int (*)(Model *,char *,int,int))((u32 *)self->vtable)[2])(self,(char *)file,c,d)')
+    bodies.append(setfile)
+    # Use the full original pointer-bearing file records, projected by Lift.
+    header=(ROOT/'include/BMD_File.h').read_text()
+    records=header[header.index('struct BMD_Bone {'):header.index('#ifndef SM64DS_PLATFORM_PC')]
+    declarations='''
+void *LoadFile(u16); int func_02016ff4(Model *,BMD_File *,int,int);
+void _ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(BMD_File *);
+void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(BMD_File *);
+void *_ZN6Memory13operator_new2Ej(u32); u32 func_02017060(void *);
+int func_02046564(BMD_File *); void func_020462d0(ModelComponents *,BMD_File *,void *);
+void _ZN15ModelComponents21UpdateVertsUsingBonesEv(ModelComponents *);
+void func_02016b24(Model *,u32);
+void _ZN17dExtSimpleModel_c12SetPolygonIDEi(Model *,int);
+'''
+    return projected(rel,'\n'.join(bodies),declarations,
+        ['_ZN17dExtSimpleModel_c14LoadAndSetFileEtii','_ZN17dExtSimpleModel_c9DoSetFileEPcii',
+         'func_02016b24','func_02016ff4'],extra=records)
+
+
+def stage_model():
+    rel='src/game/stages/d_s_stage_methods.cpp'
+    body=function((ROOT/rel).read_text(),'void dScStage_c::LoadModel()')
+    body=body.replace('void dScStage_c::LoadModel()',
+                      'void _ZN10dScStage_c9LoadModelEv(Stage *self)')
+    body=body.replace('mModel.LoadAndSetFile(',
+        '_ZN17dExtSimpleModel_c14LoadAndSetFileEtii(&self->mModel,')
+    body=body.replace('&mModel.data','&self->mModel.data')
+    header=(ROOT/'include/BMD_File.h').read_text()
+    records=header[header.index('struct BMD_Bone {'):header.index('#ifndef SM64DS_PLATFORM_PC')]
+    return projected(rel,body,
+        'void _ZN17dExtSimpleModel_c14LoadAndSetFileEtii(Model *,u16,int,int);',
+        ['_ZN10dScStage_c9LoadModelEv'],extra=records)
+
+
+def level_objects():
+    rel='src/game/stages/LevelObjects.cpp'
+    raw=(ROOT/rel).read_text()
+    raw=re.sub(r'^#include[^\n]*','',raw,flags=re.M)
+    # Keep every category loader and its full dispatch/selection body.
+    names=re.findall(r'// @symbol (\S+)',raw)
+    method='_ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc'
+    for name in names:
+        if name==method: continue
+        # The @symbol immediately preceding each definition owns its name.
+        pattern=r'(// @symbol '+re.escape(name)+r'\s*\n)void (\w+)\('
+        found=re.search(pattern,raw)
+        if not found: raise ValueError('level category definition changed: '+name)
+        short=found[2]
+        raw=re.sub(r'\b'+short+r'\b',name,raw)
+    raw=raw.replace('void dScStage_c::LoadClsnAndObjects(LVL_Overlay &overlayRef, u32 entranceIndex,\n                                    dBgW_Kc &meshColliderRef)',
+        'void '+method+'(LVL_Overlay *overlayRef,u32 entranceIndex,MeshCollider *meshColliderRef)')
+    raw=raw.replace('&overlayRef','overlayRef').replace('&meshColliderRef','meshColliderRef')
+    raw=raw.replace('LVL_Overlay::','')
+    raw=raw.replace('&table','*table').replace('table.','table->')
+    raw=re.sub(r'\bdBgW_Kc\b','MeshCollider',raw).replace('dBgW *','MeshCollider *')
+    raw=raw.replace('MeshCollider::UpdateFileOffsets(*collisionFile)',
+        '_ZN7dBgW_Kc17UpdateFileOffsetsER8KCL_File(collisionFile)')
+    raw=raw.replace('((MeshCollider *)meshCollider)->SetFile(collisionFile, *overlay->clps)',
+        '_ZN7dBgW_Kc7SetFileEP8KCL_FileR10CLPS_Block(meshCollider,collisionFile,overlay->clps)')
+    raw=raw.replace('((MeshCollider *)meshCollider)->GetOctreeOriginY()',
+        '_ZNK7dBgW_Kc16GetOctreeOriginYEv(meshCollider)')
+    raw=raw.replace('((MeshCollider *)meshCollider)->GetUnkOctreeY()',
+        '_ZNK7dBgW_Kc13GetUnkOctreeYEv(meshCollider)')
+    raw=raw.replace('((MeshCollider *)(meshCollider))->Enable((dActor_c *)(0))',
+        '_ZN4dBgW6EnableEP8dActor_c(meshCollider,0)')
+    raw=raw.replace('dBase_c::Spawn','_ZN7dBase_c5SpawnEjP7fBase_cii')
+    raw=raw.replace('PathPtr::SetNodeTable','_ZN7PathPtr12SetNodeTableEPv')
+    raw=raw.replace('PathPtr::SetPathTable','_ZN7PathPtr12SetPathTableEP7PathDefi')
+    # References become checked four-byte addresses. Do not form a host
+    # reference to one of these cartridge table records.
+    raw=re.sub(r'(_Z\w+Load\w*Objects\w*\()\*([^,\n]+)',r'\1\2',raw)
+    raw=raw.replace('_Z11LoadObjectsRN11LVL_Overlay8ObjTableEij(*overlay->objTable',
+        '_Z11LoadObjectsRN11LVL_Overlay8ObjTableEij(overlay->objTable')
+    raw=raw.replace('_Z11LoadObjectsRN11LVL_Overlay8ObjTableEij(*subTable->table',
+        '_Z11LoadObjectsRN11LVL_Overlay8ObjTableEij(subTable->table')
+    header=(ROOT/'include/LVL_Overlay.h').read_text()
+    records='\n'.join(re.search(r'    struct '+name+r' \{.*?\n    \};',header,re.S)[0]
+        for name in ('ObjTable','ObjSubTable','ExitEntry','TeleportSourceEntry','StandardEntry','SimpleEntry'))
+    extra='''
+typedef int Fix12i;
+struct Vector3 { s32 x,y,z; }; struct Vector3s { s16 x,y,z; };
+typedef Vector3s Vector3_16;
+struct fBase_c; struct dActor_c; struct CLPS_Block; struct KCL_File;
+struct PathDef;
+'''+records+'''
+static_assert(sizeof(ObjTable)==8 && sizeof(ObjSubTable)==8);
+static_assert(sizeof(StandardEntry)==16 && sizeof(SimpleEntry)==8);
+struct LevelSubTable { ObjTable *table; char pad_004[8]; };
+'''
+    raw=raw.replace('struct SubTbl {\n        ObjTable *table;\n        char pad_004[8];\n    } *subTables;', 'LevelSubTable *subTables;')
+    raw=raw.replace('LVL_Overlay_Layout::SubTbl','LevelSubTable')
+    declarations='''
+void _ZN7PathPtr12SetNodeTableEPv(void *); void _ZN7PathPtr12SetPathTableEP7PathDefi(PathDef *,int);
+void *_ZN7dBase_c5SpawnEjP7fBase_cii(u32,fBase_c *,int,int);
+void _ZN7dBgW_Kc17UpdateFileOffsetsER8KCL_File(KCL_File *);
+void _ZN7dBgW_Kc7SetFileEP8KCL_FileR10CLPS_Block(MeshCollider *,KCL_File *,CLPS_Block *);
+void _ZN4dBgW6EnableEP8dActor_c(MeshCollider *,dActor_c *);
+int _ZNK7dBgW_Kc16GetOctreeOriginYEv(MeshCollider *); int _ZNK7dBgW_Kc13GetUnkOctreeYEv(MeshCollider *);
+int ContinueKuppaScriptIfNecessary(void); void StartIntroCutscene(void);
+void func_0202a850(int,int);
+extern short data_ov002_0211118c;
+'''
+    row,bindings=projected(rel,raw,declarations,names,extra=extra,auto_globals=False)
+    for binding in bindings: binding['overlay']=2
+    return row,bindings
+
+
 def overlay_initializers():
     # The pinned dependency retains complete matching C bodies for initializers
     # which newer class TUs express as implicit C++ static construction. Keep
@@ -513,6 +670,10 @@ def stage():
     rel = 'src/game/stages/d_s_stage_methods.cpp'
     raw = (ROOT/rel).read_text()
     body = function(raw, 'int dScStage_c::InitResources() {')
+    table_setters=['func_0202b0e0','func_0202b0c4','func_0202b090',
+                   'func_0202b060','func_0202b044','func_0202af80']
+    table_bodies='\n'.join(function(raw,'extern "C" void '+name+'(int a, int b)')
+                           for name in table_setters)
     body = replace_once(body, 'int dScStage_c::InitResources()', 'int _ZN10dScStage_c13InitResourcesEv(u32 actor)')
     body = replace_once(body, 'dScStage_c *scene = this;', 'Stage *scene = (Stage *)actor;')
     # The complete controller reset uses its shared, pointer-free 0x18 record.
@@ -626,10 +787,10 @@ char *_ZN3G2S13GetBG0CharPtrEv(void); char *_ZN3G2S12GetBG0ScrPtrEv(void);
 char *_ZN3G2S12GetBG1ScrPtrEv(void); char *_ZN3G2S12GetBG2ScrPtrEv(void);
 void LoadControllerModeText(int); void MultiStore16(u16,char *,int);
 '''
-    return projected(rel,reset+'\n'+sound_group+'\n'+overlays+'\n'+graphics+'\n'+body,prototypes,
+    return projected(rel,reset+'\n'+sound_group+'\n'+overlays+'\n'+graphics+'\n'+body+'\n'+table_bodies,prototypes,
                      ['ResetInput','_ZN10dScStage_c13InitResourcesEv',
                       *overlay_symbols.values(),'func_0202deac','GetSoundGroupID',
-                      '_ZN10dScStage_c14LoadGraphics2DEbi'],
+                      '_ZN10dScStage_c14LoadGraphics2DEbi',*table_setters],
                      extra=controls+'\nstruct OvTbl { u32 t[7]; };\n'+graphics_enum+'\n'+graphics_macros+'\n')
 
 
@@ -637,6 +798,13 @@ if __name__ == '__main__':
     rows,bindings = [],[]
     for row,code in [stage(),sound(),narc(),scene_graphics(),graphics_3d(),controller_text(),controller_glyphs(),collision_reset(),cap_reset(),save_predicate(),shared_file_handles(),common_models()]:
         rows.append(row); bindings.extend(code)
+    # Distinct execution slices of the same original TU retain its source hash.
+    for unit,(row,code) in [('stage_model_instances',model_instances()),
+                            ('stage_level_model',stage_model()),
+                            ('stage_level_objects',level_objects())]:
+        row['unit']=unit
+        rows.append(row)
+        bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
     for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',

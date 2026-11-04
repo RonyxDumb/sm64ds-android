@@ -54,6 +54,17 @@
     "external/sm64ds-pc/config/arm9/overlays/ov094/symbols.txt": "6511b01c4f458a49c66c56dc7a6e542ff13ad04c5f08694dcfbde0f786dcbbc0",
     "external/sm64ds-pc/config/arm9/overlays/ov098/symbols.txt": "a3840b9571a34725a68bab62b15673f0843f6e8fe86241fab4120af73e998f51",
     "external/sm64ds-pc/config/arm9/overlays/ov100/symbols.txt": "73de1cc6f757a75d22b46c675b641f234e944c22089586478e42bd937abb94ba",
-    "external/sm64ds-pc/config/arm9/overlays/ov102/symbols.txt": "b1228bfbf9c0e75e79ed3f8cb77e8bd4e93fe96d639941467cd43f24d3fdbadb"
+    "external/sm64ds-pc/config/arm9/overlays/ov102/symbols.txt": "b1228bfbf9c0e75e79ed3f8cb77e8bd4e93fe96d639941467cd43f24d3fdbadb",
+    "src/unnamed/arm9/0207/func_02073470.cpp": "9ec49e7bd2735dea3ea6626fb2a146e967acabbfe52062d524d423d9e0d2acf1",
+    "src/unnamed/arm9/0207/func_02073534.cpp": "1b4431ad95cf99a003d17765121d828f2942199b5090c6634656ce7a4149799d",
+    "src/runtime/graphics/fader/d_fader.cpp": "d6dd07ac255f907f220557247543608321190707ba5c7e623337bd1c4277d356",
+    "include/dFdWipe_c.h": "4b34a89b651bee27b3e5eff59cc250c136f9cbc5b6b19d6773f389a1b517cc8e",
+    "include/dFdColor_c.h": "52de31ac611d97fb0234c6b16845c5348574cc5aed3e1153e0ffa8a3084a2093",
+    "include/dFdBrightness_c.h": "7ccf5904736046a4d5679153d42906e5d26e76ae14392a5dadadf18664070dbd",
+    "include/BMD_File.h": "93cf2b742cefaa1eee54a3569029a7c91f7dd6bea9ae3993e4d7760b4af12860",
+    "include/LVL_Overlay.h": "14948cbbbe64f2f38825d045f9f8486275b4e3e07242138fdc84567600d706d2",
+    "src/game/stages/LevelObjects.cpp": "a878678c07b10a1fe28e531521155ce7f72450669f70f9208ac4660bb754b80b",
+    "src/engine/path/PathPtr.cpp": "e83e939346db6be6acb2f048ded5cc20f6db19a0c9258fe96242fb55f81ee9df",
+    "src/engine/collision/d_bg_w_kc_itcm.cpp": "dfb4a6a9b0689cfd8f11aef5a5c161f85c0876467b8fc4d8e51affe540d89e7c"
   }
 }

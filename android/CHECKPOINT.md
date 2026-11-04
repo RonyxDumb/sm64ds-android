@@ -1,3 +1,38 @@
+# Current checkpoint — 2026-11-04, castle model and collision mesh
+
+Continues main dc15df22496e65c278157be0b10f8a2eb3cc1bb1. The acceptance
+condition remains playable castle grounds. This checkpoint does not meet it.
+
+The original array-new dependency at 0x02073470 is connected with genuine
+cookies, forward constructors and reverse partial cleanup. All seven wipe
+faders construct their original 0x60-byte records and load actual BMD models.
+Complete original simple-model LoadAndSetFile/DoSetFile/func_02016ff4 and
+stage LoadModel bodies execute through the existing native model primitives.
+The common-model pool now contains 20 real files (12 shared, 7 wipes, castle).
+
+All seventeen original ov002 object/category dispatch bodies are projected,
+including LoadClsnAndObjects. They bind only after overlay 2 loads. The KCL
+file is read, its four pointer lanes rebased, and the real collider initialized
+and registered in the 24-slot mesh table. Path and camera/minimap table setup
+use their original storage. Multiple projections of one source TU have explicit
+unique unit names; duplicate or malformed generated names fail closed.
+
+ASan/UBSan private-ROM checks pass for Mario, Luigi, Wario and blank-file Yoshi
+through this frontier. Checks validate all 7 fader cookies/embedded models,
+the castle model, and the entire collision payload against the independently
+loaded StageAssets data. No-ROM checks cover real constructor dispatch and
+partial-array rollback in reverse order, with no leaked owned allocation.
+Local LeakSanitizer is disabled because process inspection is unavailable.
+
+Next actual missing dependency: dActor_c::Spawn at 0x02010e2c, reached from
+LoadEntranceObjects. Player/actor factories, initialization, frame scheduling,
+camera, input and stage rendering must still execute before claiming gameplay.
+Android CI and phone verification are pending for this checkpoint. Version
+0.4.12-stage-assets, versionCode 16. Matching src/include and the pinned PC
+dependency are unchanged. No ROM, extracted data or private captures are tracked.
+
+---
+
 # Current checkpoint — 2026-10-30, shared arithmetic-unit state
 
 The phone report sm64ds-crash-report(2).txt ends in a native fixed-point

@@ -16,6 +16,7 @@ def generate(out, manifest=None):
     if not re.fullmatch(r'[a-zA-Z_][a-zA-Z_0-9]*', namespace):
         raise ValueError('invalid source binding namespace')
     sources = []
+    outputs = set()
     inputs = set()
     for path,digest in data.get('dependencies',{}).items():
         inputs.add(ROOT/path)
@@ -34,9 +35,13 @@ def generate(out, manifest=None):
             dest = out/'include'/source.relative_to(ROOT/'include')
             text = '#pragma once\n' + row['source']
         else:
-            dest = out/(source.stem + '.cpp')
+            unit = row.get('unit', source.stem)
+            if not re.fullmatch(r'[a-zA-Z_][a-zA-Z_0-9]*', unit) or unit in outputs:
+                raise ValueError('invalid or duplicate projected source unit: '+unit)
+            outputs.add(unit)
+            dest = out/(unit + '.cpp')
             text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n'
-                    'namespace sm64ds::' + namespace + '::unit_' + source.stem + ' {\n'
+                    'namespace sm64ds::' + namespace + '::unit_' + unit + ' {\n'
                     'using namespace sm64ds::packed;\n#pragma pack(push, 4)\n' +
                     ('#define bool int\n' if source.suffix == '.c' else '') + row['source'] +
                     '\n#undef bool\n#pragma pack(pop)\n}\n')

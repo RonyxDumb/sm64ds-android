@@ -84,6 +84,16 @@ void narc_bounds() {
 }
 
 unsigned overlayInitializers=0;
+unsigned arrayConstructed=0;
+unsigned arrayThrowAt=0;
+std::vector<unsigned> arrayDestroyed;
+void construct_array_element(uint32_t element) {
+    if (++arrayConstructed==arrayThrowAt) throw std::runtime_error("array construction test");
+    *sm64ds::packed::Ptr<uint32_t>(element)=arrayConstructed;
+}
+void destroy_array_element(uint32_t element) {
+    arrayDestroyed.push_back(*sm64ds::packed::Ptr<uint32_t>(element));
+}
 void synthetic_initializer() {
     ++overlayInitializers;
     *sm64ds::packed::Ptr<uint32_t>(0x020b0004u)=0x55667788u;
@@ -107,6 +117,33 @@ void overlay_sdk() {
     space.bind(0x020b0020u,&synthetic_initializer);
     space.bind(0x60001000u,&collect_overlay);
     sm64ds::packed::Space::Scope scope(space);
+    space.bind(0x60002000u,&construct_array_element);
+    space.bind(0x60002001u,&destroy_array_element);
+    const auto allocationCount=space.allocations();
+    arrayConstructed=0; arrayThrowAt=0; arrayDestroyed.clear();
+    auto allocateArray=Ptr<uint32_t(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t)>(0x02073470u);
+    const uint32_t elements=allocateArray(7,0x60,8,0x60002000u,0x60002001u);
+    assert(*Ptr<uint32_t>(elements-8)==0x60 && *Ptr<uint32_t>(elements-4)==7);
+    assert(arrayConstructed==7 && arrayDestroyed.empty());
+    for (unsigned i=0;i<7;++i) assert(*Ptr<uint32_t>(elements+i*0x60)==i+1);
+    space.release(elements-8);
+    arrayConstructed=0; arrayThrowAt=3;
+    bool constructorThrew=false;
+    try { (void)allocateArray(7,0x60,8,0x60002000u,0x60002001u); }
+    catch (const std::runtime_error &e) { constructorThrew=std::string(e.what())=="array construction test"; }
+    assert(constructorThrew && arrayDestroyed==std::vector<unsigned>({2,1}));
+    assert(space.allocations()==allocationCount);
+    const uint32_t wipes=allocateArray(7,0x60,8,0x02017480u,0x02017450u);
+    for (unsigned i=0;i<7;++i) {
+        const uint32_t wipe=wipes+i*0x60;
+        assert(*Ptr<uint32_t>(wipe)==0x0208ea9cu);
+        assert(*Ptr<uint32_t>(wipe+4)==0x1000 && *Ptr<uint32_t>(wipe+8)==0);
+        assert(*Ptr<uint32_t>(wipe+0x10)==0x0208e90cu);
+        assert(*Ptr<uint32_t>(wipe+0x14)==0 && *Ptr<uint32_t>(wipe+0x5c)==0);
+        Ptr<void(uint32_t)>(0x02017450u)(wipe);
+    }
+    space.release(wipes-8);
+    assert(space.allocations()==allocationCount);
     // Synthetic card: one uncompressed overlay, one initializer word and a
     // nonempty BSS. Every SDK table/file operation below is original code.
     put32(card,0x50,0x100); put32(card,0x54,32);
@@ -649,7 +686,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02073470u);
+                    "Unlinked native code handle: " + std::to_string(0x02010e2cu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                     reachedStage=std::string(e.what()).find("Unlinked native code handle: ")==0;
@@ -718,13 +755,22 @@ int main(int argc, char **argv) {
             assert(destructors.size()>100);
             assert(stageWord(0x0210da94u)==0x02017ab4u && stageWord(0x0210da98u)==0x0210da18u);
             assert(stageSpace->code(0x02100560u) && stageSpace->code(0x02112458u));
-            assert(stageWord(0x0209cef8u)==12);
+            assert(stageWord(0x0209cef8u)==20);
             for(unsigned i=0;i<12;++i) {
                 const uint32_t holder=stageWord(0x020756f0u+i*4),file=stageWord(holder+4);
                 assert(*static_cast<uint8_t *>(stageSpace->data(holder+2,1))==1);
                 assert(file && stageSpace->allocation_size(file)>=0x40);
                 assert(stageWord(file+8)>=file); // original BMD offsets became checked pointers
                 assert(stageWord(0x0209cefc+i*12)==file);
+            }
+            const uint32_t wipes=stageWord(0x0209f324u);
+            assert(wipes && stageWord(wipes-8)==0x60 && stageWord(wipes-4)==7);
+            for (unsigned i=0;i<7;++i) {
+                const uint32_t wipe=wipes+i*0x60,model=wipe+0x10;
+                assert(stageWord(wipe)==0x0208ea9cu && stageWord(wipe+4)==0x1000);
+                assert(stageWord(model)==0x0208e90cu && stageWord(model+4));
+                assert(stageWord(model+8)==stageWord(model+4));
+                assert(stageWord(model+0x4c) && stageWord(model+0x14));
             }
             {
                 sm64ds::packed::Space::Scope scope(*stageSpace);
@@ -751,7 +797,17 @@ int main(int argc, char **argv) {
             assert(stageWord(actor+0x91c)==0x020993dcu);
             assert(stageWord(actor+0x91c+8)==UINT32_MAX);
             assert(stageWord(actor+0x91c+12)==uint32_t(-0x1000));
-            assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x91c+20,1))==0x18);
+            assert(*static_cast<uint8_t *>(stageSpace->data(actor+0x91c+20,1))==0);
+            assert(stageWord(0x020a0c80u)==actor+0x91c);
+            const uint32_t kcl=stageWord(actor+0x91c+0x20);
+            assert(kcl && stageSpace->allocation_size(kcl)>=assets->collision().size());
+            for (unsigned offset : {0u,4u,8u,12u}) {
+                uint32_t original=0;
+                std::memcpy(&original,assets->collision().data()+offset,4);
+                assert(stageWord(kcl+offset)==kcl+original);
+            }
+            assert(std::memcmp(stageSpace->data(kcl+16,assets->collision().size()-16),
+                               assets->collision().data()+16,assets->collision().size()-16)==0);
             assert(stageWord(actor+0x9c4)==0);
             assert(stageWord(0x0209f5c0u)==actor);
             assert(stageWord(0x0209f314u)==actor+0x8bc);

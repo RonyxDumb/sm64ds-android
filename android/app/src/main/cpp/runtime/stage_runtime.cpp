@@ -4,6 +4,7 @@
 #include "packed_ptr.h"
 #include "platform/arm9_services.h"
 #include <cstring>
+#include <exception>
 #include <unordered_set>
 #include <stdexcept>
 
@@ -200,6 +201,131 @@ uint32_t native_simple_model_construct(uint32_t model) {
     return model;
 }
 
+namespace {
+uint32_t stage_allocate(uint32_t bytes) { return packed::Space::current().allocate(bytes); }
+void stage_deallocate(uint32_t address) { if (address) packed::Space::current().release(address); }
+// MSL func_02073470: preserve the cartridge's eight-byte cookie and use
+// registered native callbacks for element construction and exception cleanup.
+uint32_t stage_array_new(uint32_t count,uint32_t stride,uint32_t cookie,
+                         uint32_t constructor,uint32_t destructor) {
+    auto &space=packed::Space::current();
+    const uint64_t bytes=uint64_t(count)*stride+cookie;
+    if (!stride || bytes>UINT32_MAX || (cookie && cookie<4))
+        throw std::runtime_error("Invalid cartridge array allocation extent.");
+    const uint32_t block=space.allocate(static_cast<uint32_t>(bytes));
+    const uint32_t base=block+cookie;
+    if (cookie) {
+        at<uint32_t>(base-4)=count;
+        if (cookie>=8) at<uint32_t>(base-8)=stride;
+    }
+    uint32_t built=0;
+    try {
+        if (constructor)
+            for (;built<count;++built) Ptr<void(uint32_t)>{constructor}(base+built*stride);
+    } catch (...) {
+        try {
+            if (destructor)
+                while (built) Ptr<void(uint32_t)>{destructor}(base+(--built)*stride);
+        } catch (...) { std::terminate(); } // original func_02073534 termination path
+        space.release(block);
+        throw;
+    }
+    return base;
+}
+uint32_t stage_wipe_construct(uint32_t wipe) {
+    (void)packed::Space::current().data(wipe,0x60);
+    // dFdWipe_c's implicit inline base constructors, then its model member.
+    at<uint32_t>(wipe)=0x0208ea9cu;
+    at<int32_t>(wipe+4)=0x1000;
+    at<int32_t>(wipe+8)=0;
+    at<uint16_t>(wipe+12)=0;
+    native_simple_model_construct(wipe+0x10);
+    return wipe;
+}
+void stage_wipe_destroy(uint32_t wipe) {
+    auto &space=packed::Space::current();
+    (void)space.data(wipe,0x60);
+    at<uint32_t>(wipe)=0x0208ea9cu;
+    const uint32_t model=wipe+0x10;
+    at<uint32_t>(model)=0x0208e90cu;
+    if (const uint32_t buffer=at<uint32_t>(model+0x4c)) space.release(buffer);
+    at<uint32_t>(model)=0x0208e87cu;
+    if (const uint32_t file=at<uint32_t>(model+4)) space.release(file);
+    at<uint32_t>(wipe)=0x0208eb2cu;
+    at<uint32_t>(wipe)=0x0208eaccu;
+    at<uint32_t>(wipe)=0x0208eafcu;
+}
+void stage_wipe_load(uint32_t wipe,uint16_t file) {
+    // Complete dFdWipe_c::LoadAndSetFile body, including original model load.
+    Ptr<void(uint32_t,uint16_t,int,int)>(0x02016f9cu)(wipe+0x10,file,0,-1);
+}
+void stage_path_nodes(uint32_t nodes) { at<uint32_t>(0x020a0d88u)=nodes; }
+void stage_path_defs(uint32_t definitions,int count) {
+    at<uint32_t>(0x020a0d84u)=definitions;
+    at<int32_t>(0x020a0d8cu)=count;
+}
+void stage_kcl_rebase(uint32_t file) {
+    auto &space=packed::Space::current();
+    (void)space.data(file,0x38);
+    for (unsigned offset : {0u,4u,8u,12u}) {
+        const uint64_t target=uint64_t(file)+at<uint32_t>(file+offset);
+        if (target>UINT32_MAX) throw std::runtime_error("KCL pointer relocation overflow.");
+        (void)space.data(static_cast<uint32_t>(target),1);
+        at<uint32_t>(file+offset)=static_cast<uint32_t>(target);
+    }
+}
+void stage_kcl_set_file(uint32_t collider,uint32_t file,uint32_t clps) {
+    auto &space=packed::Space::current();
+    (void)space.data(collider,0x50);
+    (void)space.data(file,0x38);
+    (void)space.data(clps,8);
+    // func_02039624 and dBgW_Kc::SetFile. Preserve the derived vtable.
+    at<uint32_t>(collider+4)=0;
+    at<int32_t>(collider+8)=-1;
+    at<int32_t>(collider+12)=-0x1000;
+    at<int32_t>(collider+16)=0;
+    at<uint8_t>(collider+20)=0x18;
+    at<uint32_t>(collider+24)=at<uint32_t>(collider+28)=0;
+    at<uint32_t>(collider+0x20)=file;
+    at<uint32_t>(collider+0x24)=clps;
+    at<int32_t>(collider+0x28)=at<int32_t>(collider+0x30)=0;
+    at<int32_t>(collider+0x2c)=0x1000;
+    at<uint8_t>(collider+0x34)=at<uint8_t>(collider+0x35)=0;
+    at<int32_t>(collider+0x38)=0x1000;
+    at<int32_t>(collider+0x3c)=at<int32_t>(collider+0x40)=0;
+    at<int32_t>(collider+0x44)=-0x1000;
+    at<int32_t>(collider+0x48)=2;
+    at<uint8_t>(collider+0x4c)=1;
+    at<uint8_t>(collider+0x4d)=0;
+}
+int stage_collider_enable(uint32_t collider,uint32_t actor) {
+    (void)packed::Space::current().data(collider,0x20);
+    for (unsigned slot=0;slot<24;++slot) {
+        const uint32_t cell=0x020a0c80u+slot*4;
+        if (!at<uint32_t>(cell)) {
+            at<uint32_t>(collider+4)=actor;
+            at<uint32_t>(collider+8)=actor ? at<uint32_t>(actor+4) : UINT32_MAX;
+            at<uint8_t>(collider+20)=static_cast<uint8_t>(slot);
+            at<uint32_t>(cell)=collider;
+            return 1;
+        }
+    }
+    return 0;
+}
+int32_t stage_kcl_origin_y(uint32_t collider) {
+    return static_cast<int32_t>(at<uint32_t>(at<uint32_t>(collider+0x20)+0x18)<<6);
+}
+int32_t stage_kcl_far_y(uint32_t collider) {
+    const uint32_t file=at<uint32_t>(collider+0x20);
+    return static_cast<int32_t>(static_cast<uint32_t>(stage_kcl_origin_y(collider))+
+                                (~at<uint32_t>(file+0x24)<<12));
+}
+void stage_vertical_bounds(int32_t near,int32_t far) {
+    at<int32_t>(0x02092138u)=static_cast<int32_t>(static_cast<uint32_t>(near)-0x64000u);
+    at<int32_t>(0x0209212cu)=static_cast<int32_t>(static_cast<uint32_t>(far)+0x64000u);
+}
+}
+
 uint32_t native_mesh_collider_construct(uint32_t collider) {
     (void)packed::Space::current().data(collider,0x50);
     // dBgW::dBgW()/func_02039624, CLPS_BlockRef(), dBgW_Kc().
@@ -250,6 +376,20 @@ void native_actor_post_construct(uint32_t actor) {
 }
 
 void bind_stage_runtime(packed::Space &space) {
+    space.bind(0x0203cbd8u,&stage_allocate);
+    space.bind(0x0203cbc0u,&stage_deallocate);
+    space.bind(0x02073470u,&stage_array_new);
+    space.bind(0x02017480u,&stage_wipe_construct);
+    space.bind(0x02017450u,&stage_wipe_destroy);
+    space.bind(0x020172c0u,&stage_wipe_load);
+    space.bind(0x0203acccu,&stage_path_nodes);
+    space.bind(0x0203aca0u,&stage_path_defs);
+    space.bind(0x02039760u,&stage_kcl_rebase);
+    space.bind(0x020396f0u,&stage_kcl_set_file);
+    space.bind(0x02039184u,&stage_collider_enable);
+    space.bind(0x01ffb0ecu,&stage_kcl_origin_y);
+    space.bind(0x01ffb0d0u,&stage_kcl_far_y);
+    space.bind(0x0202a850u,&stage_vertical_bounds);
     space.bind(0x0202e088u,&native_stage_factory);
     space.bind(0x02043decu,&native_fbase_construct);
     space.bind(0x02023204u,&native_particle_tracker_construct);
