@@ -1,7 +1,62 @@
-# Current checkpoint — 2026-11-04, Player resources and entrance-state handoff
+# Current checkpoint — 2026-11-04, entrance, KCL queries and camera initialization
 
-Local castle-assets checkpoint: 023c57a. The remote base remains
-dc15df22496e65c278157be0b10f8a2eb3cc1bb1 until publication is approved.
+Continues published main ea15b84250029d047f951c61693e20d56b3306a5.
+Version 0.4.14-castle-entrance, versionCode 18. This checkpoint is not playable.
+
+The full original Player::St_LevelEnter_Init and SetAnim bodies now execute,
+including animation selection, shared-file ownership and the entrance ground
+probe. The Player finishes InitResources and the dActor/dBase/fBase post-init
+chain, joining the real ordered behavior/render lists. Native dCamera_c factory,
+InitResources, state installation, frustum rebuilding, initial positioning and
+Render finish; the live view and inverse matrices are updated through the
+original CopyToViewMat body. Queries use the original KCL octree traversal,
+prism/plane tests and surface filters for both ground rays and line segments.
+
+StageFlow now calls the complete original scheduler order: cleanup, pending
+initialization, behavior, rendering and scene-tree reconciliation. Native
+adapters preserve priorities, deferred insertion, inherited pause flags and
+destruction routing. GameProgram keeps gameplay input active after scene 3
+becomes current, retains analog input instead of menu key emulation, and feeds
+stage GX/OBJ/capture output to scanout. The complete frame cannot yet execute:
+remaining class methods still fail at their actual unresolved calls.
+
+All four private-ROM save/character paths reach daDoor_c_classInit at
+0x0214589c (overlay 100), after Player and camera initialization. Assertions
+inspect alive states, entrance lock/state, original models, colliders, camera
+projection and live view matrix. No-ROM ASan/UBSan checks exercise real ground
+and segment traversal against a synthetic KCL prism, surface/owner filtering,
+one-sided surfaces and five-phase scheduler order/tree traversal. The segment
+distance convention was cross-checked against the private cartridge's ITCM
+instruction at 0x01ffb6a4; guest instructions are never executed.
+
+A clean host rebuild of all 618 frontend and 162 stage translation units plus
+the native runtime passes these private-ROM checks under ASan/UBSan. Relocated
+video/math regressions and source/host-generation audits pass. Regeneration is
+identical with PYTHONHASHSEED 9 and 900. LeakSanitizer is disabled because this
+environment cannot inspect processes. The preceding ea15b84 Android build/lint
+workflow passed; this checkpoint still needs its own ARM64 CI/device run.
+
+Next: connect the complete overlay-100 Door actor, then continue actual object,
+HUD, stage fog/skybox/particles and per-frame Player/camera dependencies. No
+dummy factory, skipped object category or successful unknown callback is used.
+Playable acceptance still requires visible castle geometry and Player movement,
+jumping/collision and multiple complete frames, followed by Android/device
+verification. ROM, decoded assets and private captures remain untracked.
+
+The N64 reference was inspected for architecture:
+[sm64-port pc_main.c](https://github.com/sm64-port/sm64-port/blob/master/src/pc/pc_main.c)
+runs original game logic once per frame between graphics backend calls, with
+separate audio/backend ownership;
+[Android SDL/GLES base](https://github.com/VDavid003/sm64-port-android-base)
+adapts the platform layer. The DS implementation follows that frame ownership
+principle while retaining its own recovered actor scheduler, KCL format and ABI.
+
+---
+
+# Previous checkpoint — 2026-11-04, Player resources and entrance-state handoff
+
+Published castle-assets checkpoint: bedfa240db2d63d1a29c83399f400a42810cbf63.
+Published Player-resources checkpoint: ea15b84250029d047f951c61693e20d56b3306a5.
 The goal remains playable castle grounds; this checkpoint is not playable.
 
 The complete original entrance/object dispatch now reaches dActor_c::Spawn,

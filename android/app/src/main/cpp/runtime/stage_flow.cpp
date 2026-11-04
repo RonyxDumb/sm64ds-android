@@ -266,8 +266,9 @@ void StageFlow::update_scene() {
         if (result != 1) { sync_state(false); return; }
         sceneInitialized_ = true;
     }
-    dispatch.process(sceneActor_, {{24,1}, {28,1}, {32,1}});
-    dispatch.process(sceneActor_, {{36,1}, {40,1}, {44,1}});
+    // The scene shares the original five-phase scheduler with every actor.
+    // Calling only its own Behavior/Render leaves Player and objects frozen.
+    packed::Ptr<void()>(0x02044120u)();
     sync_state(false);
 }
 

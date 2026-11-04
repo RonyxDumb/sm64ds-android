@@ -23,6 +23,7 @@ for path in ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
             SYMBOLS.setdefault(match[1], int(match[2], 16))
 SYMBOLS['func_ov001_020ab2e4'] = 0x020ab2e4
 SYMBOLS['_ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc'] = 0x020fe190
+SYMBOLS['_ZN6Player7SetAnimEjiit'] = 0x020bef2c
 for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov002/symbols.txt').read_text().splitlines():
     match=re.match(r'(\S+) kind:(\w+).*?addr:0x([0-9a-f]+)',line)
     if match:
@@ -299,14 +300,17 @@ def graphics_3d():
     rel = 'src/engine/view/Graphics3D.cpp'
     raw = (ROOT/rel).read_text()
     body = function(raw,'void Initialise3dGraphics(int arg) {')
+    body += '\n'+function(raw,'void CopyToViewMat(const Matrix4x3 *src)')
+    body=body.replace('void CopyToViewMat(', 'void _Z13CopyToViewMatPK9Matrix4x3(')
     body = body.replace('G3X::SetClearColor','_ZN3G3X13SetClearColorEtiiib')
     macros = '\n'.join(line for line in raw.splitlines() if line.startswith('#define REG_'))
     prototypes = '''
 void func_0205583c(void); void func_020554bc(void); void func_020556d0(void);
 void _ZN3G3X13SetClearColorEtiiib(u16,int,int,int,bool);
 void _ZN3G3i13PerspectiveW_E5Fix12IiES1_S1_S1_S1_S1_bP9Matrix4x3(int,int,int,int,int,int,int,void *);
+void InvMat4x3(Matrix4x3 *,Matrix4x3 *);
 '''
-    return projected(rel,body,prototypes,['Initialise3dGraphics'],extra=macros+'\n')
+    return projected(rel,body,prototypes,['Initialise3dGraphics','_Z13CopyToViewMatPK9Matrix4x3'],extra=macros+'\n')
 
 
 def controller_text():
@@ -384,8 +388,15 @@ def save_predicate():
     body=body.replace('SaveData::IsCharacterUnlocked','_ZN8SaveData19IsCharacterUnlockedEj')
     body+='\n'+function((ROOT/rel).read_text(),'int SaveData::NumGlowingRabbitsFound()')
     body=body.replace('SaveData::NumGlowingRabbitsFound','_ZN8SaveData22NumGlowingRabbitsFoundEv')
+    for name in ('CanPlayerHaveCap','HasPlayerLostCap'):
+        body+='\n'+function((ROOT/rel).read_text(),'int SaveData::'+name+'()')
+    for name in ('CanPlayerHaveCap','HasPlayerLostCap'):
+        body=body.replace('SaveData::'+name,'_ZN8SaveData%d%sEv'%(len(name),name))
+    body=body.replace('((SaveData*)data_0209caa0)->mCharacter','(*(u8 *)((char *)data_0209caa0+0x41))')
     return projected(rel,body,'',['_ZN8SaveData19IsCharacterUnlockedEj',
-                                 '_ZN8SaveData22NumGlowingRabbitsFoundEv'])
+                                 '_ZN8SaveData22NumGlowingRabbitsFoundEv',
+                                 '_ZN8SaveData16CanPlayerHaveCapEv',
+                                 '_ZN8SaveData16HasPlayerLostCapEv'])
 
 
 def shared_file_handles():
@@ -697,6 +708,311 @@ def player_preload():
     return row,bindings
 
 
+def player_entrance():
+    rel='src/game/player/Player.cpp'
+    raw=(ROOT/rel).read_text()
+    body=function(raw,'int Player::St_LevelEnter_Init()')
+    body=body.replace('int Player::St_LevelEnter_Init()',
+                      'int _ZN6Player18St_LevelEnter_InitEv(void *object)')
+    body=body.replace('this->SetAnim(', '_ZN6Player7SetAnimEjiit(object,')
+    body=body.replace('this->GetBodyModelID(', '_ZNK6Player14GetBodyModelIDEjb(object,')
+    body=body.replace('func_ov002_020c7cbc()', 'func_ov002_020c7cbc(object)')
+    model='((void **)((char *)object+0xdc))'
+    body=body.replace('mModels.mBodyModels[',model+'[')
+    body=body.replace(model+'[_ZNK6Player14GetBodyModelIDEjb(object,(u8)param1, 0)]->SetFlags(0x40000000)',
+                      '_ZN9Animation8SetFlagsEi((char *)'+model+'[_ZNK6Player14GetBodyModelIDEjb(object,(u8)param1, 0)]+0x50,0x40000000)')
+    body=body.replace('&(dExtFrameCtrl_c &)*'+model+'[_ZNK6Player14GetBodyModelIDEjb(object,(u8)param1, 0)]',
+                      '(StageFrame *)((char *)'+model+'[_ZNK6Player14GetBodyModelIDEjb(object,(u8)param1, 0)]+0x50)')
+    body=body.replace('dExtFrameCtrl_c *p','StageFrame *p').replace('((char*)this)','object')
+    fields={
+        'mStateStep':('u8',0x6e3),'mKeyModelId':('s8',0x719),
+        'mJumpComboStage':('u8',0x6e1),'mHorzSpeed':('s32',0x98),
+        'mStateArg':('u8',0x70c),'mPrevAngleY':('s16',0x94),
+        'mAngleY':('s16',0x8e),'mStateWork':('u8',0x6e5),
+        'mPosX':('s32',0x5c),'mPosY':('s32',0x60),'mPosZ':('s32',0x64),
+        'mStateWaitTimer':('u16',0x6a6),'mStateTimer':('u16',0x6a4),
+        'mVertAccel':('s32',0x9c),'mVertSpeed':('s32',0xa8),
+        'mIsUnderwater':('u8',0x706),'mIsAirborne':('u8',0x6de),
+        'mLandSoundPlayed':('u8',0x6df),'param1':('u32',8),
+    }
+    for name,(typ,offset) in fields.items():
+        body=re.sub(r'\b'+name+r'\b','(*('+typ+' *)((char *)object+0x%x))'%offset,body)
+    extra='''
+#include "nitro/fx/fx.h"
+struct Vector3 { s32 x,y,z; };
+struct StageFrame { u32 vtable,flags; s32 currFrame,speed; };
+'''
+    declarations='''
+void _ZN6Player7SetAnimEjiit(void *,u32,int,int,u16);
+u32 _ZNK6Player14GetBodyModelIDEjb(void *,u32,int);
+void _ZN9Animation8SetFlagsEi(void *,int);
+int func_ov002_020c7cbc(void *);
+'''
+    row,bindings=projected(rel,body,declarations,['_ZN6Player18St_LevelEnter_InitEv'],extra=extra,auto_globals=False)
+    for binding in bindings: binding['overlay']=2
+    return row,bindings
+
+
+def player_set_animation():
+    rel='src/game/player/Player.cpp'
+    body=function((ROOT/rel).read_text(),'void Player::SetAnim(u32 animId, int flags, Fix12i speed, u16 startFrame)')
+    body=body.replace('void Player::SetAnim(', 'void _ZN6Player7SetAnimEjiit(void *object,')
+    body=body.replace('(char *)this','(char *)object').replace('Player *player','char *player').replace('(Player *)self','self')
+    body=body.replace('void *, u32 a, int b','void *, unsigned int a, int b')
+    body=body.replace('LAUNDER16(', '(')
+    body=body.replace('data_ov002_020ff480[player->mCharFileBase + (player->param1 & 3)]->Release()',
+                      '_ZN13SharedFilePtr7ReleaseEv(data_ov002_020ff480[player->mCharFileBase + (player->param1 & 3)])')
+    body=body.replace('data_ov002_020ff480[player->mCharFileBase + charId]->Release()',
+                      '_ZN13SharedFilePtr7ReleaseEv(data_ov002_020ff480[player->mCharFileBase + charId])')
+    body=body.replace('dExtFrameCtrl_c::LoadFile(*', '_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(')
+    model='((void **)(player+0xdc))[id]'
+    body=body.replace('player->mModels.mBodyModels[id]',model)
+    body=body.replace('((dExtAnmModel_c *)modelPtr)->file','(*(void **)((char *)modelPtr+0x60))')
+    body=body.replace(model+'->SetAnim(', '_ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit('+model+',')
+    body=body.replace('player->mModels.mTexSeqBody[field8].SetFile(*(BTP_File *)data_ov002_020ff2f0[sl]->filePtr,',
+                      '_ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj(player+0x1dc+field8*0x14,data_ov002_020ff2f0[sl]->filePtr,')
+    body=body.replace('(BCA_File *)','')
+    for name,(typ,offset) in {
+        'mStateFlags':('u16',0x6ce),'mCharFileBase':('u32',0x63c),
+        'param1':('u32',8),'mCapFlags':('u16',0x73c),'mCapTimer':('u16',0x73e),
+        'mHatCharacter':('u8',0x6dd),'mPrevCharacter':('u8',0x6dc),
+    }.items():
+        body=body.replace('player->'+name,'(*('+typ+' *)(player+0x%x))'%offset)
+    declarations='''
+void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
+void *_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(SharedFilePtr *);
+void _ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit(void *,void *,int,int,u16);
+void _ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj(void *,void *,int,int,u16);
+'''
+    row,bindings=projected(rel,body,declarations,['_ZN6Player7SetAnimEjiit'],auto_globals=False)
+    for binding in bindings: binding['overlay']=2
+    return row,bindings
+
+
+def ground_scan():
+    rel='src/engine/collision/d_bg_ch_sph_crr_query.cpp'
+    body=function((ROOT/rel).read_text(),'int dBgCh_Gnd::DetectClsn()')
+    body=body.replace('int dBgCh_Gnd::DetectClsn()',
+                      'int _ZN9dBgCh_Gnd10DetectClsnEv(void *object)')
+    body=body.replace('IsOwnedBy(', '_ZNK5dBgCh9IsOwnedByEP8dActor_c(object,')
+    body=body.replace('dBgPi::SetCollider(', '_ZN5dBgPi11SetColliderEiiP8dActor_cP4dBgW((char *)object+0x10,')
+    for name in ('o','obj'):
+        body=body.replace(name+'->DetectClsn(*this)',name+'->vtable[6]('+name+',object)')
+    body=body.replace('(Vector3*)((long long)(int)&this->pos)', '(Vector3 *)((char *)object+0x38)')
+    body=re.sub(r'\bthis\b','object',body)
+    for field,typ,off in [('mFlags','u32',0xb0),('mClipRadius','s32',0xb8),('mClipOffsetY','s32',0xb4)]:
+        body=body.replace('p->'+field,'(*('+typ+' *)((char *)p+0x%x))'%off)
+    extra='''
+struct Vector3 { s32 x,y,z; }; struct Vec3 { int x,y,z; };
+struct dActor_c;
+struct dBgW { int (**vtable)(dBgW *,void *); };
+extern dBgW *data_020a0c80[24];
+'''
+    declarations='''
+void func_02037464(void *);
+void *func_020393b4(void *); int func_020393ac(void *);
+int func_0203939c(void *); int func_0203938c(void *);
+bool _ZNK5dBgCh9IsOwnedByEP8dActor_c(void *,void *);
+void _ZN5dBgPi11SetColliderEiiP8dActor_cP4dBgW(void *,int,int,void *,void *);
+int Vec3_HorzDist(void *,void *);
+'''
+    return projected(rel,body,declarations,['_ZN9dBgCh_Gnd10DetectClsnEv'],extra=extra,auto_globals=False)
+
+
+def line_scan():
+    rel='src/engine/collision/d_bg_ch_sph_crr_query.cpp'
+    body=function((ROOT/rel).read_text(),'bool dBgCh_Lin::DetectClsn()')
+    body=body.replace('bool dBgCh_Lin::DetectClsn()',
+                      'bool _ZN9dBgCh_Lin10DetectClsnEv(void *object)')
+    body=body.replace('IsOwnedBy(', '_ZNK5dBgCh9IsOwnedByEP8dActor_c(object,')
+    body=body.replace('dBgPi::SetCollider(', '_ZN5dBgPi11SetColliderEiiP8dActor_cP4dBgW((char *)object+0x10,')
+    body=body.replace('((dBgW *)e)->DetectClsn(*this)', '((dBgW *)e)->vtable[7]((dBgW *)e,object)')
+    body=body.replace('o->DetectClsn(*this)','o->vtable[7](o,object)')
+    body=body.replace('dM3dGSph &sphere = mBoundSphere;',
+                      'StageSphere *sphere = (StageSphere *)((char *)object+0x64);')
+    body=body.replace('sphere.', 'sphere->')
+    body=re.sub(r'\bthis\b','object',body)
+    for field,typ,off in [('mFlags','u32',0xb0),('mClipRadius','s32',0xb8),('mClipOffsetY','s32',0xb4)]:
+        body=body.replace('info->'+field,'(*('+typ+' *)((char *)info+0x%x))'%off)
+    extra='''
+struct Vector3 { s32 x,y,z; }; struct Vec3 { int x,y,z; };
+struct StageSphere { u32 vtable; Vector3 centre; s32 radius; };
+struct dActor_c; struct dBgW { int (**vtable)(dBgW *,void *); };
+extern dBgW *data_020a0c80[24];
+'''
+    declarations='''
+void *func_020393b4(void *); int func_020393ac(void *);
+int func_0203939c(void *); int func_0203938c(void *);
+bool _ZNK5dBgCh9IsOwnedByEP8dActor_c(void *,void *);
+void _ZN5dBgPi11SetColliderEiiP8dActor_cP4dBgW(void *,int,int,void *,void *);
+int Vec3_Dist(void *,void *);
+'''
+    return projected(rel,body,declarations,['_ZN9dBgCh_Lin10DetectClsnEv'],extra=extra,auto_globals=False)
+
+
+def camera_init():
+    rel='src/engine/view/d_camera.cpp'
+    raw=(ROOT/rel).read_text()
+    body=function(raw,'int dCamera_c::InitResources()')
+    body=body.replace('int dCamera_c::InitResources()', 'int _ZN9dCamera_c13InitResourcesEv(void *object)')
+    body=body.replace('dCamera_c *thiz = this','char *thiz = (char *)object')
+    body=body.replace('::operator new(', '_Znwj(')
+    body=body.replace('((dActor_c *)thiz->mTargetPlayer)->mAreaId',
+                      '(*(s8 *)((char *)thiz->mTargetPlayer+0xcc))')
+    body=body.replace('ChangeState((State *)&data_0209b008)',
+                      '_ZN9dCamera_c11ChangeStateEPNS_5StateE(object,&data_0209b008)')
+    body=body.replace('return this->Render()', 'return _ZN9dCamera_c6RenderEv(object)')
+    body=body.replace('func_0200d0ac((int)thiz,', 'func_0200d0ac(thiz,')
+    fields={'mFixedViewPos':('void *',0x148),'mFovBlend':('s32',0x168),
+            'mTargetPlayer':('u32',0x110),'mFramedActor':('u32',0x114),'mFocusActor':('u32',0x118)}
+    for name,(typ,off) in fields.items():
+        body=body.replace('thiz->'+name,'(*('+typ+' *)(thiz+0x%x))'%off)
+    extra='typedef struct CamViewObj { u8 type,p1; s16 x,y,z; } CamViewObj;\n'
+    declarations='''
+extern u8 data_0209f1f8; extern u8 data_0209f250;
+extern void *data_0209f394[4]; extern u32 data_0209b008;
+CamViewObj *GetViewObj(int); void *_Znwj(u32);
+void ChangeArea(int); int StartWithFarCamera(void);
+int _ZN9dCamera_c11ChangeStateEPNS_5StateE(void *,void *);
+void func_0200cf40(void *); void func_0200d0ac(void *,u8);
+int _ZN9dCamera_c6RenderEv(void *);
+'''
+    return projected(rel,body,declarations,['_ZN9dCamera_c13InitResourcesEv'],extra=extra,auto_globals=False)
+
+
+def camera_render():
+    rel='src/engine/view/d_camera.cpp'
+    body=function((ROOT/rel).read_text(),'int dCamera_c::Render()')
+    body=body.replace('int dCamera_c::Render()', 'int _ZN9dCamera_c6RenderEv(void *object)')
+    body=body.replace('dCamera_c *self = this', 'char *self = (char *)object')
+    for name,symbol in {
+        'OAM::Render':'_ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii',
+        'G2x::SetBlendAlpha':'_ZN3G2x13SetBlendAlphaEPVttttj',
+        'G3i::LookAt_':'_ZN3G3i7LookAt_EPK7Vector3S2_S2_bP9Matrix4x3',
+        'dView_c::Render()':'_ZN7dView_c6RenderEv(object)',
+    }.items(): body=body.replace(name,symbol)
+    body=body.replace('self->mViewport','((u8 *)(self+0x10c))')
+    fields={
+        'lookAt':('Vector3',0x80),'pos':('Vector3',0x8c),
+        'mPrevLookAt':('Vector3',0xc8),'mPrevPos':('Vector3',0xd4),
+        'mFovAngle':('s16',0x17a),'mAngleZ':('s16',0x178),
+        'mFlags':('u32',0x154),'mMode':('void *',0x13c),'mFovBlend':('s32',0x168),
+        'mShakeY':('s32',0x134),'mRollShake':('s16',0x18c),'mRollShakePhase':('s16',0x18a),
+        'mFovShake':('s16',0x18e),'mFovShakePhase':('s16',0x192),
+        'mAspect':('s32',0xf8),'mNear':('s32',0xfc),'mFar':('s32',0x100),
+        'viewMat':('Matrix4x3',0x50),
+    }
+    for name,(typ,off) in fields.items():
+        body=re.sub(r'\bself->'+name+r'\b','(*('+typ+' *)(self+0x%x))'%off,body)
+    extra='''
+#include "nitro/fx/fx.h"
+struct Vector3 { s32 x,y,z; }; struct Vec3 { s32 x,y,z; }; struct OamAttr;
+'''
+    declarations='''
+int Vec3_Dist(Vector3 *,Vector3 *); int Vec3_HorzDist(Vector3 *,Vector3 *);
+void func_0200af20(void *,Vec3 *,Vec3 *,s16 *); void func_0200d954(void *,s16);
+void _ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii(bool,OamAttr *,int,int,int,int,int,int,int,int);
+void _ZN3G2x13SetBlendAlphaEPVttttj(volatile u16 *,u16,u16,u16,u32);
+void _ZN3G3i13PerspectiveW_E5Fix12IiES1_S1_S1_S1_S1_bP9Matrix4x3(int,int,int,int,int,int,bool,Matrix4x3 *);
+void _ZN3G3i7LookAt_EPK7Vector3S2_S2_bP9Matrix4x3(Vector3 *,Vector3 *,Vector3 *,bool,Matrix4x3 *);
+void Matrix4x3_FromRotationZ(Matrix4x3 *,s16); void MulMat4x3Mat4x3(Matrix4x3 *,Matrix4x3 *,Matrix4x3 *);
+int _ZN7dView_c6RenderEv(void *);
+'''
+    return projected(rel,body,declarations,['_ZN9dCamera_c6RenderEv'],extra=extra)
+
+
+def view_render():
+    rel='src/engine/view/d_view.cpp'
+    body=function((ROOT/rel).read_text(),'s32 dView_c::Render()')
+    body=body.replace('s32 dView_c::Render()', 's32 _ZN7dView_c6RenderEv(void *object)')
+    body=body.replace('CopyToViewMat(&viewMat)', '_Z13CopyToViewMatPK9Matrix4x3((Matrix4x3 *)((char *)object+0x50))')
+    return projected(rel,body,'void _Z13CopyToViewMatPK9Matrix4x3(Matrix4x3 *);',['_ZN7dView_c6RenderEv'])
+
+
+def stage_areas():
+    rel='src/game/stages/d_s_stage_methods.cpp'
+    raw=(ROOT/rel).read_text()
+    names=('HideArea','ShowArea','ChangeArea')
+    body='\n'.join(function(raw,'extern "C" void '+name+'(') for name in names)
+    declarations='void HideArea(int); void ShowArea(int);\n'
+    return projected(rel,body,declarations,list(names))
+
+
+def clipper_frustum():
+    rel='src/engine/collision/d_clipper.cpp'
+    raw=(ROOT/rel).read_text()
+    build=function(raw,'void dClipper::Func_0201559C()')
+    build=build.replace('void dClipper::Func_0201559C()',
+                        'void _ZN8dClipper13Func_0201559CEv(void *object)')
+    setup=function(raw,'void dClipper::Func_020156DC(Fix12i aspectRatio, u16 fovAngle, Fix12i nearZ, Fix12i farZ)')
+    setup=setup.replace('void dClipper::Func_020156DC(',
+                        'void _ZN8dClipper13Func_020156DCEitii(void *object,')
+    setup=setup.replace('Func_0201559C()', '_ZN8dClipper13Func_0201559CEv(object)')
+    body=build+'\n'+setup
+    body=body.replace('mPlaneNormals','((Vector3 *)((char *)object+4))')
+    for name,(typ,off) in {'mFovAngle':('u16',0x58),'mNearZ':('s32',0x50),
+                            'mFarZ':('s32',0x54),'mAspectRatio':('s32',0x4c)}.items():
+        body=re.sub(r'\b'+name+r'\b','(*('+typ+' *)((char *)object+0x%x))'%off,body)
+    extra='#include "nitro/fx/fx.h"\nstruct Vector3 { s32 x,y,z; };\n'
+    declarations='''
+extern s16 data_02082214[];
+int _ZN4cstd4fdivEii(int,int);
+void CrossVec3(Vector3 *,Vector3 *,Vector3 *); void NormalizeVec3(Vector3 *,Vector3 *);
+'''
+    return projected(rel,body,declarations,['_ZN8dClipper13Func_0201559CEv',
+                 '_ZN8dClipper13Func_020156DCEitii'],extra=extra,auto_globals=False)
+
+
+def ground_kcl(line=False):
+    rel='src/engine/collision/d_bg_w_kc_itcm.cpp'
+    symbol='_ZN7dBgW_Kc10DetectClsnER9dBgCh_'+('Lin' if line else 'Gnd')
+    signature=('s32 dBgW_Kc::DetectClsn(dBgCh_Lin &ray)' if line else
+               'int dBgW_Kc::DetectClsn(dBgCh_Gnd &ray)')
+    body=function((ROOT/rel).read_text(),signature)
+    body=body.replace(signature,'int '+symbol+'(void *object,'+('Line' if line else 'Ground')+' *ray)')
+    body=body.replace('this->kclFile','(*(KCL_File **)((char *)object+0x20))')
+    body=body.replace('kclFile','(*(KCL_File **)((char *)object+0x20))')
+    body=body.replace('ray.','ray->').replace('GetSurfaceInfo(', '_ZN7dBgW_Kc14GetSurfaceInfoEsR11SurfaceInfo(object,')
+    body=body.replace('dBgCh::ShouldPassThroughImpl(', '_ZN5dBgCh21ShouldPassThroughImplEPvRK4CLPSRKS_b(')
+    body=body.replace('data_020a0cec.clps','&data_020a0cec.clps')
+    body=body.replace(', data_020a0cec)',', &data_020a0cec)')
+    body=body.replace('((dBgPi &)ray).RecordHit(', '_ZN5dBgPi9RecordHitEsP11SurfaceInfo((char *)ray+0x10,')
+    if line:
+        body=body.replace('GetSurfaceInfo(', '_ZN7dBgW_Kc14GetSurfaceInfoEsR11SurfaceInfo(object,') if 'GetSurfaceInfo(' in body else body
+        body=body.replace(', info)',', &info)').replace('info.clps','&info.clps')
+        body=body.replace('info.CopyNormalTo(normal)', 'normal=info.normal')
+        body=body.replace('ray->SetClsnPos(pos)','ray->lineEnd=pos')
+        body=body.replace('(dBgPc *)&info','(void *)&info')
+    body=re.sub(r'\bthis\b','object',body).replace('cstd::fdiv','_ZN4cstd4fdivEii')
+    # Lift's 32-bit cast helper is named word; keep the octree's local distinct.
+    body=re.sub(r'\bword\b','octreeWord',body)
+    header=(ROOT/'include/dBgW_Kc.h').read_text()
+    records='\n'.join(re.search(r'struct '+name+r' \{.*?\n\};',header,re.S).group() for name in ('KCL_Tri','KCL_File'))
+    extra='''
+struct Vector3 { s32 x,y,z; };
+struct CLPS { u32 w0,w1; };
+struct SurfaceInfo { CLPS clps; Vector3 normal; };
+struct Ground { u8 bases[0x38]; Vector3 pos; s32 clsnY; u8 hasClsn,pad[3]; s32 height; };
+struct Line { u8 bases[0x38]; Vector3 start,end; u8 hasClsn,pad[3]; Vector3 lineEnd; s32 clsnDist; u8 sphere[0x14]; };
+static_assert(sizeof(Ground)==0x50);
+static_assert(sizeof(Line)==0x78);
+extern SurfaceInfo data_020a0cec;
+'''+records+'''\n#define REL_DOT(n) ((n)[0]*rel.x+(n)[1]*rel.y+(n)[2]*rel.z)\n'''
+    declarations='''
+int _ZN4cstd4fdivEii(int,int); bool func_020397dc(int);
+s16 func_020396dc(void *,KCL_Tri *);
+void _ZN7dBgW_Kc14GetSurfaceInfoEsR11SurfaceInfo(void *,s16,SurfaceInfo *);
+bool _ZN5dBgCh21ShouldPassThroughImplEPvRK4CLPSRKS_b(void *,CLPS *,void *,bool);
+void _ZN5dBgPi9RecordHitEsP11SurfaceInfo(void *,s16,SurfaceInfo *);
+'''
+    if line:
+        declarations+='''
+void _ZN5dBgPcC1Ev(void *); void _ZN5dBgPcD1Ev(void *);
+bool func_020397b8(int); int Vec3_Dist(Vector3 *,Vector3 *);
+'''
+    return projected(rel,body,declarations,[symbol],extra=extra,auto_globals=False)
+
+
 def overlay_initializers():
     # The pinned dependency retains complete matching C bodies for initializers
     # which newer class TUs express as implicit C++ static construction. Keep
@@ -895,10 +1211,22 @@ if __name__ == '__main__':
                             ('stage_level_model',stage_model()),
                             ('stage_level_objects',level_objects()),
                             ('stage_player_init',player_init()),
-                            ('stage_player_preload',player_preload())]:
+                            ('stage_player_preload',player_preload()),
+                            ('stage_player_entrance',player_entrance()),
+                            ('stage_player_animation',player_set_animation()),
+                            ('stage_ground_scan',ground_scan()),
+                            ('stage_ground_kcl',ground_kcl()),
+                            ('stage_line_scan',line_scan()),
+                            ('stage_line_kcl',ground_kcl(line=True)),
+                            ('stage_camera_init',camera_init()),
+                            ('stage_camera_render',camera_render()),
+                            ('stage_view_render',view_render()),
+                            ('stage_clipper_frustum',clipper_frustum())]:
         row['unit']=unit
         rows.append(row)
         bindings.extend(code)
+    row,code=stage_areas();row['unit']='stage_areas'
+    rows.append(row);bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
     for name in ['func_ov002_020e5948','func_ov002_020e63a4',
@@ -915,6 +1243,17 @@ if __name__ == '__main__':
                 'src/Vec3_RotateYAndTranslate.c',
                 'src/SetBg0Offset.c','src/SetSubBg0Offset.c','src/SetSubBg1Offset.c','src/SetSubBg2Offset.c',
                 'external/sm64ds-pc/src/func_0201eaac.c',
+                'external/sm64ds-pc/src/StartWithFarCamera.c',
+                'external/sm64ds-pc/src/GetViewObj.c',
+                'external/sm64ds-pc/src/func_0200cf40.c',
+                'external/sm64ds-pc/src/func_0200cb58.c',
+                'external/sm64ds-pc/src/func_0200d954.c',
+                'external/sm64ds-pc/src/func_0200cce4.c',
+                'external/sm64ds-pc/src/func_020093f4.c',
+                'external/sm64ds-pc/src/func_020093d4.c',
+                'external/sm64ds-pc/src/func_0200897c.c',
+                'external/sm64ds-pc/src/func_0200928c.c',
+                'external/sm64ds-pc/src/func_0200d0ac.c',
                 'src/unnamed/arm9/0201/func_02017e60.c',
                 'src/unnamed/arm9/0201/func_02018a24.c',
                 'src/unnamed/arm9/0201/func_0201973c.c',

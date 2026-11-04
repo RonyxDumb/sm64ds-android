@@ -19,6 +19,8 @@ extern "C" short data_0209d6d4;
 extern "C" void pk_MultiStore16(unsigned short,sm64ds::packed::Ptr<char>,int);
 extern "C" void pk_MultiStore_Int(int,sm64ds::packed::Ptr<int>,int);
 extern "C" void pk_MultiCopy_Int(sm64ds::packed::Ptr<int>,sm64ds::packed::Ptr<int>,int);
+extern "C" int pk__ZN4cstd4fdivEii(int,int);
+namespace cstd { int sqrt(unsigned long long); int16_t atan2(int32_t,int32_t); }
 
 namespace sm64ds {
 namespace {
@@ -59,6 +61,30 @@ void append_process(uint32_t list, uint32_t node) {
         at<uint32_t>(node)=tail;
     } else at<uint32_t>(list)=node;
     at<uint32_t>(list+4)=node;
+}
+void unlink_process(uint32_t list,uint32_t node) {
+    if (!node) return;
+    const uint32_t previous=at<uint32_t>(node),next=at<uint32_t>(node+4);
+    if (previous) at<uint32_t>(previous+4)=next;
+    else if (at<uint32_t>(list)==node) at<uint32_t>(list)=next;
+    if (next) at<uint32_t>(next)=previous;
+    else if (at<uint32_t>(list+4)==node) at<uint32_t>(list+4)=previous;
+    at<uint32_t>(node)=at<uint32_t>(node+4)=0;
+}
+// func_0204405c: stable priority order, including equal-priority actors.
+void insert_process(uint32_t list,uint32_t node) {
+    if (!node) return;
+    uint32_t previous=0,next=at<uint32_t>(list);
+    std::unordered_set<uint32_t> visited;
+    while (next && at<uint16_t>(next+12)<=at<uint16_t>(node+12)) {
+        if (!visited.insert(next).second) throw std::runtime_error("Cyclic actor priority list.");
+        previous=next;next=at<uint32_t>(next+4);
+    }
+    at<uint32_t>(node)=previous;at<uint32_t>(node+4)=next;
+    if (previous) at<uint32_t>(previous+4)=node;
+    else at<uint32_t>(list)=node;
+    if (next) at<uint32_t>(next)=node;
+    else at<uint32_t>(list+4)=node;
 }
 
 bool stage_before_init(uint32_t actor) {
@@ -475,6 +501,168 @@ void stage_bg_result_construct(uint32_t result,uint32_t vtable=0x02099368u) {
     at<uint16_t>(result+26)=0x18;
     at<int32_t>(result+28)=-1;
 }
+// dBgCh_Gnd/dBgCh/dBgPi retain their two original base subobjects. These
+// primitives are shared by entrance setup and the per-frame ground queries.
+uint32_t stage_ground_construct(uint32_t query) {
+    (void)packed::Space::current().data(query,0x50);
+    stage_bg_query_construct(query,0x02099264u);
+    stage_bg_result_construct(query+0x10,0x02099274u);
+    at<int32_t>(query+0x4c)=0x1f4000;
+    return query;
+}
+void stage_ground_destroy(uint32_t query) {
+    at<uint32_t>(query)=0x020991d8u;
+    at<uint32_t>(query+0x10)=0x02099368u;
+}
+void stage_ground_set_owner_position(uint32_t query,uint32_t position,uint32_t owner) {
+    auto &space=packed::Space::current();
+    std::memcpy(space.data(query+0x38,12),space.data(position,12),12);
+    at<uint32_t>(query+12)=owner;
+    at<int32_t>(query+8)=owner ? at<int32_t>(owner+4) : -1;
+}
+bool stage_query_owned(uint32_t query,uint32_t owner) {
+    return owner && at<uint32_t>(query+12) &&
+        at<uint32_t>(query+12)==owner && at<uint32_t>(query+8)==at<uint32_t>(owner+4);
+}
+void stage_ground_reset(uint32_t query) {
+    const uint32_t result=query+0x10;
+    at<uint16_t>(result+0x18)=0xffff;
+    at<uint16_t>(result+0x1a)=0x18;
+    at<int32_t>(result+0x1c)=-1;
+    at<uint32_t>(result+0x20)=at<uint32_t>(result+0x24)=0;
+    at<int32_t>(query+0x44)=static_cast<int32_t>(0x80000000u);
+    at<uint8_t>(query+0x48)=0;
+}
+void stage_surface_construct(uint32_t surface) {
+    at<uint32_t>(surface)=0xfc0;at<uint32_t>(surface+4)=0xff;
+    for (unsigned off : {8u,12u,16u}) at<uint32_t>(surface+off)=0;
+}
+void stage_surface_destroy(uint32_t surface) { (void)packed::Space::current().data(surface,0x14); }
+uint32_t stage_line_construct(uint32_t query) {
+    (void)packed::Space::current().data(query,0x78);
+    stage_bg_query_construct(query,0x020992a4u);
+    stage_bg_result_construct(query+0x10,0x020992b4u);
+    for (unsigned off : {0x54u,0x58u,0x5cu,0x60u}) at<uint32_t>(query+off)=0;
+    at<uint32_t>(query+0x64)=0x020994ccu;
+    return query;
+}
+void stage_line_destroy(uint32_t query) {
+    at<uint32_t>(query)=0x020991d8u;
+    at<uint32_t>(query+0x10)=0x02099368u;
+    at<uint32_t>(query+0x64)=0x020994ccu;
+}
+void stage_line_set(uint32_t query,uint32_t start,uint32_t end,uint32_t owner) {
+    auto &space=packed::Space::current();
+    std::memmove(space.data(query+0x38,12),space.data(start,12),12);
+    std::memmove(space.data(query+0x44,12),space.data(end,12),12);
+    at<uint32_t>(query+12)=owner;
+    at<int32_t>(query+8)=owner ? at<int32_t>(owner+4) : -1;
+    at<uint8_t>(query+0x50)=0;
+    std::memcpy(space.data(query+0x54,12),space.data(query+0x44,12),12);
+    const int distance=Ptr<int(uint32_t,uint32_t)>(0x0203cfdcu)(query+0x54,query+0x38);
+    at<int32_t>(query+0x60)=distance;
+    // dBgPi::Reset leaves its surface record intact.
+    at<uint16_t>(query+0x28)=0xffff;at<uint16_t>(query+0x2a)=0x18;
+    at<int32_t>(query+0x2c)=-1;
+    at<uint32_t>(query+0x30)=at<uint32_t>(query+0x34)=0;
+    for (unsigned i=0;i<3;++i) {
+        const uint32_t sum=at<uint32_t>(start+i*4)+at<uint32_t>(end+i*4);
+        at<int32_t>(query+0x68+i*4)=static_cast<int32_t>(sum)>>1;
+    }
+    at<int32_t>(query+0x74)=(distance>>1)+0x1000;
+}
+void stage_line_position(uint32_t output,uint32_t query) {
+    auto &space=packed::Space::current();
+    std::memcpy(space.data(output,12),space.data(query+0x54,12),12);
+}
+bool stage_wall_facing(int normal) { return normal<0x600 && normal>-0xccc; }
+void stage_result_set_collider(uint32_t result,int index,int id,uint32_t owner,uint32_t collider) {
+    at<uint16_t>(result+0x1a)=static_cast<uint16_t>(index);
+    at<int32_t>(result+0x1c)=id;
+    at<uint32_t>(result+0x20)=owner;
+    at<uint32_t>(result+0x24)=collider;
+}
+void stage_result_record(uint32_t result,int16_t triangle,uint32_t surface) {
+    at<uint16_t>(result+0x18)=static_cast<uint16_t>(triangle);
+    auto &space=packed::Space::current();
+    std::memmove(space.data(result+4,0x14),space.data(surface,0x14),0x14);
+}
+uint32_t stage_collider_owner(uint32_t collider) { return at<uint32_t>(collider+4); }
+int stage_collider_id(uint32_t collider) { return at<int32_t>(collider+8); }
+int stage_collider_radius(uint32_t collider) { return at<int32_t>(collider+12); }
+int stage_collider_offset(uint32_t collider) { return at<int32_t>(collider+16); }
+bool stage_near_zero(int value) { return value>=-8 && value<=8; }
+int stage_vector_distance(uint32_t a,uint32_t b) {
+    uint64_t sum=0;
+    for (unsigned off : {0u,4u,8u}) {
+        const int32_t difference=static_cast<int32_t>(at<uint32_t>(a+off)-at<uint32_t>(b+off));
+        sum+=uint64_t(int64_t(difference)*difference);
+    }
+    return cstd::sqrt(sum);
+}
+int stage_vector_horizontal_distance(uint32_t a,uint32_t b) {
+    uint64_t sum=0;
+    for (unsigned off : {0u,8u}) {
+        const int32_t difference=static_cast<int32_t>(at<uint32_t>(a+off)-at<uint32_t>(b+off));
+        sum+=uint64_t(int64_t(difference)*difference);
+    }
+    return cstd::sqrt(sum);
+}
+int16_t stage_vector_horizontal_angle(uint32_t a,uint32_t b) {
+    const int32_t x=static_cast<int32_t>(at<uint32_t>(b)-at<uint32_t>(a));
+    const int32_t z=static_cast<int32_t>(at<uint32_t>(b+8)-at<uint32_t>(a+8));
+    return cstd::atan2(x,z);
+}
+int16_t stage_vector_vertical_angle(uint32_t a,uint32_t b) {
+    const int32_t y=static_cast<int32_t>(at<uint32_t>(a+4)-at<uint32_t>(b+4));
+    return cstd::atan2(y,stage_vector_horizontal_distance(a,b));
+}
+int16_t stage_triangle_index(uint32_t collider,uint32_t triangle) {
+    const uint32_t file=at<uint32_t>(collider+0x20);
+    return static_cast<int16_t>((triangle-at<uint32_t>(file+8))>>4);
+}
+void stage_kcl_normal(uint32_t collider,int16_t triangle,uint32_t output) {
+    const uint32_t file=at<uint32_t>(collider+0x20);
+    const uint32_t tri=at<uint32_t>(file+8)+uint32_t(int32_t(triangle))*0x10u;
+    const uint32_t normal=at<uint32_t>(file+4)+at<uint16_t>(tri+6)*6u;
+    for (unsigned i=0;i<3;++i) at<int32_t>(output+i*4)=int32_t(at<int16_t>(normal+i*2))*4;
+}
+void stage_kcl_surface(uint32_t collider,int16_t triangle,uint32_t output) {
+    const uint32_t normalCallback=at<uint32_t>(at<uint32_t>(collider)+16);
+    Ptr<void(uint32_t,int16_t,uint32_t)>{normalCallback}(collider,triangle,output+8);
+    const uint32_t file=at<uint32_t>(collider+0x20);
+    const uint32_t tri=at<uint32_t>(file+8)+uint32_t(int32_t(triangle))*0x10u;
+    const uint32_t block=at<uint32_t>(collider+0x24);
+    uint32_t entry;
+    if (!block || at<uint16_t>(block+4)!=8) {
+        entry=0x020a0c78u;
+        at<uint32_t>(entry)=0xfc0;
+        at<uint32_t>(entry+4)=0xff;
+    } else entry=block+8+at<uint16_t>(tri+14)*8u;
+    at<uint32_t>(output)=at<uint32_t>(entry);
+    at<uint32_t>(output+4)=at<uint32_t>(entry+4);
+}
+bool stage_surface_pass(uint32_t,uint32_t surface,uint32_t query,bool check14) {
+    const uint32_t properties=at<uint32_t>(surface);
+    const uint8_t flags=at<uint8_t>(query+4);
+    bool special=false;
+    if (properties&0x20u) { special=true; if (!(flags&2)) return true; }
+    if (properties&0x2000000u) { special=true; if (!(flags&8)) return true; }
+    if (properties&0x1000000u) { special=true; if (flags&4) return true; }
+    if (properties&0x4000000u) { special=true; if (!(flags&4)) return true; }
+    const uint32_t type=(properties>>19)&0x1fu;
+    if (type==0x11) { special=true; if (flags&0x20) return true; }
+    if (check14 && type==0x14) { special=true; if (flags&0x40) return true; }
+    return !special && !(flags&1);
+}
+void stage_query_water(uint32_t query) { at<uint8_t>(query+4)|=2; }
+void stage_query_stop_vanish(uint32_t query) { at<uint8_t>(query+4)&=~0x20u; }
+void stage_query_start_vanish(uint32_t query) { at<uint8_t>(query+4)|=0x20; }
+void stage_query_special(uint32_t query) { at<uint8_t>(query+4)|=4; }
+void stage_player_disable_interaction(uint32_t player) {
+    at<uint8_t>(player+0x709)=1;
+    at<uint32_t>(player+0x2d4+0x18)|=4;
+}
 void stage_mesh_query_construct(uint32_t query) {
     (void)packed::Space::current().data(query,0x1bc);
     stage_bg_query_construct(query,0x02099204u);
@@ -518,6 +706,41 @@ uint32_t stage_player_construct(uint32_t player) {
 }
 uint32_t stage_player_factory() {
     return stage_player_construct(packed::Space::current().allocate(0x768));
+}
+uint32_t stage_camera_factory() {
+    auto &space=packed::Space::current();
+    const uint32_t camera=space.allocate(0x1a8);
+    native_fbase_construct(camera);
+    at<uint32_t>(camera)=0x02092720u;
+    std::memset(space.data(camera+0x50,0x30),0,0x30);
+    for (unsigned off : {0x50u,0x60u,0x70u}) at<int32_t>(camera+off)=0x1000;
+    at<uint32_t>(camera)=0x02086f84u;
+    return camera;
+}
+int stage_camera_state_init(uint32_t camera) {
+    auto &flags=at<uint32_t>(camera+0x154);
+    if (flags&0x4000) flags=(flags&~0x4000u)|0x8000;
+    const uint32_t state=at<uint32_t>(camera+0x138);
+    if (!at<uint32_t>(state)) return 1;
+    packed::MemberCall member{};
+    std::memcpy(&member,packed::Space::current().data(state,8),8);
+    const auto target=packed::Space::current().resolve_member(camera,member);
+    using Callback=int (*)(uint32_t);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    return callback(target.object);
+}
+int stage_camera_change_state(uint32_t camera,uint32_t state) {
+    if (at<uint32_t>(camera+0x154)&0x10) return 0;
+    if (at<uint32_t>(camera+0x138)!=state) {
+        if (at<uint32_t>(camera+0x138)==0x0209b0c8u) {
+            Ptr<void()>(0x02029a68u)();
+            Ptr<void(uint32_t)>(0x020089f8u)(camera);
+        }
+        at<uint32_t>(camera+0x138)=state;
+        at<uint8_t>(camera+0x1a6)=0;
+    }
+    return stage_camera_state_init(camera);
 }
 uint32_t stage_vector_lifetime(uint32_t vector) {
     // The original default Vector3 constructor and destructor have empty
@@ -666,6 +889,118 @@ void native_actor_post_construct(uint32_t actor) {
     append_process(0x020a4b88u,actor+0x28);
 }
 
+namespace {
+void stage_base_after_init(uint32_t actor,uint32_t status) {
+    if (status!=2) return;
+    unlink_process(0x020a4b88u,actor+0x28);
+    if (at<uint32_t>(0x02099f24u)==3) { at<uint8_t>(actor+16)=1;return; }
+    insert_process(0x020a4b78u,actor+0x28);
+    insert_process(0x020a4b98u,actor+0x38);
+    at<uint8_t>(actor+14)=1;
+}
+void stage_derived_after_init(uint32_t actor,uint32_t status) {
+    if (status==1) stage_mark_for_destruction(actor);
+    stage_base_after_init(actor,status);
+}
+void stage_actor_after_init(uint32_t actor,uint32_t status) {
+    stage_derived_after_init(actor,status);
+    at<uint32_t>(actor+0xb0)|=0x38;
+}
+int stage_process(uint32_t actor,uint32_t action,uint32_t before,uint32_t after) {
+    auto &space=packed::Space::current();
+    ActorProcessMethods methods{};
+    std::memcpy(&methods.action,space.data(action,8),8);
+    std::memcpy(&methods.before,space.data(before,8),8);
+    std::memcpy(&methods.after,space.data(after,8),8);
+    return ActorDispatch(space).process(actor,methods);
+}
+int stage_process_init(uint32_t actor) { return stage_process(actor,0x02099ebcu,0x02099ec4u,0x02099e94u); }
+int stage_process_behavior(uint32_t actor) { return stage_process(actor,0x02099ea4u,0x02099eacu,0x02099eb4u); }
+int stage_process_render(uint32_t actor) { return stage_process(actor,0x02099eccu,0x02099e74u,0x02099e9cu); }
+int stage_process_cleanup(uint32_t actor) {
+    const uint16_t id=at<uint16_t>(actor+12);
+    const int result=stage_process(actor,0x02099e8cu,0x02099e7cu,0x02099e84u);
+    if (result==1) Ptr<void(int)>(0x0204302cu)(id);
+    return result;
+}
+int stage_reconcile_actor(uint32_t actor) {
+    if (at<uint8_t>(actor+15)) {
+        at<uint8_t>(actor+15)=0;
+        if (at<uint8_t>(actor+14)==1) {
+            unlink_process(0x020a4b78u,actor+0x28);
+            unlink_process(0x020a4b98u,actor+0x38);
+        } else unlink_process(0x020a4b88u,actor+0x28);
+        // func_0203b20c prepends a newly dying actor.
+        const uint32_t node=actor+0x28,head=at<uint32_t>(0x020a4ba8u);
+        at<uint32_t>(node+4)=head;
+        if (head) at<uint32_t>(head)=node;
+        else at<uint32_t>(0x020a4bacu)=node;
+        at<uint32_t>(0x020a4ba8u)=node;
+        at<uint8_t>(actor+14)=2;
+        for (uint32_t child=at<uint32_t>(actor+0x18);child;child=at<uint32_t>(child+12))
+            stage_mark_for_destruction(at<uint32_t>(child+16));
+    } else {
+        const uint32_t parent=at<uint32_t>(actor+0x14);
+        if (parent) {
+            const uint32_t owner=at<uint32_t>(parent+16);
+            const uint8_t flags=at<uint8_t>(owner+0x13);
+            auto &own=at<uint8_t>(actor+0x13);
+            own=uint8_t((own&~2u)|((flags&3) ? 2 : 0));
+            own=uint8_t((own&~8u)|((flags&12) ? 8 : 0));
+        }
+        if (at<uint8_t>(actor+14)==1) {
+            for (auto entry : {std::pair<uint32_t,uint32_t>{0x020a4b78u,actor+0x28},
+                                {0x020a4b98u,actor+0x38}}) {
+                if (at<uint16_t>(entry.second+12)!=at<uint16_t>(entry.second+14)) {
+                    unlink_process(entry.first,entry.second);
+                    at<uint16_t>(entry.second+12)=at<uint16_t>(entry.second+14);
+                    insert_process(entry.first,entry.second);
+                }
+            }
+        } else if (at<uint8_t>(actor+14)!=2) {
+            if (at<uint8_t>(actor+17)) {
+                at<uint8_t>(actor+17)=0;append_process(0x020a4b88u,actor+0x28);
+            } else if (at<uint8_t>(actor+16)) {
+                at<uint8_t>(actor+16)=0;
+                insert_process(0x020a4b78u,actor+0x28);
+                insert_process(0x020a4b98u,actor+0x38);
+                at<uint8_t>(actor+14)=1;
+            }
+        }
+    }
+    return 1;
+}
+void stage_actor_frame() {
+    // Complete func_02044120 order: cleanup, init, behavior, render, tree.
+    for (auto phase : {std::pair<uint32_t,uint32_t>{4,0x020a4ba8u},
+                       {2,0x020a4b88u},{3,0x020a4b78u},{5,0x020a4b98u}}) {
+        at<uint32_t>(0x02099f24u)=phase.first;
+        native_fbase_process_list(phase.second);
+    }
+    at<uint32_t>(0x02099f24u)=1;
+    const uint32_t entry=at<uint32_t>(0x020a4b70u),adjust=at<uint32_t>(0x020a4b74u);
+    if (entry || adjust) {
+        uint32_t node=at<uint32_t>(0x020a4b6cu);
+        std::unordered_set<uint32_t> visited;
+        while (node) {
+            if (!visited.insert(node).second) throw std::runtime_error("Cyclic actor scene traversal.");
+            uint32_t next=at<uint32_t>(node+4),ancestor=node;
+            while (!next && ancestor) {
+                next=at<uint32_t>(ancestor+12);ancestor=at<uint32_t>(ancestor);
+            }
+            const auto target=packed::Space::current().resolve_member(
+                at<uint32_t>(node+16),{entry,static_cast<int32_t>(adjust)});
+            using Callback=void (*)(uint32_t);
+            Callback callback=nullptr;
+            std::memcpy(&callback,&target.code,sizeof callback);
+            callback(target.object);
+            node=next;
+        }
+    }
+    at<uint32_t>(0x02099f24u)=0;
+}
+}
+
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id!=2) return;
     space.bind(0x020e6c0cu,&stage_player_factory);
@@ -673,9 +1008,13 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020becc8u,&stage_player_body_model);
     space.bind(0x020e30a0u,&stage_player_change_state);
     space.bind(0x020c7dd0u,&stage_player_entrance_state);
+    space.bind(0x020c9e40u,&stage_player_disable_interaction);
 }
 
 void bind_stage_runtime(packed::Space &space) {
+    space.bind(0x0200e444u,&stage_camera_factory);
+    space.bind(0x0200cb70u,&stage_camera_change_state);
+    space.bind(0x0200cae4u,&stage_camera_state_init);
     space.bind(0x0203cbd8u,&stage_allocate);
     space.bind(0x0203cbe4u,&stage_allocate);
     space.bind(0x0203cbc0u,&stage_deallocate);
@@ -694,6 +1033,38 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
     space.bind(0x02037388u,&stage_actor_mesh_init);
+    space.bind(0x02037570u,&stage_ground_construct);
+    space.bind(0x020377b0u,&stage_line_construct);
+    space.bind(0x02037764u,&stage_line_destroy);
+    space.bind(0x02037670u,&stage_line_set);
+    space.bind(0x020375d0u,&stage_line_position);
+    space.bind(0x02037eecu,&stage_surface_construct);
+    space.bind(0x02037ee8u,&stage_surface_destroy);
+    space.bind(0x020397b8u,&stage_wall_facing);
+    space.bind(0x02037534u,&stage_ground_destroy);
+    space.bind(0x0203748cu,&stage_ground_set_owner_position);
+    space.bind(0x02035354u,&stage_query_owned);
+    space.bind(0x02037464u,&stage_ground_reset);
+    space.bind(0x02037fecu,&stage_result_set_collider);
+    space.bind(0x02037fd4u,&stage_result_record);
+    space.bind(0x020393b4u,&stage_collider_owner);
+    space.bind(0x020393acu,&stage_collider_id);
+    space.bind(0x0203939cu,&stage_collider_radius);
+    space.bind(0x0203938cu,&stage_collider_offset);
+    space.bind(0x020397dcu,&stage_near_zero);
+    space.bind(0x0203cfdcu,&stage_vector_distance);
+    space.bind(0x0203cf40u,&stage_vector_horizontal_distance);
+    space.bind(0x0203b7acu,&stage_vector_horizontal_angle);
+    space.bind(0x0203b770u,&stage_vector_vertical_angle);
+    space.bind(0x02053258u,&pk__ZN4cstd4fdivEii);
+    space.bind(0x020396dcu,&stage_triangle_index);
+    space.bind(0x01ffd8d8u,&stage_kcl_normal);
+    space.bind(0x01ffd920u,&stage_kcl_surface);
+    space.bind(0x02039488u,&stage_surface_pass);
+    space.bind(0x0203549cu,&stage_query_water);
+    space.bind(0x02035414u,&stage_query_stop_vanish);
+    space.bind(0x02035428u,&stage_query_start_vanish);
+    space.bind(0x02035468u,&stage_query_special);
     space.bind(0x02035644u,&stage_actor_wall_extent);
     space.bind(0x02073470u,&stage_array_new);
     space.bind(0x02017480u,&stage_wipe_construct);
@@ -719,6 +1090,16 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02016d58u,&native_simple_model_construct);
     space.bind(0x02039894u,&native_mesh_collider_construct);
     space.bind(0x020433b8u,&native_actor_post_construct);
+    space.bind(0x02043bf8u,&stage_base_after_init);
+    space.bind(0x02013ef4u,&stage_derived_after_init);
+    space.bind(0x02011244u,&stage_actor_after_init);
+    space.bind(0x0202e62cu,&stage_derived_after_init);
+    space.bind(0x0204335cu,&stage_process_init);
+    space.bind(0x020432e4u,&stage_process_cleanup);
+    space.bind(0x02043288u,&stage_process_behavior);
+    space.bind(0x0204322cu,&stage_process_render);
+    space.bind(0x02043880u,&stage_reconcile_actor);
+    space.bind(0x02044120u,&stage_actor_frame);
     space.bind(0x0202ddc8u,&stage_before_init);
     space.bind(0x02043c78u,&fbase_before_init);
     space.bind(0x0202e66cu,&scene_reset_faders_and_sound);

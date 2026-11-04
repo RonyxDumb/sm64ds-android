@@ -405,8 +405,9 @@ void GameProgram::finish_tick() {
         scanout();
 }
 void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
-    input_.update(keys, x, y, tx, ty, data_02092664 != 3);
-    if (data_02092664 == 3)
+    const bool gameplay=activeScene_==3 || data_02092664==3;
+    input_.update(keys, x, y, tx, ty, !gameplay);
+    if (gameplay)
         stage_.update_input(0, input_.x(), input_.y());
     if (job_) {
         auto callback = job_;
@@ -544,10 +545,11 @@ void GameProgram::scanout() {
                   (ntr::io_read(0x04001000, 4) & ~0xf00u) | (uint32_t(data_0209d454 & 15) << 8), 4);
     }
     ntr::Framebuffer geometry{};
-    if (activeScene_==1) ntr::gx_render(geometry);
-    ntr::ppu_scanout(ntr::ENGINE_A, main_,activeScene_==1?&geometry:nullptr);
+    const bool render3d=activeScene_==1 || activeScene_==3;
+    if (render3d) ntr::gx_render(geometry);
+    ntr::ppu_scanout(ntr::ENGINE_A, main_,render3d?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);
-    if (activeScene_==1) {
+    if (render3d) {
         ntr::ppu_scanout_obj(ntr::ENGINE_A,main_);
         ntr::ppu_scanout_obj(ntr::ENGINE_B,sub_);
         ntr::ppu_capture(main_,geometry);

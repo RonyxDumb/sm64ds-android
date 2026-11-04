@@ -146,6 +146,121 @@ void player_state_runtime() {
     assert(space.allocations()==0);
     std::cout << "Original Player state transition: cleanup veto, native PMFs, reset, control lock and carried-object redirect passed.\n";
 }
+
+void ground_runtime() {
+    using sm64ds::packed::Ptr;
+    assert(ntr::io_init());
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map(ntr::IO_BASE,ntr::host_ptr(ntr::IO_BASE),ntr::IO_SIZE);
+    sm64ds::frontend::bind_arm9_sources(space);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::packed::Space::Scope scope(space);
+    const uint32_t file=space.allocate(0x100),collider=space.allocate(0x50),
+        query=space.allocate(0x50),line=space.allocate(0x78),
+        position=space.allocate(12),end=space.allocate(12),owner=space.allocate(0xd4);
+    // One floor prism in a terminal octree cell, with genuine KCL scales.
+    for (auto lane : {std::pair<unsigned,uint32_t>{0,0x40},{4,0x60},{8,0x90},{12,0xc0},
+                      {0x20,~3u},{0x24,~3u},{0x28,~3u},{0x2c,2},
+                      {0xa0,0x100000},{0xc0,0x80000004u}})
+        *Ptr<uint32_t>(file+lane.first)=lane.second;
+    const int16_t normals[]={0,1024,0,-1024,0,0,0,0,-1024,1024,0,1024};
+    std::memcpy(space.data(file+0x60,sizeof normals),normals,sizeof normals);
+    *Ptr<uint16_t>(file+0xa8)=1;*Ptr<uint16_t>(file+0xaa)=2;*Ptr<uint16_t>(file+0xac)=3;
+    *Ptr<uint16_t>(file+0xc6)=1;
+    *Ptr<uint16_t>(file+0xe4)=8;
+    sm64ds::native_mesh_collider_construct(collider);
+    *Ptr<uint32_t>(0x020993dcu+16)=0x01ffd8d8u;
+    *Ptr<uint32_t>(0x020993dcu+24)=0x01ffd3f8u;
+    *Ptr<uint32_t>(0x020993dcu+28)=0x01ffb0fcu;
+    Ptr<void(uint32_t)>(0x02039760u)(file);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x020396f0u)(collider,file,file+0xe0);
+    *Ptr<uint32_t>(owner+4)=7;
+    Ptr<void(uint32_t,uint32_t)>(0x02039184u)(collider,owner);
+    Ptr<uint32_t(uint32_t)>(0x02037570u)(query);
+    *Ptr<int32_t>(position)=4096;*Ptr<int32_t>(position+4)=8192;*Ptr<int32_t>(position+8)=4096;
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203748cu)(query,position,0);
+    auto detect=Ptr<int(uint32_t)>(0x02038f44u);
+    assert(detect(query)==1 && *Ptr<int32_t>(query+0x44)==0);
+    assert(*Ptr<uint8_t>(query+0x48)==1 && *Ptr<uint16_t>(query+0x28)==1);
+    assert(*Ptr<int32_t>(query+0x20)==4096); // Q10 file normal becomes Q12
+    assert(*Ptr<uint32_t>(query+0x30)==owner && *Ptr<uint32_t>(query+0x34)==collider);
+    // Water is independently filtered; an owned collider is never hit.
+    *Ptr<uint32_t>(file+0xe8)=0x20;
+    assert(detect(query)==0 && *Ptr<int32_t>(query+0x44)==INT_MIN);
+    Ptr<void(uint32_t)>(0x0203549cu)(query);
+    assert(detect(query)==1);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203748cu)(query,position,owner);
+    assert(detect(query)==0);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203748cu)(query,position,0);
+    *Ptr<int32_t>(position)=-4096;
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203748cu)(query,position,0);
+    assert(detect(query)==0); // outside the octree, including its negative side
+    // A descending segment crosses that same prism at the same height.
+    *Ptr<uint32_t>(file+0xe8)=0;
+    *Ptr<int32_t>(position)=4096;
+    *Ptr<int32_t>(end)=4096;*Ptr<int32_t>(end+4)=-8192;*Ptr<int32_t>(end+8)=4096;
+    Ptr<uint32_t(uint32_t)>(0x020377b0u)(line);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(line,position,end,0);
+    assert(Ptr<bool(uint32_t)>(0x02038638u)(line));
+    // The cartridge shifts Vec3_Dist's result by six before storing this
+    // lane (ITCM 0x01ffb6a4); preserve that raw distance convention.
+    assert(*Ptr<int32_t>(line+0x58)==0 && *Ptr<int32_t>(line+0x60)==128);
+    assert(*Ptr<uint8_t>(line+0x50)==1 && *Ptr<uint16_t>(line+0x28)==1);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(line,end,position,0);
+    assert(!Ptr<bool(uint32_t)>(0x02038638u)(line)); // one-sided surface
+    for (uint32_t allocation : {owner,end,position,line,query,collider,file}) space.release(allocation);
+    assert(space.allocations()==0);
+    std::cout << "Original KCL rays: ground/segment octrees, floor height, hit records, water/owner filters and one-sided surfaces passed.\n";
+}
+
+std::vector<std::pair<uint32_t,uint32_t>> actorPhases;
+int record_actor_phase(uint32_t actor) {
+    using sm64ds::packed::Ptr;
+    assert(*Ptr<uint32_t>(0x020a4b68u));
+    actorPhases.emplace_back(*Ptr<uint32_t>(0x02099f24u),actor);
+    return 1;
+}
+void record_tree_phase(uint32_t actor) {
+    actorPhases.emplace_back(*sm64ds::packed::Ptr<uint32_t>(0x02099f24u),actor);
+}
+void actor_frame_runtime() {
+    using sm64ds::packed::Ptr;
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u);
+    space.map(0x02004000u,main.data(),main.size());
+    sm64ds::bind_stage_runtime(space);
+    space.bind(0x60004000u,&record_actor_phase);space.bind(0x60004001u,&record_tree_phase);
+    sm64ds::packed::Space::Scope scope(space);
+    std::vector<uint32_t> allocated;
+    std::vector<std::pair<uint32_t,uint32_t>> expected;
+    for (auto phase : {std::pair<uint32_t,uint32_t>{4,0x020a4ba8u},
+                       {2,0x020a4b88u},{3,0x020a4b78u},{5,0x020a4b98u}}) {
+        const uint32_t actor=space.allocate(0x50),node=actor+0x28;allocated.push_back(actor);
+        *Ptr<uint32_t>(node+8)=actor;
+        *Ptr<uint32_t>(phase.second)=*Ptr<uint32_t>(phase.second+4)=node;
+        *Ptr<uint32_t>(phase.second+8)=0x60004000u;
+        expected.emplace_back(phase.first,actor);
+    }
+    const uint32_t rootActor=space.allocate(0x50),childActor=space.allocate(0x50),siblingActor=space.allocate(0x50);
+    const uint32_t root=rootActor+0x14,child=childActor+0x14,sibling=siblingActor+0x14;
+    allocated.insert(allocated.end(),{rootActor,childActor,siblingActor});
+    *Ptr<uint32_t>(root+4)=child;*Ptr<uint32_t>(root+16)=rootActor;
+    *Ptr<uint32_t>(child)=root;*Ptr<uint32_t>(child+12)=sibling;*Ptr<uint32_t>(child+16)=childActor;
+    *Ptr<uint32_t>(sibling)=root;*Ptr<uint32_t>(sibling+16)=siblingActor;
+    *Ptr<uint32_t>(0x020a4b6cu)=root;*Ptr<uint32_t>(0x020a4b70u)=0x60004001u;
+    expected.insert(expected.end(),{{1,rootActor},{1,childActor},{1,siblingActor}});
+    actorPhases.clear();
+    Ptr<void()>(0x02044120u)();
+    assert(actorPhases==expected);
+    assert(*Ptr<uint32_t>(0x02099f24u)==0 && *Ptr<uint32_t>(0x020a4b68u)==0);
+    for (uint32_t allocation : allocated) space.release(allocation);
+    std::cout << "Original actor frame: cleanup/init/behavior/render order and depth-first scene reconciliation passed.\n";
+}
 void synthetic_initializer() {
     ++overlayInitializers;
     *sm64ds::packed::Ptr<uint32_t>(0x020b0004u)=0x55667788u;
@@ -532,6 +647,8 @@ int main(int argc, char **argv) {
     audio_groups();
     controller_glyph_words();
     player_state_runtime();
+    ground_runtime();
+    actor_frame_runtime();
     if (argc < 2) {
         std::cout << "NARC bounds passed; native boot needs a private ROM.\n";
         return 0;
@@ -743,14 +860,14 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x020c7838u);
+                    "Unlinked native code handle: " + std::to_string(0x0214589cu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
-            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 5);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 4);
             auto stageWord = [&](uint32_t address) {
                 uint32_t value=0;
                 std::memcpy(&value,stageSpace->data(address,4),4);
@@ -866,7 +983,8 @@ int main(int argc, char **argv) {
                                assets->collision().data()+16,assets->collision().size()-16)==0);
             assert(stageWord(actor+0x9c4)==0);
             // The real entrance loader constructed and initialized the Player
-            // through its state transition. The next state body is still unlinked.
+            // through its full entrance-state initializer. Door's overlay-100
+            // factory is now the next original dependency reached naturally.
             const uint32_t playerNode=stageWord(0x0209b468u),player=stageWord(playerNode+8);
             assert(playerNode==player+0x50 && stageSpace->allocation_size(player)>=0x768);
             assert(stageWord(player)==0x0210a83cu);
@@ -900,6 +1018,17 @@ int main(int argc, char **argv) {
             assert(stageWord(player+0x380+0x14)==player && stageWord(player+0x380+0x18)==0x32000);
             assert(stageWord(player+0x380+0x10c)==0x28000);
             assert(stageWord(player+0xa0)==uint32_t(-0x4b000));
+            assert(*static_cast<uint8_t *>(stageSpace->data(player+14,1))==1);
+            assert(*static_cast<uint8_t *>(stageSpace->data(player+0x6e5,1))==2);
+            assert(*static_cast<uint8_t *>(stageSpace->data(player+0x709,1))==1);
+            const uint32_t camera=stageWord(0x0209f318u);
+            assert(camera && stageSpace->allocation_size(camera)==0x1a8);
+            assert(stageWord(camera)==0x02086f84u && stageWord(camera+0x110)==player);
+            assert(*static_cast<uint8_t *>(stageSpace->data(camera+14,1))==1);
+            assert(stageWord(camera+0xf8)==0x1555 && stageWord(camera+0xfc)==0x1000);
+            assert(stageWord(camera+0x100)==0x1388000);
+            assert(std::memcmp(stageSpace->data(camera+0x50,0x30),
+                               stageSpace->data(0x0209b3ecu,0x30),0x30)==0);
             assert(stageWord(0x0209f5c0u)==actor);
             assert(stageWord(0x0209f314u)==actor+0x8bc);
             assert(*static_cast<uint8_t *>(stageSpace->data(0x0209f2f8u,1))==1);

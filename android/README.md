@@ -42,8 +42,12 @@ the pinned sequencer.
 Private-ROM execution with stylus/button input reaches the actual save menu
 and emits a launch result. It is passed to the original file-launch branch;
 results 3/4/5 map to slots 0/1/2 and call `StartFile`/`LoadLevel`. No launcher
-code selects a file. Scene 3, actor/Player execution, collision/camera/HUD and
-complete rendering fidelity remain under development. The current title uses
+code selects a file. Native stage setup now completes the Player entrance state,
+KCL ground/line queries and camera initialization/rendering. Original actor
+process lists, gameplay input routing and stage 3D/OBJ scanout are connected.
+The next original missing dependency is the overlay-100 castle-door factory;
+remaining actors, camera behavior, HUD and stage setup remain under development.
+The current title uses
 two screens; fullscreen gameplay/minimap composition is pending. No phone
 compatibility or performance claim is made.
 
