@@ -41,9 +41,37 @@ int main() {
         assert(store.load_minigames(mini) && mini[0] == '5');
         mini[12] = 0x4a;
         assert(store.save_minigames(mini));
+        assert(!store.read(UINT32_MAX, file.data(), 2));
+        assert(!store.write(0, file.data(), 2)); // card has not been claimed
+    }
+    {
+        std::ifstream f(path, std::ios::binary);
+        const std::vector<uint8_t> image{std::istreambuf_iterator<char>(f), {}};
+        assert(image.size() == SaveStore::Size);
+        assert(std::equal(image.begin(), image.begin() + 0x4e, image.begin() + 0x1000));
+        assert(std::string(image.begin() + 2, image.begin() + 10) == "ds mario");
+        const uint16_t sum = image[0] | (uint16_t(image[1]) << 8);
+        assert(sum == checksum(image.data() + 10, SaveStore::FileSize));
+    }
+    {
+        SaveStore store(path);
+        assert(store.load_file(0, file) && file[0x13] == 0xa5);
+        assert(store.load_minigames(mini) && mini[12] == 0x4a);
+        const int lock = store.take_lock();
+        store.claim(lock);
+        assert(!store.read(UINT32_MAX, file.data(), 2));
+        assert(!store.write(SaveStore::Size - 1, file.data(), 2));
+        store.unclaim(lock);
+        store.release_lock(lock);
+    }
+    // Keep the original save-test's 0x4a record unchanged. The live
+    // minigame globals and a separately supplied SaveStore::MinigameData
+    // are two distinct owners until the menu explicitly loads one into the
+    // other. Exercise their persistence on an independent cartridge image.
+    const std::string minigamePath = std::string(directory) + "/minigame.sav";
+    {
+        SaveStore store(minigamePath);
         using sm64ds::MinigameProgress;
-        // Execute unlock/new/record writes against the actual live original
-        // minigame save block; persist with SaveData's real EEPROM protocol.
         assert(MinigameProgress::unlocked(0));
         assert(!MinigameProgress::unlocked(35));
         MinigameProgress::unlock(35);
@@ -66,33 +94,15 @@ int main() {
         catch (const std::out_of_range &) { invalid = true; }
         assert(invalid);
         assert(MinigameProgress::persist());
-        assert(!store.read(UINT32_MAX, file.data(), 2));
-        assert(!store.write(0, file.data(), 2)); // card has not been claimed
     }
     {
-        std::ifstream f(path, std::ios::binary);
-        const std::vector<uint8_t> image{std::istreambuf_iterator<char>(f), {}};
-        assert(image.size() == SaveStore::Size);
-        assert(std::equal(image.begin(), image.begin() + 0x4e, image.begin() + 0x1000));
-        assert(std::string(image.begin() + 2, image.begin() + 10) == "ds mario");
-        const uint16_t sum = image[0] | (uint16_t(image[1]) << 8);
-        assert(sum == checksum(image.data() + 10, SaveStore::FileSize));
-    }
-    {
-        SaveStore store(path);
-        assert(store.load_file(0, file) && file[0x13] == 0xa5);
-        assert(store.load_minigames(mini) && mini[12] == 0x4a);
+        SaveStore store(minigamePath);
         using sm64ds::MinigameProgress;
         assert(MinigameProgress::unlocked(35) && !MinigameProgress::is_new(35));
         assert(!MinigameProgress::is_new(0));
         assert(MinigameProgress::record(35, 4) == 4321);
-        const int lock = store.take_lock();
-        store.claim(lock);
-        assert(!store.read(UINT32_MAX, file.data(), 2));
-        assert(!store.write(SaveStore::Size - 1, file.data(), 2));
-        store.unclaim(lock);
-        store.release_lock(lock);
     }
+    std::remove(minigamePath.c_str());
     corrupt(path, 0); // original code must recover the mirror
     {
         SaveStore store(path);
