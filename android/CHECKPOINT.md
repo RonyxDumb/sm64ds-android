@@ -1,3 +1,31 @@
+# Current checkpoint — 2026-11-05, execute original ARM9 minigame save leaf bodies
+
+Continues published main 91484c03a09581644190a669f729ff09bda4a1a9.
+Current port remains **not playable** in the minigame room; the earlier
+0.4.21-player-animation version is unchanged.
+
+Five recovered, unchanged ARM9 C source files now compile directly into the
+Android target and the host SaveStore regression:
+func_02013568 (set record), func_02013580 (read record),
+func_020135d0 (unseen badge), func_0201361c (unlock),
+func_02013638 (unlock test). The checked native MinigameProgress interface
+calls these original bodies, never a success-returning stub. The original
+data_0209caf4[36][5] alias is mapped exactly onto the live save block
+at data_0209caa0 + 0x54. The recovered func_02013598 still has an
+unconditional negative shift for indices below 28, so clear_new uses a
+bounded native byte/word implementation instead of invoking undefined
+behavior. The original SaveData::SaveMinigames handles actual persistence,
+mirror and checksums. Existing minigame catalog, overlay discovery and
+touch hitbox decoder remain unchanged.
+
+CI: latest push awaits the native filesystem/save/game tests, ARM64 APK and
+lint results. This is not evidence of a running menu or any playable
+original minigame. ROM-based overlay-5 table acceptance, full scene-5
+lifecycle, overlay-6 gameplay, UI rendering, touch and device persistence
+still require separately verified runtime work.
+
+---
+
 # Current checkpoint — 2026-11-05, original minigame catalog, saves and touchscreen hitboxes
 
 Continues published main 1163315db6494dadf97a5361ba0f30056808ecc4.
