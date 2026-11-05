@@ -37,6 +37,7 @@ void bind_overlay_sources(packed::Space &,unsigned);
 }
 void minigame_oam_runtime();
 void minigame_state_runtime();
+void minigame_base_leaf_runtime();
 void minigame_record_runtime();
 void wipe_runtime_tests();
 void minigame_state_cartridge(sm64ds::Cartridge &);
@@ -844,6 +845,7 @@ void minigame_art_decode() {
 int main(int argc, char **argv) {
     minigame_oam_runtime();
     minigame_state_runtime();
+    minigame_base_leaf_runtime();
     minigame_record_runtime();
     wipe_runtime_tests();
     narc_bounds();

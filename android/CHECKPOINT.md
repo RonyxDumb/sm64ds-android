@@ -1,3 +1,13 @@
+# Checkpoint — 2026-11-05, original minigame base leaves
+
+Nine original ov004 entry points are now bound to native typed leaf bodies:
+base variant test, display mode, rendering/pending-destruction defaults,
+level lookup and credit arithmetic. Host regression covers saturation,
+missing-scene handling and variant parameter bits. This is not a complete
+scene constructor or a playable game.
+
+---
+
 # Checkpoint — 2026-11-05, ungated original minigame gameplay bootstrap
 
 Branch **main**. Removed `supports_scene`, `mg_CanStartGame`, the

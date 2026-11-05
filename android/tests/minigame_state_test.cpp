@@ -264,3 +264,37 @@ void minigame_record_runtime() {
     unlink(path.c_str());
     std::cout << "Original minigame scoring: cap, record-slot extraction, session/submission distinction, ranking, EEPROM persist/reopen passed.\n";
 }
+
+void minigame_base_leaf_runtime() {
+    sm64ds::GameHeap heap(2<<20);
+    Space space(heap);
+    space.map_owned(0x020ad660u,0x020bfec0u-0x020ad660u);
+    sm64ds::bind_minigame_shared_runtime(space);
+    Space::Scope scope(space);
+    const uint32_t actor=space.allocate(0x4660);
+    *Ptr<uint32_t>(0x020beb68u)=actor;
+    *Ptr<uint32_t>(actor+8u)=0;
+    assert(Ptr<int(uint32_t)>(0x020ad660u)(actor)==0);
+    *Ptr<uint32_t>(actor+8u)=0x123401u;
+    assert(Ptr<int(uint32_t)>(0x020ad660u)(actor)==1);
+    *Ptr<uint32_t>(actor+0xbcu)=42;
+    assert(Ptr<int()>(0x020b1aecu)()==42);
+    assert(Ptr<int(uint32_t)>(0x020b04e0u)(actor)==0);
+    Ptr<void(uint32_t)>(0x020b04ecu)(actor);
+    assert(Ptr<int(uint32_t)>(0x020b04f0u)(actor)==1);
+    *Ptr<int32_t>(actor+0xa8u)=100;
+    Ptr<void(uint32_t,int)>(0x020b1b78u)(actor,200);
+    assert(*Ptr<int32_t>(actor+0xa8u)==0);
+    Ptr<void(uint32_t,int)>(0x020b1ba0u)(actor,15000);
+    assert(*Ptr<int32_t>(actor+0xa8u)==9999);
+    Ptr<void(uint32_t)>(0x020b1b08u)(1000);
+    assert(*Ptr<int32_t>(actor+0xa8u)==8999);
+    Ptr<void(uint32_t)>(0x020b1b40u)(2000);
+    assert(*Ptr<int32_t>(actor+0xa8u)==9999);
+    *Ptr<uint32_t>(0x020beb68u)=0;
+    assert(Ptr<int()>(0x020b1aecu)()==0);
+    Ptr<void(uint32_t)>(0x020b1b40u)(123);
+    assert(*Ptr<int32_t>(actor+0xa8u)==9999);
+    space.release(actor);
+    std::cout << "Original minigame base leaves: variant, display, level, credits passed.\n";
+}

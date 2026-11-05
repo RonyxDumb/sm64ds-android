@@ -2,6 +2,8 @@
 #include "packed_ptr.h"
 #include "boot_seams.h"
 #include <cstring>
+#include <algorithm>
+#include <cstdint>
 #include <stdexcept>
 
 namespace sm64ds::minigame_sources {
@@ -9,6 +11,37 @@ void bind_sources(packed::Space &);
 void bind_overlay_sources(packed::Space &,unsigned);
 }
 extern "C" { extern int data_0209caa0[]; extern unsigned char gTouchHeld[],gActivePlayerSlot; }
+namespace {
+// Original ov004 leaf bodies on Nintendo DS-width scene records. Descendant
+// overrides still dispatch through their own original callback addresses.
+template<class T> T &mg_field(uint32_t address) { return *sm64ds::packed::Ptr<T>(address); }
+int mg_base_is_alt(uint32_t actor) {
+    return (mg_field<uint32_t>(actor+8u)&0xffu)!=0;
+}
+int mg_base_display_mode(uint32_t) { return 0; }
+void mg_base_pending_destroy(uint32_t) {}
+int mg_base_render(uint32_t) { return 1; }
+int mg_get_level() {
+    const uint32_t scene=mg_field<uint32_t>(0x020beb68u);
+    return scene ? static_cast<int>(mg_field<uint32_t>(scene+0xbcu)) : 0;
+}
+void mg_sub_credits(uint32_t scene,int delta) {
+    const int64_t next=int64_t(mg_field<int32_t>(scene+0xa8u))-delta;
+    mg_field<int32_t>(scene+0xa8u)=static_cast<int32_t>(std::clamp<int64_t>(next,0,9999));
+}
+void mg_add_credits(uint32_t scene,int delta) {
+    const int64_t next=int64_t(mg_field<int32_t>(scene+0xa8u))+delta;
+    mg_field<int32_t>(scene+0xa8u)=static_cast<int32_t>(std::clamp<int64_t>(next,0,9999));
+}
+void mg_lose_credits(uint32_t amount) {
+    const uint32_t scene=mg_field<uint32_t>(0x020beb68u);
+    if (scene) mg_sub_credits(scene,static_cast<int32_t>(amount));
+}
+void mg_gain_credits(uint32_t amount) {
+    const uint32_t scene=mg_field<uint32_t>(0x020beb68u);
+    if (scene) mg_add_credits(scene,static_cast<int32_t>(amount));
+}
+}
 namespace sm64ds {
 void map_minigame_live_arm9(packed::Space &space, Cartridge::DataImage &arm9) {
     // Live aliases are shared with SaveStore and Android's DS touch controller.
@@ -33,6 +66,15 @@ void map_minigame_live_arm9(packed::Space &space, Cartridge::DataImage &arm9) {
 void bind_minigame_shared_runtime(packed::Space &space) {
     minigame_sources::bind_sources(space);
     minigame_sources::bind_overlay_sources(space,4);
+    space.bind(0x020ad660u,&mg_base_is_alt);
+    space.bind(0x020b04e0u,&mg_base_display_mode);
+    space.bind(0x020b04ecu,&mg_base_pending_destroy);
+    space.bind(0x020b04f0u,&mg_base_render);
+    space.bind(0x020b1aecu,&mg_get_level);
+    space.bind(0x020b1b08u,&mg_lose_credits);
+    space.bind(0x020b1b40u,&mg_gain_credits);
+    space.bind(0x020b1b78u,&mg_sub_credits);
+    space.bind(0x020b1ba0u,&mg_add_credits);
 }
 void validate_minigame_shared_runtime(const packed::Space &space) {
     for (uint32_t address=0x020bc8bcu;address<0x020bca44u;address+=8) {
