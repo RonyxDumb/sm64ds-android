@@ -1,3 +1,44 @@
+# Current checkpoint — 2026-11-05, minigame font work-buffer seam
+
+Continues published main ef931b13c5d1b2fdf5dee101f91ce71b23803884.
+**Partial infrastructure only; minigame menu and gameplay NOT working or verified.**
+The existing 0.4.21 player-animation version remains unchanged.
+
+The original GetSceneOverlayID routes scene 5 (dScMiniGm_c) to overlay 5
+and minigame actor IDs 0x169–0x186 to overlay 6. The frontend's original
+dScDSMT_c::Behavior requests StartMinigameMenu(0) for result 7, but the
+native GameProgram::accept_title_result currently only launches save-file
+results 3–5. GameProgram::tick still runs scenes 1 and 3 only. Neither the
+overlay-5 menu actor nor overlay-6 game actors are bound to a native
+packed-ABI scheduler. Their original src/minigames sources exist but are not
+in the Android execution manifest. In particular, no original menu render,
+page navigation, save-record lifecycle, or completed minigame can be claimed.
+
+One concrete dependency is closed: Mg_GetWorkBuffer now returns native-owned
+storage sized to the real cartridge's file 0x980e. LoadFileAt's checked copy
+can write to this storage without hijacking live BG/OBJ VRAM, and rejects
+writes beyond it. The private-ROM game integration test checks buffer
+stability, exact resource bytes, and out-of-bounds rejection. The test is
+compiled in CI but its ROM-backed branch only runs when explicitly supplied
+a private cartridge. No protected ROM or extracted game assets are committed.
+
+Verification status at publication: GitHub Actions build for ef931b1 was
+in progress; not yet a reported pass. Android device/emulator rendering,
+touchscreen, navigation, original game launch, play-to-completion and record
+persistence have NOT been tested. The new seam must not be equated with
+functional minigame support. Previous two-screen display, stage and title
+routes are intentionally unchanged.
+
+Next: implement an original overlay-5 scene-owner with the dScene_c/fBase_c
+lifecycle in a checked packed::Space, mount its immutable cartridge tables
+and original OAM/font/audio callback code, connect result 7 + saved-minigame
+read/write without modifying original decomp files, then verify selection,
+return, unlock/records and overlay-6 scene dispatch. Bind and test at least
+one complete original overlay-6 game before extending the registry. Do not
+replace missing native callbacks with successful stubs.
+
+---
+
 # Current checkpoint — 2026-11-05, original Player body animation and rendering
 
 Continues published main ede8cbeca70166789142e461d6f1dfba2c49148d.
