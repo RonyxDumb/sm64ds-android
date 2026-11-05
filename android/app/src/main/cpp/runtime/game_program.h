@@ -9,6 +9,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <vector>
 namespace sm64ds {
 // Native owner of recovered boot, title-file and stage-flow state. Requests come from recovered
 // dScene_c methods; an unlinked destination is reported explicitly.
@@ -56,6 +57,10 @@ public:
     void *load(uint32_t handle);
     void release(void *pointer);
     size_t bytes_at(const void *pointer) const;
+    // An owned, exact-size destination for the original LoadFont(2) cartridge bytes.
+    // Never aliases the displayed BG/OBJ VRAM banks.
+    void *minigame_font_work_buffer();
+    void *font_work_destination(void *target, size_t bytes) const;
     bool sound(uint32_t archive, uint32_t entry) {
         return sound_(archive, entry);
     }
@@ -80,6 +85,7 @@ private:
     int activeScene_=0,pendingMusic_=-1;
     uint16_t musicDelay_=0;
     std::map<void *, size_t> files_;
+    std::vector<uint8_t> minigameFontBuffer_;
     ntr::Framebuffer main_{}, sub_{};
     void (*job_)(int) = nullptr;
     int argument_ = 0;

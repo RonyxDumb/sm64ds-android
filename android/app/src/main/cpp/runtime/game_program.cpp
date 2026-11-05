@@ -49,6 +49,8 @@ void copy_video(const void *source, void *target, size_t size) {
     void *destination = video_destination(target, size, ntr::VRAM_BASE, ntr::VRAM_SIZE);
     if (!destination)
         destination = video_destination(target, size, ntr::PLTT_BASE, ntr::PLTT_SIZE);
+    if (!destination)
+        destination = sm64ds::GameProgram::active().font_work_destination(target, size);
     require(source && destination, "Video upload outside mapped memory.");
     require(size <= sm64ds::GameProgram::active().bytes_at(source),
             "Video upload exceeds source data.");
@@ -141,7 +143,7 @@ void MultiCopy_Int(int *source, int *target, int size) {
     copy_video(source, target, static_cast<size_t>(size));
 }
 void *Mg_GetWorkBuffer() {
-    throw std::runtime_error("Minigame font work buffer is not linked.");
+    return sm64ds::GameProgram::active().minigame_font_work_buffer();
 }
 int func_0201a244(AsyncJobCallback callback, int argument, int, int stack, int) {
     require(stack == 0 && callback, "Unsupported native boot stack.");
@@ -324,6 +326,25 @@ void GameProgram::release(void *p) {
     require(found != files_.end(), "Unowned native file release.");
     Resources::active().heap().deallocate(p);
     files_.erase(found);
+}
+void *GameProgram::minigame_font_work_buffer() {
+    if (minigameFontBuffer_.empty()) {
+        // 0x980e is the original font file handle used by LoadFont(2).
+        // Size it from the actual cartridge, not from an assumed VRAM slot.
+        const size_t size = cartridge_.file(0x980e).size();
+        require(size >= 0x4000 && size <= 0x20000,
+                "Invalid original minigame font work-buffer extent.");
+        minigameFontBuffer_.resize(size);
+    }
+    return minigameFontBuffer_.data();
+}
+void *GameProgram::font_work_destination(void *target, size_t bytes) const {
+    if (minigameFontBuffer_.empty()) return nullptr;
+    const uintptr_t base = reinterpret_cast<uintptr_t>(minigameFontBuffer_.data());
+    const uintptr_t at = reinterpret_cast<uintptr_t>(target);
+    if (at < base || at - base > minigameFontBuffer_.size() ||
+        bytes > minigameFontBuffer_.size() - (at - base)) return nullptr;
+    return target;
 }
 size_t GameProgram::bytes_at(const void *p) const {
     uintptr_t at = reinterpret_cast<uintptr_t>(p);

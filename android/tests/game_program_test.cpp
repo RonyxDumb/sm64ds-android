@@ -21,6 +21,8 @@
 #include <unordered_set>
 #include <unistd.h>
 extern "C" void MultiCopy_Int(int *, int *, int);
+extern "C" void *Mg_GetWorkBuffer();
+extern "C" int LoadFileAt(int, void *);
 namespace cstd {
 s16 atan2(s32, s32);
 int sqrt(unsigned long long);
@@ -804,6 +806,15 @@ int main(int argc, char **argv) {
             },[&](const sm64ds::SoundRequest &request){ return music.native(request); });
             assert(game.boot().mFadeTimer == 60 && game.boot().mState == 0);
             assert(game.requested_scene() == 0x187);
+            // Exercise the actual LoadFont(2) destination contract without
+            // changing the displayed VRAM or pretending the menu is linked.
+            const auto minigameFont = cartridge.file(0x980e);
+            auto *fontWork = static_cast<uint8_t *>(Mg_GetWorkBuffer());
+            assert(fontWork && Mg_GetWorkBuffer() == fontWork);
+            assert(game.font_work_destination(fontWork, minigameFont.size()) == fontWork);
+            assert(game.font_work_destination(fontWork + 1, minigameFont.size()) == nullptr);
+            assert(LoadFileAt(0x980e, fontWork) == 1);
+            assert(std::memcmp(fontWork, minigameFont.data(), minigameFont.size()) == 0);
             bool secondRejected = false;
             try {
                 sm64ds::GameProgram second(argv[1], [](uint32_t, uint32_t) { return true; });
