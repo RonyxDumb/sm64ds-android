@@ -71,6 +71,53 @@ def slices(projected, free_c, symbols, data_symbols):
         return (result+' '+cls+'::'+name+'()',
                 export or '_ZN'+str(len(cls))+cls+str(len(name))+name+'Ev','void *object')
 
+    add('stage_bg_actor_transform','src/runtime/actor/d_bg_actor.cpp',2,
+        [method('dBgActor_c','UpdateModelPosAndRotY','void'),
+         method('dBgActor_c','UpdateClsnPosAndRot','void')],
+        {'mModel':('Model',0xd4),'mClsnMat':('Matrix4x3',0x2ec)},
+        {'mMeshCollider.Transform(mClsnMat, mAngleY)':
+            '_ZN10dBgW_KcMbg9TransformERK9Matrix4x3s((char *)object+0x124,&mClsnMat,mAngleY)'},'''
+void Matrix4x3_FromRotationY(Matrix4x3 *,int);
+void _ZN10dBgW_KcMbg9TransformERK9Matrix4x3s(void *,Matrix4x3 *,s16);
+''')
+
+    add('stage_metalnet_init','src/game/actors/d_a_obj_mc_metalnet.cpp',9,
+        [method('daObjMc_Metalnet_c','InitResources','s32'),
+         method('daObjMc_Metalnet_c','OnPendingDestroy','void')],{},
+        {'dExtSimpleModel_c::LoadFile(data_ov009_02113e90)':
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov009_02113e90)',
+         'mModel.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0xd4,',
+         'UpdateModelPosAndRotY()':'_ZN10dBgActor_c21UpdateModelPosAndRotYEv(object)',
+         'UpdateClsnPosAndRot()':'_ZN10dBgActor_c19UpdateClsnPosAndRotEv(object)',
+         'dBgW_Kc::LoadFile(data_ov009_02113e88)':
+            '_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(&data_ov009_02113e88)',
+         'KCL_File *':'void *','(KCL_File *)':'','(BMD_File *)':'',
+         '''((dBgW_KcMbg *)(&mMeshCollider))
+        ->dBgW_KcMbg::SetFile(kcl, *(&mClsnMat), 0x1000, mAngleY,
+                              *(CLPS_Block *)(&data_ov009_02112bf8))''':
+            '_ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block((char *)object+0x124,kcl,(Matrix4x3 *)((char *)object+0x2ec),0x1000,mAngleY,data_ov009_02112bf8)',
+         'IsVsMode()':'(data_0209f2d8 == 1)'},MODEL_API+'''
+extern SharedFilePtr data_ov009_02113e90,data_ov009_02113e88;
+extern u8 data_ov009_02112bf8[],data_0209f2d8; extern int data_0209caa0[];
+void _ZN10dBgActor_c21UpdateModelPosAndRotYEv(void *);
+void _ZN10dBgActor_c19UpdateClsnPosAndRotEv(void *);
+void *_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(SharedFilePtr *);
+void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block(void *,void *,Matrix4x3 *,int,s16,void *);
+u8 NumStars();
+''')
+
+    add('stage_sign_init','src/game/actors/d_a_obj_kanban.cpp',85,
+        [method('daObjKanban_c','InitResources',export='_ZN8WallSign13InitResourcesEv')],{},
+        {'dExtSimpleModel_c::LoadFile(data_ov085_02130858)':
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov085_02130858)',
+         'mModel.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0xd4,',
+         '(BMD_File *)':'','struct Vector3':'Vec3',
+         'UpdateModelPosAndRotY()':'_ZN10dBgActor_c21UpdateModelPosAndRotYEv(object)'},MODEL_API+'''
+extern SharedFilePtr data_ov085_02130858; extern Vec3 data_ov085_0212f29c;
+void _ZN10dBgActor_c21UpdateModelPosAndRotYEv(void *);
+void _ZN10dCcAcPos_c4InitEP8dActor_cRK7Vector35Fix12IiES6_jj(void *,void *,Vec3 *,int,int,u32,u32);
+''','struct Vec3 { s32 x,y,z; };\n')
+
     rel='src/game/actors/d_a_door.cpp'
     extra='struct Vec3i { s32 x,y,z; }; struct M48 { s32 w[12]; };\n'
     extra+=re.search(r'struct DoorEntry \{.*?\n\};',(ROOT/rel).read_text(),re.S).group()+'\n'

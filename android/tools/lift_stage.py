@@ -449,7 +449,8 @@ def shared_file_handles():
     model=model.replace('ptr.ReallocateModelFile()','_ZN13SharedFilePtr19ReallocateModelFileEv(ptr)')
     body+='\n'+model
     animation_loaders=[]
-    for cls,ret,kind in [('dExtFrameCtrl_c','char *','BCA'),('dExtAnmTexPat_c','void *','BTP')]:
+    for cls,ret,kind in [('dExtFrameCtrl_c','char *','BCA'),('dExtAnmTexPat_c','void *','BTP'),
+                         ('dBgW_Kc','char *','KCL')]:
         symbol='_ZN'+str(len(cls))+cls+'8LoadFileER13SharedFilePtr'
         signature=ret+cls+'::LoadFile(SharedFilePtr &ptr)'
         loader=replace_once(function(raw,signature),signature,
@@ -476,6 +477,7 @@ void _ZN17dExtSimpleModel_c17UpdateFileOffsetsER8BMD_File(void *);
 void *_ZN17dExtSimpleModel_c23AddToCommonModelDataArrER8BMD_File(void *);
 void _ZN15dExtFrameCtrl_c17UpdateFileOffsetsER8BCA_File(void *);
 void _ZN15dExtAnmTexPat_c17UpdateFileOffsetsER8BTP_File(void *);
+void _ZN7dBgW_Kc17UpdateFileOffsetsER8KCL_File(void *);
 '''
     return projected(rel,body,prototypes,[*signatures,*methods,*animation_loaders,
                      '_ZN13SharedFilePtr9ConstructEj','_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr'])
@@ -1233,6 +1235,9 @@ if __name__ == '__main__':
         rows.append(row); bindings.extend(code)
     from stage_actor_views import slices
     for row,code in slices(projected,free_c,SYMBOLS,DATA_SYMBOLS):
+        rows.append(row);bindings.extend(code)
+    from stage_moving_views import slices as moving_slices
+    for row,code in moving_slices(projected,free_c):
         rows.append(row);bindings.extend(code)
     for name in ['func_ov002_020e5948','func_ov002_020e63a4',
                  'func_ov002_020e6330','func_ov002_020e6350','func_ov002_020e6780',

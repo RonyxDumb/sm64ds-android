@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 extern "C" uint8_t GetControllerMode(int);
+extern "C" uint8_t NumStars();
 extern "C" int GetOwnerLanguage();
 extern "C" void LoadFont(uint8_t);
 extern "C" int LoadFileAt(int,void *);
@@ -807,6 +808,44 @@ uint32_t stage_fish_factory() {
     at<int32_t>(actor+0x138)=1; // daFish_c's out-of-line constructor seed
     return actor;
 }
+uint32_t stage_bg_actor_construct(uint32_t actor) {
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=0x0210ae38u;
+    native_simple_model_construct(actor+0xd4);
+    native_mesh_collider_construct(actor+0x124);
+    at<uint32_t>(actor+0x124)=0x02099434u;
+    return actor;
+}
+uint32_t stage_metalnet_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x320);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x02113ae0u;
+    return actor;
+}
+uint32_t stage_sign_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x368);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x02130400u;
+    stage_actor_cylinder_construct(actor+0x320,true);
+    return actor;
+}
+int stage_collider_is_enabled(uint32_t collider) { return at<uint8_t>(collider+20)!=24; }
+int stage_collider_disable(uint32_t collider) {
+    const uint8_t slot=at<uint8_t>(collider+20);
+    if(slot==24) return 1;
+    if(slot>24) throw std::runtime_error("Invalid mesh collider slot.");
+    at<uint32_t>(0x020a0c80u+slot*4)=0;
+    at<uint8_t>(collider+20)=24;
+    return 1;
+}
+void stage_scale_matrix(uint32_t matrix,int x,int y,int z) {
+    // func_020527e8: the original Thumb SDK scale-matrix primitive.
+    auto &space=packed::Space::current();
+    std::memset(space.data(matrix,48),0,48);
+    at<int32_t>(matrix)=x;
+    at<int32_t>(matrix+16)=y;
+    at<int32_t>(matrix+32)=z;
+}
 uint32_t stage_position_cylinder_construct(uint32_t collider) {
     (void)packed::Space::current().data(collider,0x3c);
     at<uint32_t>(collider)=0x0208e6bcu;
@@ -1110,9 +1149,11 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==9) {
+        space.bind(0x02112048u,&stage_metalnet_factory);
         space.bind(0x021121f0u,&stage_castle_flag_factory);
         space.bind(0x02111a30u,&stage_bird_factory);
     }
+    if (id==85) space.bind(0x0212f244u,&stage_sign_factory);
     if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
     if (id==100) {
         space.bind(0x0214589cu,&stage_door_factory);
@@ -1134,6 +1175,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
 }
 
 void bind_stage_runtime(packed::Space &space) {
+    space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
     space.bind(0x0200cae4u,&stage_camera_state_init);
@@ -1148,6 +1190,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015c0cu,&stage_frame_count);
     space.bind(0x02052820u,&pk_func_02052820);
     space.bind(0x02052800u,&pk_func_02052800);
+    space.bind(0x020527e8u,&stage_scale_matrix);
     space.bind(0x02015c20u,&stage_frame_set_animation);
     space.bind(0x02016748u,&stage_anim_model_set_animation);
     space.bind(0x0201597cu,&stage_texture_prepare);
@@ -1205,6 +1248,8 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02039760u,&stage_kcl_rebase);
     space.bind(0x020396f0u,&stage_kcl_set_file);
     space.bind(0x02039184u,&stage_collider_enable);
+    space.bind(0x020393dcu,&stage_collider_is_enabled);
+    space.bind(0x02039140u,&stage_collider_disable);
     space.bind(0x01ffb0ecu,&stage_kcl_origin_y);
     space.bind(0x01ffb0d0u,&stage_kcl_far_y);
     space.bind(0x0202a850u,&stage_vertical_bounds);

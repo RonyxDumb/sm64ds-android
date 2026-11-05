@@ -147,6 +147,65 @@ void player_state_runtime() {
     std::cout << "Original Player state transition: cleanup veto, native PMFs, reset, control lock and carried-object redirect passed.\n";
 }
 
+void moving_mesh_runtime() {
+    using sm64ds::packed::Ptr;
+    assert(ntr::io_init());
+    sm64ds::GameHeap heap(2*1024*1024);
+    sm64ds::packed::Space space(heap);
+    std::vector<uint8_t> main(0x020aa420u-0x02004000u);
+    space.map(0x02004000u,main.data(),main.size());
+    space.map(ntr::IO_BASE,ntr::host_ptr(ntr::IO_BASE),ntr::IO_SIZE);
+    sm64ds::frontend::bind_arm9_sources(space);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::packed::Space::Scope scope(space);
+    const uint32_t collider=space.allocate(0x1c8),matrix=space.allocate(48);
+    const uint32_t file=space.allocate(0x38),clps=space.allocate(16);
+    const uint32_t input=space.allocate(12),output=space.allocate(12);
+    sm64ds::native_mesh_collider_construct(collider);
+    *Ptr<uint32_t>(collider)=0x02099434u;
+    *Ptr<int32_t>(matrix)=*Ptr<int32_t>(matrix+16)=*Ptr<int32_t>(matrix+32)=0x1000;
+    *Ptr<int32_t>(matrix+36)=0xa000;
+    *Ptr<int32_t>(matrix+40)=0x14000;
+    *Ptr<int32_t>(matrix+44)=-0x5000;
+    Ptr<void(uint32_t,uint32_t,uint32_t,int,int16_t,uint32_t)>(0x0203a1e0u)(
+        collider,file,matrix,0x2000,0x7f00,clps);
+    assert(*Ptr<int32_t>(collider+0x50)==0x2000 && *Ptr<int32_t>(collider+0x164)==0x800);
+    assert(*Ptr<uint32_t>(collider+0x20)==file && *Ptr<uint32_t>(collider+0x24)==clps);
+    *Ptr<int32_t>(input)=0x1000;
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02039e30u)(collider,input,output);
+    assert(*Ptr<int32_t>(output)==0xc000 && *Ptr<int32_t>(output+4)==0x14000);
+    assert(*Ptr<int32_t>(output+8)==-0x5000);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02039e48u)(collider,output,output);
+    assert(*Ptr<int32_t>(output)==0x1000 && *Ptr<int32_t>(output+4)==0 && *Ptr<int32_t>(output+8)==0);
+    // A quarter-turn and translation must carry an existing world-space point
+    // using the previous inverse, independently of the uniform mesh scale.
+    *Ptr<int32_t>(matrix)=*Ptr<int32_t>(matrix+32)=0;
+    *Ptr<int32_t>(matrix+8)=-0x1000; *Ptr<int32_t>(matrix+24)=0x1000;
+    *Ptr<int32_t>(matrix+36)=0xe000; *Ptr<int32_t>(matrix+40)=0x16000;
+    *Ptr<int32_t>(matrix+44)=-0x4000;
+    Ptr<void(uint32_t,uint32_t,int16_t)>(0x02039f20u)(collider,matrix,int16_t(0x8100));
+    assert(Ptr<int16_t(uint32_t)>(0x02039924u)(collider)==0x200);
+    Ptr<void(uint32_t,uint32_t)>(0x02039908u)(collider,output);
+    assert(*Ptr<int32_t>(output)==0x4000 && *Ptr<int32_t>(output+4)==0x2000);
+    assert(*Ptr<int32_t>(output+8)==0x1000);
+    *Ptr<int32_t>(input)=0xb000; *Ptr<int32_t>(input+4)=0x14000;
+    *Ptr<int32_t>(input+8)=-0x5000;
+    assert(Ptr<int(uint32_t,uint32_t,uint32_t)>(0x02039930u)(collider,input,output)==1);
+    assert(*Ptr<int32_t>(output)==0xe000 && *Ptr<int32_t>(output+4)==0x16000);
+    assert(*Ptr<int32_t>(output+8)==-0x5000);
+    Ptr<void(uint32_t)>(0x020398fcu)(collider);
+    Ptr<void(uint32_t,uint32_t,int16_t)>(0x02039f20u)(collider,matrix,int16_t(0x8100));
+    assert(*Ptr<uint8_t>(collider+0x34)==1); // stationary movement filter
+    *Ptr<int32_t>(matrix+36)+=0x1000;
+    Ptr<void(uint32_t,uint32_t,int16_t)>(0x02039f20u)(collider,matrix,int16_t(0x8100));
+    assert(*Ptr<uint8_t>(collider+0x34)==0 && *Ptr<uint8_t>(collider+0x35)==1);
+    assert(*Ptr<int32_t>(collider+0x44)==0xe66);
+    for(uint32_t address : {output,input,clps,file,matrix,collider}) space.release(address);
+    assert(space.allocations()==0);
+    std::cout << "Original moving mesh: scale/inverse, rotation, carrying, velocity, yaw wrap and motion filter passed.\n";
+}
+
 void ground_runtime() {
     using sm64ds::packed::Ptr;
     assert(ntr::io_init());
@@ -647,6 +706,7 @@ int main(int argc, char **argv) {
     audio_groups();
     controller_glyph_words();
     player_state_runtime();
+    moving_mesh_runtime();
     ground_runtime();
     actor_frame_runtime();
     if (argc < 2) {
@@ -860,7 +920,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02112048u);
+                    "Unlinked native code handle: " + std::to_string(0x020bc3c8u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
@@ -879,10 +939,32 @@ int main(int argc, char **argv) {
             // and real model/animation ownership.
             std::unordered_set<uint32_t> actorNodes;
             std::unordered_set<uint16_t> initializedTypes;
+            unsigned loadedNets=0;
             for(uint32_t node=stageWord(0x0209b468u);node;node=stageWord(node+4)) {
                 assert(actorNodes.insert(node).second && actorNodes.size()<512);
                 const uint32_t instance=stageWord(node+8);
                 const uint16_t id=*static_cast<uint16_t *>(stageSpace->data(instance+12,2));
+                const uint32_t vtable=stageWord(instance);
+                if(vtable==0x02113ae0u || vtable==0x02130400u) {
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(stageWord(instance+0xdc));
+                    assert(stageWord(instance+0x124)==0x02099434u);
+                    if(vtable==0x02113ae0u) {
+                        ++loadedNets;
+                        assert(stageSpace->allocation_size(instance)==0x320);
+                        const uint32_t mesh=instance+0x124,kcl=stageWord(mesh+0x20);
+                        assert(kcl && stageSpace->allocation_size(kcl)>=0x38);
+                        assert(stageWord(mesh+0x24)==0x02112bf8u);
+                        assert(stageWord(mesh+0x50)==0x1000 && stageWord(mesh+0x164)==0x1000);
+                        for(unsigned lane=0;lane<3;++lane)
+                            assert(stageWord(mesh+0x118+lane*4)==stageWord(instance+0x5c+lane*4));
+                    } else {
+                        assert(stageSpace->allocation_size(instance)==0x368);
+                        assert(stageWord(instance+0x320)==0x0208e704u);
+                        assert(stageWord(instance+0x350)==instance);
+                    }
+                    continue;
+                }
                 if(id!=353 && id!=343 && id!=336 && id!=207 && id!=286) continue;
                 const uint8_t life=*static_cast<uint8_t *>(stageSpace->data(instance+14,1));
                 if(id==286 && life!=1) {
@@ -914,6 +996,7 @@ int main(int argc, char **argv) {
                 }
             }
             for(uint16_t id : {353,343,336,207,286}) assert(initializedTypes.count(id));
+            assert(loadedNets>0);
             // All eleven actual modules and all 58 static initializers ran.
             // Code stays the real BLZ result. Constructors build handles and
             // state tables in writable data/BSS instead of fabricated data.

@@ -1,3 +1,34 @@
+# Current checkpoint — 2026-11-05, moving meshes and castle metal net
+
+Continues published main 3953c8d95174f154995f076f45a0b59e5b4303b3.
+Version 0.4.16-moving-mesh, versionCode 20. This checkpoint is not playable.
+
+The complete original moving-mesh SetFile/Transform, coordinate conversion,
+previous-frame carrying, velocity/yaw and movement-direction filter bodies now
+execute over checked 0x1c8-byte records. The Thumb scale-matrix primitive is
+adapted natively. dBgActor's original model/collider transform bodies and the
+original first-holder KCL loader are connected. Metalnet's complete resource
+initializer loads its real BMD, KCL and CLPS and preserves the original save/star
+conditions. The original NumStars routine is linked, not a replacement count.
+A reviewed wall-sign initializer/factory is compiled; the distinct movable
+signpost actor remains the next runtime dependency.
+
+ASan/UBSan checks cover scale/inverse round trips, quarter-turn transforms,
+previous-frame carrying, velocity, signed yaw wrap and stationary/moving depth
+filtering. All four private-ROM save/character paths initialize actual metal-net
+models and meshes and advance to daObjTatefuda_c_classInit at 0x020bc3c8.
+The regression inspects live actor records and real KCL/CLPS ownership; preceding
+Player, camera, castle and scheduler assertions remain active. Source/hostgen
+checks pass. LeakSanitizer is disabled locally. Android ARM64 CI and device
+verification are pending for this checkpoint.
+
+Next: finish the movable signpost, then castle water/waterfall initialization
+and the remaining scene/particle/HUD and per-frame dependencies. A complete
+original gameplay frame and visible movement/collision have not been verified.
+ROM, extracted resources and private test output remain untracked.
+
+---
+
 # Current checkpoint — 2026-11-05, castle actor initialization
 
 Continues published main ceed5171a39d45d21ef3bac79793fb6e8a6ee5cd.

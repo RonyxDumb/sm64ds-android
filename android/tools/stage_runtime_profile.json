@@ -150,6 +150,16 @@
     "include/daFish_c.h": "f362aea782c3fe91b0d1e9dff3a252f4a74791bf29bc74817676efd552066327",
     "include/dCcPos_c.h": "737a064ccc9a7566520fc1437ceafe5484c3b3b2d92b8fff93b03a1d545b9c11",
     "src/engine/collision/d_cc_pos.cpp": "8b3ba85c0b0fbaa8e77a0be11098b6d3bbc539a006cbdc9a79d71bc56a401e7b",
-    "src/unnamed/arm9/0205/func_02052820.c": "17b8c475177f9b8e64f524c5537cceefd0e398a1b9d5ca326decf957740e6044"
+    "src/unnamed/arm9/0205/func_02052820.c": "17b8c475177f9b8e64f524c5537cceefd0e398a1b9d5ca326decf957740e6044",
+    "src/runtime/actor/d_bg_actor.cpp": "81b99c01b39f3f0b479fafab588098d0c170ad654385a13245f627d7e69d8932",
+    "include/dBgActor_c.h": "ef4a2ec5aef6c7dc9b112a188ddadc23b932e3edcffec7f7450714da5ba3205c",
+    "include/dBgW_KcMbg.h": "61eb1c1cc26cb76370d3dcee7c4652bb64b977d9d17488c43dbdb363be730114",
+    "src/engine/collision/d_bg_w_kc_mbg.cpp": "99026d5da27e3cbed16c8263ab24264c625e65c0264b8143d14d9a682f4cc3b3",
+    "src/game/actors/d_a_obj_mc_metalnet.cpp": "5eaea4268faea06335035485fa317ed91e78cd057af993f3add49394cb0c38f4",
+    "include/daObjMc_Metalnet_c.h": "abc529ddef66c93c131a63248a16217ebcbd4683561373d3478d2b42198ef807",
+    "src/game/actors/d_a_obj_kanban.cpp": "3e65ec77cfb1bef315b8b5f53704c39d2fb5e5a316e3f89b47432589da4baac2",
+    "include/daObjKanban_c.h": "c12dbf5b92676ea0d424908fd648d1f95ec51ccb0182fdc47ea3661f8230308f",
+    "src/unnamed/arm9/0205/func_020527e8.c": "745c35da2a08c43d60b47bf19adf1742051818e304902b5678bfccec5edd20ad",
+    "src/Matrix4x3_ApplyInPlaceToScale.c": "9e2083210f27372ed293df56236b112c8606a68580400da8d42a1e887bb7b248"
   }
 }
