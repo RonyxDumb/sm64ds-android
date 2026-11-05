@@ -2,7 +2,8 @@
 
 Version 0.4.23 links the original menu and shared controller. The latest
 checkpoint also mounts overlay 6 and attempts its original scene factory, but
-does **not** yet implement the constructors needed to finish a game launch.
+now binds two original 2D scene factories (Luigi and Amida), but
+still lacks complete lifecycle, scene-kind table and options initialization.
 
 | Path | Native support | Evidence |
 | --- | --- | --- |
@@ -13,6 +14,7 @@ does **not** yet implement the constructors needed to finish a game launch.
 | Locked games, NEW badges and records | Connected | Original helpers and live save block; exact record-slot permutation, default repair, EEPROM checksums, mirror recovery and reopen tests. |
 | Base-class leaf behavior | Partly connected | Nine original ov004 entry points implement variant selection, base rendering/pending-destroy defaults, level lookup and clamped credits without synthetic actors. |
 | Shared controller and original records | Connected as common dependencies | 52 original state/helper bodies, all 20 enter states and 49 original EU member pointers; 23 original score/language/record helpers. UI/audio dependencies are observed by test spies in controller tests, not implemented by success stubs in production. |
+| Minigame scene constructors | Initial pair connected | Native-owned Luigi (0x16e, 0x545c) and Amida (0x173, 0x53fc) allocation, recovered shared fields, saved top record, empty original element constructors and retail RTTI vtables. Other factories still surface missing native code. |
 | Gameplay overlay 6 | Bootstrap connected | Overlay-5 menu resources are released; a separate address space mounts original overlay 6, carries the exact selected 0x34-byte menu row, preserves input/save aliases and looks up the real scene factory. Missing constructor bindings fail at the original address. |
 | Gameplay scanline wipe | Connected | Original dWipe ramp/circle table builders and HBlank/VBlank handlers feed WIN0/WIN1 masks on both native PPUs. Lifecycle, pending type changes, masks, effects and teardown are tested. |
 | First complete minigame/round | **Missing** | The full dScMgBase resource lifecycle, shared banners/options, and overlay-6 scene/component actor callbacks remain unlinked. |

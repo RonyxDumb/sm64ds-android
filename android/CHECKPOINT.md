@@ -1,3 +1,21 @@
+# Checkpoint — 2026-11-05, first original 2D minigame constructors
+
+Native constructor bindings for Luigi's Wanted (scene 0x16e) and Amida
+(scene 0x173): allocate exact retail object sizes, run the fBase scene
+manager constructor, initialize recovered dScMgBase_c fields and its shared
+state defaults, preserve record slot/top score, construct the original empty
+Amida component arrays, and install cartridge RTTI-resolved original vtables.
+The factory lives at the real ROM profile address; the original actor
+post-construction hook executes afterward. There is no fake victory/score.
+
+A no-ROM host test validates independent RTTI/vtable resolution, constructor
+sizes, scene parameters, records and timers. Full pause-options icon setup,
+scene-kind table and both minigames' gameplay methods remain unlinked. Any
+missing constructor or callback fails at the original native address; these
+are **not** two playable minigames.
+
+---
+
 # Checkpoint — 2026-11-05, preserve selected original row across overlay switch
 
 Carry all 0x34 bytes of gMgMenuRow (ARM9 0x0209b308) from the live

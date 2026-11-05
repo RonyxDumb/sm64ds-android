@@ -1,5 +1,6 @@
 #include "minigame_gameplay_runtime.h"
 #include "minigame_shared.h"
+#include "minigame_scene_constructors.h"
 #include "stage_runtime.h"
 #include "resources.h"
 #include "packed_ptr.h"
@@ -36,6 +37,7 @@ MinigameGameplayRuntime::MinigameGameplayRuntime(GameHeap &heap, Cartridge &cart
     bind_stage_runtime(space_);
     bind_minigame_shared_runtime(space_);
     validate_minigame_shared_runtime(space_);
+    bind_minigame_scene_factory(space_,game_,scene_);
 }
 uint32_t MinigameGameplayRuntime::spawn(uint8_t kind) {
     packed::Space::Scope scope(space_);
@@ -44,13 +46,22 @@ uint32_t MinigameGameplayRuntime::spawn(uint8_t kind) {
     // Look up the actual original profile rather than a capability table.
     const uint32_t profile=*Ptr<uint32_t>(0x02090864u+scene_*4u);
     const uint32_t factory=*Ptr<uint32_t>(profile);
+    // Mirror the original scene-manager profile-table startup. The boot
+    // path did not run its usual overlay manager initialization.
+    if (!*Ptr<uint32_t>(0x020a4bb8u))
+        *Ptr<uint32_t>(0x020a4bb8u)=0x02090864u;
     *Ptr<uint16_t>(0x020a4b50u)=static_cast<uint16_t>(scene_);
     *Ptr<uint16_t>(0x020a4b54u)=static_cast<uint16_t>(scene_);
     *Ptr<uint32_t>(0x020a4b60u)=parameter_;
     *Ptr<uint8_t>(0x020a4b48u)=kind;
-    // An unported original constructor fails here at its real code address.
-    // Do not register a dummy factory, fake an actor or fabricate a round.
+    // Only original recovered factories have native code bindings.
     actor_=Ptr<uint32_t()>(factory)();
+    if (actor_) {
+        *Ptr<uint8_t>(0x020a4b4cu)=5;
+        Ptr<void(uint32_t)>(0x020433b8u)(actor_); // actor post-construction
+        *Ptr<uint8_t>(0x020a4b4cu)=0;
+        *Ptr<uint16_t>(0x020a4b50u)=0xffffu;
+    }
     return actor_;
 }
 void MinigameGameplayRuntime::update() {
