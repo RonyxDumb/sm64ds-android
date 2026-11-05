@@ -1,3 +1,14 @@
+# Checkpoint — 2026-11-05, preserve selected original row across overlay switch
+
+Carry all 0x34 bytes of gMgMenuRow (ARM9 0x0209b308) from the live
+overlay-5 menu address space to the overlay-6 gameplay owner before
+the menu storage is destroyed. This preserves variant, scene parameters,
+records, music and level fields selected by the genuine source.
+The private EU cartridge regression checks the overlay-6 owner received
+the complete row unchanged. This does not claim a playable round.
+
+---
+
 # Checkpoint — 2026-11-05, original minigame base leaves
 
 Nine original ov004 entry points are now bound to native typed leaf bodies:

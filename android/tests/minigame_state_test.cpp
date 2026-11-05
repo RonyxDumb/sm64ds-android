@@ -182,7 +182,11 @@ void minigame_state_cartridge(sm64ds::Cartridge &cartridge) {
     // Independently verify that a game receives overlay 6, NOT the menu's
     // overlay 5, with the same live ARM9/overlay-4 controller dependencies.
     sm64ds::GameHeap heap(2<<20);
-    sm64ds::MinigameGameplayRuntime game(heap,cartridge,0x169,0);
+    std::array<uint8_t,0x34> selected{};
+    for (size_t i=0;i<selected.size();++i) selected[i]=static_cast<uint8_t>(i);
+    sm64ds::MinigameGameplayRuntime game(heap,cartridge,0x169,0,selected.data());
+    assert(std::memcmp(game.space().data(0x0209b308u,selected.size()),
+                       selected.data(),selected.size())==0);
     const auto image=cartridge.overlay_data(6);
     assert(game.scene()==0x169);
     assert(game.space().contains(image.base,image.bytes.size()));

@@ -5,17 +5,23 @@
 #include "packed_ptr.h"
 #include "ntr/gx.h"
 #include "ntr/mmio.h"
+#include <cstring>
 #include <utility>
 
 namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
 namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
 namespace sm64ds {
 MinigameGameplayRuntime::MinigameGameplayRuntime(GameHeap &heap, Cartridge &cartridge,
-                                                 uint32_t scene, uint32_t parameter)
+                                                 uint32_t scene, uint32_t parameter, const uint8_t *selectedRow)
     : space_(heap), arm9_(cartridge.arm9_data(0x020aa420u)),
       common_(cartridge.overlay_data(4)), game_(cartridge.overlay_data(6)),
       scene_(scene), parameter_(parameter) {
     map_minigame_live_arm9(space_,arm9_);
+    // The selected 0x34-byte ROM row belongs to mutable menu ARM9 globals,
+    // NOT immutable cartridge data. Carry the original menu's exact bytes
+    // into the new overlay-6 session before constructing its scene.
+    if (selectedRow)
+        std::memcpy(space_.data(0x0209b308u,0x34u),selectedRow,0x34u);
     space_.map(common_.base,common_.bytes.data(),common_.bytes.size());
     // The game overlay replaces the menu overlay at the identical DS address.
     // Never map both overlay 5 and 6 into one address space.

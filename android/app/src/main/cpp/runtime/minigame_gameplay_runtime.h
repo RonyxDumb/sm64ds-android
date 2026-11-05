@@ -7,7 +7,8 @@ namespace sm64ds {
 // cartridge load address. This is an actor bootstrap, not a fake game loop.
 class MinigameGameplayRuntime {
 public:
-    MinigameGameplayRuntime(GameHeap &, Cartridge &, uint32_t scene, uint32_t parameter);
+    MinigameGameplayRuntime(GameHeap &, Cartridge &, uint32_t scene, uint32_t parameter,
+                            const uint8_t *selectedRow = nullptr);
     uint32_t spawn(uint8_t kind);
     void update();
     uint32_t scene() const noexcept { return scene_; }

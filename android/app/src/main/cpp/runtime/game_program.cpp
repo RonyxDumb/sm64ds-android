@@ -6,6 +6,7 @@
 #include "ntr/lz77.h"
 #include "ntr/gx.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <stdexcept>
@@ -553,15 +554,24 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             if (MinigameCatalog::is_game_scene(data_02092664)) {
                 const uint16_t gameScene=data_02092664;
                 if (!minigameGameplayRuntime_) {
+                    std::array<uint8_t,0x34> selectedRow{};
+                    bool hasSelectedRow=false;
                     if (minigameRuntime_) {
                         minigameGroup_=minigameRuntime_->group();
                         minigamePage_=minigameRuntime_->page();
+                        // The original menu assembled this row and its
+                        // variants before calling StartSceneFade.
+                        std::memcpy(selectedRow.data(),
+                            minigameRuntime_->space().data(0x0209b308u,selectedRow.size()),
+                            selectedRow.size());
+                        hasSelectedRow=true;
                         minigameRuntime_->cleanup();
                         minigameRuntime_.reset();
                     }
                     frontend_.reset();
                     minigameGameplayRuntime_=std::make_unique<MinigameGameplayRuntime>(
-                        Resources::active().heap(),cartridge_,gameScene,data_0209f5b8);
+                        Resources::active().heap(),cartridge_,gameScene,data_0209f5b8,
+                        hasSelectedRow ? selectedRow.data() : nullptr);
                     data_02092660=0; // original AfterCleanupResources scene-ready transition
                 }
                 if (dScene_c::SpawnIfNecessary()) {
