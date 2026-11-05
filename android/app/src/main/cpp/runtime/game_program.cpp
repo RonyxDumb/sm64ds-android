@@ -364,6 +364,11 @@ size_t GameProgram::bytes_at(const void *p) const {
     }
     throw std::runtime_error("Video upload uses an unowned source.");
 }
+const MinigameCatalog &GameProgram::minigames() {
+    if (!minigames_)
+        minigames_ = std::make_unique<MinigameCatalog>(MinigameCatalog::load(cartridge_));
+    return *minigames_;
+}
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;
 }

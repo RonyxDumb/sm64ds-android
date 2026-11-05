@@ -760,8 +760,55 @@ void stage_controls(const char *rom) {
         << "Recovered stage controls: button maps, touch, camera regions and integer math passed.\n";
 }
 }
+void minigame_catalog_runtime() {
+    using sm64ds::MinigameCatalog;
+    assert(MinigameCatalog::overlay_for_scene(5) == 5);
+    assert(MinigameCatalog::overlay_for_scene(0x169) == 6);
+    assert(MinigameCatalog::overlay_for_scene(0x186) == 6);
+    bool unsupported = false;
+    try { (void)MinigameCatalog::overlay_for_scene(3); }
+    catch (const std::out_of_range &) { unsupported = true; }
+    assert(unsupported);
+    // A synthetic table tests the parser only; production data is read from
+    // overlay 5 and must pass the same checks without falling back to this.
+    constexpr size_t begin = 0x20;
+    std::vector<uint8_t> data(begin + MinigameCatalog::Count * 0x34 + 0x20, 0xff);
+    for (uint32_t i = 0; i < MinigameCatalog::Count; ++i) {
+        const size_t at = begin + size_t(i) * 0x34;
+        put16(data, at, uint16_t(0x169 + (i < 30 ? i : i - 30)));
+        put16(data, at + 2, 0);
+        put32(data, at + 4, (i << 8) | (i < 30 ? 0u : 1u));
+        put32(data, at + 8, i % 6);
+        put32(data, at + 12, 9999);
+        put32(data, at + 16, i % 6 == 2 ? 1 : 0);
+        for (uint32_t j = 0; j < 5; ++j) put32(data, at + 20 + j * 4, j);
+        put32(data, at + 40, 7);
+        put32(data, at + 44, 2);
+        put32(data, at + 48, 0);
+    }
+    const auto catalog = MinigameCatalog::parse(data.data(), data.size(), 0x020ad660u);
+    assert(catalog.menu_table_address() == 0x020ad680u);
+    for (size_t i = 0; i < MinigameCatalog::Count; ++i) {
+        assert(catalog.row(i).sceneId == (0x169 + (i < 30 ? i : i - 30)));
+        assert(((catalog.row(i).sceneParameter >> 8) & 0xffff) == i);
+    }
+    auto duplicate = data;
+    put32(duplicate, begin + 35 * 0x34 + 4, 34u << 8);
+    bool rejected = false;
+    try { (void)MinigameCatalog::parse(duplicate.data(), duplicate.size()); }
+    catch (const std::runtime_error &) { rejected = true; }
+    assert(rejected);
+    put16(data, begin, 0x168);
+    rejected = false;
+    try { (void)MinigameCatalog::parse(data.data(), data.size()); }
+    catch (const std::runtime_error &) { rejected = true; }
+    assert(rejected);
+    std::cout << "Minigame overlay routing, 36-row table parser, tags and invalid-table rejection passed.\\n";
+}
+
 int main(int argc, char **argv) {
     narc_bounds();
+    minigame_catalog_runtime();
     overlay_sdk();
     audio_groups();
     controller_glyph_words();
@@ -804,6 +851,10 @@ int main(int argc, char **argv) {
                 sounds.emplace_back(a, b);
                 return music.effect(static_cast<int>(a),static_cast<int>(b));
             },[&](const sm64ds::SoundRequest &request){ return music.native(request); });
+            const auto &menu = game.minigames();
+            assert(menu.menu_table_address() >= 0x02000000u);
+            for (size_t i = 0; i < sm64ds::MinigameCatalog::Count; ++i)
+                assert(sm64ds::MinigameCatalog::is_game_scene(menu.row(i).sceneId));
             assert(game.boot().mFadeTimer == 60 && game.boot().mState == 0);
             assert(game.requested_scene() == 0x187);
             // Exercise the actual LoadFont(2) destination contract without

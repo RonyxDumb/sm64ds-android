@@ -2,6 +2,7 @@
 #include "cartridge.h"
 #include "frontend_core.h"
 #include "game_input.h"
+#include "minigame_catalog.h"
 #include "stage_flow.h"
 #include "title_files.h"
 #include "runtime/boot_state.h"
@@ -32,6 +33,8 @@ public:
         return ticks_;
     }
     uint16_t requested_scene() const;
+    // Original 36-row menu data and overlay 5/6 preflight; not a game scene actor.
+    const MinigameCatalog &minigames();
     int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;
@@ -78,6 +81,7 @@ private:
     StageFlow stage_;
     std::unique_ptr<TitleFiles> title_;
     std::unique_ptr<FrontendCore> frontend_;
+    std::unique_ptr<MinigameCatalog> minigames_;
     BootState boot_{};
     GameInput input_;
     Sound sound_;
