@@ -375,7 +375,13 @@ bool GameProgram::prepare_minigame_menu() {
     std::array<MinigameEntry, MinigameCatalog::Count> rows{};
     for (size_t i = 0; i < rows.size(); ++i)
         rows[i] = catalog.row(i);
+    // Validate all fixed original BG/OBJ resources before mutating the live
+    // minigame records or publishing a menu session.
+    auto artwork = minigameArtwork_ ? nullptr :
+        std::make_unique<MinigameMenuArtwork>(
+            MinigameMenuArtwork::load(cartridge_, GetOwnerLanguage()));
     const bool dirty = MinigameProgress::initialize_records(rows.data(), rows.size());
+    if (artwork) minigameArtwork_ = std::move(artwork);
     // Preserve the menu's last tab/page once it returns from a minigame.
     // A first launch defaults to original tab 0, page 0.
     const unsigned page = minigameMenu_ ? minigameMenu_->page() : 0;

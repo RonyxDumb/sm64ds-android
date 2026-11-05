@@ -1,4 +1,5 @@
 #include "runtime/game_program.h"
+#include "runtime/minigame_art.h"
 #include "runtime/resources.h"
 #include "runtime/save_store.h"
 #include "pc_audio/stream.h"
@@ -806,9 +807,38 @@ void minigame_catalog_runtime() {
     std::cout << "Minigame overlay routing, 36-row table parser, tags and invalid-table rejection passed.\\n";
 }
 
+void minigame_art_decode() {
+    using sm64ds::MinigameMenuArtwork;
+    assert(MinigameMenuArtwork::language_obj_file(0) == 0xd8);
+    assert(MinigameMenuArtwork::language_obj_file(1) == 0xd8);
+    assert(MinigameMenuArtwork::language_obj_file(2) == 0xd5);
+    assert(MinigameMenuArtwork::language_obj_file(3) == 0xd6);
+    assert(MinigameMenuArtwork::language_obj_file(4) == 0xd7);
+    assert(MinigameMenuArtwork::language_obj_file(5) == 0xda);
+    const std::vector<uint8_t> packed{
+        'L','Z','7','7',0x10,4,0,0,0,0x12,0x34,0x56,0x78};
+    const auto decoded = MinigameMenuArtwork::decode_lz(packed, 4);
+    assert((decoded == std::vector<uint8_t>{0x12,0x34,0x56,0x78}));
+    bool rejected = false;
+    try { (void)MinigameMenuArtwork::decode_lz(packed, 3); }
+    catch (const std::runtime_error &) { rejected = true; }
+    assert(rejected);
+    rejected = false;
+    try { (void)MinigameMenuArtwork::decode_lz(
+        std::vector<uint8_t>(packed.begin(),packed.end()-1), 4); }
+    catch (const std::runtime_error &) { rejected = true; }
+    assert(rejected);
+    rejected = false;
+    try { (void)MinigameMenuArtwork::language_obj_file(6); }
+    catch (const std::out_of_range &) { rejected = true; }
+    assert(rejected);
+    std::cout << "Original minigame BG/OBJ asset compression and language handle checks passed.\\n";
+}
+
 int main(int argc, char **argv) {
     narc_bounds();
     minigame_catalog_runtime();
+    minigame_art_decode();
     overlay_sdk();
     audio_groups();
     controller_glyph_words();

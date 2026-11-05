@@ -17,6 +17,11 @@ for source in src/GetOwnerLanguage.c src/SetBg0Offset.c src/SetSubBg{0,1,2}Offse
     src/DecIfAbove0_Byte.c src/GetControllerMode.c src/GetPlayerFlagByte.c src/GetSoundMode.c \
     src/unnamed/arm9/0202/func_020233f4.c src/ui/messages/func_0201fe08.c \
     src/Vec3_MulScalarInPlace.c \
+    src/unnamed/arm9/0201/func_02013568.c \
+    src/unnamed/arm9/0201/func_02013580.c \
+    src/unnamed/arm9/0201/func_020135d0.c \
+    src/unnamed/arm9/0201/func_0201361c.c \
+    src/unnamed/arm9/0201/func_02013638.c \
     src/unnamed/arm9/0203/func_0203b{b60,c7c}.c; do
     gcc -std=c11 -Wno-unknown-pragmas -fsanitize=address,undefined -g -Iinclude -c "$source" -o "$GAME_BUILD/$(basename "$source").o"
 done
@@ -25,7 +30,7 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-int-to-pointer-ca
     -ffunction-sections -fdata-sections -Wl,--gc-sections -fsanitize=address,undefined -g -pthread \
     -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp -I"$GAME_BUILD/generated" \
     -Iexternal/sm64ds-pc/port/hal/sdat \
-    android/tests/game_program_test.cpp android/app/src/main/cpp/runtime/{game_program,cartridge,game_input,resources,game_heap,save_store,stage_flow,stage_runtime,stage_assets,minigame_catalog,title_files,native_math,frontend_core,frontend_primitives,packed_memory,packed_fs,packed_audio,actor_dispatch,collision_dispatch}.cpp \
+    android/tests/game_program_test.cpp android/app/src/main/cpp/runtime/{game_program,cartridge,game_input,resources,game_heap,save_store,stage_flow,stage_runtime,stage_assets,minigame_catalog,minigame_progress,minigame_controls,minigame_menu_session,minigame_art,title_files,native_math,frontend_core,frontend_primitives,packed_memory,packed_fs,packed_audio,actor_dispatch,collision_dispatch}.cpp \
     "$GAME_BUILD/generated"/runtime/*.cpp "$GAME_BUILD/generated/src/SharedFilePtr.cpp" \
     "$GAME_BUILD/generated/src/engine/save"/*.cpp \
     android/app/src/main/cpp/pc_audio/{archive,stream}.cpp android/app/src/main/cpp/audio_core.cpp \

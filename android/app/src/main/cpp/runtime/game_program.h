@@ -3,6 +3,7 @@
 #include "frontend_core.h"
 #include "game_input.h"
 #include "minigame_catalog.h"
+#include "minigame_art.h"
 #include "minigame_menu_session.h"
 #include "stage_flow.h"
 #include "title_files.h"
@@ -40,6 +41,7 @@ public:
     // Never called by the File Select unless scene 5 actually starts.
     bool prepare_minigame_menu();
     const MinigameMenuSession *minigame_menu_session() const { return minigameMenu_.get(); }
+    const MinigameMenuArtwork *minigame_artwork() const { return minigameArtwork_.get(); }
     int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;
@@ -88,6 +90,7 @@ private:
     std::unique_ptr<FrontendCore> frontend_;
     std::unique_ptr<MinigameCatalog> minigames_;
     std::unique_ptr<MinigameMenuSession> minigameMenu_;
+    std::unique_ptr<MinigameMenuArtwork> minigameArtwork_;
     BootState boot_{};
     GameInput input_;
     Sound sound_;
