@@ -1,6 +1,7 @@
 #include "minigame_shared.h"
 #include "packed_ptr.h"
 #include "boot_seams.h"
+#include "wipe_runtime.h"
 #include <cstring>
 #include <algorithm>
 #include <cstdint>
