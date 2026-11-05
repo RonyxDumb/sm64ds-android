@@ -1,3 +1,51 @@
+# Current checkpoint — 2026-11-05, original minigame records, menu timing and fixed artwork
+
+Last tested code checkpoint: 3bb6d1cdec0944b65584723cbc213ab7758f8297.
+Branch: `main`; no branch, pull request, ROM, or extracted cartridge asset was created.
+Port version remains 0.4.21-player-animation. **Menu scene 5 and original
+minigame scenes 0x169..0x186 are NOT yet linked or playable.**
+
+New source-derived runtime work:
+- `MinigameProgress::initialize_records` implements the original
+  `dScMiniGm_c::InitResources` once-only seed of all 36 x 5 saved records,
+  the 0x80000000 initialized flag, unsigned score-cap repair, and
+  the `ownRecords == 1` first-rank-only exception. It returns dirty status;
+  no fabricated persistence or automatic score was introduced.
+- `GameProgram::prepare_minigame_menu` explicitly preflights the real overlay-5
+  catalog, loads original menu art, initializes original save records, and
+  creates a menu state session. It is deliberately **not called** from the
+  title frontend while scene 5 still lacks its renderer/lifecycle.
+- `MinigameMenuSession` owns original 0x12-frame page arrow delays,
+  eight-pixel per-tick scroll over 0xb0 pixels, 0x1c-frame exit countdown,
+  four character tabs, 0x1e group debounce and 0..0x3f animation phases.
+  It only emits selection/exit requests, not successful game launches.
+- `MinigameMenuArtwork::load` reads and bounds-checks actual EU ROM files
+  for original main/sub BG2 characters, main BG2 map, palettes and OBJ
+  characters, including the source's 0xd5..0xda language selection. LZ77
+  decoding is checked; missing or malformed resources throw, not replaced
+  by synthetic artwork. Dynamic group icons and OAM tables are NOT linked.
+- `android/tests/run-game-tests.sh` includes all new native menu units and
+  the five exact recovered ARM9 helpers; no-ROM tests verify record defaults,
+  cap repair, score persistence, page events, scrolling, exit countdown,
+  compressed-asset validation and rejected invalid input.
+
+Verification and remaining blockers:
+- At publication the code commit's GitHub Actions no-ROM native/host tests,
+  GLES tests and frontend ARM64 runner had passed; final ARM64 APK build/lint
+  was still pending. Run: https://github.com/RonyxDumb/sm64ds-android/actions/runs/42054328151
+- GitHub CI has **no private European game ROM**: the 36-row overlay-5
+  discovery and artwork loading must also be tested against a user-provided
+  cartridge and on an Android device before any playability claim.
+- The scene-5 dScMiniGm_c resource lifecycle, original OAM sprites and
+  dynamically chosen group-icon BG maps, and bridge from frontend return
+  code 7 remain unimplemented. GameProgram::tick still handles scenes 1
+  and 3 only. Overlay-6 gameplay actor dispatch, scores and 30 distinct
+  minigames with six variants remain the subsequent major integration.
+- Existing File Select, stage path, native screens and saves have not been
+  deliberately bypassed or replaced by fake minigame UI.
+
+---
+
 # Current checkpoint — 2026-11-05, execute original ARM9 minigame save leaf bodies
 
 Continues published main 91484c03a09581644190a669f729ff09bda4a1a9.
