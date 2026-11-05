@@ -63,8 +63,7 @@ public:
     const StageAssets *stage_assets() const { return stage_.assets(); }
     std::vector<StageAssets::PlayerSpawnCommand> stage_player_spawn_commands() const;
     packed::Space *stage_address_space() const { return stage_.address_space(); }
-    // Receives the real frontend's return code (3..5), never raw UI coordinates.
-    // The title dispatcher and stage actor scene still need native link closure.
+    // Receives original frontend results: files 3..5 or minigame room 7.
     bool accept_title_result(int result);
     uint32_t spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {
         return stage_.spawn_scene(sceneID, parameter, kind);
@@ -97,7 +96,7 @@ private:
     std::unique_ptr<MinigameMenuSession> minigameMenu_;
     std::unique_ptr<MinigameMenuArtwork> minigameArtwork_;
     std::unique_ptr<MinigameRuntime> minigameRuntime_;
-    unsigned minigameGroup_=0, minigamePage_=0;
+    unsigned minigameGroup_=4, minigamePage_=0; // first entry reads ROM's group initializer
     BootState boot_{};
     GameInput input_;
     Sound sound_;

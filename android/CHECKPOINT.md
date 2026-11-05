@@ -1,3 +1,15 @@
+# Source-data correction — 2026-11-05, original initial character
+
+A further private-ROM check confirms gMgGroupBase at ARM9 0x0208a170 starts
+at 3 (Yoshi), and gMgLastSelected starts at -1. The first native menu entry
+now reads that original initializer instead of forcing group 0. Later entries
+retain the runtime's last selected tab/page. The private-ROM regression checks
+Yoshi first and then switches Mario -> Yoshi -> Mario before the page tests.
+This follow-up retains the targeted Clang build fix; its tests/build are rerunning.
+Gameplay scenes remain unlinked and no Android device claim is made.
+
+---
+
 # Verification update — 2026-11-05, original title touch and ARM64 compile follow-up
 
 The private-ROM regression now drives the actual title with the stylus:

@@ -9,7 +9,8 @@ class GameProgram;
 // pointer projection preserves the original logic, tables and OAM rendering.
 class MinigameRuntime {
 public:
-    MinigameRuntime(Cartridge &, GameProgram &, unsigned group=0, unsigned page=0);
+    // Group 4 selects the original ARM9 initializer (Yoshi, value 3 in EU).
+    MinigameRuntime(Cartridge &, GameProgram &, unsigned group=4, unsigned page=0);
     ~MinigameRuntime();
     void update();
     void render();

@@ -46,7 +46,7 @@ MinigameRuntime::Scope::~Scope() { owner=previous_; }
 MinigameRuntime::MinigameRuntime(Cartridge &cartridge,GameProgram &program,unsigned group,unsigned page)
     :space_(Resources::active().heap()),cartridge_(cartridge),program_(program),
      arm9_(cartridge.arm9_data(0x020aa420u)),menu_(cartridge.overlay_data(5)) {
-    if (group>3 || page>1) throw std::out_of_range("Invalid original menu state.");
+    if (group>4 || page>1) throw std::out_of_range("Invalid original menu state.");
     if (menu_.base!=0x020bfec0u || program.minigames().menu_table_address()!=0x020c24d8u)
         throw std::runtime_error("Unsupported original minigame overlay layout.");
     // Keep pointer-free save and input records LIVE. Split the ARM9 image at
@@ -73,6 +73,8 @@ MinigameRuntime::MinigameRuntime(Cartridge &cartridge,GameProgram &program,unsig
                            std::make_pair(ntr::OAM_BASE,ntr::OAM_SIZE)})
         space_.map(span.first,ntr::host_ptr(span.first),span.second);
     Scope scope(*this);
+    if (group==4) group=static_cast<unsigned>(at<int>(0x0208a170u));
+    if (group>3) throw std::runtime_error("Invalid original minigame initial character.");
     at<int>(0x0208a170u)=group; at<int>(0x0208a174u)=-1;
     at<uint8_t>(0x0209b304u)=static_cast<uint8_t>(page);
     actor_=space_.allocate(0xb0);

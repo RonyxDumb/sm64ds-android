@@ -990,7 +990,7 @@ int main(int argc, char **argv) {
                 for (unsigned i=0;i<200 && game.active_scene()!=5;++i) titleTouch();
                 for (unsigned i=0;i<40;++i) game.tick();
                 assert(game.active_scene()==5 && game.minigame_runtime());
-                assert(game.minigame_runtime()->group()==0);
+                assert(game.minigame_runtime()->group()==3); // original ARM9 initializer
                 assert(game.minigame_runtime()->page()==0);
                 const auto sprite_pixels=[](const ntr::Framebuffer &screen) {
                     size_t count=0;
@@ -1020,6 +1020,8 @@ int main(int argc, char **argv) {
                     assert(ntr::ppu_write_bmp((std::string(capture)+"-sub.bmp").c_str(),game.sub_screen()));
                 }
                 // Original tab table is 3,0,1,2 (not tab index == group).
+                game.tick(0,0,0,0x18,0x48); game.tick();
+                assert(game.minigame_runtime()->group()==0);
                 game.tick(0,0,0,0x18,0x18); game.tick();
                 assert(game.minigame_runtime()->group()==3);
                 game.tick(0,0,0,0x18,0x48); game.tick();
