@@ -99,11 +99,13 @@ int main() {
         std::array<sm64ds::MinigameEntry, MinigameProgress::GameRows> rows{};
         for (size_t i = 0; i < rows.size(); ++i) {
             rows[i].sceneId = static_cast<uint16_t>(0x169 + i % 30);
+            rows[i].sceneParameter = ((35-i) << 16) | (i << 8);
             rows[i].scoreCap = 5000;
             rows[i].ownRecords = i == 35 ? 1 : 0;
             for (size_t j = 0; j < 5; ++j)
                 rows[i].recordDefaults[j] = static_cast<int32_t>(i * 100 + j);
         }
+        std::swap(rows[1], rows[34]); // menu order differs from saved-record order
         assert(MinigameProgress::initialize_records(rows.data(), rows.size()));
         assert(MinigameProgress::record(34, 2) == 3402);
         assert(!MinigameProgress::initialize_records(rows.data(), rows.size()));

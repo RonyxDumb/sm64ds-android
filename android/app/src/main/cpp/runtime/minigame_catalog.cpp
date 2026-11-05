@@ -20,7 +20,8 @@ int32_t signed32(const uint8_t *p) {
 }
 // The byte-level scan is deliberately constrained by facts from the recovered
 // d_s_mini_gm.cpp: 36 rows, IDs 0x169..0x186, 30 unique games plus six second
-// variants, and a unique 0..35 row tag in sceneParameter bits 8..23.
+// variants, and a unique 0..35 save slot in sceneParameter bits 8..15.
+// Bits 16..23 identify a different per-game value; they are not part of it.
 // This is data discovery, not execution of ARM9 code.
 bool decode_table(const uint8_t *p,
                   std::array<sm64ds::MinigameEntry, sm64ds::MinigameCatalog::Count> &rows) {
@@ -44,7 +45,7 @@ bool decode_table(const uint8_t *p,
             item.scoringMode < 0 || item.scoringMode > 5 ||
             item.ownRecords < 0 || item.ownRecords > 1)
             return false;
-        const uint32_t tag = (item.sceneParameter >> 8) & 0xffff;
+        const uint32_t tag = (item.sceneParameter >> 8) & 0xff;
         if (tag >= tags.size() || tags[tag])
             return false;
         ++tags[tag];

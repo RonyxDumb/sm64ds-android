@@ -1,3 +1,24 @@
+# Current checkpoint — 2026-11-05, verified EU minigame catalog/save correction
+
+A private-ROM test exposed two errors in the earlier foundation:
+- The record slot is sceneParam bits 8..15, not bits 8..23. The old parser
+  rejected the actual EU overlay 5 table. It now accepts all 36 real rows
+  at 0x020c24d8, including row 2 -> save slot 6 and row 6 -> save slot 10.
+- Menu rows are not in record-slot order. Default initialization and cap repair
+  now use the original MiniGm_GetSaveTable mapping, validating the complete
+  permutation before mutating saves.
+
+Verified locally with AddressSanitizer and UndefinedBehaviorSanitizer:
+actual private EU overlay catalog acceptance; original EEPROM defaults,
+record repair, checksums, mirror recovery, reopen and I/O-failure regression.
+LeakSanitizer is disabled locally because this executor cannot inspect its
+thread proc entries; address and undefined-behavior checks remain enabled.
+
+Menu/OAM integration is still under development and is not included in this
+checkpoint. No minigame gameplay or Android device interaction is claimed.
+
+---
+
 # Current checkpoint — 2026-11-05, original minigame records, menu timing and fixed artwork
 
 Last tested code checkpoint: 3bb6d1cdec0944b65584723cbc213ab7758f8297.

@@ -83,6 +83,13 @@ bool MinigameProgress::initialize_records(const MinigameEntry *rows, size_t coun
     if (!rows || count != GameRows)
         throw std::invalid_argument("Original minigame menu requires exactly 36 records.");
     auto *save = active();
+    std::array<bool, GameRows> slots{};
+    for (size_t i = 0; i < GameRows; ++i) {
+        const auto slot = (rows[i].sceneParameter >> 8) & 0xff;
+        if (slot >= GameRows || slots[slot])
+            throw std::invalid_argument("Invalid original minigame record-slot permutation.");
+        slots[slot] = true;
+    }
     // ROM source: dScMiniGm_c::InitResources seeds all five records for each
     // game exactly once, guarded by bit 31 of the unlocked/initialized word.
     const bool initial = (read_word(save + 0x48) & 0x80000000u) == 0;
@@ -90,18 +97,20 @@ bool MinigameProgress::initialize_records(const MinigameEntry *rows, size_t coun
     if (initial) {
         for (size_t i = 0; i < GameRows; ++i)
             for (size_t rank = 0; rank < RecordRanks; ++rank)
-                set_record(i, rank, rows[i].recordDefaults[rank]);
+                set_record((rows[i].sceneParameter >> 8) & 0xff,
+                           rank, rows[i].recordDefaults[rank]);
         write_word(save + 0x48, read_word(save + 0x48) | 0x80000000u);
     }
     // Preserve recovered unsigned comparison: negative/sentinel records
     // greater than a nonzero score cap are reset to the ROM defaults.
     for (size_t i = 0; i < GameRows; ++i) {
         const auto &row = rows[i];
+        const auto slot = (row.sceneParameter >> 8) & 0xff;
         if (row.scoreCap == 0) continue;
         const size_t compareCount = row.ownRecords == 1 ? 1 : RecordRanks;
         bool exceedsCap = false;
         for (size_t rank = 0; rank < compareCount; ++rank) {
-            if (static_cast<uint32_t>(record(i, rank)) >
+            if (static_cast<uint32_t>(record(slot, rank)) >
                 static_cast<uint32_t>(row.scoreCap)) {
                 exceedsCap = true;
                 break;
@@ -109,7 +118,7 @@ bool MinigameProgress::initialize_records(const MinigameEntry *rows, size_t coun
         }
         if (!exceedsCap) continue;
         for (size_t rank = 0; rank < RecordRanks; ++rank)
-            set_record(i, rank, row.recordDefaults[rank]);
+            set_record(slot, rank, row.recordDefaults[rank]);
         dirty = true;
     }
     return dirty;
