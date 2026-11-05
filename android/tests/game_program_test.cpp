@@ -9,6 +9,7 @@
 #include "runtime/stage_runtime.h"
 #include "ntr/lz77.h"
 #include "ntr/fs.h"
+#include "stage_code_ranges.h"
 #include <cassert>
 #include <climits>
 #include <cstdlib>
@@ -145,6 +146,35 @@ void player_state_runtime() {
     space.release(next); space.release(previous); space.release(player);
     assert(space.allocations()==0);
     std::cout << "Original Player state transition: cleanup veto, native PMFs, reset, control lock and carried-object redirect passed.\n";
+}
+
+void texture_animation_runtime() {
+    using sm64ds::packed::Ptr;
+    sm64ds::GameHeap heap(1024*1024);
+    sm64ds::packed::Space space(heap);
+    sm64ds::stage_sources::bind_sources(space);
+    sm64ds::bind_stage_runtime(space);
+    sm64ds::packed::Space::Scope scope(space);
+    const uint32_t control=space.allocate(20),anim=space.allocate(2),other=space.allocate(2);
+    *Ptr<uint16_t>(anim)=3; *Ptr<uint16_t>(other)=2;
+    Ptr<void(uint32_t,uint32_t,int,int,uint16_t)> setFile(0x020158acu);
+    Ptr<void(uint32_t)> advance(0x02015c3cu);
+    setFile(control,anim,0,0x1000,1);
+    assert(*Ptr<int32_t>(control+8)==0x1000);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0x2000);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0);
+    // Reusing the same BTA preserves its cursor while replacing flags/rate.
+    setFile(control,anim,0,-0x1000,2);
+    assert(*Ptr<int32_t>(control+8)==0);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0x2000);
+    setFile(control,anim,0x40000000,0x1000,0);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0x2fff);
+    setFile(control,anim,0x40000000,-0x4000,0);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0);
+    setFile(control,other,0,0x800,0);
+    assert(*Ptr<uint32_t>(control+4)==0x2000 && *Ptr<int32_t>(control+8)==0);
+    advance(control); assert(*Ptr<int32_t>(control+8)==0x800);
+    std::cout << "Original texture animation: file changes, retained cursors, forward/reverse wrapping and one-shot clamping passed.\n";
 }
 
 void moving_mesh_runtime() {
@@ -706,6 +736,7 @@ int main(int argc, char **argv) {
     audio_groups();
     controller_glyph_words();
     player_state_runtime();
+    texture_animation_runtime();
     moving_mesh_runtime();
     ground_runtime();
     actor_frame_runtime();
@@ -920,7 +951,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x02111d8cu);
+                    "Unlinked native code handle: " + std::to_string(0x0214a8ecu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
@@ -939,12 +970,52 @@ int main(int argc, char **argv) {
             // and real model/animation ownership.
             std::unordered_set<uint32_t> actorNodes;
             std::unordered_set<uint16_t> initializedTypes;
-            unsigned loadedNets=0,loadedSigns=0;
+            unsigned loadedNets=0,loadedSigns=0,loadedWater=0,loadedMist=0;
             for(uint32_t node=stageWord(0x0209b468u);node;node=stageWord(node+4)) {
                 assert(actorNodes.insert(node).second && actorNodes.size()<512);
                 const uint32_t instance=stageWord(node+8);
                 const uint16_t id=*static_cast<uint16_t *>(stageSpace->data(instance+12,2));
                 const uint32_t vtable=stageWord(instance);
+                if(vtable==0x02113a18u) {
+                    ++loadedWater;
+                    assert(stageSpace->allocation_size(instance)==0x338);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(stageWord(instance+0xdc));
+                    assert(stageWord(instance+0x330)==0x02112bc4u);
+                    assert(stageWord(instance+0x324)>0);
+                    assert(stageWord(instance+0x124+0x20));
+                    assert(stageWord(instance+0x124+0x24)==0x02112c38u);
+                    assert(stageWord(instance+0x124+0x50)==0x1000);
+                    const uint8_t slot=*static_cast<uint8_t *>(stageSpace->data(instance+0x124+20,1));
+                    assert(slot<24 && stageWord(0x020a0c80u+slot*4)==instance+0x124);
+                    // One original actor over multiple animation wraps;
+                    // this is deliberately not counted as a full world frame.
+                    sm64ds::packed::Space::Scope scope(*stageSpace);
+                    using sm64ds::packed::Ptr;
+                    const uint32_t length=stageWord(instance+0x324)&0x3fffffffu;
+                    const uint32_t materials=stageWord(instance+0xe0);
+                    const uint32_t materialBytes=stageWord(stageWord(instance+0xdc)+0x24)*0x30;
+                    assert(materialBytes>0 && materialBytes<65536);
+                    std::vector<uint8_t> before(materialBytes);
+                    std::memcpy(before.data(),stageSpace->data(materials,materialBytes),materialBytes);
+                    bool materialsChanged=false;
+                    for(unsigned frame=0;frame<400;++frame) {
+                        assert(Ptr<int(uint32_t)>(0x02111c4cu)(instance)==1);
+                        Ptr<void(uint32_t,uint32_t)>(0x02015888u)(instance+0x320,instance+0xdc);
+                        assert(stageWord(instance+0x328)==((frame+1)*0x1000u)%length);
+                        materialsChanged|=std::memcmp(before.data(),stageSpace->data(materials,materialBytes),materialBytes)!=0;
+                    }
+                    assert(materialsChanged);
+                    continue;
+                }
+                if(vtable==0x021094a0u) {
+                    ++loadedMist;
+                    assert(stageSpace->allocation_size(instance)==0xdc);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(*static_cast<uint16_t *>(stageSpace->data(instance+0xd4,2))==0x24);
+                    assert(stageWord(instance+0xd8)==0);
+                    continue;
+                }
                 if(vtable==0x02109af8u) {
                     ++loadedSigns;
                     assert(stageSpace->allocation_size(instance)==0x5a4);
@@ -1020,6 +1091,7 @@ int main(int argc, char **argv) {
             for(uint16_t id : {353,343,336,207,286}) assert(initializedTypes.count(id));
             assert(loadedNets>0);
             assert(loadedSigns>0);
+            assert(loadedWater>0 && loadedMist==loadedWater*7);
             // All eleven actual modules and all 58 static initializers ran.
             // Code stays the real BLZ result. Constructors build handles and
             // state tables in writable data/BSS instead of fabricated data.
@@ -1028,12 +1100,17 @@ int main(int argc, char **argv) {
                 ntr::OverlayInfo info{};
                 assert(ntr::fs_overlay_info(modules[i],info));
                 const auto expectedImage=cartridge.overlay_data(modules[i]);
-                const uint32_t table=0x08000000u+stageWord(0x027ffe50u)+modules[i]*32;
-                const uint32_t codeEnd=stageWord(table+0x10);
-                assert(codeEnd>=info.ramAddress && codeEnd-info.ramAddress<=info.ramSize);
-                const uint32_t codeBytes=codeEnd-info.ramAddress;
-                assert(std::memcmp(stageSpace->data(expectedImage.base,codeBytes),
-                                   expectedImage.bytes.data(),codeBytes)==0);
+                bool checkedCode=false;
+                for(const auto &range:stageCodeRanges) if(range.module==modules[i]) {
+                    if(!range.start && !range.end) { checkedCode=true; continue; }
+                    assert(range.start>=info.ramAddress && range.end>range.start);
+                    assert(range.end-info.ramAddress<=info.ramSize);
+                    const uint32_t offset=range.start-info.ramAddress,bytes=range.end-range.start;
+                    assert(std::memcmp(stageSpace->data(range.start,bytes),
+                                       expectedImage.bytes.data()+offset,bytes)==0);
+                    checkedCode=true;
+                }
+                assert(checkedCode);
                 const uint32_t region=0x0209d3c4u+i*12;
                 assert(stageWord(region)==modules[i]);
                 assert(stageWord(region+4)==info.ramAddress);
@@ -1054,7 +1131,8 @@ int main(int argc, char **argv) {
                                {0x02148934u,0x4a1}}) {
                 assert(*static_cast<uint16_t *>(stageSpace->data(handle.first,2))==
                        resources.file_id(handle.second));
-                if (handle.first==0x02113c20u || handle.first==0x02113c28u) {
+                if (handle.first==0x02113c20u || handle.first==0x02113c28u ||
+                    handle.first==0x02113c68u || handle.first==0x02113c70u) {
                     assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))>=1);
                     assert(stageSpace->allocation_size(stageWord(handle.first+4))>0);
                 } else {

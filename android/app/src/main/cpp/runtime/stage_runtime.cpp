@@ -825,6 +825,14 @@ uint32_t stage_metalnet_factory() {
     at<uint32_t>(actor)=0x02113ae0u;
     return actor;
 }
+uint32_t stage_castle_water_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x338);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x02113a18u;
+    stage_frame_construct(actor+0x320,0x0208e7c4u);
+    at<uint32_t>(actor+0x330)=0;
+    return actor;
+}
 uint32_t stage_sign_factory() {
     const uint32_t actor=packed::Space::current().allocate(0x368);
     stage_bg_actor_construct(actor);
@@ -1167,6 +1175,7 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==9) {
+        space.bind(0x02111d8cu,&stage_castle_water_factory);
         space.bind(0x02112048u,&stage_metalnet_factory);
         space.bind(0x021121f0u,&stage_castle_flag_factory);
         space.bind(0x02111a30u,&stage_bird_factory);
@@ -1181,6 +1190,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x02146d38u,&stage_fish_factory);
     }
     if (id!=2) return;
+    space.bind(0x020b6ee8u,&stage_plain_actor_factory<0xdc,0x021094a0u>);
     space.bind(0x020bc3c8u,&stage_signpost_factory);
     space.bind(0x020e6c0cu,&stage_player_factory);
     space.bind(0x020e68f4u,&stage_player_construct);

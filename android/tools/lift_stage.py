@@ -1239,6 +1239,9 @@ if __name__ == '__main__':
     from stage_moving_views import slices as moving_slices
     for row,code in moving_slices(projected,free_c):
         rows.append(row);bindings.extend(code)
+    from stage_water_views import slices as water_slices
+    for row,code in water_slices(projected):
+        rows.append(row);bindings.extend(code)
     for name in ['func_ov002_020e5948','func_ov002_020e63a4',
                  'func_ov002_020e6330','func_ov002_020e6350','func_ov002_020e6780',
                  'func_ov002_020e6bb0']:

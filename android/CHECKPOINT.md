@@ -1,3 +1,41 @@
+# Current checkpoint — 2026-11-05, original castle water and texture animation
+
+Continues published main 39e13b3bb779b22a89a5768903cd2d263428ee79.
+Version 0.4.18-castle-water, versionCode 22. Not playable.
+
+The original castle-water factory, complete InitResources, waterfall-spawning
+helper and Behavior now execute. The real water BMD, KCL and CLPS are owned and
+the collider is registered. Its original seven waterfall actors initialize
+with the correct course-dependent particle ID. Texture SRT Prepare/SetFile/Update
+and the complete original frame-controller Advance body are connected. This
+initializes emitters; their per-frame particle production is not yet verified.
+
+ASan/UBSan passes all four private-ROM save/character routes through water to
+QuestionBlock's factory at 0x0214a8ec (overlay 102). Each route executes 400
+original water Behavior/BTA Update calls, checks cursor wraps and actual changes
+to material records, and inspects the live colliders and seven emitter actors.
+No-ROM tests additionally check file changes, cursor retention, reverse wrapping,
+fractional speed and non-looping clamping. Existing Player, camera, signpost,
+mesh, input, source-hash and process-list checks remain active. LeakSanitizer
+is disabled locally. This is repeated execution of one actor, not complete
+world frames or playable character movement.
+
+The integration now compares the pinned delinks' actual .text/.init sections
+with the cartridge. The former comparison ended at the initializer pointer and
+incorrectly included writable BTA descriptors; the original texture Prepare
+legitimately resolves those descriptors in .data. Executable bytes still must
+remain identical. The empty overlay 69 has an explicit audited no-code marker.
+
+The preceding 39e13b3 Android workflow succeeded, including ARM64 build/lint.
+This increment awaits its own Android CI. The local host has no javac or Android
+SDK/device; Java/Android validation runs in CI. Reference-port findings and
+playable acceptance criteria are in NATIVE_RUNTIME.md. Next: the original item
+block resource/state chain, remaining scene/HUD/particles, then complete
+Player/camera/render/audio world frames. Side-by-side screens are preserved;
+no ROM, extracted assets or private captures are committed.
+
+---
+
 # Current checkpoint — 2026-11-05, original movable signpost
 
 Continues published main 4479e2330da49db6f12c504f6cc5b555a0376dd6.

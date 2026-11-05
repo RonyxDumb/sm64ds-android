@@ -5,7 +5,7 @@ GAME_BUILD=${SM64DS_GAME_BUILD:-$(mktemp -d)}
 mkdir -p "$GAME_BUILD"
 if [[ -z ${SM64DS_GAME_BUILD:-} ]]; then trap 'rm -rf "$GAME_BUILD"' EXIT; fi
 python3 android/tools/native_sources.py --out "$GAME_BUILD/generated"
-python3 android/tools/verify_stage_sources.py
+python3 android/tools/verify_stage_sources.py --ranges-header "$GAME_BUILD/generated/stage_code_ranges.h"
 python3 android/tools/packed_sources.py --out "$GAME_BUILD/packed"
 python3 android/tools/packed_sources.py --out "$GAME_BUILD/stage" --manifest android/tools/stage_manifest.json
 COMPILE_CACHE=()

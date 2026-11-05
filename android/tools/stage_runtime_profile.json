@@ -162,6 +162,23 @@
     "src/unnamed/arm9/0205/func_020527e8.c": "745c35da2a08c43d60b47bf19adf1742051818e304902b5678bfccec5edd20ad",
     "src/Matrix4x3_ApplyInPlaceToScale.c": "9e2083210f27372ed293df56236b112c8606a68580400da8d42a1e887bb7b248",
     "src/game/actors/d_a_obj_tatefuda.cpp": "a0043c7b034d4dfc961e2018c933c573ef36880cad19a5e5121a4b0810b6ccab",
-    "include/daObjTatefuda_c.h": "574e22e3b55ce5958921161563567cdc9b438f27b391c603f68fb7670387f942"
+    "include/daObjTatefuda_c.h": "574e22e3b55ce5958921161563567cdc9b438f27b391c603f68fb7670387f942",
+    "src/game/actors/d_a_obj_mc_water.cpp": "65092b6370986c563d6bf4cdf045e4e2140a6e98260b37ec25dc430c2e2291e6",
+    "include/daObjMcWater_c.h": "9b3e3778d115465b5b1b0021f914e6db8e432f068a06adbd039915cc875f72e6",
+    "src/game/actors/d_a_obj_waterfall.cpp": "1f5073e8d20bb68f8b5cf6df7ed3c6b7a3c498162012f98031be9ad95a354f5a",
+    "include/daObjWaterfall_c.h": "3e6d5755cf60e8ebe26aa964caf8227d7ea03c7569ed8d36a1635e76d2b47e41",
+    "src/engine/model/d_ext_anm_tex_srt.cpp": "a48046f0bdc6144b602c6a73c03ffbe905ff17bbb4d7565bafe043263fcf21af",
+    "include/dExtAnmTexSRT_c.h": "0968ceb740d9b2db1025f4110f764efe0f55ae58b8a334765ba68c75d1fc13d2",
+    "external/sm64ds-pc/config/arm9/overlays/ov001/delinks.txt": "a4d09a56a78926402a527ac1c0a8351bc58dde0ef56e140147a00b38403bbf04",
+    "external/sm64ds-pc/config/arm9/overlays/ov002/delinks.txt": "2e74d475da0c3a9fca064b03ad5274135bdcee63092d17adeb87095c3212d7c6",
+    "external/sm64ds-pc/config/arm9/overlays/ov009/delinks.txt": "0e715245f93dc67f9f7c9cb153f5330b87caa8d7147349fcb338f3174d2e633f",
+    "external/sm64ds-pc/config/arm9/overlays/ov062/delinks.txt": "0bc0eba2e65016333d6ca105f202803420f86a2685ec93f843946c6172514275",
+    "external/sm64ds-pc/config/arm9/overlays/ov069/delinks.txt": "818c3e5fadcd2d5630c8ef5e0716ebdf643de2a3d77137058b2e2fab4da18746",
+    "external/sm64ds-pc/config/arm9/overlays/ov085/delinks.txt": "c3fbaa91a38e611406b1e7da641bb63e58ba718c3677bb0e68417aa24fba78a8",
+    "external/sm64ds-pc/config/arm9/overlays/ov089/delinks.txt": "9b40da70a9fd073263b25ccbf9e694cec140fe83e74554db175524cdcaae1ea1",
+    "external/sm64ds-pc/config/arm9/overlays/ov094/delinks.txt": "0ff0869d7ebb87c62006b6901b2ae2c6430bb3959792d51e67fd9aba0d68f33a",
+    "external/sm64ds-pc/config/arm9/overlays/ov100/delinks.txt": "2d4f4618d50e39f74f40df55b21208762fa5d58088536f3c4f2e3fc614021896",
+    "external/sm64ds-pc/config/arm9/overlays/ov098/delinks.txt": "ac5bbeb4dfefb7c0e5558e671434e5e131b32d582352228a3512fe9a2858db82",
+    "external/sm64ds-pc/config/arm9/overlays/ov102/delinks.txt": "4c547e81c3850599b985c4a1e27124551d9bc033bbacb195157ebb64d8769fa7"
   }
 }
