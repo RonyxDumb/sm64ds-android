@@ -1,3 +1,47 @@
+# Current checkpoint — 2026-11-05, castle actor initialization
+
+Continues published main ceed5171a39d45d21ef3bac79793fb6e8a6ee5cd.
+Version 0.4.15-castle-actors, versionCode 19. This checkpoint is not playable.
+
+Original complete InitResources bodies now run for the Door, exit trigger,
+castle flag, tree, bird, butterfly, ambient sound and cannon actors. The fish
+factory and InitResources are connected as well. Factories preserve cartridge
+allocation sizes, subobject construction, vtables and the original frame/state
+records. Door decoration/key resources and the actual key-model loader retain
+their original selection and ownership. Position-only and actor-owned collision
+cylinders use their real records. Rotation/translation helpers and frame counts
+are available to these complete game bodies; no unknown callback succeeds.
+
+The four private-ROM save/character paths advance through the former overlay-100
+Door frontier to daObjMc_Metalnet_c_classInit at 0x02112048 in overlay 9.
+The regression inspects live actor states, real model/BCA/shadow resources and
+cannon/butterfly cylinder owners, in addition to the preceding castle, Player,
+camera, KCL and scheduler checks. The build uses all frontend and stage units;
+ASan/UBSan are enabled and local LeakSanitizer remains disabled. This does not
+establish a complete gameplay frame or on-phone playability.
+
+Host compilation now supports opt-in content-checked object reuse. An explicit
+SM64DS_GAME_BUILD keeps the cache; source/header/compiler-option changes
+invalidate it and removed projections delete their stale objects. A real compiler
+regression verifies reuse and header/source invalidation. Clean default builds
+retain their existing full-compilation path.
+
+Next: original moving-mesh collider transforms and Metalnet/Water actors, then
+remaining object, stage fog/skybox/particle/HUD initialization and actual
+per-frame Player/camera/rendering dependencies. Playable acceptance requires
+visible castle geometry, original movement/jumping/collision over multiple
+complete frames, followed by an ARM64 Android build and device verification.
+ROM, extracted data and local captures remain untracked.
+
+Reference ports were checked directly: sm64-port's produce_one_frame brackets
+one original game-loop iteration with graphics backend calls; its Android base
+adapts the platform backend. The upstream DS port's port/README still specifies
+a 32-bit-first native ABI, so its host classes cannot simply replace the checked
+four-byte-handle Android records. Its recovered actor/collider source is reused
+where the original algorithms apply, preserving the DS game and resources.
+
+---
+
 # Current checkpoint — 2026-11-04, entrance, KCL queries and camera initialization
 
 Continues published main ea15b84250029d047f951c61693e20d56b3306a5.

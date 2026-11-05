@@ -8,8 +8,10 @@ python3 android/tools/native_sources.py --out "$GAME_BUILD/generated"
 python3 android/tools/verify_stage_sources.py
 python3 android/tools/packed_sources.py --out "$GAME_BUILD/packed"
 python3 android/tools/packed_sources.py --out "$GAME_BUILD/stage" --manifest android/tools/stage_manifest.json
-python3 android/tools/compile_frontend.py --generated "$GAME_BUILD/packed" --out "$GAME_BUILD/objects"
-python3 android/tools/compile_frontend.py --generated "$GAME_BUILD/stage" --out "$GAME_BUILD/stage-objects"
+COMPILE_CACHE=()
+if [[ -n ${SM64DS_GAME_BUILD:-} ]]; then COMPILE_CACHE=(--incremental); fi
+python3 android/tools/compile_frontend.py --generated "$GAME_BUILD/packed" --out "$GAME_BUILD/objects" "${COMPILE_CACHE[@]}"
+python3 android/tools/compile_frontend.py --generated "$GAME_BUILD/stage" --out "$GAME_BUILD/stage-objects" "${COMPILE_CACHE[@]}"
 for source in src/GetOwnerLanguage.c src/SetBg0Offset.c src/SetSubBg{0,1,2}Offset.c \
     src/SetNumPlayers.c src/SublevelToLevel.c src/unnamed/arm9/0203/func_020308d0.c \
     src/DecIfAbove0_Byte.c src/GetControllerMode.c src/GetPlayerFlagByte.c src/GetSoundMode.c \

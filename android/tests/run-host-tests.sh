@@ -79,6 +79,7 @@ ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" \
     UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" "$TEST_BUILD/stage_object_test"
 
 python3 android/tests/hostgen_test.py
+python3 android/tests/compile_frontend_cache_test.py
 python3 android/tests/native_sources_test.py
 python3 android/tools/native_sources.py --out "$TEST_BUILD/native-src"
 g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \

@@ -20,6 +20,8 @@ extern "C" void pk_MultiStore16(unsigned short,sm64ds::packed::Ptr<char>,int);
 extern "C" void pk_MultiStore_Int(int,sm64ds::packed::Ptr<int>,int);
 extern "C" void pk_MultiCopy_Int(sm64ds::packed::Ptr<int>,sm64ds::packed::Ptr<int>,int);
 extern "C" int pk__ZN4cstd4fdivEii(int,int);
+extern "C" void pk_func_02052820(sm64ds::packed::Ptr<int>,int,int);
+extern "C" void pk_func_02052800(sm64ds::packed::Ptr<int>,int,int);
 namespace cstd { int sqrt(unsigned long long); int16_t atan2(int32_t,int32_t); }
 
 namespace sm64ds {
@@ -447,6 +449,9 @@ int stage_model_set_file(uint32_t model,uint32_t file,int a,int b) {
 void stage_frame_flags(uint32_t frame,int flags) {
     at<uint32_t>(frame+4)=(at<uint32_t>(frame+4)&0x3fffffffu)|static_cast<uint32_t>(flags);
 }
+uint32_t stage_frame_count(uint32_t frame) {
+    return ((at<uint32_t>(frame+4)&0x3fffffffu)<<4)>>16;
+}
 void stage_frame_set_animation(uint32_t frame,uint16_t count,int flags,int speed,uint16_t start) {
     at<uint32_t>(frame+4)=static_cast<uint32_t>(flags)|(uint32_t(count)<<12);
     at<uint32_t>(frame+8)=uint32_t(start)<<12;
@@ -742,6 +747,108 @@ int stage_camera_change_state(uint32_t camera,uint32_t state) {
     }
     return stage_camera_state_init(camera);
 }
+// Factories mirror the source constructors' original allocation, member
+// construction order and vtables. All storage keeps cartridge-width handles.
+template<uint32_t Size,uint32_t Vtable>
+uint32_t stage_plain_actor_factory() {
+    const uint32_t actor=packed::Space::current().allocate(Size);
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=Vtable;
+    return actor;
+}
+void stage_shadow_construct(uint32_t model) {
+    at<uint32_t>(model)=0x0208e868u;
+    for (unsigned off : {4u,12u,32u,36u}) at<uint32_t>(model+off)=0;
+}
+void stage_actor_cylinder_construct(uint32_t collider,bool position) {
+    at<uint32_t>(collider)=position ? 0x0208e704u : 0x0208e6d4u;
+    for (unsigned off : {0x28u,0x2cu,0x30u}) at<uint32_t>(collider+off)=0;
+}
+uint32_t stage_door_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x148,0x02148188u>();
+    stage_anim_model_construct(actor+0xd4);
+    return actor;
+}
+uint32_t stage_castle_flag_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x138,0x02113ba0u>();
+    stage_anim_model_construct(actor+0xd4);
+    return actor;
+}
+uint32_t stage_tree_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x264,0x0210ac00u>();
+    for (unsigned i=0;i<5;++i) native_simple_model_construct(actor+0xd4+i*0x50);
+    return actor;
+}
+uint32_t stage_bird_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x184,0x02113958u>();
+    stage_anim_model_construct(actor+0xd4);
+    stage_shadow_construct(actor+0x138);
+    return actor;
+}
+uint32_t stage_butterfly_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x3f4,0x02147e9cu>();
+    stage_anim_model_construct(actor+0xd4);
+    native_simple_model_construct(actor+0x138);
+    stage_shadow_construct(actor+0x188);
+    stage_shadow_construct(actor+0x1b0);
+    stage_mesh_query_construct(actor+0x1d8);
+    stage_actor_cylinder_construct(actor+0x394,true);
+    return actor;
+}
+uint32_t stage_cannon_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x198,0x0213c6a0u>();
+    native_simple_model_construct(actor+0xd4);
+    stage_actor_cylinder_construct(actor+0x124,false);
+    return actor;
+}
+uint32_t stage_fish_factory() {
+    const uint32_t actor=stage_plain_actor_factory<0x160,0x021484bcu>();
+    stage_anim_model_construct(actor+0xd4);
+    at<int32_t>(actor+0x138)=1; // daFish_c's out-of-line constructor seed
+    return actor;
+}
+uint32_t stage_position_cylinder_construct(uint32_t collider) {
+    (void)packed::Space::current().data(collider,0x3c);
+    at<uint32_t>(collider)=0x0208e6bcu;
+    at<uint32_t>(collider+0x28)=at<uint32_t>(collider+0x2c)=0;
+    return collider;
+}
+void stage_position_cylinder_init(uint32_t collider,uint32_t position,int radius,int height,
+                                  uint32_t flags,uint32_t vulnerable) {
+    auto &space=packed::Space::current();
+    std::memcpy(space.data(collider+0x30,12),space.data(position,12),12);
+    native_collision_init(collider,radius,height,flags,vulnerable);
+}
+uint32_t stage_position_cylinder_pos(uint32_t collider) { return collider+0x30; }
+uint32_t stage_position_cylinder_owner(uint32_t) { return 0; }
+void stage_centered_cylinder_init(uint32_t collider,uint32_t actor,int radius,int height,
+                                  uint32_t flags,uint32_t vulnerable) {
+    at<uint32_t>(collider+0x30)=actor;
+    native_collision_init(collider,radius,height,flags,vulnerable);
+}
+uint32_t stage_door_relative_player(uint32_t door) {
+    auto &space=packed::Space::current();
+    const uint32_t player=at<uint32_t>(0x0209f394u+at<uint8_t>(0x0209f250u)*4u);
+    int32_t relative[3];
+    for (unsigned i=0;i<3;++i)
+        relative[i]=static_cast<int32_t>(at<uint32_t>(player+0x5c+i*4)-at<uint32_t>(door+0x5c+i*4));
+    const int16_t angle=static_cast<int16_t>(-int32_t(at<int16_t>(door+0x8e)));
+    Ptr<void(uint32_t,uint32_t,int16_t,uint32_t)>(0x0203b6a4u)(
+        door+0x80,0x020a0ebcu,angle,space.address(relative));
+    return player;
+}
+int stage_door_change_state(uint32_t door,uint32_t state,int player) {
+    auto &space=packed::Space::current();
+    at<uint32_t>(door+0x140)=state;
+    if (!at<uint32_t>(state)) return 1;
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(state,8),8);
+    const auto target=space.resolve_member(door,member);
+    using Callback=int (*)(uint32_t,int);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    return callback(target.object,player);
+}
 uint32_t stage_vector_lifetime(uint32_t vector) {
     // The original default Vector3 constructor and destructor have empty
     // bodies. Their ABI returns the existing object and writes no component.
@@ -1002,6 +1109,18 @@ void stage_actor_frame() {
 }
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
+    if (id==9) {
+        space.bind(0x021121f0u,&stage_castle_flag_factory);
+        space.bind(0x02111a30u,&stage_bird_factory);
+    }
+    if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
+    if (id==100) {
+        space.bind(0x0214589cu,&stage_door_factory);
+        space.bind(0x02145370u,&stage_door_relative_player);
+        space.bind(0x021453d8u,&stage_door_change_state);
+        space.bind(0x02141ea4u,&stage_butterfly_factory);
+        space.bind(0x02146d38u,&stage_fish_factory);
+    }
     if (id!=2) return;
     space.bind(0x020e6c0cu,&stage_player_factory);
     space.bind(0x020e68f4u,&stage_player_construct);
@@ -1009,6 +1128,9 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020e30a0u,&stage_player_change_state);
     space.bind(0x020c7dd0u,&stage_player_entrance_state);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);
+    space.bind(0x020b0f24u,&stage_plain_actor_factory<0x104,0x021086b4u>);
+    space.bind(0x020ec32cu,&stage_tree_factory);
+    space.bind(0x020f1b94u,&stage_plain_actor_factory<0xd8,0x0210b4c8u>);
 }
 
 void bind_stage_runtime(packed::Space &space) {
@@ -1023,6 +1145,9 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x020163a0u,&stage_anim2_model_construct);
     space.bind(0x02016fd4u,&stage_model_set_file);
     space.bind(0x02015bf8u,&stage_frame_flags);
+    space.bind(0x02015c0cu,&stage_frame_count);
+    space.bind(0x02052820u,&pk_func_02052820);
+    space.bind(0x02052800u,&pk_func_02052800);
     space.bind(0x02015c20u,&stage_frame_set_animation);
     space.bind(0x02016748u,&stage_anim_model_set_animation);
     space.bind(0x0201597cu,&stage_texture_prepare);
@@ -1032,6 +1157,11 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0203d384u,&stage_vector_lifetime);
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
+    space.bind(0x02014878u,&stage_position_cylinder_construct);
+    space.bind(0x020147d4u,&stage_position_cylinder_init);
+    space.bind(0x02014820u,&stage_position_cylinder_pos);
+    space.bind(0x02014818u,&stage_position_cylinder_owner);
+    space.bind(0x0201490cu,&stage_centered_cylinder_init);
     space.bind(0x02037388u,&stage_actor_mesh_init);
     space.bind(0x02037570u,&stage_ground_construct);
     space.bind(0x020377b0u,&stage_line_construct);

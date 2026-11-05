@@ -860,7 +860,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0214589cu);
+                    "Unlinked native code handle: " + std::to_string(0x02112048u);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
@@ -873,6 +873,47 @@ int main(int argc, char **argv) {
                 std::memcpy(&value,stageSpace->data(address,4),4);
                 return value;
             };
+            // Inspect real spawned instances beyond the former door-factory
+            // frontier. A linked constructor alone must not count as a loaded
+            // actor: its original InitResources must have published live state
+            // and real model/animation ownership.
+            std::unordered_set<uint32_t> actorNodes;
+            std::unordered_set<uint16_t> initializedTypes;
+            for(uint32_t node=stageWord(0x0209b468u);node;node=stageWord(node+4)) {
+                assert(actorNodes.insert(node).second && actorNodes.size()<512);
+                const uint32_t instance=stageWord(node+8);
+                const uint16_t id=*static_cast<uint16_t *>(stageSpace->data(instance+12,2));
+                if(id!=353 && id!=343 && id!=336 && id!=207 && id!=286) continue;
+                const uint8_t life=*static_cast<uint8_t *>(stageSpace->data(instance+14,1));
+                if(id==286 && life!=1) {
+                    // Original tree batching keeps one live actor per model
+                    // variant; the additional colliders live in TreeNodes.
+                    assert(life==0 && *static_cast<uint8_t *>(stageSpace->data(instance+15,1))==1);
+                    continue;
+                }
+                initializedTypes.insert(id);
+                assert(life==1);
+                if(id==286) {
+                    bool modelLoaded=false;
+                    for(unsigned i=0;i<5;++i) modelLoaded|=stageWord(instance+0xd8+i*0x50)!=0;
+                    assert(modelLoaded);
+                } else {
+                    assert(stageWord(instance+0xdc)); // shared model data; no owned modelFile
+                    if(id!=207) assert(stageWord(instance+0x134)); // original BCA
+                }
+                if(id==353) assert(stageWord(instance)==0x02148188u && stageWord(instance+0x140));
+                if(id==343) assert(stageWord(instance+0x138)==0x0208e868u && stageWord(instance+0x140));
+                if(id==336) {
+                    assert(stageWord(instance+0x140) && stageWord(instance+0x190));
+                    assert(stageWord(instance+0x394+0x30)==instance);
+                }
+                if(id==207) {
+                    assert(stageWord(instance+0x124)==0x0208e6d4u);
+                    assert(stageWord(instance+0x124+0x30)==instance);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+0x184,1))==2);
+                }
+            }
+            for(uint16_t id : {353,343,336,207,286}) assert(initializedTypes.count(id));
             // All eleven actual modules and all 58 static initializers ran.
             // Code stays the real BLZ result. Constructors build handles and
             // state tables in writable data/BSS instead of fabricated data.
@@ -907,7 +948,10 @@ int main(int argc, char **argv) {
                                {0x02148934u,0x4a1}}) {
                 assert(*static_cast<uint16_t *>(stageSpace->data(handle.first,2))==
                        resources.file_id(handle.second));
-                if (handle.first==0x0210da18u || handle.first>=0x02113c20u) {
+                if (handle.first==0x02113c20u || handle.first==0x02113c28u) {
+                    assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))>=1);
+                    assert(stageSpace->allocation_size(stageWord(handle.first+4))>0);
+                } else {
                     assert(*static_cast<uint8_t *>(stageSpace->data(handle.first+2,1))==0);
                     assert(stageWord(handle.first+4)==0);
                 }

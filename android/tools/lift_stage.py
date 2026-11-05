@@ -261,6 +261,8 @@ def free_c(rel):
                if '#include "decl_common.h"' in (ROOT/rel).read_text()
                and set(re.findall(r'\b(?:data_\w+|func_\w+|SUBLEVEL_LEVEL_TABLE)\b',m.group())) & used]
     raw = '\n'.join(imports)+'\n'+raw
+    if rel in ('src/Matrix4x3_ApplyInPlaceToRotationX.c','src/Matrix4x3_ApplyInPlaceToScale.c'):
+        raw=replace_once(raw,'struct Matrix4x3 { char data[0x30]; };','')
     if rel.endswith('/func_0205cb68.c'):
         raw = replace_once(raw,'extern void func_0205d2dc(void);',
                            'extern int func_0205d2dc(void *,int,int,int);')
@@ -1229,6 +1231,9 @@ if __name__ == '__main__':
     rows.append(row);bindings.extend(code)
     for row,code in overlay_initializers():
         rows.append(row); bindings.extend(code)
+    from stage_actor_views import slices
+    for row,code in slices(projected,free_c,SYMBOLS,DATA_SYMBOLS):
+        rows.append(row);bindings.extend(code)
     for name in ['func_ov002_020e5948','func_ov002_020e63a4',
                  'func_ov002_020e6330','func_ov002_020e6350','func_ov002_020e6780',
                  'func_ov002_020e6bb0']:
@@ -1241,6 +1246,12 @@ if __name__ == '__main__':
         rows.append(row); bindings.extend(code)
     for rel in ['src/Enable3dEngines.c','src/LoadOverlay.c','src/FS_LoadOverlay.c',
                 'src/Vec3_RotateYAndTranslate.c',
+                'src/Vec3_Asr.c','src/Vec3_AsrInPlace.c',
+                'src/Matrix4x3_FromTranslation.c',
+                'src/Matrix4x3_ApplyInPlaceToRotationY.c',
+                'src/Matrix4x3_ApplyInPlaceToRotationX.c',
+                'src/Matrix4x3_FromRotationY.c','src/Matrix4x3_FromRotationX.c',
+                'src/GetLevelPart.c','src/RandomIntInternal.c','src/AngleDiff.c',
                 'src/SetBg0Offset.c','src/SetSubBg0Offset.c','src/SetSubBg1Offset.c','src/SetSubBg2Offset.c',
                 'external/sm64ds-pc/src/func_0201eaac.c',
                 'external/sm64ds-pc/src/StartWithFarCamera.c',
