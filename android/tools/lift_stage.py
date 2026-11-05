@@ -1245,6 +1245,9 @@ if __name__ == '__main__':
     from stage_hatena_views import slices as hatena_slices
     for row,code in hatena_slices(projected,SYMBOLS):
         rows.append(row);bindings.extend(code)
+    from stage_player_updates import slices as player_updates
+    for row,code in player_updates(projected):
+        rows.append(row);bindings.extend(code)
     for name in ['func_ov002_020e5948','func_ov002_020e63a4',
                  'func_ov002_020e6330','func_ov002_020e6350','func_ov002_020e6780',
                  'func_ov002_020e6bb0']:

@@ -920,6 +920,20 @@
       "unit": "stage_hatena_init"
     },
     {
+      "path": "src/game/player/Player.cpp",
+      "sha256": "734b1b3c2cecb1a81e71d817e94c2885753fae5ed437629407ed93590cabd42d",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\nstatic u32 pk__ZNK6Player14GetBodyModelIDEjb(Ptr<void> a0, u32 a1, int a2) { return Ptr<u32(Ptr<void>, u32, int)>(0x020becc8u)(a0, a1, a2); }\nextern \"C\" int pk__ZN6Player6IsAnimEj(Ptr<void>, u32);\nstatic void pk__ZN9Animation7AdvanceEv(Ptr<void> a0) { Ptr<void(Ptr<void>)>(0x02015c3cu)(a0); }\n\nextern \"C\" void pk_Player_AdvanceAnims(Ptr<char> self) {\n    Ptr<char> player = self;\n    unsigned int modelID = pk__ZNK6Player14GetBodyModelIDEjb(player,(*(Ptr<u32>)((player+8))) & 0xff, 0);\n    Ptr<void> model = ((Ptr<Ptr<void>>)((player+0xdc)))[modelID];\n    pk__ZN9Animation7AdvanceEv((Ptr<char>)(model)+0x50);\n\n    if (pk__ZN6Player6IsAnimEj(player,0x9a) || pk__ZN6Player6IsAnimEj(player,0x19) ||\n        pk__ZN6Player6IsAnimEj(player,0xac) || pk__ZN6Player6IsAnimEj(player,0x6b) ||\n        pk__ZN6Player6IsAnimEj(player,0x85) || pk__ZN6Player6IsAnimEj(player,0x94) ||\n        pk__ZN6Player6IsAnimEj(player,0x98) || pk__ZN6Player6IsAnimEj(player,0x99)) {\n        (*(Ptr<s32>)((player+0x1dc+(*(Ptr<u32>)((player+8)))*0x14+8))) = 0;\n    }\n    pk__ZN9Animation7AdvanceEv(player+0x1dc+(*(Ptr<u32>)((player+8)))*0x14);\n}\nextern \"C\" int pk__ZN6Player6IsAnimEj(Ptr<void> object, unsigned int a) {\n    \n#define data_ov002_020ff480 ArrayRef<int>(0x020ff480u)\n\n  int ip = (*(Ptr<u32>)(((Ptr<char>)(object)+8)));\n  Ptr<int> p = (Ptr<int>)(data_ov002_020ff480[ip + a*4]);\n  int v = p[1];\n  unsigned int id = pk__ZNK6Player14GetBodyModelIDEjb(object,ip&0xff, 0);\n  Ptr<void> model = ((Ptr<Ptr<void>>)(((Ptr<char>)(object)+0xdc)))[id];\n  int matches = (word((*(Ptr<Ptr<void>>)(((Ptr<char>)(model)+0x60)))) == v);\n  return matches ? 1 : 0;\n}\nextern \"C\" void abi_Player_AdvanceAnims(unsigned int a0) { pk_Player_AdvanceAnims((Ptr<char>)(a0)); }\n\nextern \"C\" unsigned int abi__ZN6Player6IsAnimEj(unsigned int a0, unsigned int a1) { return uword(pk__ZN6Player6IsAnimEj((Ptr<void>)(a0), (unsigned int)(a1))); }\n",
+      "unit": "stage_player_advance_anims"
+    },
+    {
+      "path": "src/engine/model/d_ext_anm_model.cpp",
+      "sha256": "e6f3e426d5b6692d7180291500e6f79caeedcd739d53095f00e71beac7fa8fe0",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\nstatic void pk__ZN15ModelComponents11UpdateBonesEP8BCA_Filei(Ptr<void> a0, Ptr<void> a1, int a2) { Ptr<void(Ptr<void>, Ptr<void>, int)>(0x02045394u)(a0, a1, a2); }\nstatic void pk__ZN15ModelComponents21UpdateVertsUsingBonesEv(Ptr<void> a0) { Ptr<void(Ptr<void>)>(0x0204504cu)(a0); }\nextern \"C\" void pk__ZN14dExtAnmModel_c11UpdateVertsEv(Ptr<void>);\nstatic void pk__ZN17dExtSimpleModel_c6RenderEPK7Vector3(Ptr<void> a0, Ptr<void> a1) { Ptr<void(Ptr<void>, Ptr<void>)>(0x02016b78u)(a0, a1); }\n\nextern \"C\" void pk__ZN14dExtAnmModel_c11UpdateVertsEv(Ptr<void> object) {\n    s32 frame = (*(Ptr<s32>)(((Ptr<char>)(object)+0x58)));\n    pk__ZN15ModelComponents11UpdateBonesEP8BCA_Filei((Ptr<char>)(object)+8,(*(Ptr<Ptr<void>>)(((Ptr<char>)(object)+0x60))), (u32)(frame << 4) >> 0x10);\n    pk__ZN15ModelComponents21UpdateVertsUsingBonesEv((Ptr<char>)(object)+8);\n}\nextern \"C\" void pk__ZN14dExtAnmModel_c6RenderEPK7Vector3(Ptr<void> object, Ptr<void> scale) {\n    pk__ZN14dExtAnmModel_c11UpdateVertsEv(object);\n    pk__ZN17dExtSimpleModel_c6RenderEPK7Vector3(object,scale);\n}\nextern \"C\" void abi__ZN14dExtAnmModel_c11UpdateVertsEv(unsigned int a0) { pk__ZN14dExtAnmModel_c11UpdateVertsEv((Ptr<void>)(a0)); }\n\nextern \"C\" void abi__ZN14dExtAnmModel_c6RenderEPK7Vector3(unsigned int a0, unsigned int a1) { pk__ZN14dExtAnmModel_c6RenderEPK7Vector3((Ptr<void>)(a0), (Ptr<void>)(a1)); }\n",
+      "unit": "stage_animated_model_render"
+    },
+    {
       "path": "external/sm64ds-pc/src/func_ov002_020e5948.c",
       "sha256": "6fb11131cf353c306f98b2e4c9e7740405bbd1b321ee1cbbc3ac626b53b8f891",
       "header": false,
@@ -2409,6 +2423,24 @@
       "address": 34905472,
       "symbol": "abi_func_ov102_02149d80",
       "overlay": 102
+    },
+    {
+      "address": 34336212,
+      "symbol": "abi_Player_AdvanceAnims",
+      "overlay": 2
+    },
+    {
+      "address": 34336460,
+      "symbol": "abi__ZN6Player6IsAnimEj",
+      "overlay": 2
+    },
+    {
+      "address": 33646700,
+      "symbol": "abi__ZN14dExtAnmModel_c11UpdateVertsEv"
+    },
+    {
+      "address": 33646584,
+      "symbol": "abi__ZN14dExtAnmModel_c6RenderEPK7Vector3"
     },
     {
       "address": 34494792,

@@ -31,5 +31,7 @@ not committed Nintendo assets.
 4. Inspect rendered castle and character frames, with the camera following.
 5. Build ARM64 and test the APK on Android, including pause/resume and controls.
 
-An isolated 400-tick water-animation regression does not satisfy steps 2–5.
+Isolated water updates and 180-step Player body animation/bone/render tests
+do not satisfy steps 2–5. The latter exercise original model code; they do not
+establish complete Player actor rendering, movement or camera following.
 No attached Android device has been available in this session.

@@ -1,4 +1,44 @@
-# Current checkpoint — 2026-11-05, consecutive original water rendering
+# Current checkpoint — 2026-11-05, original Player body animation and rendering
+
+Continues published main ede8cbeca70166789142e461d6f1dfba2c49148d.
+Version 0.4.21-player-animation, versionCode 25. **Not playable.**
+
+Complete original Player_AdvanceAnims and Player::IsAnim bodies now execute
+against the actual body-model and animation-file tables. Character/metal model
+selection, the eight animation-specific texture-cursor resets and body/texture
+frame advancement are preserved. Complete dExtAnmModel::UpdateVerts and Render
+connect BCA bone sampling, vertex-matrix rebuilding and the original model draw.
+No synthetic motion, substituted pose or unknown-callback success is used.
+
+ASan/UBSan passes all four private-ROM save/character launches. Each original
+body model (0, 1, 2, 3) executes 180 consecutive animation/bone/render updates:
+the cursor matches original wrap/clamp behavior, skeletal transform storage
+changes, and every draw emits geometry. The existing 400-update water/material/
+geometry tests and all item/mushroom, Player initialization, camera, KCL,
+moving-mesh and process-list assertions still pass. No-ROM integration, packed
+source rename/removal, hostgen/native-source and source-hash checks pass.
+LeakSanitizer is disabled locally.
+
+These tests draw the selected body independently of the complete Player actor.
+They do not verify full Player::Behavior/Render, head/accessory placement,
+walking, jumping, camera following, world audio or complete scene-3 frames.
+Initialization still reaches the actual rabbit factory dependency at 0x0212cc2c
+(overlay 85). It must be closed before the normal world-frame path can advance.
+
+The latest published water-render Android workflow was running when this
+checkpoint was prepared; its frontend-arm64 job passed. This increment's full
+ARM64 APK/lint workflow is pending publication. No local Android SDK/javac or
+attached device/emulator is available. The broad host runner's native ROM probe
+passes but its Java step requires CI. Side-by-side screens and previous graphics
+fixes remain. No ROM, extracted assets, private captures or APK is committed.
+
+Next: finish original scene/actor/particle/HUD initialization and the remaining
+per-frame Player state, collision, camera and world/audio callbacks. The body
+animation milestone is not playable-gameplay evidence.
+
+---
+
+# Previous checkpoint — 2026-11-05, consecutive original water rendering
 
 Continues published main 0ba35886ea031f2842734eb53c889c823008260c.
 Version 0.4.20-water-render, versionCode 24. **Not playable.**

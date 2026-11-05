@@ -12,6 +12,7 @@
 #include "ntr/gx.h"
 #include "stage_code_ranges.h"
 #include <cassert>
+#include <algorithm>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
@@ -1304,6 +1305,43 @@ int main(int argc, char **argv) {
                 const uint32_t model=stageWord(player+0x154+i*4);
                 assert(model && stageWord(model)==(i==3?0x0208e980u:0x0208e90cu));
                 assert(stageWord(model+8));
+            }
+            {
+                // Execute the Player's own animation selection/advancement,
+                // then the animated body's original bone and draw pipeline.
+                // This does not replace Player::Behavior/Render or move it.
+                sm64ds::packed::Space::Scope scope(*stageSpace);
+                using sm64ds::packed::Ptr;
+                const uint32_t bodyID=Ptr<uint32_t(uint32_t,uint32_t,int)>(0x020becc8u)(
+                    player,stageWord(player+8)&0xffu,0);
+                assert(bodyID<5);
+                const uint32_t body=stageWord(player+0xdc+bodyID*4);
+                const uint32_t bones=stageWord(stageWord(body+8)+4),matrices=stageWord(body+0x14);
+                assert(bones>0 && bones<256);
+                std::vector<uint8_t> initial(bones*48);
+                std::memcpy(initial.data(),stageSpace->data(matrices,initial.size()),initial.size());
+                bool poseChanged=false,cursorChanged=false;
+                for(unsigned frame=0;frame<180;++frame) {
+                    const uint32_t flags=stageWord(body+0x54),length=flags&0x3fffffffu;
+                    const int32_t before=int32_t(stageWord(body+0x58));
+                    assert(length>0);
+                    int64_t expected=int64_t(before)+int32_t(stageWord(body+0x5c));
+                    if(flags&0xc0000000u)
+                        expected=std::clamp<int64_t>(expected,0,length-1);
+                    else expected=(expected+length)%length;
+                    Ptr<void(uint32_t)>(0x020bedd4u)(player);
+                    assert(int32_t(stageWord(body+0x58))==expected);
+                    cursorChanged|=before!=expected;
+                    ntr::gx_begin_frame();
+                    Ptr<void(uint32_t,uint32_t)>(0x020167f8u)(body,0);
+                    size_t polygons=0;
+                    (void)ntr::gx_polygons(polygons);
+                    assert(polygons>0);
+                    poseChanged|=std::memcmp(initial.data(),stageSpace->data(matrices,initial.size()),initial.size())!=0;
+                }
+                assert(cursorChanged && poseChanged);
+                std::cout << "Original Player body " << bodyID
+                          << ": 180 animation/bone/render updates passed.\n";
             }
             assert(stageWord(player+0x2ac)==0x0208e868u && stageWord(player+0x2ac+8));
             assert(stageWord(player+0x2d4+0x30)==player);
