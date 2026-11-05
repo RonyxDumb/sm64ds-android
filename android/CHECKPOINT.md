@@ -1,3 +1,57 @@
+# Current checkpoint — 2026-11-05, original minigame catalog, saves and touchscreen hitboxes
+
+Continues published main 1163315db6494dadf97a5361ba0f30056808ecc4.
+Version remains 0.4.21-player-animation; **neither the menu nor any minigame is playable**.
+
+New native-owned runtime components:
+- minigame_catalog.{h,cpp} reads overlay 5 from the supplied European
+  cartridge, validates the 36 recovered 0x34-byte MgEntry rows, unique
+  0..35 parameter tags, 30 unique original scene IDs (0x169..0x186), and
+  six alternate entries. It also verifies that original overlay 6 exists.
+  The data is not guessed or synthesized if the cartridge table is absent.
+- minigame_progress.{h,cpp} accesses the live, original minigame save block
+  at data_0209caa0+0x44. The source-derived flags/bit allocations implement
+  unlocked/new badges, seen state, and all 36x5 original record slots.
+  persist() calls recovered SaveData::SaveMinigames, including real EEPROM
+  checksums and mirrored writes, returning failure when a write fails.
+- minigame_controls.{h,cpp} identifies original touchscreen hitboxes from
+  d_s_mini_gm.cpp (4 character tabs, two icon pages, arrows and exit),
+  filters locked entries, and honors caller-side input gating.
+  It is a pure touch decoder, **not** an independent or synthetic visual menu.
+
+Verification:
+- No-ROM catalog tests construct only a parser fixture and reject duplicate
+  tags, invalid scene IDs and unsupported overlay routes.
+- No-ROM save tests use a separate 8 KiB EEPROM image for real recovered
+  minigame save, reopening it to assert unlock/new/record persistence.
+  Touch decoder tests verify page changes, selection and locked-icon rejection.
+- Private-ROM game test now preflights the actual overlay-5/6 catalog.
+  No private ROM is on GitHub Actions; that validation requires one supplied
+  separately. A synthetic parser fixture is not evidence of correct ROM art.
+- Android CI status of the latest code checkpoint was pending at publication;
+  Android device/emulator interaction, original menu rendering, game startup
+  and completion have **not** been verified.
+
+Still missing and blocking a playable minigame room:
+- Link the original dScMiniGm_c InitResources/Behavior/Render/Cleanup,
+  OAM draw and animation callbacks, game audio/fonts and original overlay-5
+  scene scheduler into ARM64 packed native bindings.
+- Connect frontend result 7 -> original StartMinigameMenu(0), scene 5 lifecycle,
+  exit/back transitions, fader/scroll timers, and saved progress loading.
+  Do not enable the transition before original scene callbacks are executable:
+  the current GameProgram::tick rejects all scenes except 1 and 3.
+- Link 0x169..0x186 to original overlay-6 minigame actors including dScMgBase_c,
+  dMgState_c (ov004), per-game scenes, gameplay, scoring and error-free return.
+  Existing raw-source compilation does **not** establish runtime playability.
+- Test all menu/round-trip/persistence assertions on device with a user-owned
+  cartridge; preserve existing side-by-side screens, title and stage routes.
+
+These changes are foundational and must not be reported as completion of any
+individual minigame or the full minigame suite. No ROM or extracted assets
+are committed. All commits are on main, without PRs or new branches.
+
+---
+
 # Current checkpoint — 2026-11-05, minigame font work-buffer seam
 
 Continues published main ef931b13c5d1b2fdf5dee101f91ce71b23803884.
