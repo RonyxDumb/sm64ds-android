@@ -1,5 +1,6 @@
 #include "runtime/save_store.h"
 #include "runtime/minigame_progress.h"
+#include "runtime/minigame_controls.h"
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -73,9 +74,27 @@ int main() {
         SaveStore store(minigamePath);
         using sm64ds::MinigameProgress;
         assert(MinigameProgress::unlocked(0));
+        using sm64ds::MinigameMenuControls;
+        using sm64ds::MinigameTapKind;
+        assert(!MinigameMenuControls::has_second_page());
+        const auto first = MinigameMenuControls::tap(0x45, 0x20, 0, 0);
+        assert(first.kind == MinigameTapKind::Select && first.index == 0);
+        const auto locked = MinigameMenuControls::tap(0xa5, 0x20, 0, 0);
+        assert(locked.kind == MinigameTapKind::None);
+        assert(MinigameMenuControls::tap(0x12, 0x65, 0, 0).kind == MinigameTapKind::Group);
+        assert(MinigameMenuControls::tap(0xe0, 0xa0, 0, 0).kind == MinigameTapKind::Exit);
+        assert(MinigameMenuControls::tap(0x45, 0x20, 0, 0, false).kind == MinigameTapKind::None);
         assert(!MinigameProgress::unlocked(35));
         MinigameProgress::unlock(35);
+        MinigameProgress::unlock(24);
         assert(MinigameProgress::unlocked(35));
+        assert(MinigameMenuControls::has_second_page());
+        assert(MinigameMenuControls::tap(0xe0, 0x60, 0, 0).kind ==
+               MinigameTapKind::NextPage);
+        assert(MinigameMenuControls::tap(0x40, 0x60, 1, 0).kind ==
+               MinigameTapKind::PreviousPage);
+        const auto second = MinigameMenuControls::tap(0x65, 0x60, 1, 0);
+        assert(second.kind == MinigameTapKind::Select && second.index == 24);
         assert(MinigameProgress::is_new(0));
         assert(MinigameProgress::is_new(35));
         MinigameProgress::clear_new(0);
