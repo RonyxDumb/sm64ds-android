@@ -83,6 +83,12 @@ python3 android/tests/packed_sources_test.py
 python3 android/tests/compile_frontend_cache_test.py
 python3 android/tests/native_sources_test.py
 python3 android/tools/native_sources.py --out "$TEST_BUILD/native-src"
+ORIGINAL_MG_OBJS=()
+for name in func_02013568 func_02013580 func_020135d0 func_0201361c func_02013638; do
+    gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -g \
+        -c "src/unnamed/arm9/0201/$name.c" -o "$TEST_BUILD/$name.o"
+    ORIGINAL_MG_OBJS+=("$TEST_BUILD/$name.o")
+done
 g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
     -Wno-unused-parameter -Wno-sign-compare -fno-strict-aliasing -ffunction-sections \
     -fdata-sections -Wl,--gc-sections -fsanitize=address,undefined -g \
@@ -91,7 +97,8 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
     android/app/src/main/cpp/runtime/minigame_progress.cpp \
     android/app/src/main/cpp/runtime/minigame_controls.cpp \
     "$TEST_BUILD/native-src/src/engine/save/SaveData.cpp" \
-    "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" -o "$TEST_BUILD/save_test"
+    "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" \
+    "${ORIGINAL_MG_OBJS[@]}" -o "$TEST_BUILD/save_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/save_test"
 g++ -std=c++17 -Wall -Wextra -Werror -fno-strict-aliasing -fsanitize=address,undefined -g \
     -DSM64DS_PLATFORM_PC -Iinclude -Iport/ntr/include -Iandroid/app/src/main/cpp \

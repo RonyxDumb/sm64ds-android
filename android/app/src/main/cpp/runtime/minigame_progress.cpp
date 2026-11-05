@@ -4,7 +4,14 @@
 #include <cstring>
 #include <stdexcept>
 
-extern "C" int data_0209caa0[];
+extern "C" {
+int data_0209caa0[];
+void func_02013568(int slot, int rank, int value);
+int func_02013580(int slot, int rank);
+int func_020135d0(int index);
+void func_0201361c(int index);
+int func_02013638(int index);
+}
 namespace {
 uint8_t *active() {
     (void)sm64ds::SaveStore::active();
@@ -22,13 +29,10 @@ void check_row(size_t row) {
     if (row >= sm64ds::MinigameProgress::GameRows)
         throw std::out_of_range("Invalid original minigame menu row.");
 }
-size_t record_offset(size_t slot, size_t rank) {
+void check_record(size_t slot, size_t rank) {
     if (slot >= sm64ds::MinigameProgress::GameRows ||
         rank >= sm64ds::MinigameProgress::RecordRanks)
         throw std::out_of_range("Invalid original minigame save table index.");
-    // Original func_02013568/580: data_0209caf4[slot][rank].
-    // data_0209caf4 == data_0209caa0 + 0x54.
-    return 0x54 + slot * 5 * sizeof(uint32_t) + rank * sizeof(uint32_t);
 }
 }
 
@@ -38,20 +42,21 @@ bool MinigameProgress::unlocked(size_t row) {
     // Original MiniGm_IsUnlocked: the first eight entries are always open;
     // func_02013638 checks bits 0..27 of the word at 0x48 otherwise.
     if (row < 8) return true;
-    return (read_word(active() + 0x48) & (uint32_t(1) << (row - 8))) != 0;
+    (void)active();
+    return func_02013638(static_cast<int>(row - 8)) != 0;
 }
 bool MinigameProgress::is_new(size_t row) {
     check_row(row);
-    const auto *save = active();
-    // Original MiniGm_IsNew/func_020135d0 invert the "seen" bits.
-    if (row < 8) return (save[0x50] & (1u << row)) == 0;
-    return (read_word(save + 0x4c) & (uint32_t(1) << (row - 8))) == 0;
+    (void)active();
+    // Preserve the original helper's index remapping, rather than a
+    // second native copy of its record bitfield computation.
+    return func_020135d0(static_cast<int>(row < 8 ? row + 28 : row - 8)) != 0;
 }
 void MinigameProgress::unlock(size_t row) {
     check_row(row);
     if (row < 8) return;
-    auto *p = active() + 0x48;
-    write_word(p, read_word(p) | (uint32_t(1) << (row - 8)));
+    (void)active();
+    func_0201361c(static_cast<int>(row - 8));
 }
 void MinigameProgress::clear_new(size_t row) {
     check_row(row);
@@ -64,15 +69,14 @@ void MinigameProgress::clear_new(size_t row) {
     }
 }
 int32_t MinigameProgress::record(size_t slot, size_t rank) {
-    const uint32_t bits = read_word(active() + record_offset(slot, rank));
-    int32_t value;
-    std::memcpy(&value, &bits, sizeof value);
-    return value;
+    check_record(slot, rank);
+    (void)active();
+    return func_02013580(static_cast<int>(slot), static_cast<int>(rank));
 }
 void MinigameProgress::set_record(size_t slot, size_t rank, int32_t value) {
-    uint32_t bits;
-    std::memcpy(&bits, &value, sizeof bits);
-    write_word(active() + record_offset(slot, rank), bits);
+    check_record(slot, rank);
+    (void)active();
+    func_02013568(static_cast<int>(slot), static_cast<int>(rank), value);
 }
 bool MinigameProgress::persist() {
     auto *save = active();

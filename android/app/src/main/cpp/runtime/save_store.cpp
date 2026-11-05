@@ -21,7 +21,9 @@ extern "C" {
 alignas(16) int data_0209caa0[0x32c / 4]{};
 asm(".global data_0209cab4\n.set data_0209cab4, data_0209caa0 + 0x14\n"
     ".global data_0209cad2\n.set data_0209cad2, data_0209caa0 + 0x32\n"
-    ".global data_0209cae4\n.set data_0209cae4, data_0209caa0 + 0x44\n");
+    ".global data_0209cae4\n.set data_0209cae4, data_0209caa0 + 0x44\n"
+    // Original func_02013568/80 index data_0209caf4[36][5].
+    ".global data_0209caf4\n.set data_0209caf4, data_0209caa0 + 0x54\n");
 uint8_t data_020a4b40[8] = {'d', 's', ' ', 'm', 'a', 'r', 'i', 'o'};
 // CpuCopy8.c reads r0 and writes r1. Some recovered declarations call the
 // parameters dst/src in the opposite order; preserve the primitive's behavior.
