@@ -230,13 +230,7 @@ void pk_mg_WipeType(Ptr<void> object,int type) {
     data_0209f61c.func_0202ec9c(type);
 }
 void pk_mg_StartScene(int scene,int parameter,int color) {
-    if (!sm64ds::GameProgram::supports_scene(static_cast<uint32_t>(scene)))
-        throw std::runtime_error("Original minigame scene has no native gameplay binding.");
     dScene_c::StartSceneFade(scene,parameter,static_cast<uint16_t>(color));
-}
-int pk_mg_CanStartGame(int scene) {
-    return sm64ds::MinigameCatalog::is_game_scene(static_cast<uint32_t>(scene)) &&
-           sm64ds::GameProgram::supports_scene(static_cast<uint32_t>(scene));
 }
 void pk_mg_ExitMenu() { ExitMinigameMenu(); }
 int pk_mg_GetRecord(int slot,int rank) { return sm64ds::MinigameProgress::record(slot,rank); }

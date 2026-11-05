@@ -540,8 +540,11 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 }
                 finish_tick(); return;
             }
-            throw std::runtime_error("Scena originale non collegata: " +
-                                     std::to_string(data_02092664));
+            // Do not filter original scene IDs. Let the recovered scene
+            // dispatcher resolve the requested factory; missing native
+            // bindings surface at their actual call site.
+            if (dScene_c::SpawnIfNecessary()) activeScene_ = data_02092664;
+            finish_tick(); return;
         }
     }
     if (activeScene_==0) boot_.Behavior();

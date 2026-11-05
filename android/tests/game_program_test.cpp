@@ -1018,9 +1018,9 @@ int main(int argc, char **argv) {
                     std::memcpy(&xy,menuSpace.data(0x0209ea74+j*8,4),4);
                     assert(xy==0xc0);
                 }
-                // An unlocked cartridge icon with no native game callback
-                // must stay in the real menu, with no false scene success.
-                game.tick(0,0,0,0x45,0x20); game.tick();
+                // Touching empty space must not start a scene; actual unlocked
+                // icons now follow the original StartSceneFade path.
+                game.tick(0,0,0,0x35,0x20); game.tick();
                 assert(game.active_scene()==5 && game.requested_scene()==0x187);
                 const char *capture=std::getenv("SM64DS_MENU_CAPTURE");
                 if (capture) {

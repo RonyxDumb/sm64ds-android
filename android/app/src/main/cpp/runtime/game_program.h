@@ -45,9 +45,6 @@ public:
     const MinigameMenuArtwork *minigame_artwork() const { return minigameArtwork_.get(); }
     const MinigameRuntime *minigame_runtime() const { return minigameRuntime_.get(); }
     int active_scene() const { return activeScene_; }
-    static bool supports_scene(uint32_t scene) noexcept {
-        return scene==0 || scene==1 || scene==3 || scene==5;
-    }
     const BootState &boot() const {
         return boot_;
     }

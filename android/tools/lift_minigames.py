@@ -81,7 +81,6 @@ void mg_UnsetVoice(); int mg_Effect(int); int mg_Language();
 char *mg_LoadFile(int); void mg_Free(void *); void mg_InitVram();
 int mg_FaderReady(); void mg_SetFaders(void *); void mg_StopColorFader();
 void mg_WipeType(void *,int); void mg_StartScene(int,int,int); void mg_ExitMenu();
-int mg_CanStartGame(int);
 void mg_Save(void *); void mg_ClearNew(int); int mg_GetRecord(int,int);
 void mg_SetRecord(int,int,int); int mg_IsNew(int); int mg_IsUnlocked(int);
 void mg_ResetGeometry(); void mg_Cache(u32,u32);
@@ -149,12 +148,6 @@ def menu():
         if call not in body: raise ValueError('fader call changed: '+call)
         body = body.replace(call, 'mg_FaderReady()')
     body = replace_once(body, 'data_0209f61c.func_0202ec9c(0)', 'mg_WipeType(&data_0209f61c,0)')
-    # A visible, cartridge-unlocked icon does not establish a native gameplay
-    # binding. Reject unsupported routes before palette/save/fader mutations;
-    # never freeze the menu or claim that an unlinked game was launched.
-    body = replace_once(body, '    if (MiniGm_IsUnlocked(self, sel) == 0) return;',
-        '    if (MiniGm_IsUnlocked(self, sel) == 0) return;\n'
-        '    if (!mg_CanStartGame(sMiniGmRows[sel].id)) { mg_Effect(0xe); return; }')
     # The recovered byte-clear helper has a negative shift for index<28.
     # The checked native service implements the same bit updates without UB.
     aliases = {
