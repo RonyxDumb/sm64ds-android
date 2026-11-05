@@ -160,6 +160,8 @@
     "src/game/actors/d_a_obj_kanban.cpp": "3e65ec77cfb1bef315b8b5f53704c39d2fb5e5a316e3f89b47432589da4baac2",
     "include/daObjKanban_c.h": "c12dbf5b92676ea0d424908fd648d1f95ec51ccb0182fdc47ea3661f8230308f",
     "src/unnamed/arm9/0205/func_020527e8.c": "745c35da2a08c43d60b47bf19adf1742051818e304902b5678bfccec5edd20ad",
-    "src/Matrix4x3_ApplyInPlaceToScale.c": "9e2083210f27372ed293df56236b112c8606a68580400da8d42a1e887bb7b248"
+    "src/Matrix4x3_ApplyInPlaceToScale.c": "9e2083210f27372ed293df56236b112c8606a68580400da8d42a1e887bb7b248",
+    "src/game/actors/d_a_obj_tatefuda.cpp": "a0043c7b034d4dfc961e2018c933c573ef36880cad19a5e5121a4b0810b6ccab",
+    "include/daObjTatefuda_c.h": "574e22e3b55ce5958921161563567cdc9b438f27b391c603f68fb7670387f942"
   }
 }

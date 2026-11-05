@@ -920,7 +920,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x020bc3c8u);
+                    "Unlinked native code handle: " + std::to_string(0x02111d8cu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
@@ -939,12 +939,34 @@ int main(int argc, char **argv) {
             // and real model/animation ownership.
             std::unordered_set<uint32_t> actorNodes;
             std::unordered_set<uint16_t> initializedTypes;
-            unsigned loadedNets=0;
+            unsigned loadedNets=0,loadedSigns=0;
             for(uint32_t node=stageWord(0x0209b468u);node;node=stageWord(node+4)) {
                 assert(actorNodes.insert(node).second && actorNodes.size()<512);
                 const uint32_t instance=stageWord(node+8);
                 const uint16_t id=*static_cast<uint16_t *>(stageSpace->data(instance+12,2));
                 const uint32_t vtable=stageWord(instance);
+                if(vtable==0x02109af8u) {
+                    ++loadedSigns;
+                    assert(stageSpace->allocation_size(instance)==0x5a4);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(stageWord(instance+0xdc) && stageWord(instance+0x360));
+                    assert(stageWord(instance+0x124+0x20));
+                    assert(stageWord(instance+0x124+0x24)==0x0210d714u);
+                    assert(stageWord(instance+0x124+0x50)==0x199);
+                    assert(stageWord(instance+0x350)==instance);
+                    assert(stageWord(instance+0x3c8+0x14)==instance);
+                    assert(stageWord(instance+0x3c8+0x18)==0x28000);
+                    assert((*static_cast<uint8_t *>(stageSpace->data(instance+0x3c8+0x24,1))&2)!=0);
+                    assert((*static_cast<uint8_t *>(stageSpace->data(instance+0x3c8+0x138,1))&2)!=0);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+0x58e,1))==2);
+                    for(unsigned lane=0;lane<3;++lane) {
+                        assert(stageWord(instance+0x3b0+lane*4)==stageWord(instance+0x5c+lane*4));
+                        assert(int32_t(stageWord(instance+0x3a4+lane*4))==
+                               (int32_t(stageWord(instance+0x5c+lane*4))>>3));
+                    }
+                    assert(int32_t(stageWord(instance+0x9c))==-0x2000);
+                    continue;
+                }
                 if(vtable==0x02113ae0u || vtable==0x02130400u) {
                     assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
                     assert(stageWord(instance+0xdc));
@@ -997,6 +1019,7 @@ int main(int argc, char **argv) {
             }
             for(uint16_t id : {353,343,336,207,286}) assert(initializedTypes.count(id));
             assert(loadedNets>0);
+            assert(loadedSigns>0);
             // All eleven actual modules and all 58 static initializers ran.
             // Code stays the real BLZ result. Constructors build handles and
             // state tables in writable data/BSS instead of fabricated data.

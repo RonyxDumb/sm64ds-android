@@ -1,3 +1,32 @@
+# Current checkpoint — 2026-11-05, original movable signpost
+
+Continues published main 4479e2330da49db6f12c504f6cc5b555a0376dd6.
+Version 0.4.17-signpost, versionCode 21. Not playable.
+
+The complete original movable signpost InitResources and UpdateShadowMatrix
+bodies now run. The factory preserves the 0x5a4-byte actor, background model,
+moving KCL, active cylinder, cuboid shadow and sphere/line query constructors.
+Its original ground ray snaps the home position to the real castle collision;
+model/KCL ownership, 0x199 collision scale, shadow matrix, gravity and the two
+water-query flags are checked on live actors. No unknown callback succeeds.
+
+Verified: all four private-ROM save/character launches pass ASan/UBSan through
+the signpost and stop at daObjMcWater_c_classInit, 0x02111d8c (overlay 9).
+The integration keeps the prior Player, camera, scheduler and moving-mesh
+assertions. Stage source hashes, hostgen/native-source tests (3 each), packed
+compilation and diff checks pass. Local LeakSanitizer is disabled. The broad
+host runner's first native ROM check passes, but stops because javac is absent;
+Android CI performs the Java and ARM64 checks. Initial main's last four Android
+workflows were successful, including 4479e23; this new checkpoint awaits CI.
+
+Next: castle water and its seven waterfall emitters, then remaining original
+scene/particle/HUD and per-frame dependencies. There is still no completed
+original gameplay frame and no Android device/emulator test. Side-by-side
+screens and prior graphics fixes are unchanged. No ROM or extracted data is
+committed.
+
+---
+
 # Current checkpoint — 2026-11-05, moving meshes and castle metal net
 
 Continues published main 3953c8d95174f154995f076f45a0b59e5b4303b3.

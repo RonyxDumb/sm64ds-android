@@ -37,7 +37,8 @@ def slices(projected, free_c, symbols, data_symbols):
                 else: data_symbols[match[1]]=int(match[3],16)
     symbols.update({'_ZN8daDoor_c13InitResourcesEv':0x021455a0,
                     '_ZN9daSBird_c13InitResourcesEv':0x0211197c,
-                    '_ZN9daBtfly_c13InitResourcesEv':0x02141c6c})
+                    '_ZN9daBtfly_c13InitResourcesEv':0x02141c6c,
+                    '_ZN15daObjTatefuda_c18UpdateShadowMatrixEv':0x020baf80})
     rows=[]
 
     def add(unit,rel,overlay,methods,fields=None,replacements=None,declarations='',extra=''):
@@ -105,6 +106,55 @@ void *_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(SharedFilePtr *);
 void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block(void *,void *,Matrix4x3 *,int,s16,void *);
 u8 NumStars();
 ''')
+
+    add('stage_signpost_init','src/game/actors/d_a_obj_tatefuda.cpp',2,
+        [method('daObjTatefuda_c','InitResources',export='_ZN8SignPost13InitResourcesEv'),
+         method('daObjTatefuda_c','UpdateShadowMatrix','void')],
+        {'mShadowMat':('Matrix4x3',0x380),
+         'mPoundsLeft':('u8',0x58e),
+         'mHomePosX':('s32',0x3b0),'mHomePosY':('s32',0x3b4),'mHomePosZ':('s32',0x3b8),
+         'mHomeAngleX':('s16',0x3bc),'mHomeAngleY':('s16',0x3be),'mHomeAngleZ':('s16',0x3c0)},
+        {'dExtSimpleModel_c::LoadFile(SignPost_ModelFile)':
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&SignPost_ModelFile)',
+         'mModel.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0xd4,',
+         '(BMD_File*)':'','(KCL_File *)':'',
+         'mShadowModel.InitCuboid()':'_ZN17dExtShadowModel_c10InitCuboidEv((char *)object+0x358)',
+         'dBgCh_Gnd rg;':'char rg[0x50]; _ZN9dBgCh_GndC1Ev(rg);',
+         'rg.SetObjAndPos(*(Vector3*)&v, (dActor_c*)0)':
+            '_ZN9dBgCh_Gnd12SetObjAndPosERK7Vector3P8dActor_c(rg,&v,0)',
+         'rg.DetectClsn()':'_ZN9dBgCh_Gnd10DetectClsnEv(rg)',
+         'rg.clsnY':'(*(s32 *)(rg+0x44))',
+         'UpdateModelPosAndRotY()':'_ZN10dBgActor_c21UpdateModelPosAndRotYEv(object)',
+         'UpdateClsnPosAndRot()':'_ZN10dBgActor_c19UpdateClsnPosAndRotEv(object)',
+         'UpdateShadowMatrix()':'_ZN15daObjTatefuda_c18UpdateShadowMatrixEv(object)',
+         'dBgW_Kc::LoadFile(SignPost_ClsnFile)':
+            '_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(&SignPost_ClsnFile)',
+         '''((dBgW_KcMbg *)(&mMeshCollider))
+        ->dBgW_KcMbg::SetFile(kf, mClsnMat, 0x199, mAngleY, data_ov002_0210d714)''':
+            '_ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block((char *)object+0x124,kf,(Matrix4x3 *)((char *)object+0x2ec),0x199,mAngleY,data_ov002_0210d714)',
+         '&mdCcAc_c':'((char *)object+0x320)',
+         '&mWithMeshClsn':'((char *)object+0x3c8)',
+         '(dActor_c*)((char *)this)':'object',
+         'mWithMeshClsn.StartDetectingWater()':
+            '_ZN10dBgCh_Actr19StartDetectingWaterEv((char *)object+0x3c8)',
+         'return 1;':'_ZN9dBgCh_GndD1Ev(rg); return 1;',
+         '.t.x':'.m[9]','.t.y':'.m[10]','.t.z':'.m[11]'},MODEL_API+'''
+extern SharedFilePtr SignPost_ModelFile,SignPost_ClsnFile;
+extern u8 data_ov002_0210d714[];
+int _ZN17dExtShadowModel_c10InitCuboidEv(void *);
+void *_ZN9dBgCh_GndC1Ev(void *); void _ZN9dBgCh_GndD1Ev(void *);
+void _ZN9dBgCh_Gnd12SetObjAndPosERK7Vector3P8dActor_c(void *,Vec3 *,void *);
+int _ZN9dBgCh_Gnd10DetectClsnEv(void *);
+void _ZN10dBgActor_c21UpdateModelPosAndRotYEv(void *);
+void _ZN10dBgActor_c19UpdateClsnPosAndRotEv(void *);
+void _ZN15daObjTatefuda_c18UpdateShadowMatrixEv(void *);
+void *_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(SharedFilePtr *);
+void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block(void *,void *,Matrix4x3 *,int,s16,void *);
+void _ZN7dCcAc_c4InitEP8dActor_c5Fix12IiES3_jj(void *,void *,int,int,u32,u32);
+void _ZN10dBgCh_Actr4InitEP8dActor_c5Fix12IiES3_P10Vector3_16S5_(void *,void *,int,int,void *,void *);
+void _ZN10dBgCh_Actr19StartDetectingWaterEv(void *);
+void Matrix4x3_FromRotationY(Matrix4x3 *,int);
+''','struct Vec3 { s32 x,y,z; };\n')
 
     add('stage_sign_init','src/game/actors/d_a_obj_kanban.cpp',85,
         [method('daObjKanban_c','InitResources',export='_ZN8WallSign13InitResourcesEv')],{},

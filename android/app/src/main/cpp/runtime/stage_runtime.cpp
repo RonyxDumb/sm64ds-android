@@ -488,6 +488,9 @@ int stage_shadow_set_file(uint32_t model,uint32_t file,int flags,int) {
 int stage_shadow_init_cylinder(uint32_t model) {
     return stage_model_set_file(model,0x020ad560u,1,-1);
 }
+int stage_shadow_init_cuboid(uint32_t model) {
+    return stage_model_set_file(model,0x020ad524u,1,-1);
+}
 uint32_t stage_player_body_model(uint32_t player,uint32_t requested,int drawing) {
     const uint8_t metal=at<uint8_t>(player+(drawing ? 0x6fa : 0x6f9));
     return metal ? 4 : requested;
@@ -829,6 +832,21 @@ uint32_t stage_sign_factory() {
     stage_actor_cylinder_construct(actor+0x320,true);
     return actor;
 }
+uint32_t stage_signpost_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x5a4);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x02109af8u;
+    stage_actor_cylinder_construct(actor+0x320,false);
+    stage_shadow_construct(actor+0x358);
+    stage_mesh_query_construct(actor+0x3c8);
+    return actor;
+}
+void stage_actor_mesh_start_water(uint32_t query) {
+    // dBgCh_Actr::StartDetectingWater, line first, then sphere.
+    (void)packed::Space::current().data(query,0x1bc);
+    stage_query_water(query+0x134);
+    stage_query_water(query+0x20);
+}
 int stage_collider_is_enabled(uint32_t collider) { return at<uint8_t>(collider+20)!=24; }
 int stage_collider_disable(uint32_t collider) {
     const uint8_t slot=at<uint8_t>(collider+20);
@@ -1163,6 +1181,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x02146d38u,&stage_fish_factory);
     }
     if (id!=2) return;
+    space.bind(0x020bc3c8u,&stage_signpost_factory);
     space.bind(0x020e6c0cu,&stage_player_factory);
     space.bind(0x020e68f4u,&stage_player_construct);
     space.bind(0x020becc8u,&stage_player_body_model);
@@ -1197,6 +1216,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02016abcu,&stage_model_polygon_id);
     space.bind(0x02015ef4u,&stage_shadow_set_file);
     space.bind(0x02015ebcu,&stage_shadow_init_cylinder);
+    space.bind(0x02015ed8u,&stage_shadow_init_cuboid);
     space.bind(0x0203d384u,&stage_vector_lifetime);
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
@@ -1206,6 +1226,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02014818u,&stage_position_cylinder_owner);
     space.bind(0x0201490cu,&stage_centered_cylinder_init);
     space.bind(0x02037388u,&stage_actor_mesh_init);
+    space.bind(0x02035840u,&stage_actor_mesh_start_water);
     space.bind(0x02037570u,&stage_ground_construct);
     space.bind(0x020377b0u,&stage_line_construct);
     space.bind(0x02037764u,&stage_line_destroy);
