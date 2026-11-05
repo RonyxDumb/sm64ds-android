@@ -23,6 +23,9 @@ uint32_t luigi_factory() {
 uint32_t amida_factory() {
     return sm64ds::construct_minigame_2d(0x173u,boundVptr);
 }
+uint32_t hanachan_factory() {
+    return sm64ds::construct_minigame_2d(0x182u,boundVptr);
+}
 }
 
 namespace sm64ds {
@@ -57,7 +60,8 @@ uint32_t original_minigame_vptr(const Cartridge::DataImage &image,const char *ty
 uint32_t construct_minigame_2d(uint32_t scene,uint32_t originalVptr) {
     auto &space=packed::Space::current();
     const uint32_t size=scene==0x16eu ? 0x545cu :
-                        scene==0x173u ? 0x53fcu : 0;
+                        scene==0x173u ? 0x53fcu :
+                        scene==0x182u ? 0x4f68u : 0;
     if (!size || !originalVptr)
         throw std::runtime_error("Minigame scene constructor not linked.");
     // fBase_c::operator new and its native actor manager already preserve
@@ -76,7 +80,9 @@ uint32_t construct_minigame_2d(uint32_t scene,uint32_t originalVptr) {
     at<uint8_t>(actor+0x0c2u)=1;
     at<int32_t>(actor+0x058u)=(scene==0x16eu || scene==0x185u ||
                                  scene==0x16du || scene==0x182u)?0x3c:0x78;
-    at<int32_t>(actor+0x0e4u)=-1; // dMgState_c::dMgState_c (state=-1)
+    // Execute the original dMgState_c::dMgState_c constructor, including
+    // its 0x28-byte checked state record, rather than resetting it by hand.
+    Ptr<void(uint32_t)>(0x020b8a70u)(actor+0x0ccu);
     // Pause panel default: shut, no active icons. Icon placement and scene
     // kind table must still be connected before complete scene lifecycle.
     at<int32_t>(actor+0x214u)=0;
@@ -88,23 +94,32 @@ uint32_t construct_minigame_2d(uint32_t scene,uint32_t originalVptr) {
     // 4x8 walker/position/velocity pairs and 128x0x18 falling pieces.
     // The checked GameHeap is already zero initialized.
     if (scene==0x173u) {
-        (void)space.data(actor+0x4724u,4u*8u);
-        (void)space.data(actor+0x4744u,4u*8u);
-        (void)space.data(actor+0x4768u,0x80u*0x18u);
+        (void)space.data(actor+0x46e0u,4u*8u); // walker cells
+        (void)space.data(actor+0x4724u,4u*8u); // lane positions
+        (void)space.data(actor+0x4744u,4u*8u); // lane velocities
+        (void)space.data(actor+0x4768u,0x80u*0x18u); // 128 falling pieces
+    }
+    if (scene==0x182u) {
+        // Wiggler_Construct invokes five empty Point constructors for
+        // each of the 15 0x98-byte records. The arena is zero-initialized.
+        (void)space.data(actor+0x4678u,15u*0x98u);
+        (void)space.data(actor+0x4f60u,4u); // target wiggler pointer
     }
     at<uint32_t>(actor)=originalVptr;
     return actor;
 }
 
 void bind_minigame_scene_factory(packed::Space &space,const Cartridge::DataImage &game,uint32_t scene) {
-    if (scene!=0x16eu && scene!=0x173u) return;
+    if (scene!=0x16eu && scene!=0x173u && scene!=0x182u) return;
     packed::Space::Scope scope(space);
     // Verify the actual profile and callback in the selected cartridge.
     const uint32_t profile=at<uint32_t>(0x02090864u+scene*4u);
     const uint32_t factory=at<uint32_t>(profile);
-    const char *name=scene==0x16eu?"12dScMgLuigi_c":"12dScMgAmida_c";
+    const char *name=scene==0x16eu?"12dScMgLuigi_c":
+                     scene==0x173u?"12dScMgAmida_c":"15dScMgHanachan_c";
     boundVptr=original_minigame_vptr(game,name);
     if (scene==0x16eu) space.bind(factory,&luigi_factory);
-    else space.bind(factory,&amida_factory);
+    else if (scene==0x173u) space.bind(factory,&amida_factory);
+    else space.bind(factory,&hanachan_factory);
 }
 }

@@ -1,3 +1,15 @@
+# Checkpoint — 2026-11-05, Hanachan Wiggler array and original state constructor
+
+A third original 2D scene factory is now bound: Hanachan (0x182),
+allocating its 0x4f68-byte record, including fifteen 0x98-byte Wigglers
+whose five Point constructors are empty in source. dMgState_c initialization
+now calls the actual recovered 0x020b8a70 constructor for every ported
+2D scene instead of writing only its state field. The no-ROM scene
+regression exercises the third factory and zeroed Wiggler components.
+No playable round or complete minigame UI is claimed.
+
+---
+
 # Checkpoint — 2026-11-05, first original 2D minigame constructors
 
 Native constructor bindings for Luigi's Wanted (scene 0x16e) and Amida

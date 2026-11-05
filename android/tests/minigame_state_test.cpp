@@ -331,10 +331,11 @@ void minigame_constructor_runtime() {
         space.map_owned(0x020ad660u,0x020bfec0u-0x020ad660u);
         space.map_owned(0x020bfec0u,0x0215c000u-0x020bfec0u);
         Space::Scope scope(space);
+        sm64ds::bind_minigame_shared_runtime(space);
         *Ptr<uint32_t>(0x020a4bb8u)=0x02090864u;
         sm64ds::MinigameProgress::set_record(2,0,12345);
         for (auto pair : {std::pair<uint32_t,uint32_t>{0x16e,0x545c},
-                          {0x173,0x53fc}}) {
+                          {0x173,0x53fc},{0x182,0x4f68}}) {
             *Ptr<uint16_t>(0x020a4b54u)=static_cast<uint16_t>(pair.first);
             *Ptr<uint32_t>(0x020a4b60u)=0x00000201u;
             *Ptr<uint32_t>(0x0209b308u+0x30u)=19;
@@ -350,6 +351,11 @@ void minigame_constructor_runtime() {
             assert(*Ptr<int32_t>(actor+0x4650u)==12345);
             assert(*Ptr<int32_t>(actor+0x058u)==(pair.first==0x16e?60:120));
             assert(space.allocation_size(actor)==pair.second);
+            if (pair.first==0x182) {
+                assert(*Ptr<uint32_t>(actor+0x4f60u)==0);
+                for (unsigned i=0;i<15;++i)
+                    assert(*Ptr<uint32_t>(actor+0x4678u+i*0x98u+0x18u)==0);
+            }
             // Remove the original scene node and global owner for the next case.
             *Ptr<uint32_t>(0x020a4b6cu)=0;
             *Ptr<uint32_t>(0x020beb68u)=0;
@@ -357,5 +363,5 @@ void minigame_constructor_runtime() {
         }
     }
     unlink(path.c_str());
-    std::cout << "Original 2D constructors: Luigi, Amida and retail RTTI verified.\n";
+    std::cout << "Original 2D constructors: Luigi, Amida, Hanachan and RTTI verified.\n";
 }
