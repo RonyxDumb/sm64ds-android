@@ -14,6 +14,7 @@
 
 using sm64ds::packed::Ptr;
 using sm64ds::packed::Space;
+static_assert(sizeof(Ptr<char>)==sizeof(uint32_t), "Original native minigame pointer ABI");
 extern "C" {
 uint32_t abi_mg_MenuInitResources(uint32_t);
 uint32_t abi_mg_MenuCleanupResources(uint32_t);

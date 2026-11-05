@@ -1,3 +1,23 @@
+# Verification update — 2026-11-05, original title touch and ARM64 compile follow-up
+
+The private-ROM regression now drives the actual title with the stylus:
+intro tap (128,96), then STANZA DEI GIOCHI (220,170). The original frontend
+returns 7 and the room opens, without injecting a result code. Full menu,
+return/title/castle/Player and no-ROM regressions pass afterward.
+
+Code 5fc39c4 passed public CI native filesystem/save/game tests, original
+frontend tests, GLES tests and the native ARM64 frontend runner. APK compilation
+then stopped on Clang -Wreturn-type-c-linkage for Ptr<char> in the new service.
+The follow-up uses the same targeted diagnostic setting as the existing
+projected frontend; both sides are C++ and retain the identical checked
+four-byte Ptr<char> signature. An explicit ABI size assertion is added.
+The APK/lint rerun is pending; this update does not claim an Android build pass.
+
+No game scene or complete round has been enabled. The remaining gameplay
+limitations below are unchanged; no Android device test has been performed.
+
+---
+
 # Current checkpoint — 2026-11-05, executable original minigame room
 
 Version **0.4.22-minigame-menu**, versionCode 26, branch **main**.
@@ -6,8 +26,9 @@ Version **0.4.22-minigame-menu**, versionCode 26, branch **main**.
 Implemented and exercised against the private EU cartridge:
 - Title result 7 calls the unchanged original StartMinigameMenu(0). Native
   tick executes scene 5; exit calls original ExitMinigameMenu and recreates
-  the original title with its own VRAM resources. The test supplies result 7
-  at the dispatcher boundary; the initial title icon press is not tested.
+  the original title with its own VRAM resources. The final private-ROM test
+  dismisses the intro and touches STANZA DEI GIOCHI through the original
+  frontend. It does not inject result 7; the real dispatcher produces it.
 - Full recovered dScMiniGm_c InitResources, Behavior, Render and CleanupResources
   run via a hash-guarded four-byte-pointer projection, with the exact 0xb0-byte
   scene record. Original src/ and include/ are unchanged.

@@ -148,6 +148,10 @@ target_compile_options(sm64ds_android PRIVATE -fvisibility=hidden -ffunction-sec
 target_link_options(sm64ds_android PRIVATE -Wl,--no-undefined)
 set_source_files_properties(${GAME_SOURCES} runtime/game_program.cpp "${REPO_ROOT}/port/ntr/ppu.cpp"
     PROPERTIES COMPILE_OPTIONS "-Wno-int-to-pointer-cast;-Wno-int-to-void-pointer-cast;-Wno-unknown-pragmas")
+# The projected C++ units share C symbol names with these typed four-byte
+# pointer services, as with sm64ds_frontend above. They are not a C caller API.
+set_source_files_properties(runtime/minigame_runtime.cpp
+    PROPERTIES COMPILE_OPTIONS "-Wno-return-type-c-linkage")
 
 # Native ARM9 services and complete statically lowered MSL arithmetic.
 set(PLATFORM_ROOT "${CMAKE_CURRENT_BINARY_DIR}/platform-src")

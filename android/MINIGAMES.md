@@ -4,7 +4,7 @@ Version 0.4.22 links **the original menu**, not minigame gameplay.
 
 | Path | Native support | Evidence |
 | --- | --- | --- |
-| Title result 7 -> scene 5 | Connected | Test supplies result 7 at the title/runtime boundary. The initial title icon press is not tested. |
+| Title result 7 -> scene 5 | Connected | Private-ROM test dismisses the intro and touches STANZA DEI GIOCHI in the actual frontend; result 7 is produced by original code. |
 | Menu resources/lifecycle | Connected | Entire recovered InitResources, Behavior, Render and CleanupResources bodies execute with checked four-byte pointer handles. |
 | Backgrounds, sprites, Italian captions | Connected | Private-ROM main/sub scanouts inspected; no recreated art. Original OAM size tables, reset, upload and bounds also tested without ROM. |
 | Four tabs, arrow delays, two pages, exit | Connected | Original touch conversion, hit tests, timers and scrolling exercised on the actual EU data. |

@@ -978,8 +978,17 @@ int main(int argc, char **argv) {
             assert(resources.heap().allocations() == 1 + game.frontend_core()->allocations());
             if (repeat==0) {
                 sm64ds::MinigameProgress::unlock(24);
-                assert(game.accept_title_result(7) && game.requested_scene()==5);
-                for (unsigned i=0;i<80;++i) game.tick();
+                const auto titleTouch=[&](int tx=-1,int ty=-1) {
+                    game.tick(0,0,0,tx,ty);
+                    float samples[1096]{}; music.mix(samples,548,32768);
+                };
+                // Real original UI: dismiss the intro, wait for the title,
+                // then tap STANZA DEI GIOCHI. Do not inject return code 7.
+                titleTouch(); titleTouch(128,96);
+                for (unsigned i=0;i<488;++i) titleTouch();
+                titleTouch(220,170);
+                for (unsigned i=0;i<200 && game.active_scene()!=5;++i) titleTouch();
+                for (unsigned i=0;i<40;++i) game.tick();
                 assert(game.active_scene()==5 && game.minigame_runtime());
                 assert(game.minigame_runtime()->group()==0);
                 assert(game.minigame_runtime()->page()==0);
