@@ -45,6 +45,7 @@ sm64ds::ControllerInput data_0209f498[4]{};
 // ControllerInput. A separate array here would silently desynchronise Player.
 asm(".global data_0209f4ae\n.set data_0209f4ae, data_0209f498 + 0x16\n");
 u8 data_0209fc50 = 0, data_0209fc5c[4]{};
+u8 data_0209f298 = 0;
 char data_0209fc64[4]{};
 u8 data_0209f21c = 0, data_0209f350[4]{}, data_0209fc48 = 0;
 u8 data_0209f294 = 0, data_0209f2c4 = 0, data_0209f20c = 0, data_020a1166[4 * 0x24]{};
@@ -93,6 +94,7 @@ StageFlow::StageFlow(Cartridge &cartridge) : cartridge_(cartridge) {
     data_ov002_02111180 = 0;
     data_0208a0e0 = 1;
     data_0209fc50 = 0;
+    data_0209f298 = 0;
 }
 
 const ControllerInput &StageFlow::controller(unsigned slot) const {

@@ -224,6 +224,8 @@ def stage_flow(text):
         'extern "C" void LoadLevel(int levelID, u32 entranceID, int starID, u32 arg3, s8 returnState) {',
         'extern "C" void LoadLevelNoReturn(int levelID, u32 arg1, u32 arg2, u32 arg3) {',
         'extern "C" void StartFile(s8 levelID, u8 entranceID) {',
+        'extern "C" void StartMinigameMenu(u8 returnToRecRoom) {',
+        'extern "C" void ExitMinigameMenu(void) {',
     )
     output = '#include "runtime/stage_flow.h"\n#include "runtime/boot_seams.h"\n'
     for signature in signatures:

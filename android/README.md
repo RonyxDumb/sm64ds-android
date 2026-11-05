@@ -4,6 +4,12 @@ Native port in development. The Android session runs the recovered boot and
 original title update/render loop. No emulator or ARM guest execution is used.
 Stage/Player integration is still in progress.
 
+The original minigame room (scene 5) now executes its recovered menu lifecycle,
+OAM rendering, character tabs, pages, locked icons, record display and saving.
+Game scenes are still unlinked: selecting an unsupported game stays in the menu
+and plays the original error effect. No playable minigame is claimed. See
+[minigame verification and remaining work](MINIGAMES.md).
+
 ## Current execution
 
 The launcher imports the European ASMP revision 0 ROM (`.nds` or one ROM in a

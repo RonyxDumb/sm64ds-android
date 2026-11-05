@@ -7,6 +7,7 @@ namespace sm64ds {
 // Cartridge offsets are checked data spans, never native code or objects.
 class Cartridge {
 public:
+    void preload_archive(unsigned index);
     struct DataImage {
         uint32_t base;
         std::vector<uint8_t> bytes;

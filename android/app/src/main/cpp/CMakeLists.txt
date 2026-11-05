@@ -59,6 +59,15 @@ target_sources(sm64ds_frontend PRIVATE ${PACKED_FRONTEND_SOURCES})
 include("${STAGE_ROOT}/inputs.cmake")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${REPO_ROOT}/android/tools/stage_manifest.json" ${PACKED_FRONTEND_INPUTS})
+set(MINIGAME_ROOT "${CMAKE_CURRENT_BINARY_DIR}/minigame-src")
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${REPO_ROOT}/android/tools/packed_sources.py"
+    --out "${MINIGAME_ROOT}" --manifest "${REPO_ROOT}/android/tools/minigame_manifest.json"
+    COMMAND_ERROR_IS_FATAL ANY)
+include("${MINIGAME_ROOT}/sources.cmake")
+target_sources(sm64ds_frontend PRIVATE ${PACKED_FRONTEND_SOURCES})
+include("${MINIGAME_ROOT}/inputs.cmake")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${REPO_ROOT}/android/tools/minigame_manifest.json" ${PACKED_FRONTEND_INPUTS})
 # Projected POD headers must never enter native runtime includes.
 target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
@@ -114,7 +123,7 @@ set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
-    runtime/stage_flow.cpp runtime/stage_runtime.cpp runtime/stage_assets.cpp runtime/minigame_catalog.cpp runtime/minigame_progress.cpp runtime/minigame_controls.cpp runtime/minigame_menu_session.cpp runtime/minigame_art.cpp runtime/title_files.cpp runtime/native_math.cpp
+    runtime/stage_flow.cpp runtime/stage_runtime.cpp runtime/stage_assets.cpp runtime/minigame_catalog.cpp runtime/minigame_progress.cpp runtime/minigame_controls.cpp runtime/minigame_menu_session.cpp runtime/minigame_art.cpp runtime/minigame_runtime.cpp runtime/title_files.cpp runtime/native_math.cpp
     # Execute recovered ARM9 minigame record/unlock leaf bodies directly.
     # func_02013598 has a negative shift for indices <28 and needs a
     # separate audited native projection before inclusion.

@@ -5,6 +5,7 @@
 #include "minigame_catalog.h"
 #include "minigame_art.h"
 #include "minigame_menu_session.h"
+#include "minigame_runtime.h"
 #include "stage_flow.h"
 #include "title_files.h"
 #include "runtime/boot_state.h"
@@ -42,7 +43,11 @@ public:
     bool prepare_minigame_menu();
     const MinigameMenuSession *minigame_menu_session() const { return minigameMenu_.get(); }
     const MinigameMenuArtwork *minigame_artwork() const { return minigameArtwork_.get(); }
+    const MinigameRuntime *minigame_runtime() const { return minigameRuntime_.get(); }
     int active_scene() const { return activeScene_; }
+    static bool supports_scene(uint32_t scene) noexcept {
+        return scene==0 || scene==1 || scene==3 || scene==5;
+    }
     const BootState &boot() const {
         return boot_;
     }
@@ -91,6 +96,8 @@ private:
     std::unique_ptr<MinigameCatalog> minigames_;
     std::unique_ptr<MinigameMenuSession> minigameMenu_;
     std::unique_ptr<MinigameMenuArtwork> minigameArtwork_;
+    std::unique_ptr<MinigameRuntime> minigameRuntime_;
+    unsigned minigameGroup_=0, minigamePage_=0;
     BootState boot_{};
     GameInput input_;
     Sound sound_;

@@ -36,6 +36,17 @@ std::vector<uint8_t> read_file(int32_t id) {
 }
 }
 namespace sm64ds {
+void Cartridge::preload_archive(unsigned index) {
+    if (index >= archives_.size())
+        throw std::out_of_range("Invalid cartridge archive mount.");
+    const auto &archive = archives_[index];
+    if (!cached_.count(archive.path)) {
+        auto bytes = read_file(ntr::fs_id_by_path(archive.path.c_str()));
+        // Parse the header and first allocation before publishing the mount.
+        (void)narc_member(bytes, 0);
+        cached_.emplace(archive.path, std::move(bytes));
+    }
+}
 Cartridge::DataImage Cartridge::arm9_data(uint32_t end) const {
     // src/func_0200497c and Entry use this exact module-parameter record.
     // The expanded file contains ITCM/DTCM payloads *at* the main BSS start.

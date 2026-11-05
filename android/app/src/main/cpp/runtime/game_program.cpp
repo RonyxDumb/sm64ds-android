@@ -279,6 +279,7 @@ GameProgram::GameProgram(const char *path, Sound sound,FrontendCore::Audio audio
 }
 GameProgram::~GameProgram() {
     job_ = nullptr;
+    minigameRuntime_.reset();
     frontend_.reset();
     title_.reset();
     while (!files_.empty())
@@ -398,6 +399,11 @@ std::vector<StageAssets::PlayerSpawnCommand> GameProgram::stage_player_spawn_com
 }
 bool GameProgram::accept_title_result(int result) {
     require(title_ != nullptr, "Title file records have not been prepared.");
+    if (result==7) {
+        (void)minigames(); // validate the real cartridge before changing scene
+        StartMinigameMenu(0);
+        return true;
+    }
     const bool started = title_->start_selected(result);
     if (started) {
         stage_.prepare_scene();
@@ -465,6 +471,13 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         stage_.update_scene();
         finish_tick(); return;
     }
+    if (activeScene_==5 && data_02092664==NoScene) {
+        if (data_0209f5bc->IsAtEnd()) data_0209f5bc->SetBackwardTime(30);
+        minigameRuntime_->update();
+        minigameRuntime_->render();
+        data_0209f5bc->AdvanceFade();
+        finish_tick(); return;
+    }
     if (activeScene_==1 && data_02092664==NoScene) {
         if (pendingMusic_>=0 && (!musicDelay_ || --musicDelay_==0)) {
             native_audio({SoundOp::Music,0,0,pendingMusic_}); pendingMusic_=-1;
@@ -479,6 +492,14 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             data_0209f5bc->SetForwardTime(30);
         if (data_0209f5bc->IsAtEnd()) {
             if (data_02092664 == 1) {
+                if (minigameRuntime_) {
+                    minigameGroup_=minigameRuntime_->group();
+                    minigamePage_=minigameRuntime_->page();
+                    minigameRuntime_->cleanup();
+                    minigameRuntime_.reset();
+                    frontend_.reset(); // original title must re-upload its VRAM
+                    data_02092660=0;
+                }
                 if (!title_)
                     title_ = std::make_unique<TitleFiles>(data_0209d6fc);
                 if (!frontend_) {
@@ -495,6 +516,18 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 frontend_->render(); accept_title_result(result);
                 finish_tick(); return;
             }
+            if (data_02092664 == 5) {
+                const unsigned group=minigameRuntime_?minigameRuntime_->group():minigameGroup_;
+                const unsigned page=minigameRuntime_?minigameRuntime_->page():minigamePage_;
+                if (minigameRuntime_) minigameRuntime_->cleanup();
+                frontend_.reset();
+                minigameRuntime_.reset();
+                minigameRuntime_=std::make_unique<MinigameRuntime>(cartridge_,*this,group,page);
+                activeScene_=5; data_02092664=NoScene; data_02092660=1;
+                data_0209f5bc->SetBackwardTime(30);
+                minigameRuntime_->render();
+                finish_tick(); return;
+            }
             if (data_02092664 == 3) {
                 if (dScene_c::SpawnIfNecessary()) {
                     activeScene_ = 3;
@@ -506,7 +539,9 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                                      std::to_string(data_02092664));
         }
     }
-    boot_.Behavior();
+    if (activeScene_==0) boot_.Behavior();
+    else if (activeScene_==1) frontend_->render();
+    else if (activeScene_==5) { minigameRuntime_->update(); minigameRuntime_->render(); }
     data_0209f5bc->AdvanceFade();
     finish_tick();
 }
@@ -595,11 +630,11 @@ void GameProgram::scanout() {
     if (render3d) ntr::gx_render(geometry);
     ntr::ppu_scanout(ntr::ENGINE_A, main_,render3d?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);
-    if (render3d) {
+    if (render3d || activeScene_==5) {
         ntr::ppu_scanout_obj(ntr::ENGINE_A,main_);
         ntr::ppu_scanout_obj(ntr::ENGINE_B,sub_);
-        ntr::ppu_capture(main_,geometry);
     }
+    if (render3d) ntr::ppu_capture(main_,geometry);
     if (!data_0208ee3c) {
         std::fill(&main_.px[0][0],&main_.px[0][0]+256*192,0xff000000u);
         std::fill(&sub_.px[0][0],&sub_.px[0][0]+256*192,0xff000000u);

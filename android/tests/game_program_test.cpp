@@ -1,4 +1,5 @@
 #include "runtime/game_program.h"
+#include "runtime/minigame_progress.h"
 #include "runtime/minigame_art.h"
 #include "runtime/resources.h"
 #include "runtime/save_store.h"
@@ -34,6 +35,7 @@ namespace sm64ds::stage_sources {
 void bind_sources(packed::Space &);
 void bind_overlay_sources(packed::Space &,unsigned);
 }
+void minigame_oam_runtime();
 namespace {
 void put16(std::vector<uint8_t> &v, size_t at, uint16_t x) {
     v[at] = x;
@@ -778,7 +780,7 @@ void minigame_catalog_runtime() {
         const size_t at = begin + size_t(i) * 0x34;
         put16(data, at, uint16_t(0x169 + (i < 30 ? i : i - 30)));
         put16(data, at + 2, 0);
-        put32(data, at + 4, (i << 8) | (i < 30 ? 0u : 1u));
+        put32(data, at + 4, ((35-i) << 16) | (i << 8) | (i < 30 ? 0u : 1u));
         put32(data, at + 8, i % 6);
         put32(data, at + 12, 9999);
         put32(data, at + 16, i % 6 == 2 ? 1 : 0);
@@ -791,7 +793,7 @@ void minigame_catalog_runtime() {
     assert(catalog.menu_table_address() == 0x020ad680u);
     for (size_t i = 0; i < MinigameCatalog::Count; ++i) {
         assert(catalog.row(i).sceneId == (0x169 + (i < 30 ? i : i - 30)));
-        assert(((catalog.row(i).sceneParameter >> 8) & 0xffff) == i);
+        assert(((catalog.row(i).sceneParameter >> 8) & 0xff) == i);
     }
     auto duplicate = data;
     put32(duplicate, begin + 35 * 0x34 + 4, 34u << 8);
@@ -836,6 +838,7 @@ void minigame_art_decode() {
 }
 
 int main(int argc, char **argv) {
+    minigame_oam_runtime();
     narc_bounds();
     minigame_catalog_runtime();
     minigame_art_decode();
@@ -973,6 +976,57 @@ int main(int argc, char **argv) {
                 assert(front.word_at(front.word_at(view + 0x10) + 0x10) == view + 0xc);
             }
             assert(resources.heap().allocations() == 1 + game.frontend_core()->allocations());
+            if (repeat==0) {
+                sm64ds::MinigameProgress::unlock(24);
+                assert(game.accept_title_result(7) && game.requested_scene()==5);
+                for (unsigned i=0;i<80;++i) game.tick();
+                assert(game.active_scene()==5 && game.minigame_runtime());
+                assert(game.minigame_runtime()->group()==0);
+                assert(game.minigame_runtime()->page()==0);
+                const auto sprite_pixels=[](const ntr::Framebuffer &screen) {
+                    size_t count=0;
+                    for (const auto &row:screen.layer) for (const auto layer:row) count+=layer==4;
+                    return count;
+                };
+                assert(sprite_pixels(game.main_screen())>200);
+                assert(sprite_pixels(game.sub_screen())>200);
+                // All 128 unused original OAM entries must be hidden after
+                // Reset's intentionally overlapping forward word copies.
+                const auto &menuSpace=game.minigame_runtime()->space();
+                uint32_t used=0;
+                std::memcpy(&used,menuSpace.data(0x0209e670,4),4);
+                assert(used>0 && used<128);
+                for (unsigned j=used;j<128;++j) {
+                    uint32_t xy=0;
+                    std::memcpy(&xy,menuSpace.data(0x0209ea74+j*8,4),4);
+                    assert(xy==0xc0);
+                }
+                // An unlocked cartridge icon with no native game callback
+                // must stay in the real menu, with no false scene success.
+                game.tick(0,0,0,0x45,0x20); game.tick();
+                assert(game.active_scene()==5 && game.requested_scene()==0x187);
+                const char *capture=std::getenv("SM64DS_MENU_CAPTURE");
+                if (capture) {
+                    assert(ntr::ppu_write_bmp((std::string(capture)+"-main.bmp").c_str(),game.main_screen()));
+                    assert(ntr::ppu_write_bmp((std::string(capture)+"-sub.bmp").c_str(),game.sub_screen()));
+                }
+                // Original tab table is 3,0,1,2 (not tab index == group).
+                game.tick(0,0,0,0x18,0x18); game.tick();
+                assert(game.minigame_runtime()->group()==3);
+                game.tick(0,0,0,0x18,0x48); game.tick();
+                assert(game.minigame_runtime()->group()==0);
+                game.tick(0,0,0,0xe0,0x60); game.tick();
+                for (unsigned i=0;i<50;++i) game.tick();
+                assert(game.minigame_runtime()->page()==1);
+                assert(game.minigame_runtime()->scroll()==0xb0);
+                game.tick(0,0,0,0x40,0x60); game.tick();
+                for (unsigned i=0;i<50;++i) game.tick();
+                assert(game.minigame_runtime()->page()==0 && game.minigame_runtime()->scroll()==0);
+                game.tick(0,0,0,0xe8,0xa0); game.tick();
+                for (unsigned i=0;i<90;++i) game.tick();
+                assert(game.active_scene()==1 && game.frontend_core() && !game.minigame_runtime());
+                std::cout << "Original minigame menu: source lifecycle, OAM, touchscreen tabs/pages and title round trip passed.\n";
+            }
             auto *active = reinterpret_cast<uint8_t *>(data_0209caa0);
             std::vector<uint8_t> minigames(active + 0x44, active + 0x328);
             assert(!game.accept_title_result(2) && game.requested_scene() == 0x187);

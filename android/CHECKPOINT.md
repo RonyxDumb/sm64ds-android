@@ -1,3 +1,61 @@
+# Current checkpoint — 2026-11-05, executable original minigame room
+
+Version **0.4.22-minigame-menu**, versionCode 26, branch **main**.
+**The original room/menu now runs; no minigame gameplay scene is playable yet.**
+
+Implemented and exercised against the private EU cartridge:
+- Title result 7 calls the unchanged original StartMinigameMenu(0). Native
+  tick executes scene 5; exit calls original ExitMinigameMenu and recreates
+  the original title with its own VRAM resources. The test supplies result 7
+  at the dispatcher boundary; the initial title icon press is not tested.
+- Full recovered dScMiniGm_c InitResources, Behavior, Render and CleanupResources
+  run via a hash-guarded four-byte-pointer projection, with the exact 0xb0-byte
+  scene record. Original src/ and include/ are unchanged.
+- Actual BG files, dynamic group icons, locked tiles, original OAM sprite tables,
+  Italian captions, records, NEW badges, tab hit tests, arrow animations,
+  page timers, 8-pixel scrolling and exit countdown execute from source/data.
+  Main/sub rendered scanouts were visually inspected. Android's two-screen
+  side-by-side composition is unchanged.
+- Live save/input spans share bytes with recovered ARM9 helpers. Original
+  EEPROM persistence is used; dirty flags are not cleared after a failed write.
+  Cartridge archive preloads and LZ writes are checked, including VRAM targets.
+- Original OAM reset requires overlapping forward copies; this is retained.
+  Original width/height helpers now perform the equivalent byte reads without
+  constructing misaligned native int references. Unused sprites stay hidden.
+- Unsupported game taps are rejected BEFORE selected-row, palette, wipe or
+  pending-scene changes. They play the original error effect and leave the
+  real menu responsive; there is no fake successful launch or generated score.
+
+Local verification (AddressSanitizer + UndefinedBehaviorSanitizer):
+- Complete no-ROM game dependency tests, including original OAM size tables,
+  reset, rendering/upload, single-buffer routing and 128-entry limit: PASS.
+- Full private-ROM boot/title -> menu -> tabs/pages -> exit -> original title,
+  visible sprites on BOTH screens, unsupported-game rejection, and existing
+  four-session file/castle/180-frame Player regression: PASS.
+- Original EEPROM defaults/records/cap repair/checksums/mirror/reopen/I/O-failure
+  tests: PASS. Actual EU overlay-5 catalog/slot permutation: PASS.
+- Relocated video-register, GX/palette, projection/fixed-math tests: PASS.
+- Native generator tests, source manifest regeneration and diff checks: PASS.
+- Full local host suite stops at missing javac; public CI runs that full suite,
+  ARM64 frontend, GLES, APK build and lint. Latest menu build status is pending
+  at this code checkpoint; do not confuse the prior checkpoint's CI with it.
+- LeakSanitizer cannot inspect this executor's proc thread entries, so local
+  runs disable leak detection only; address/undefined checks stay enabled.
+
+Remaining blocking work, not completed or verified:
+- Overlay-4 dScMgBase_c/dMgState_c lifecycle, banners/options/fonts and native
+  callback tables; overlay-6 game/component actor dispatch for 30 distinct
+  scenes and six variants; dWipe capture/scanline lifecycle.
+- First original game launch, complete round, real scoring/win/loss/retry,
+  return after gameplay, and persistence of a gameplay-earned record.
+- Android device/emulator touch, audio, pause/resume and playability. No device
+  is attached. Host tests/scanouts do not establish those claims.
+
+See android/MINIGAMES.md for exact scope and next executable dependencies.
+No ROM, extracted resource, screenshot or save image is published.
+
+---
+
 # Current checkpoint — 2026-11-05, verified EU minigame catalog/save correction
 
 A private-ROM test exposed two errors in the earlier foundation:
