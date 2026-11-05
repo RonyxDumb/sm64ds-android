@@ -285,6 +285,7 @@ GameProgram::~GameProgram() {
     reset_wipe();
     data_0209f5bc=data_0209d4ac=&data_0209f5e8;
     minigameRuntime_.reset();
+    minigameGameplayRuntime_.reset();
     frontend_.reset();
     title_.reset();
     while (!files_.empty())
@@ -395,6 +396,14 @@ bool GameProgram::prepare_minigame_menu() {
     minigameMenu_ = std::make_unique<MinigameMenuSession>(page, group);
     return dirty;
 }
+uint32_t GameProgram::spawn_scene(uint32_t sceneID,uint32_t parameter,uint8_t kind) {
+    if (MinigameCatalog::is_game_scene(sceneID)) {
+        // The scene dispatcher has already mounted overlay 6. Do not silently
+        // fall back to the unrelated castle-stage address space.
+        return minigameGameplayRuntime_->spawn(kind);
+    }
+    return stage_.spawn_scene(sceneID,parameter,kind);
+}
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;
 }
@@ -476,6 +485,12 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         stage_.update_scene();
         finish_tick(); return;
     }
+    if (MinigameCatalog::is_game_scene(static_cast<uint32_t>(activeScene_)) &&
+        data_02092664 == NoScene) {
+        minigameGameplayRuntime_->update();
+        data_0209f5bc->AdvanceFade();
+        finish_tick(); return;
+    }
     if (activeScene_==5 && data_02092664==NoScene) {
         if (data_0209f5bc->IsAtEnd()) data_0209f5bc->SetBackwardTime(30);
         minigameRuntime_->update();
@@ -497,6 +512,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             data_0209f5bc->SetForwardTime(30);
         if (data_0209f5bc->IsAtEnd()) {
             if (data_02092664 == 1) {
+                minigameGameplayRuntime_.reset();
                 if (minigameRuntime_) {
                     minigameGroup_=minigameRuntime_->group();
                     minigamePage_=minigameRuntime_->page();
@@ -522,6 +538,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 finish_tick(); return;
             }
             if (data_02092664 == 5) {
+                minigameGameplayRuntime_.reset();
                 const unsigned group=minigameRuntime_?minigameRuntime_->group():minigameGroup_;
                 const unsigned page=minigameRuntime_?minigameRuntime_->page():minigamePage_;
                 if (minigameRuntime_) minigameRuntime_->cleanup();
@@ -531,6 +548,26 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 activeScene_=5; data_02092664=NoScene; data_02092660=1;
                 data_0209f5bc->SetBackwardTime(30);
                 minigameRuntime_->render();
+                finish_tick(); return;
+            }
+            if (MinigameCatalog::is_game_scene(data_02092664)) {
+                const uint16_t gameScene=data_02092664;
+                if (!minigameGameplayRuntime_) {
+                    if (minigameRuntime_) {
+                        minigameGroup_=minigameRuntime_->group();
+                        minigamePage_=minigameRuntime_->page();
+                        minigameRuntime_->cleanup();
+                        minigameRuntime_.reset();
+                    }
+                    frontend_.reset();
+                    minigameGameplayRuntime_=std::make_unique<MinigameGameplayRuntime>(
+                        Resources::active().heap(),cartridge_,gameScene,data_0209f5b8);
+                    data_02092660=0; // original AfterCleanupResources scene-ready transition
+                }
+                if (dScene_c::SpawnIfNecessary()) {
+                    activeScene_=gameScene;
+                    minigameGameplayRuntime_->update();
+                }
                 finish_tick(); return;
             }
             if (data_02092664 == 3) {
@@ -543,7 +580,8 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
             // Do not filter original scene IDs. Let the recovered scene
             // dispatcher resolve the requested factory; missing native
             // bindings surface at their actual call site.
-            if (dScene_c::SpawnIfNecessary()) activeScene_ = data_02092664;
+            const uint16_t destination=data_02092664;
+            if (dScene_c::SpawnIfNecessary()) activeScene_ = destination;
             finish_tick(); return;
         }
     }
@@ -635,7 +673,8 @@ void GameProgram::scanout() {
     }
     ntr::Framebuffer geometry{};
     prepare_wipe_scanlines();
-    const bool render3d=activeScene_==1 || activeScene_==3;
+    const bool render3d=activeScene_==1 || activeScene_==3 ||
+                        MinigameCatalog::is_game_scene(static_cast<uint32_t>(activeScene_));
     if (render3d) ntr::gx_render(geometry);
     ntr::ppu_scanout(ntr::ENGINE_A, main_,render3d?&geometry:nullptr);
     ntr::ppu_scanout(ntr::ENGINE_B, sub_);

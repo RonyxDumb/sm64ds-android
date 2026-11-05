@@ -1,3 +1,22 @@
+# Checkpoint — 2026-11-05, ungated original minigame gameplay bootstrap
+
+Branch **main**. Removed `supports_scene`, `mg_CanStartGame`, the
+generated unsupported-icon rejection and the generic unsupported-scene stop.
+The original menu selection now calls `StartSceneFade` for every unlocked icon.
+
+Added a separate overlay-6 gameplay owner: it preserves shared live save/input
+bytes, maps original overlay 4 and 6, binds recovered core/controller/scheduler
+routines and follows the ROM scene-profile factory instead of a native
+allow-list. This is an incomplete original-code boot path, **not** a playable
+minigame. The missing actor/scene constructors must be ported next. A missing
+native method will raise an unlinked-code diagnostic rather than showing a
+fake game or successful score. Memory and cartridge bounds remain checked.
+
+Game overlay residency is covered by a private-EU-ROM test; compilation and
+actual Android playability require CI/device verification.
+
+---
+
 # Current checkpoint — 2026-11-05, original shared minigame controller and scanline wipe
 
 Version **0.4.23-minigame-controller**, versionCode 27, branch **main**.

@@ -1,4 +1,5 @@
 #include "runtime/minigame_shared.h"
+#include "runtime/minigame_gameplay_runtime.h"
 #include "runtime/cartridge.h"
 #include "runtime/packed_ptr.h"
 #include "runtime/boot_seams.h"
@@ -178,6 +179,18 @@ void minigame_state_runtime() {
 void minigame_state_cartridge(sm64ds::Cartridge &cartridge) {
     exercise(cartridge.arm9_data(0x020aa420),cartridge.overlay_data(4),
              cartridge.overlay_data(6),true);
+    // Independently verify that a game receives overlay 6, NOT the menu's
+    // overlay 5, with the same live ARM9/overlay-4 controller dependencies.
+    sm64ds::GameHeap heap(2<<20);
+    sm64ds::MinigameGameplayRuntime game(heap,cartridge,0x169,0);
+    const auto image=cartridge.overlay_data(6);
+    assert(game.scene()==0x169);
+    assert(game.space().contains(image.base,image.bytes.size()));
+    assert(std::memcmp(game.space().data(image.base,image.bytes.size()),
+                       image.bytes.data(),image.bytes.size())==0);
+    const uint32_t firstProfile=*sm64ds::packed::Ptr<uint32_t>(0x02090864u+0x169u*4u).get();
+    assert(firstProfile!=0); // the cartridge scene table, not a native allow-list
+    std::cout << "Original minigame game overlay: image 6 and scene profile available.\n";
 }
 
 void minigame_record_runtime() {

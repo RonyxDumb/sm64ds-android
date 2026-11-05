@@ -1,6 +1,8 @@
 # Original minigame room
 
-Version 0.4.23 links **the original menu and shared controller**, not minigame gameplay.
+Version 0.4.23 links the original menu and shared controller. The latest
+checkpoint also mounts overlay 6 and attempts its original scene factory, but
+does **not** yet implement the constructors needed to finish a game launch.
 
 | Path | Native support | Evidence |
 | --- | --- | --- |
@@ -10,6 +12,7 @@ Version 0.4.23 links **the original menu and shared controller**, not minigame g
 | Four tabs, arrow delays, two pages, exit | Connected | Original touch conversion, hit tests, timers and scrolling exercised on the actual EU data. |
 | Locked games, NEW badges and records | Connected | Original helpers and live save block; exact record-slot permutation, default repair, EEPROM checksums, mirror recovery and reopen tests. |
 | Shared controller and original records | Connected as common dependencies | 52 original state/helper bodies, all 20 enter states and 49 original EU member pointers; 23 original score/language/record helpers. UI/audio dependencies are observed by test spies in controller tests, not implemented by success stubs in production. |
+| Gameplay overlay 6 | Bootstrap connected | Overlay-5 menu resources are released; a separate address space mounts original overlay 6, preserves input/save aliases and looks up the real scene factory. Missing constructor bindings fail at the original address. |
 | Gameplay scanline wipe | Connected | Original dWipe ramp/circle table builders and HBlank/VBlank handlers feed WIN0/WIN1 masks on both native PPUs. Lifecycle, pending type changes, masks, effects and teardown are tested. |
 | First complete minigame/round | **Missing** | The full dScMgBase resource lifecycle, shared banners/options, and overlay-6 scene/component actor callbacks remain unlinked. |
 | Android phone play test | **Not performed** | Host execution and CI compilation do not establish on-device behavior. |
@@ -65,7 +68,7 @@ bash android/tests/run-host-tests.sh
 ```
 
 The private-ROM test drives original character tabs, page arrows and exit with
-touch coordinates, verifies visible OBJ pixels, rejects unsupported game taps,
+touch coordinates, verifies visible OBJ pixels, verifies overlay-6 residency,
 returns to the original title, and then runs the existing castle/Player regression.
 It does **not** play a round or test real Android touch/audio hardware.
 Set `SM64DS_MENU_CAPTURE=/tmp/menu` to inspect the two private BMP scanouts.
@@ -78,15 +81,16 @@ No production game capability is enabled until its entire lifecycle is linked.
 
 ## Next executable dependency chain
 
-1. Finish dScMgBase_c resource/scene lifecycle and shared graphics/banner/options
-   dependencies; dMgState_c, records and scanline wipe are now executable.
-2. Replace overlay 5 with overlay 6 during an actual native game transition,
-   preserving the selected menu row, parameters, live records and return tab/page.
-3. Link one complete overlay-6 scene, its real component constructors, resources,
-   gameplay, HUD/banners and cleanup. Add it to the native scene capability list
-   only after it can initialize and execute.
+1. Finish dScMgBase_c resource/scene lifecycle, shared graphics/banner/options
+   dependencies and original overlay-6 factory binding. The shared controller,
+   records and scanline wipe already execute.
+2. Complete original scene construction/scheduling and keep the selected
+   menu row, parameters, live records and return tab/page across transitions.
+3. Link one complete overlay-6 scene, its real components, gameplay,
+   HUD/banners and cleanup without replacing missing callbacks with stubs.
 4. Verify a full round, genuine score submission, retry, return to scene 5 and
    reopened EEPROM record; then repeat for the remaining scenes and variants.
 
-At present the capability list contains no minigame gameplay scene. A tap cannot
-produce a false successful launch, fabricate a win/score or freeze the live menu.
+The native capability list and forced unsupported-tap guard have been removed.
+Unlocked icons now request their original scene IDs. Missing native actor
+constructors still fail explicitly; no successful round or earned score is faked.

@@ -56,21 +56,7 @@ MinigameRuntime::MinigameRuntime(Cartridge &cartridge,GameProgram &program,unsig
     // Keep pointer-free save and input records LIVE. Split the ARM9 image at
     // these spans so the projected source and original ARM9 leaf helpers use
     // exactly the same bytes, including all interior aliases.
-    struct Live { uint32_t address; void *bytes; size_t size; };
-    const Live live[]={{0x0209caa0u,data_0209caa0,0x32c},
-                       {0x0209f5f8u,&data_0209f5f8,1},
-                       {0x020a0de8u,gTouchHeld,16},
-                       {0x020a0e40u,&gActivePlayerSlot,1},
-                       {0x020a0e58u,data_020a0e58,16}};
-    uint32_t begin=arm9_.base;
-    for (const auto &span:live) {
-        space_.map(begin,arm9_.bytes.data()+begin-arm9_.base,span.address-begin);
-        space_.map(span.address,span.bytes,span.size);
-        begin=span.address+static_cast<uint32_t>(span.size);
-    }
-    space_.map(begin,arm9_.bytes.data()+begin-arm9_.base,
-               arm9_.bytes.size()-(begin-arm9_.base));
-    for(auto &part:arm9_.relocated) space_.map(part.base,part.bytes.data(),part.bytes.size());
+    map_minigame_live_arm9(space_,arm9_);
     space_.map(common_.base,common_.bytes.data(),common_.bytes.size());
     space_.map(menu_.base,menu_.bytes.data(),menu_.bytes.size());
     bind_minigame_shared_runtime(space_);

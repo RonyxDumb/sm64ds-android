@@ -8,7 +8,28 @@ namespace sm64ds::minigame_sources {
 void bind_sources(packed::Space &);
 void bind_overlay_sources(packed::Space &,unsigned);
 }
+extern "C" { extern int data_0209caa0[]; extern unsigned char gTouchHeld[],gActivePlayerSlot; }
 namespace sm64ds {
+void map_minigame_live_arm9(packed::Space &space, Cartridge::DataImage &arm9) {
+    // Live aliases are shared with SaveStore and Android's DS touch controller.
+    // They must not be replaced by snapshots when overlay 5 gives way to 6.
+    struct Live { uint32_t address; void *bytes; size_t size; };
+    const Live live[]={{0x0209caa0u,data_0209caa0,0x32c},
+                       {0x0209f5f8u,&data_0209f5f8,1},
+                       {0x020a0de8u,gTouchHeld,16},
+                       {0x020a0e40u,&gActivePlayerSlot,1},
+                       {0x020a0e58u,data_020a0e58,16}};
+    uint32_t begin=arm9.base;
+    for (const auto &span:live) {
+        space.map(begin,arm9.bytes.data()+begin-arm9.base,span.address-begin);
+        space.map(span.address,span.bytes,span.size);
+        begin=span.address+static_cast<uint32_t>(span.size);
+    }
+    space.map(begin,arm9.bytes.data()+begin-arm9.base,
+              arm9.bytes.size()-(begin-arm9.base));
+    for (auto &part:arm9.relocated)
+        space.map(part.base,part.bytes.data(),part.bytes.size());
+}
 void bind_minigame_shared_runtime(packed::Space &space) {
     minigame_sources::bind_sources(space);
     minigame_sources::bind_overlay_sources(space,4);

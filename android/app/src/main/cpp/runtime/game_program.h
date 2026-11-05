@@ -6,6 +6,7 @@
 #include "minigame_art.h"
 #include "minigame_menu_session.h"
 #include "minigame_runtime.h"
+#include "minigame_gameplay_runtime.h"
 #include "stage_flow.h"
 #include "title_files.h"
 #include "runtime/boot_state.h"
@@ -62,9 +63,7 @@ public:
     packed::Space *stage_address_space() const { return stage_.address_space(); }
     // Receives original frontend results: files 3..5 or minigame room 7.
     bool accept_title_result(int result);
-    uint32_t spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {
-        return stage_.spawn_scene(sceneID, parameter, kind);
-    }
+    uint32_t spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind);
     void *load(uint32_t handle);
     void release(void *pointer);
     size_t bytes_at(const void *pointer) const;
@@ -93,6 +92,7 @@ private:
     std::unique_ptr<MinigameMenuSession> minigameMenu_;
     std::unique_ptr<MinigameMenuArtwork> minigameArtwork_;
     std::unique_ptr<MinigameRuntime> minigameRuntime_;
+    std::unique_ptr<MinigameGameplayRuntime> minigameGameplayRuntime_;
     unsigned minigameGroup_=4, minigamePage_=0; // first entry reads ROM's group initializer
     BootState boot_{};
     GameInput input_;
