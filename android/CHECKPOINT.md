@@ -1,3 +1,36 @@
+# Current checkpoint — 2026-11-05, consecutive original water rendering
+
+Continues published main 0ba35886ea031f2842734eb53c889c823008260c.
+Version 0.4.20-water-render, versionCode 24. **Not playable.**
+
+The complete original castle-water Render and CleanupResources bodies and
+dExtSimpleModel Render are now connected. On each of four private-ROM
+save/character launches, 400 consecutive original water Behavior/Render calls
+advance/wrap the BTA, change actual material records and emit nonempty geometry.
+The regression also verifies that all seven waterfall positions come from the
+original spawn table. These are isolated actor updates, not full stage frames;
+all four merged integration paths retain the item/mushroom checks and reach
+the actual rabbit factory dependency, 0x0212cc2c.
+
+ASan/UBSan passes all four launches and existing Player/camera/KCL/mesh/ordered
+process tests. Video/math, source-hash, native-source/hostgen checks pass.
+LeakSanitizer remains disabled locally. An incremental generation bug found
+while integrating the concurrent checkpoint is fixed: renamed/removed generated
+source views no longer leave duplicate native callback definitions behind. Its
+rename/removal regression passes and runs in the host CI suite.
+
+The preceding 7e7fdb9 Android workflow succeeded, including ARM64 debug/release
+builds and lint. This increment awaits its own CI. Local javac and Android SDK
+are unavailable; no Android device/emulator is attached. The broad host runner
+passes the private-ROM probe then stops at javac. Side-by-side screens and
+graphics fixes are preserved. No ROM, extracted assets or captures are committed.
+
+Next: rabbit initialization, remaining scene/HUD/particles and the actual
+Player/camera/render/audio world-frame chain.
+
+
+---
+
 # Current checkpoint — 2026-11-05, original item blocks and mushroom resources
 
 Continues published main 7e7fdb95454b2eb7f9243038eceb3e0869c4464c.

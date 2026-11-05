@@ -85,6 +85,13 @@ def generate(out, manifest=None):
         text += '}\n'
         dest.write_text(text)
         sources.append(dest)
+    # An incremental build can rename/remove a view. Leaving its generated
+    # unit behind makes the compiler link both old and new native callbacks.
+    # Only delete files carrying this generator's source marker.
+    expected = set(sources)
+    for stale in out.glob('*.cpp'):
+        if stale not in expected and stale.read_text().startswith('// Generated from '):
+            stale.unlink()
     (out/'sources.cmake').write_text('set(PACKED_FRONTEND_SOURCES\n' +
                                     ''.join('    "' + str(p) + '"\n' for p in sources) + ')\n')
     (out/'inputs.cmake').write_text('set(PACKED_FRONTEND_INPUTS\n' +

@@ -12,6 +12,8 @@ def slices(projected):
     specs = [
         ('int daObjMcWater_c::InitResources()', '_ZN14daObjMcWater_c13InitResourcesEv'),
         ('int daObjMcWater_c::Behavior()', '_ZN14daObjMcWater_c8BehaviorEv'),
+        ('int daObjMcWater_c::Render()', '_ZN14daObjMcWater_c6RenderEv'),
+        ('int daObjMcWater_c::CleanupResources()', '_ZN14daObjMcWater_c16CleanupResourcesEv'),
         ('extern "C" void func_ov009_02111b1c(daObjMcWater_c *self)', 'func_ov009_02111b1c'),
     ]
     bodies = []
@@ -39,6 +41,13 @@ def slices(projected):
             'func_ov009_02111b1c(this)':'func_ov009_02111b1c(object)',
             'mTexTransformer.speed':'(*(s32 *)((char *)object+0x32c))',
             'mTexTransformer.Advance()':'_ZN9Animation7AdvanceEv((char *)object+0x320)',
+            'mTexTransformer.Update(mModel.data)':
+                '_ZN15dExtAnmTexSRT_c6UpdateER15ModelComponents((char *)object+0x320,(char *)object+0xdc)',
+            'mModel.Render(0)':'_ZN17dExtSimpleModel_c6RenderEPK7Vector3((char *)object+0xd4,0)',
+            'data_ov009_02113c68.Release()':'_ZN13SharedFilePtr7ReleaseEv(&data_ov009_02113c68)',
+            'data_ov009_02113c70.Release()':'_ZN13SharedFilePtr7ReleaseEv(&data_ov009_02113c70)',
+            'mMeshCollider.IsEnabled()':'_ZN4dBgW9IsEnabledEv((char *)object+0x124)',
+            'mMeshCollider.Disable()':'_ZN4dBgW7DisableEv((char *)object+0x124)',
             'self->mPosX':'(*(s32 *)((char *)object+0x5c))',
             'self->mAreaId':'(*(s8 *)((char *)object+0xcc))',
             'dActor_c::Spawn(0xc5, 0, vec[i], 0,':
@@ -57,6 +66,10 @@ void *_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(SharedFilePtr *);
 int _ZN11dExtModel_c7SetFileEP8BMD_Fileii(void *,void *,int,int);
 void _ZN15dExtAnmTexSRT_c7PrepareER8BMD_FileR8BTA_File(void *,void *);
 void _ZN15dExtAnmTexSRT_c7SetFileER8BTA_Fileiit(void *,void *,int,int,u16);
+void _ZN15dExtAnmTexSRT_c6UpdateER15ModelComponents(void *,void *);
+void _ZN17dExtSimpleModel_c6RenderEPK7Vector3(void *,void *);
+void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
+int _ZN4dBgW9IsEnabledEv(void *); int _ZN4dBgW7DisableEv(void *);
 void _ZN10dBgActor_c21UpdateModelPosAndRotYEv(void *);
 void _ZN10dBgActor_c19UpdateClsnPosAndRotEv(void *);
 void *_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(SharedFilePtr *);
@@ -69,6 +82,21 @@ void *_ZN8dActor_c5SpawnEjjRK7Vector3PK10Vector3_16as(u32,u32,Vector3 *,void *,s
         [spec[1] for spec in specs],extra='struct Vector3 { s32 x,y,z; };\n',auto_globals=False)
     row['unit']='stage_castle_water'
     for binding in bindings: binding['overlay']=9
+    yield row,bindings
+
+    rel='src/engine/model/d_ext_simple_model.cpp'
+    signature='void dExtSimpleModel_c::Render(const Vector3 *scale)'
+    body=replace_once(function((ROOT/rel).read_text(),signature),signature,
+        'void _ZN17dExtSimpleModel_c6RenderEPK7Vector3(void *object,void *scale)')
+    body=body.replace('&mat4x3','(Matrix4x3 *)((char *)object+0x1c)')
+    body=body.replace('data.Render(&temp, (Vector3 *)scale)',
+        '_ZN15ModelComponents6RenderEP9Matrix4x3P7Vector3((char *)object+8,&temp,scale)')
+    row,bindings=projected(rel,body,'''
+extern Matrix4x3 data_0209b3ec;
+void MulMat4x3Mat4x3(Matrix4x3 *,Matrix4x3 *,Matrix4x3 *);
+void _ZN15ModelComponents6RenderEP9Matrix4x3P7Vector3(void *,Matrix4x3 *,void *);
+''',['_ZN17dExtSimpleModel_c6RenderEPK7Vector3'],auto_globals=False)
+    row['unit']='stage_simple_model_render'
     yield row,bindings
 
     rel='src/game/actors/d_a_obj_waterfall.cpp'

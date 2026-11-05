@@ -9,6 +9,7 @@
 #include "runtime/stage_runtime.h"
 #include "ntr/lz77.h"
 #include "ntr/fs.h"
+#include "ntr/gx.h"
 #include "stage_code_ranges.h"
 #include <cassert>
 #include <climits>
@@ -1055,7 +1056,11 @@ int main(int argc, char **argv) {
                     bool materialsChanged=false;
                     for(unsigned frame=0;frame<400;++frame) {
                         assert(Ptr<int(uint32_t)>(0x02111c4cu)(instance)==1);
-                        Ptr<void(uint32_t,uint32_t)>(0x02015888u)(instance+0x320,instance+0xdc);
+                        ntr::gx_begin_frame();
+                        assert(Ptr<int(uint32_t)>(0x02111c18u)(instance)==1);
+                        size_t polygons=0;
+                        (void)ntr::gx_polygons(polygons);
+                        assert(polygons>0);
                         assert(stageWord(instance+0x328)==((frame+1)*0x1000u)%length);
                         materialsChanged|=std::memcmp(before.data(),stageSpace->data(materials,materialBytes),materialBytes)!=0;
                     }
@@ -1068,6 +1073,11 @@ int main(int argc, char **argv) {
                     assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
                     assert(*static_cast<uint16_t *>(stageSpace->data(instance+0xd4,2))==0x24);
                     assert(stageWord(instance+0xd8)==0);
+                    bool originalPosition=false;
+                    for(unsigned i=0;i<7;++i)
+                        originalPosition|=std::memcmp(stageSpace->data(instance+0x5c,12),
+                                                      stageSpace->data(0x02113d8cu+i*12,12),12)==0;
+                    assert(originalPosition);
                     continue;
                 }
                 if(vtable==0x02109af8u) {
