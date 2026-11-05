@@ -132,6 +132,37 @@ def scene_transitions(text):
     return '#include "runtime/boot_seams.h"\n' + '\n\n'.join(function(text, sig) for sig in signatures)
 
 
+def wipe(text):
+    output = text[text.index('// @symbol _ZN7dWipe_cC1Ev'):]
+    output = replace_once(output,
+        'extern "C" int _ZN7dWipe_c15SetBackwardTimeEj(dWipe_c *self, u32 frames, u32 extra)\n{',
+        'int dWipe_c::SetBackwardTime(u32 frames)\n{\n    dWipe_c *self = this;')
+    output = replace_once(output,
+        '_ZN15dFdBrightness_c15SetBackwardTimeEj(self, frames, extra)',
+        'self->dFdBrightness_c::SetBackwardTime(frames)')
+    # The original ARM shift wraps a negative word; multiplication gives the
+    # same bounded value without a signed-negative-shift UBSan failure.
+    output = replace_once(output,'wipeSpeed = wipeSpeed << 1;', 'wipeSpeed *= 2;')
+    output = re.sub(r'CP15::FlushAndInvalidateDataCache\(\(u32\)(\w+), ([^;]+)\);',
+                    r'sm64ds::wipe_detail::flush(\1, \2);', output)
+    for old,new in {
+        'func_0202f2c4':'sm64ds_wipe_hblank', 'func_0202f3a4':'sm64ds_wipe_vblank',
+        'func_0202ed48':'sm64ds_wipe_reset_original',
+        'IRQ::SetIRQHandler':'sm64ds::wipe_detail::set_handler',
+        'IRQ::EnableIRQs':'sm64ds::wipe_detail::enable',
+        'IRQ::DisableIRQs':'sm64ds::wipe_detail::disable',
+        'func_02053c10':'sm64ds::wipe_detail::set_hblank',
+        'MultiStore_Int':'sm64ds::wipe_detail::fill32',
+        'MultiCopy_Int':'sm64ds::wipe_detail::copy32',
+        '_ZN3G2x18SetBlendBrightnessEPVtts':'sm64ds::wipe_detail::blend',
+        'GX::LoadBGPltt':'sm64ds::wipe_detail::palette_main',
+        'GXS::LoadBGPltt':'sm64ds::wipe_detail::palette_sub',
+        '_ZN4cstd4sqrtEy':'cstd::sqrt',
+    }.items():
+        output = re.sub(r'(?<!\w)'+re.escape(old)+r'\b',new,output)
+    return '#include "runtime/wipe_runtime.h"\n#include "ntr/mmio.h"\n'+hostgen.transform(output)[0]
+
+
 def font(text):
     # Only resident file pointers change; mapped VRAM addresses stay u32.
     pairs = (
@@ -340,6 +371,7 @@ def generate(out):
         'runtime/boot_state.h': boot_header((ROOT / 'include/dScBoot_c.h').read_text()),
         'runtime/boot.cpp': boot((ROOT / 'src/game/stages/d_s_boot_methods.cpp').read_text()),
         'runtime/faders.cpp': faders((ROOT / 'src/runtime/graphics/fader/d_fader.cpp').read_text()),
+        'runtime/wipe.cpp': wipe((ROOT / 'src/runtime/graphics/fader/d_wipe.cpp').read_text()),
         'runtime/transitions.cpp': scene_transitions((ROOT / 'src/game/stages/d_scene.cpp').read_text()),
         'runtime/font.cpp': font((ROOT / 'src/LoadFont.cpp').read_text()),
         'runtime/bg.cpp': '#include "ntr/mmio.h"\n' + hostgen.transform((ROOT / 'src/engine/gx/G2.cpp').read_text())[0],

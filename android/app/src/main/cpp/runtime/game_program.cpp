@@ -1,5 +1,6 @@
 #include "game_program.h"
 #include "minigame_progress.h"
+#include "wipe_runtime.h"
 #include "boot_seams.h"
 #include "resources.h"
 #include "ntr/lz77.h"
@@ -168,12 +169,13 @@ void _ZN6Memory16operator_delete2EPv(void *p) {
 }
 void func_02053a90(u16 *reg, int value) {
     value = std::clamp(value, -16, 16);
-    *reg = static_cast<u16>((value < 0 ? 0x8000 : value > 0 ? 0x4000 : 0) | std::abs(value));
+    const auto address=reinterpret_cast<uintptr_t>(reg);
+    require(address==0x0400006c || address==0x0400106c,"Invalid native brightness register.");
+    ntr::io_write(static_cast<uint32_t>(address),
+        static_cast<u16>((value < 0 ? 0x8000 : value > 0 ? 0x4000 : 0) | std::abs(value)),2);
 }
 void _ZN3G2x18SetBlendBrightnessEPVtts(volatile u16 *reg, u16 targets, int value) {
-    value = std::clamp(value, -16, 16);
-    reg[0] = static_cast<u16>(targets | (value < 0 ? 0xc0 : 0x80));
-    reg[2] = static_cast<u16>(std::abs(value));
+    sm64ds::wipe_detail::blend(reg,targets,value);
 }
 }
 namespace Message {
@@ -246,6 +248,7 @@ GameProgram::GameProgram(const char *path, Sound sound,FrontendCore::Audio audio
         std::memset(ntr::host_ptr(ntr::IO_BASE), 0, ntr::IO_SIZE);
         std::memset(ntr::host_ptr(ntr::VRAM_BASE), 0, ntr::VRAM_SIZE);
         std::memset(ntr::host_ptr(ntr::PLTT_BASE), 0, ntr::PLTT_SIZE);
+        initialize_wipe(cartridge_);
         for (auto b :
              {std::make_pair(0x020914e0u, std::make_pair(data_020914e0, sizeof data_020914e0)),
               std::make_pair(0x02091570u, std::make_pair(data_02091570, sizeof data_02091570)),
@@ -279,6 +282,8 @@ GameProgram::GameProgram(const char *path, Sound sound,FrontendCore::Audio audio
 }
 GameProgram::~GameProgram() {
     job_ = nullptr;
+    reset_wipe();
+    data_0209f5bc=data_0209d4ac=&data_0209f5e8;
     minigameRuntime_.reset();
     frontend_.reset();
     title_.reset();
@@ -626,6 +631,7 @@ void GameProgram::scanout() {
                   (ntr::io_read(0x04001000, 4) & ~0xf00u) | (uint32_t(data_0209d454 & 15) << 8), 4);
     }
     ntr::Framebuffer geometry{};
+    prepare_wipe_scanlines();
     const bool render3d=activeScene_==1 || activeScene_==3;
     if (render3d) ntr::gx_render(geometry);
     ntr::ppu_scanout(ntr::ENGINE_A, main_,render3d?&geometry:nullptr);

@@ -1,6 +1,6 @@
 # Original minigame room
 
-Version 0.4.22 links **the original menu**, not minigame gameplay.
+Version 0.4.23 links **the original menu and shared controller**, not minigame gameplay.
 
 | Path | Native support | Evidence |
 | --- | --- | --- |
@@ -9,8 +9,9 @@ Version 0.4.22 links **the original menu**, not minigame gameplay.
 | Backgrounds, sprites, Italian captions | Connected | Private-ROM main/sub scanouts inspected; no recreated art. Original OAM size tables, reset, upload and bounds also tested without ROM. |
 | Four tabs, arrow delays, two pages, exit | Connected | Original touch conversion, hit tests, timers and scrolling exercised on the actual EU data. |
 | Locked games, NEW badges and records | Connected | Original helpers and live save block; exact record-slot permutation, default repair, EEPROM checksums, mirror recovery and reopen tests. |
-| First complete minigame/round | **Missing** | Overlay-4 base/controller and overlay-6 game lifecycle/actor callbacks are not executable yet. |
-| Gameplay capture wipe | **Missing** | dWipe capture/scanline callbacks are explicitly rejected; unsupported game taps are gated before any wipe or scene mutation. |
+| Shared controller and original records | Connected as common dependencies | 52 original state/helper bodies, all 20 enter states and 49 original EU member pointers; 23 original score/language/record helpers. UI/audio dependencies are observed by test spies in controller tests, not implemented by success stubs in production. |
+| Gameplay scanline wipe | Connected | Original dWipe ramp/circle table builders and HBlank/VBlank handlers feed WIN0/WIN1 masks on both native PPUs. Lifecycle, pending type changes, masks, effects and teardown are tested. |
+| First complete minigame/round | **Missing** | The full dScMgBase resource lifecycle, shared banners/options, and overlay-6 scene/component actor callbacks remain unlinked. |
 | Android phone play test | **Not performed** | Host execution and CI compilation do not establish on-device behavior. |
 
 ## Implementation
@@ -35,6 +36,26 @@ rows use bits 8..15 for the saved-record slot; bits 16..23 hold another value.
 The menu order is a permutation of record slots. Both parser and initialization
 are corrected and verified against the cartridge.
 
+`lift_minigame_state.py` preserves the 0x28-byte controller, including its
+two-word member pointers; checked dispatch resolves native code and scene
+virtual slots 18/19/20 without interpreting a native vptr as cartridge data.
+The native room maps overlay 4 and checks all 49 PMF records before use.
+State IDs outside 0..19 are rejected before indexing the original enter table.
+
+`lift_minigame_records.py` compiles the original score caps, high/low score
+comparison, session best, rank insertion, record pair and slot selection bodies.
+The original distinction between the score used to choose a rank and the last
+submitted score written to that rank is retained. Tests submit scores through
+these actual bodies and persist/reopen the original EEPROM; they do not claim
+that a gameplay round earned those scores.
+
+`dWipe_c` is native-owned and uses the recovered typed methods. Only IRQ,
+cache, MMIO and palette boundaries are adapted. The host executes the original
+scanline handlers into a per-frame window snapshot shared by BG and OBJ.
+WIN0/WIN1 priority, wrapped bounds, layer masks and effect enables are supported;
+OBJ-window sprites and mosaic still are not. Original src/ and include/ files
+are unchanged.
+
 ## Verification
 
 ```sh
@@ -50,10 +71,17 @@ It does **not** play a round or test real Android touch/audio hardware.
 Set `SM64DS_MENU_CAPTURE=/tmp/menu` to inspect the two private BMP scanouts.
 Never commit cartridge bytes, extracted resources, scanouts or save images.
 
+Controller tests also run against actual overlay-4 PMFs and overlay-6 text
+tables. Overlay 6 replaces overlay 5 at 0x020bfec0; mapping the menu data in
+place of the game data cannot satisfy the controller's original text pointers.
+No production game capability is enabled until its entire lifecycle is linked.
+
 ## Next executable dependency chain
 
-1. Port dWipe's real capture/scanline lifecycle; preserve the menu's fade gates.
-2. Map overlay 4 and its dScMgBase_c, dMgState_c and original callback tables.
+1. Finish dScMgBase_c resource/scene lifecycle and shared graphics/banner/options
+   dependencies; dMgState_c, records and scanline wipe are now executable.
+2. Replace overlay 5 with overlay 6 during an actual native game transition,
+   preserving the selected menu row, parameters, live records and return tab/page.
 3. Link one complete overlay-6 scene, its real component constructors, resources,
    gameplay, HUD/banners and cleanup. Add it to the native scene capability list
    only after it can initialize and execute.

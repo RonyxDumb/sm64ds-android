@@ -33,12 +33,18 @@ struct Framebuffer {
 // tick even when the Android host defers ordinary presentation.
 bool ppu_frame_required(bool presenting);
 
+// Snapshot the original HBlank-updated WIN0H/WIN1H words for one native
+// frame. BG and OBJ consume the same immutable 192-line window mask.
+void ppu_clear_window_lines();
+void ppu_set_window_lines(Engine,const uint32_t *horizontal);
+
 // Rasterise one engine's text/affine/bitmap BG layers and blend effects.
 void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry=nullptr);
 
 // Rasterise one engine's OBJ layer (sprites) from its OAM + OBJ VRAM over
 // whatever fb already holds. Plain and affine sprites, 16- and 256-color
-// tiles, bitmap OBJ and blending. Mosaic and windows remain unsupported.
+// tiles, bitmap OBJ and blending. WIN0/WIN1 masks also gate BG/OBJ and
+// effects. Mosaic and OBJ-window sprites remain unsupported.
 // Transparent color-0 texels leave fb untouched.
 void ppu_scanout_obj(Engine eng, Framebuffer &fb);
 void ppu_capture(const Framebuffer &composited,const Framebuffer &geometry);

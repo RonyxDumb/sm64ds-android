@@ -2,6 +2,8 @@
 #include "game_program.h"
 #include "boot_seams.h"
 #include "minigame_progress.h"
+#include "minigame_shared.h"
+#include "wipe_runtime.h"
 #include "resources.h"
 #include "packed_ptr.h"
 #include "pc_audio/archive.h"
@@ -45,15 +47,18 @@ MinigameRuntime::Scope::Scope(MinigameRuntime &next):address_(next.space_),previ
 MinigameRuntime::Scope::~Scope() { owner=previous_; }
 MinigameRuntime::MinigameRuntime(Cartridge &cartridge,GameProgram &program,unsigned group,unsigned page)
     :space_(Resources::active().heap()),cartridge_(cartridge),program_(program),
-     arm9_(cartridge.arm9_data(0x020aa420u)),menu_(cartridge.overlay_data(5)) {
+     arm9_(cartridge.arm9_data(0x020aa420u)),common_(cartridge.overlay_data(4)),
+     menu_(cartridge.overlay_data(5)) {
     if (group>4 || page>1) throw std::out_of_range("Invalid original menu state.");
-    if (menu_.base!=0x020bfec0u || program.minigames().menu_table_address()!=0x020c24d8u)
+    if (common_.base!=0x020ad660u || menu_.base!=0x020bfec0u ||
+        program.minigames().menu_table_address()!=0x020c24d8u)
         throw std::runtime_error("Unsupported original minigame overlay layout.");
     // Keep pointer-free save and input records LIVE. Split the ARM9 image at
     // these spans so the projected source and original ARM9 leaf helpers use
     // exactly the same bytes, including all interior aliases.
     struct Live { uint32_t address; void *bytes; size_t size; };
     const Live live[]={{0x0209caa0u,data_0209caa0,0x32c},
+                       {0x0209f5f8u,&data_0209f5f8,1},
                        {0x020a0de8u,gTouchHeld,16},
                        {0x020a0e40u,&gActivePlayerSlot,1},
                        {0x020a0e58u,data_020a0e58,16}};
@@ -66,7 +71,10 @@ MinigameRuntime::MinigameRuntime(Cartridge &cartridge,GameProgram &program,unsig
     space_.map(begin,arm9_.bytes.data()+begin-arm9_.base,
                arm9_.bytes.size()-(begin-arm9_.base));
     for(auto &part:arm9_.relocated) space_.map(part.base,part.bytes.data(),part.bytes.size());
+    space_.map(common_.base,common_.bytes.data(),common_.bytes.size());
     space_.map(menu_.base,menu_.bytes.data(),menu_.bytes.size());
+    bind_minigame_shared_runtime(space_);
+    validate_minigame_shared_runtime(space_);
     for (const auto &span:{std::make_pair(ntr::IO_BASE,ntr::IO_SIZE),
                            std::make_pair(ntr::VRAM_BASE,ntr::VRAM_SIZE),
                            std::make_pair(ntr::PLTT_BASE,ntr::PLTT_SIZE),
@@ -165,7 +173,7 @@ void pk_mg_LoadTextNarcs() {
     current().preload(lang>=2?lang+7:8);
 }
 void pk_mg_ResetFiles() { current().reset_files(); }
-int pk_mg_Language() { return current().language(); }
+int pk_mg_Language() { return GetOwnerLanguage(); }
 void pk_mg_Cache(uint32_t address,uint32_t bytes) {
     if (bytes) (void)Space::current().data(address,bytes);
     std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -211,12 +219,15 @@ void pk_mg_StopMusic(unsigned frames) {
 }
 int pk_mg_FaderReady() { return data_0209f5bc->IsAtStart(); }
 void pk_mg_StopColorFader() { dScene_c::SetAndStopColorFader(); }
-void pk_mg_SetFaders(Ptr<void>) {
-    // Gameplay's capture wipe is deliberately not replaced by a success stub.
-    throw std::runtime_error("Original minigame capture-wipe callbacks are not linked.");
+void pk_mg_SetFaders(Ptr<void> object) {
+    if (object.address()!=0x0209f61c)
+        throw std::runtime_error("Invalid original minigame wipe object.");
+    dScene_c::SetFaders(&data_0209f61c);
 }
-void pk_mg_WipeType(Ptr<void>,int) {
-    throw std::runtime_error("Original minigame capture wipe is not linked.");
+void pk_mg_WipeType(Ptr<void> object,int type) {
+    if (object.address()!=0x0209f61c || type<0 || type>2)
+        throw std::runtime_error("Invalid original minigame wipe request.");
+    data_0209f61c.func_0202ec9c(type);
 }
 void pk_mg_StartScene(int scene,int parameter,int color) {
     if (!sm64ds::GameProgram::supports_scene(static_cast<uint32_t>(scene)))

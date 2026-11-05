@@ -267,7 +267,14 @@ void func_02056674(const void *,u32,u32);
 
 
 def main():
-    data={'version':1,'namespace':'minigame_sources','entries':[menu(),oam()]}
+    from lift_minigame_state import generate
+    from lift_minigame_records import generate as records
+    state,bindings,_=generate(digest)
+    record_sources,record_bindings=records(digest)
+    for binding in record_bindings: binding['overlay']=4
+    data={'version':1,'namespace':'minigame_sources','entries':[menu(),oam(),state,record_sources],
+          'bindings':bindings+record_bindings,
+          'dependencies':{p:digest(p) for p in ('config/arm9/symbols.txt','config/arm9/itcm/symbols.txt')}}
     (ROOT/'android/tools/minigame_manifest.json').write_text(json.dumps(data,indent=2)+'\n')
 
 

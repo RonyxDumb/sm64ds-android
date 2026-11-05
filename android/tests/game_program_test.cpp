@@ -36,6 +36,10 @@ void bind_sources(packed::Space &);
 void bind_overlay_sources(packed::Space &,unsigned);
 }
 void minigame_oam_runtime();
+void minigame_state_runtime();
+void minigame_record_runtime();
+void wipe_runtime_tests();
+void minigame_state_cartridge(sm64ds::Cartridge &);
 namespace {
 void put16(std::vector<uint8_t> &v, size_t at, uint16_t x) {
     v[at] = x;
@@ -839,6 +843,9 @@ void minigame_art_decode() {
 
 int main(int argc, char **argv) {
     minigame_oam_runtime();
+    minigame_state_runtime();
+    minigame_record_runtime();
+    wipe_runtime_tests();
     narc_bounds();
     minigame_catalog_runtime();
     minigame_art_decode();
@@ -859,6 +866,7 @@ int main(int argc, char **argv) {
         sm64ds::Resources resources(argv[1]);
         if (repeat==0) startup_data(argv[1]);
         sm64ds::Cartridge cartridge(argv[1]);
+        if (repeat==0) minigame_state_cartridge(cartridge);
         assert(cartridge.file(0x980e).size() >= 0x4000);
         std::string save = "/tmp/sm64ds-native-boot-" + std::to_string(getpid()) + ".sav";
         sm64ds::SaveStore store(save);

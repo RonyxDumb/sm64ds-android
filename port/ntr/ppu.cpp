@@ -41,6 +41,38 @@ inline uint8_t rd8(uint32_t a) { return *static_cast<volatile uint8_t *>(host_pt
 inline uint16_t rd16(uint32_t a) { return *static_cast<volatile uint16_t *>(host_ptr(a)); }
 inline uint32_t rd32(uint32_t a) { return *static_cast<volatile uint32_t *>(host_ptr(a)); }
 
+std::array<uint32_t,SCREEN_H> windowLines[2]{};
+bool hasWindowLines[2]{};
+struct Windows {
+    unsigned enabled,inside,outside;
+    uint16_t horizontal[2],vertical[2];
+    const uint32_t *lines;
+    Windows(Engine engine,uint32_t display) {
+        const auto base=kEngines[engine].reg_base;
+        enabled=(display>>13)&3; // WIN0/WIN1; OBJ-window sprites are not decoded yet
+        inside=rd16(base+0x48); outside=rd16(base+0x4a)&63;
+        for (unsigned i=0;i<2;++i) {
+            horizontal[i]=rd16(base+0x40+i*2);
+            vertical[i]=rd16(base+0x44+i*2);
+        }
+        lines=hasWindowLines[engine]?windowLines[engine].data():nullptr;
+    }
+    static bool contains(unsigned coordinate,uint16_t range) {
+        const unsigned start=range>>8,end=range&255;
+        return start<=end?(coordinate>=start && coordinate<end):
+                          (coordinate>=start || coordinate<end);
+    }
+    unsigned mask(unsigned x,unsigned y) const {
+        if (!enabled) return 63;
+        for (unsigned i=0;i<2;++i) {
+            const auto h=lines?uint16_t(lines[y]>>(i*16)):horizontal[i];
+            if ((enabled&(1u<<i)) && contains(y,vertical[i]) && contains(x,h))
+                return (inside>>(i*8))&63;
+        }
+        return outside;
+    }
+};
+
 // DS palettes are BGR555.
 inline uint32_t bgr555(uint16_t c) {
     const uint32_t r = (c >> 0) & 0x1F, g = (c >> 5) & 0x1F, b = (c >> 10) & 0x1F;
@@ -182,6 +214,14 @@ bool sample_bg(const BgConfig &c, const uint32_t *palette, int x, int y, uint32_
 
 }  // namespace
 
+void ppu_clear_window_lines() { hasWindowLines[0]=hasWindowLines[1]=false; }
+void ppu_set_window_lines(Engine engine,const uint32_t *horizontal) {
+    if ((engine!=ENGINE_A && engine!=ENGINE_B) || !horizontal)
+        throw std::runtime_error("Invalid native PPU scanline window table.");
+    std::copy(horizontal,horizontal+SCREEN_H,windowLines[engine].begin());
+    hasWindowLines[engine]=true;
+}
+
 bool ppu_frame_required(bool presenting) {
     return presenting || (io_read(0x04000064u, 4) & 0x80000000u) != 0;
 }
@@ -225,6 +265,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
     for (unsigned i = 0; i < bgPalette.size(); ++i)
         bgPalette[i] = bgr555(rd16(em.pltt_base + i * 2u));
     const uint32_t backdrop = bgPalette[0];
+    const Windows windows(eng,dispcnt);
     const uint16_t blend = rd16(em.reg_base + 0x50), master = rd16(em.reg_base + 0x6c);
     const unsigned blend_mode = (blend >> 6) & 3, master_mode = (master >> 14) & 3;
     const uint16_t blendAlpha = rd16(em.reg_base + 0x52);
@@ -263,6 +304,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
 
     for (int y = 0; y < SCREEN_H; ++y) {
         for (int x = 0; x < SCREEN_W; ++x) {
+            const unsigned window=windows.mask(x,y);
             uint32_t c = backdrop;
             uint32_t behind = backdrop;
             unsigned layer = 5, behindLayer = 5, topPriority = 4;
@@ -271,6 +313,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             // so walk priorities 3..0 and let later writes overwrite.
             for (unsigned item = 0; item < orderCount; ++item) {
                 const int bg = order[item];
+                if (!(window&(1u<<bg))) continue;
                 uint32_t s;
                 if (bg == 0 && bg0_3d) {
                     if (!geometry) continue;
@@ -300,7 +343,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
             // the NEXT visible second-target layer. Layers hidden between
             // them cannot be skipped. Do not apply this a second time to BG0
             // 3D pixels, whose alpha was already composited above.
-            if (blend_mode == 1 && !topIs3D &&
+            if ((window&32) && blend_mode == 1 && !topIs3D &&
                 (blend & (1u << layer)) && (blend & (1u << (8u + behindLayer)))) {
                 uint32_t mixed = 0xff000000u;
                 for (unsigned shift = 0; shift < 24; shift += 8) {
@@ -310,7 +353,7 @@ void ppu_scanout(Engine eng, Framebuffer &fb,const Framebuffer *geometry) {
                                               second * blendEVB + 8u) / 16u) << shift;
                 }
                 c = mixed;
-            } else if ((blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3)) {
+            } else if ((window&32) && (blend & (1u << layer)) && (blend_mode == 2 || blend_mode == 3)) {
                 c = brightness(c, blend_mode == 2 ? 1 : 2, blend_level);
             }
             if (master_mode == 1 || master_mode == 2) c = brightness(c, master_mode, master_level);
@@ -338,6 +381,7 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
     // DISPCNT bit 4: OBJ 1D mapping; bits 20-21: tile-index boundary shift.
     const uint32_t dispcnt = rd32(kEngines[eng].reg_base);
     if (!(dispcnt&(1u<<12)) || (dispcnt&0x80) || ((dispcnt>>16)&3)!=1) return;
+    const Windows windows(eng,dispcnt);
     const uint32_t boundary = 32u << ((dispcnt >> 20) & 3);
     const uint16_t blendControl = rd16(kEngines[eng].reg_base + 0x50);
     const uint16_t blendAlpha = rd16(kEngines[eng].reg_base + 0x52);
@@ -360,9 +404,19 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
     const uint16_t master = rd16(kEngines[eng].reg_base + 0x6c);
     const unsigned masterMode = (master >> 14) & 3;
     const unsigned masterLevel = std::min(16u, unsigned(master & 31u));
-    std::array<uint32_t, 256> colors{};
-    for (unsigned i = 0; i < colors.size(); ++i) {
-        uint32_t color = bgr555(rd16(obj_pltt + i * 2));
+    const unsigned objectBlendMode=(blendControl>>6)&3;
+    const unsigned objectBlendLevel=std::min(16u,unsigned(rd16(kEngines[eng].reg_base+0x54)&31));
+    const auto finishColor=[&](uint32_t color,bool effects) {
+        if (effects && (blendControl&16) && (objectBlendMode==2 || objectBlendMode==3)) {
+            uint32_t transformed=0xff000000u;
+            for (unsigned shift=0;shift<24;shift+=8) {
+                unsigned component=(color>>shift)&255u;
+                if (objectBlendMode==2) component+=(255u-component)*objectBlendLevel/16u;
+                else component-=component*objectBlendLevel/16u;
+                transformed|=component<<shift;
+            }
+            color=transformed;
+        }
         if (masterMode == 1 || masterMode == 2) {
             uint32_t transformed = 0xff000000u;
             for (unsigned shift = 0; shift < 24; shift += 8) {
@@ -375,7 +429,13 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
             }
             color = transformed;
         }
-        colors[i] = color;
+        return color;
+    };
+    std::array<uint32_t, 256> colors{},effectColors{};
+    for (unsigned i = 0; i < colors.size(); ++i) {
+        const auto color=bgr555(rd16(obj_pltt+i*2));
+        colors[i]=finishColor(color,false);
+        effectColors[i]=finishColor(color,true);
     }
 
     for (int i = 127; i >= 0; --i) {           // low index on top: draw high first
@@ -420,6 +480,8 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                 const int px = x + sx;
                 if (px < 0 || px >= SCREEN_W ||
                     objPriority > fb.priority[py][px]) continue;
+                const unsigned window=windows.mask(px,py);
+                if (!(window&16)) continue;
                 // texel coordinate: affine maps through the matrix around the
                 // box center; plain is direct with optional flips.
                 int tx, ty;
@@ -450,26 +512,12 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     if (offset + 2u > capacity) continue;
                     const uint16_t pixel = rd16(obj_vram + offset);
                     if (!(pixel & 0x8000u)) continue;
-                    uint32_t color = bgr555(pixel);
-                    // Master brightness was applied to the underlying BG
-                    // already. Apply it to the OBJ before blending so a
-                    // semi-transparent pixel does not fade the BG twice.
-                    if (masterMode == 1 || masterMode == 2) {
-                        uint32_t transformed = 0xff000000u;
-                        for (unsigned shift = 0; shift < 24; shift += 8) {
-                            unsigned component = (color >> shift) & 255u;
-                            if (masterMode == 1)
-                                component += ((255u - component) * masterLevel) / 16u;
-                            else
-                                component -= component * masterLevel / 16u;
-                            transformed |= component << shift;
-                        }
-                        color = transformed;
-                    }
                     const unsigned alpha = pal + 1u;
                     const unsigned underneath = fb.layer[py][px];
-                    if (alpha < 16 && underneath <= 5 &&
-                        (blendControl & (1u << (8u + underneath))))
+                    const bool alphaBlend=(window&32) && alpha<16 && underneath<=5 &&
+                        (blendControl&(1u<<(8u+underneath)));
+                    uint32_t color=finishColor(bgr555(pixel),(window&32) && !alphaBlend);
+                    if (alphaBlend)
                         color = blendColors(color, fb.px[py][px], alpha, 16u - alpha);
                     fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;
@@ -490,9 +538,10 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     index = rd8(addr);
                     if (!index) continue;
                     const unsigned below = fb.layer[py][px];
-                    uint32_t color = colors[index];
-                    if (objMode == 1 && below <= 5 &&
-                        (blendControl & (1u << (8u + below))))
+                    const bool alphaBlend=(window&32) && objMode==1 && below<=5 &&
+                        (blendControl&(1u<<(8u+below)));
+                    uint32_t color=((window&32) && !alphaBlend)?effectColors[index]:colors[index];
+                    if (alphaBlend)
                         color = blendColors(color, fb.px[py][px], eva, evb);
                     fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;
@@ -504,9 +553,10 @@ void ppu_scanout_obj(Engine eng, Framebuffer &fb) {
                     index = (fx & 1) ? (b >> 4) : (b & 0xF);
                     if (!index) continue;
                     const unsigned below = fb.layer[py][px];
-                    uint32_t color = colors[pal * 16u + index];
-                    if (objMode == 1 && below <= 5 &&
-                        (blendControl & (1u << (8u + below))))
+                    const bool alphaBlend=(window&32) && objMode==1 && below<=5 &&
+                        (blendControl&(1u<<(8u+below)));
+                    uint32_t color=((window&32) && !alphaBlend)?effectColors[pal*16u+index]:colors[pal*16u+index];
+                    if (alphaBlend)
                         color = blendColors(color, fb.px[py][px], eva, evb);
                     fb.px[py][px] = color;
                     fb.priority[py][px] = objPriority;

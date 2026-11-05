@@ -31,7 +31,7 @@ private:
     packed::Space space_;
     Cartridge &cartridge_;
     GameProgram &program_;
-    Cartridge::DataImage arm9_, menu_;
+    Cartridge::DataImage arm9_, common_, menu_;
     uint32_t actor_=0;
     std::map<uint32_t, size_t> files_;
     bool cleaned_=false;

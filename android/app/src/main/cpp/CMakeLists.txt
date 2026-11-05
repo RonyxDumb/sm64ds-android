@@ -83,13 +83,14 @@ target_compile_options(sm64ds_frontend PRIVATE -fwrapv -fsigned-char -fno-strict
 target_compile_options(sm64ds_frontend PRIVATE -Wno-comment -Wno-implicit-fallthrough
     -Wno-misleading-indentation -Wno-unused-but-set-variable -Wno-unused-value)
 set_property(TARGET sm64ds_frontend PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp
+target_sources(sm64ds_android PRIVATE runtime/frontend_core.cpp runtime/frontend_primitives.cpp runtime/minigame_shared.cpp runtime/wipe_runtime.cpp
     runtime/packed_memory.cpp runtime/packed_fs.cpp runtime/packed_audio.cpp runtime/actor_dispatch.cpp runtime/collision_dispatch.cpp)
 target_link_libraries(sm64ds_android PRIVATE sm64ds_frontend dl)
 set(NATIVE_ROOT "${CMAKE_CURRENT_BINARY_DIR}/native-src")
 set(SAVE_SOURCES "${NATIVE_ROOT}/src/engine/save/SaveData.cpp"
     "${NATIVE_ROOT}/src/engine/save/SaveData2.cpp" "${NATIVE_ROOT}/src/SharedFilePtr.cpp")
 set(GAME_SOURCES "${NATIVE_ROOT}/runtime/boot.cpp" "${NATIVE_ROOT}/runtime/faders.cpp"
+    "${NATIVE_ROOT}/runtime/wipe.cpp"
     "${NATIVE_ROOT}/runtime/transitions.cpp" "${NATIVE_ROOT}/runtime/font.cpp"
     "${NATIVE_ROOT}/runtime/bg.cpp" "${NATIVE_ROOT}/runtime/message_parser.cpp" "${NATIVE_ROOT}/runtime/approach.cpp"
     "${NATIVE_ROOT}/runtime/stage_flow.cpp" "${NATIVE_ROOT}/runtime/title_selection.cpp"
@@ -104,6 +105,7 @@ add_custom_command(OUTPUT ${SAVE_SOURCES} ${GAME_SOURCES} "${NATIVE_ROOT}/runtim
         "${REPO_ROOT}/src/SharedFilePtr.cpp" "${REPO_ROOT}/include/dScBoot_c.h"
         "${REPO_ROOT}/src/game/stages/d_s_boot_methods.cpp" "${REPO_ROOT}/src/game/stages/d_scene.cpp"
         "${REPO_ROOT}/src/runtime/graphics/fader/d_fader.cpp" "${REPO_ROOT}/src/LoadFont.cpp"
+        "${REPO_ROOT}/src/runtime/graphics/fader/d_wipe.cpp" "${REPO_ROOT}/include/dWipe_c.h"
         "${REPO_ROOT}/src/engine/gx/G2.cpp" "${REPO_ROOT}/src/ApproachAngle.cpp"
         "${REPO_ROOT}/src/ui/messages/func_0201cb2c.c"
         "${REPO_ROOT}/src/game/stages/d_s_stage_methods.cpp" "${REPO_ROOT}/src/game/stages/d_s_dsmt.cpp"

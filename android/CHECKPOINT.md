@@ -1,3 +1,61 @@
+# Current checkpoint — 2026-11-05, original shared minigame controller and scanline wipe
+
+Version **0.4.23-minigame-controller**, versionCode 27, branch **main**.
+**The original room works; no complete gameplay minigame is playable yet.**
+
+New original executable dependencies:
+- All 52 dMgState_c methods/helpers, all 20 states and the original 49
+  two-word member-pointer records. The controller retains its 0x28-byte
+  cartridge layout. Native scene callbacks use checked slots 18/19/20.
+  Invalid state indices and unsupported PMF tables fail before dispatch.
+- Overlay 4 is mapped beside the original overlay-5 room, with actual PMF
+  validation. The private controller test additionally maps overlay 6:
+  the original text pointers at 0x020bca44 reference that overlay, which
+  replaces overlay 5 at the same 0x020bfec0 load address during gameplay.
+- 23 original common score/language helpers: score caps, high/low score
+  comparisons, session best, five-rank insertion, record pairs and the
+  original byte-1 save slot. The rank comparison and last submitted score
+  remain distinct exactly as in the source. Actual EEPROM persistence is
+  exercised; no gameplay-earned score is claimed.
+- Native-owned dWipe_c uses the original typed methods, circle/ramp
+  builders and HBlank/VBlank handlers. Adapted IRQ/MMIO/cache/palette
+  boundaries feed per-line WIN0/WIN1 snapshots shared by both native
+  BG and OBJ passes. Original timing and pending type changes remain.
+- The PPU now supports WIN0/WIN1 priority, wrapped horizontal/vertical
+  bounds, layer masks and color-effect gating; OBJ color fade endpoints
+  are handled too. OBJ-window sprites and mosaic remain unsupported.
+- Native color/brightness fader writes now go through logical MMIO,
+  avoiding raw writes to unmapped DS register addresses on Android.
+
+Verified locally with AddressSanitizer/UndefinedBehaviorSanitizer:
+- All 20 controller states, timers, scene-readiness/fade gates, render
+  PMFs, result-touch flow and malformed table rejection. Controller UI,
+  audio and score interfaces use explicit test spies in this test only;
+  production unresolved graphics/audio callbacks still fail at their call.
+- The same controller test against actual private EU overlay-4/6 data.
+- Original scoring cap/ranking/slot extraction/session semantics and
+  actual original EEPROM save/reopen, including lower-is-better mode.
+- Both original wipe builders, original scanline handlers, both engines,
+  window priority/wrap/layer/effect masks, pending type and IRQ teardown.
+- Existing original menu/title touchscreen round trip, unsupported-game
+  tap rejection and four-session castle/180-frame Player regression.
+- Existing PPU display/bank/capture tests, relocated video register and
+  original math tests; source generator/hash tests and diff checks.
+
+The previous bf72d8e menu checkpoint's public CI completed successfully.
+This checkpoint's Android ARM64 APK/lint CI must be checked after publication;
+no device is attached, and host tests do not establish phone playability.
+Local LeakSanitizer remains disabled because the executor cannot inspect
+thread proc entries; address/undefined checks stay enabled.
+
+Remaining: full dScMgBase_c scene/resource lifecycle, banners/options/fonts,
+overlay-6 scene/component constructors and game loops, first genuine complete
+round/retry/return/earned record, then the remaining games and variants.
+Gameplay taps remain gated before menu/wipe mutations until those bindings
+exist. No original src/ or include/ file, ROM, resource or save is published.
+
+---
+
 # Source-data correction — 2026-11-05, original initial character
 
 A further private-ROM check confirms gMgGroupBase at ARM9 0x0208a170 starts
