@@ -88,6 +88,7 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
     -fdata-sections -Wl,--gc-sections -fsanitize=address,undefined -g \
     -DSM64DS_PLATFORM_PC -Iinclude -Iandroid/app/src/main/cpp android/tests/save_test.cpp \
     android/app/src/main/cpp/runtime/save_store.cpp \
+    android/app/src/main/cpp/runtime/minigame_progress.cpp \
     "$TEST_BUILD/native-src/src/engine/save/SaveData.cpp" \
     "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" -o "$TEST_BUILD/save_test"
 ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1}" "$TEST_BUILD/save_test"

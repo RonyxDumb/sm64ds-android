@@ -1,4 +1,5 @@
 #include "runtime/save_store.h"
+#include "runtime/minigame_progress.h"
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -40,6 +41,31 @@ int main() {
         assert(store.load_minigames(mini) && mini[0] == '5');
         mini[12] = 0x4a;
         assert(store.save_minigames(mini));
+        using sm64ds::MinigameProgress;
+        // Execute unlock/new/record writes against the actual live original
+        // minigame save block; persist with SaveData's real EEPROM protocol.
+        assert(MinigameProgress::unlocked(0));
+        assert(!MinigameProgress::unlocked(35));
+        MinigameProgress::unlock(35);
+        assert(MinigameProgress::unlocked(35));
+        assert(MinigameProgress::is_new(0));
+        assert(MinigameProgress::is_new(35));
+        MinigameProgress::clear_new(0);
+        MinigameProgress::clear_new(35);
+        assert(!MinigameProgress::is_new(0));
+        assert(!MinigameProgress::is_new(35));
+        MinigameProgress::set_record(35, 4, 4321);
+        assert(MinigameProgress::record(35, 4) == 4321);
+        assert(MinigameProgress::record(0, 0) == 0);
+        bool invalid = false;
+        try { (void)MinigameProgress::record(36, 0); }
+        catch (const std::out_of_range &) { invalid = true; }
+        assert(invalid);
+        invalid = false;
+        try { MinigameProgress::unlock(36); }
+        catch (const std::out_of_range &) { invalid = true; }
+        assert(invalid);
+        assert(MinigameProgress::persist());
         assert(!store.read(UINT32_MAX, file.data(), 2));
         assert(!store.write(0, file.data(), 2)); // card has not been claimed
     }
@@ -56,6 +82,10 @@ int main() {
         SaveStore store(path);
         assert(store.load_file(0, file) && file[0x13] == 0xa5);
         assert(store.load_minigames(mini) && mini[12] == 0x4a);
+        using sm64ds::MinigameProgress;
+        assert(MinigameProgress::unlocked(35) && !MinigameProgress::is_new(35));
+        assert(!MinigameProgress::is_new(0));
+        assert(MinigameProgress::record(35, 4) == 4321);
         const int lock = store.take_lock();
         store.claim(lock);
         assert(!store.read(UINT32_MAX, file.data(), 2));
