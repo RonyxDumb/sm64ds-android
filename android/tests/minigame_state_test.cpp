@@ -188,7 +188,8 @@ void minigame_state_cartridge(sm64ds::Cartridge &cartridge) {
     assert(game.space().contains(image.base,image.bytes.size()));
     assert(std::memcmp(game.space().data(image.base,image.bytes.size()),
                        image.bytes.data(),image.bytes.size())==0);
-    const uint32_t firstProfile=*sm64ds::packed::Ptr<uint32_t>(0x02090864u+0x169u*4u).get();
+    uint32_t firstProfile=0;
+    std::memcpy(&firstProfile,game.space().data(0x02090864u+0x169u*4u,4),4);
     assert(firstProfile!=0); // the cartridge scene table, not a native allow-list
     std::cout << "Original minigame game overlay: image 6 and scene profile available.\n";
 }
