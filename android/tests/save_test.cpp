@@ -1,6 +1,7 @@
 #include "runtime/save_store.h"
 #include "runtime/minigame_progress.h"
 #include "runtime/minigame_controls.h"
+#include "runtime/minigame_catalog.h"
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -85,6 +86,29 @@ int main() {
         assert(MinigameMenuControls::tap(0xe0, 0xa0, 0, 0).kind == MinigameTapKind::Exit);
         assert(MinigameMenuControls::tap(0x45, 0x20, 0, 0, false).kind == MinigameTapKind::None);
         assert(!MinigameProgress::unlocked(35));
+        // Original menu InitResources: one-time defaults, cap repair and the
+        // ownRecords==1 exception. This runs against the recovered 8KiB save.
+        std::array<sm64ds::MinigameEntry, MinigameProgress::GameRows> rows{};
+        for (size_t i = 0; i < rows.size(); ++i) {
+            rows[i].sceneId = static_cast<uint16_t>(0x169 + i % 30);
+            rows[i].scoreCap = 5000;
+            rows[i].ownRecords = i == 35 ? 1 : 0;
+            for (size_t j = 0; j < 5; ++j)
+                rows[i].recordDefaults[j] = static_cast<int32_t>(i * 100 + j);
+        }
+        assert(MinigameProgress::initialize_records(rows.data(), rows.size()));
+        assert(MinigameProgress::record(34, 2) == 3402);
+        assert(!MinigameProgress::initialize_records(rows.data(), rows.size()));
+        MinigameProgress::set_record(34, 2, 5001);
+        assert(MinigameProgress::initialize_records(rows.data(), rows.size()));
+        assert(MinigameProgress::record(34, 2) == 3402);
+        MinigameProgress::set_record(35, 4, 6000);
+        assert(!MinigameProgress::initialize_records(rows.data(), rows.size()));
+        assert(MinigameProgress::record(35, 4) == 6000);
+        bool invalidRows = false;
+        try { (void)MinigameProgress::initialize_records(rows.data(), rows.size()-1); }
+        catch (const std::invalid_argument &) { invalidRows = true; }
+        assert(invalidRows);
         MinigameProgress::unlock(35);
         MinigameProgress::unlock(24);
         assert(MinigameProgress::unlocked(35));

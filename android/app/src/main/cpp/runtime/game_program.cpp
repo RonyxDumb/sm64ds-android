@@ -1,4 +1,5 @@
 #include "game_program.h"
+#include "minigame_progress.h"
 #include "boot_seams.h"
 #include "resources.h"
 #include "ntr/lz77.h"
@@ -368,6 +369,13 @@ const MinigameCatalog &GameProgram::minigames() {
     if (!minigames_)
         minigames_ = std::make_unique<MinigameCatalog>(MinigameCatalog::load(cartridge_));
     return *minigames_;
+}
+bool GameProgram::prepare_minigame_menu() {
+    const auto &catalog = minigames();
+    std::array<MinigameEntry, MinigameCatalog::Count> rows{};
+    for (size_t i = 0; i < rows.size(); ++i)
+        rows[i] = catalog.row(i);
+    return MinigameProgress::initialize_records(rows.data(), rows.size());
 }
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;

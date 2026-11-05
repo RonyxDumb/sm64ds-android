@@ -1,4 +1,5 @@
 #include "minigame_progress.h"
+#include "minigame_catalog.h"
 #include "save_store.h"
 #include "SaveData.h"
 #include <cstring>
@@ -77,6 +78,41 @@ void MinigameProgress::set_record(size_t slot, size_t rank, int32_t value) {
     check_record(slot, rank);
     (void)active();
     func_02013568(static_cast<int>(slot), static_cast<int>(rank), value);
+}
+bool MinigameProgress::initialize_records(const MinigameEntry *rows, size_t count) {
+    if (!rows || count != GameRows)
+        throw std::invalid_argument("Original minigame menu requires exactly 36 records.");
+    auto *save = active();
+    // ROM source: dScMiniGm_c::InitResources seeds all five records for each
+    // game exactly once, guarded by bit 31 of the unlocked/initialized word.
+    const bool initial = (read_word(save + 0x48) & 0x80000000u) == 0;
+    bool dirty = initial;
+    if (initial) {
+        for (size_t i = 0; i < GameRows; ++i)
+            for (size_t rank = 0; rank < RecordRanks; ++rank)
+                set_record(i, rank, rows[i].recordDefaults[rank]);
+        write_word(save + 0x48, read_word(save + 0x48) | 0x80000000u);
+    }
+    // Preserve recovered unsigned comparison: negative/sentinel records
+    // greater than a nonzero score cap are reset to the ROM defaults.
+    for (size_t i = 0; i < GameRows; ++i) {
+        const auto &row = rows[i];
+        if (row.scoreCap == 0) continue;
+        const size_t compareCount = row.ownRecords == 1 ? 1 : RecordRanks;
+        bool exceedsCap = false;
+        for (size_t rank = 0; rank < compareCount; ++rank) {
+            if (static_cast<uint32_t>(record(i, rank)) >
+                static_cast<uint32_t>(row.scoreCap)) {
+                exceedsCap = true;
+                break;
+            }
+        }
+        if (!exceedsCap) continue;
+        for (size_t rank = 0; rank < RecordRanks; ++rank)
+            set_record(i, rank, row.recordDefaults[rank]);
+        dirty = true;
+    }
+    return dirty;
 }
 bool MinigameProgress::persist() {
     auto *save = active();

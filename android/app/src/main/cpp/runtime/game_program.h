@@ -35,6 +35,9 @@ public:
     uint16_t requested_scene() const;
     // Original 36-row menu data and overlay 5/6 preflight; not a game scene actor.
     const MinigameCatalog &minigames();
+    // Original menu record initialization; separate from catalog preflight.
+    // Never called by the File Select unless scene 5 actually starts.
+    bool prepare_minigame_menu();
     int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;
