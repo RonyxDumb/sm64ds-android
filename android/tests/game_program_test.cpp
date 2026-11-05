@@ -148,6 +148,32 @@ void player_state_runtime() {
     std::cout << "Original Player state transition: cleanup veto, native PMFs, reset, control lock and carried-object redirect passed.\n";
 }
 
+void item_block_state_runtime() {
+    using sm64ds::packed::Ptr;
+    sm64ds::GameHeap heap(1024*1024);
+    sm64ds::packed::Space space(heap);
+    space.map_owned(0x0214e890u,48);
+    sm64ds::stage_sources::bind_overlay_sources(space,102);
+    sm64ds::bind_stage_overlay_runtime(space,102);
+    sm64ds::packed::Space::Scope scope(space);
+    const uint32_t block=space.allocate(0x3f8);
+    const sm64ds::packed::MemberCall idle{0x02149d80u,0};
+    std::memcpy(space.data(0x0214e890u,8),&idle,8);
+    *Ptr<int32_t>(block+0x3dc)=0x4242;
+    *Ptr<int32_t>(block+0x80)=*Ptr<int32_t>(block+0x84)=*Ptr<int32_t>(block+0x88)=7;
+    Ptr<void(uint32_t,int)> enter(0x02149da8u);
+    enter(block,0);
+    assert(*Ptr<int32_t>(block+0x3e8)==0 && *Ptr<int32_t>(block+0x3dc)==0);
+    for(unsigned offset : {0x80u,0x84u,0x88u}) assert(*Ptr<int32_t>(block+offset)==0x1000);
+    assert(*Ptr<int32_t>(block+0x9c)==-0x8000);
+    const sm64ds::packed::MemberCall missing{0x60005000u,0};
+    std::memcpy(space.data(0x0214e890u,8),&missing,8);
+    bool rejected=false;
+    try { enter(block,0); } catch(const std::runtime_error &) { rejected=true; }
+    assert(rejected);
+    std::cout << "Original item-block state: enter PMF, idle scale/gravity reset and unknown-callback rejection passed.\n";
+}
+
 void texture_animation_runtime() {
     using sm64ds::packed::Ptr;
     sm64ds::GameHeap heap(1024*1024);
@@ -736,6 +762,7 @@ int main(int argc, char **argv) {
     audio_groups();
     controller_glyph_words();
     player_state_runtime();
+    item_block_state_runtime();
     texture_animation_runtime();
     moving_mesh_runtime();
     ground_runtime();
@@ -951,7 +978,7 @@ int main(int argc, char **argv) {
                 game.tick();
             } catch (const std::runtime_error &e) {
                 reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0214a8ecu);
+                    "Unlinked native code handle: " + std::to_string(0x0212cc2cu);
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
@@ -970,12 +997,39 @@ int main(int argc, char **argv) {
             // and real model/animation ownership.
             std::unordered_set<uint32_t> actorNodes;
             std::unordered_set<uint16_t> initializedTypes;
-            unsigned loadedNets=0,loadedSigns=0,loadedWater=0,loadedMist=0;
+            unsigned loadedNets=0,loadedSigns=0,loadedWater=0,loadedMist=0,loadedBlocks=0,loadedMushrooms=0;
             for(uint32_t node=stageWord(0x0209b468u);node;node=stageWord(node+4)) {
                 assert(actorNodes.insert(node).second && actorNodes.size()<512);
                 const uint32_t instance=stageWord(node+8);
                 const uint16_t id=*static_cast<uint16_t *>(stageSpace->data(instance+12,2));
                 const uint32_t vtable=stageWord(instance);
+                if(vtable==0x0214e47cu) {
+                    ++loadedBlocks;
+                    assert(stageSpace->allocation_size(instance)==0x3f8);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(stageWord(instance+0xdc) && stageWord(instance+0x328));
+                    assert(stageWord(instance+0x380) && stageWord(instance+0x38c));
+                    assert(stageWord(instance+0x3e8)==0 && stageWord(instance+0x3dc)==0);
+                    assert(int32_t(stageWord(instance+0x9c))==-0x8000);
+                    assert(stageWord(instance+0x124+0x50)==0x199);
+                    assert(stageWord(instance+0x124+0x24)==0x0210d954u);
+                    assert(std::memcmp(stageSpace->data(instance+0x3ac,48),stageSpace->data(instance+0xf0,48),48)==0);
+                    continue;
+                }
+                if(vtable==0x021083c8u) {
+                    ++loadedMushrooms;
+                    assert(stageSpace->allocation_size(instance)==0x398);
+                    assert(*static_cast<uint8_t *>(stageSpace->data(instance+14,1))==1);
+                    assert(stageWord(instance+0x308) && stageWord(instance+0x358));
+                    assert(stageWord(instance+0x140)==instance);
+                    assert(stageWord(instance+0x158)==instance);
+                    assert((stageWord(instance+0x154)&0x80)!=0);
+                    assert(stageWord(instance+0x384)==(stageWord(instance+8)&15));
+                    assert(stageWord(instance+0x390)==((stageWord(instance+8)>>4)&15));
+                    for(unsigned lane=0;lane<3;++lane)
+                        assert(stageWord(instance+0x378+lane*4)==stageWord(instance+0x5c+lane*4));
+                    continue;
+                }
                 if(vtable==0x02113a18u) {
                     ++loadedWater;
                     assert(stageSpace->allocation_size(instance)==0x338);
@@ -1091,6 +1145,7 @@ int main(int argc, char **argv) {
             for(uint16_t id : {353,343,336,207,286}) assert(initializedTypes.count(id));
             assert(loadedNets>0);
             assert(loadedSigns>0);
+            assert(loadedBlocks>0 && loadedMushrooms>0);
             assert(loadedWater>0 && loadedMist==loadedWater*7);
             // All eleven actual modules and all 58 static initializers ran.
             // Code stays the real BLZ result. Constructors build handles and

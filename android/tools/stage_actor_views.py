@@ -345,6 +345,33 @@ extern SharedFilePtr data_ov100_021489cc;
 extern SharedFilePtr *data_ov100_021473a4[],*data_ov100_021473b0[];
 ''')
 
+    add('stage_mushroom_init','src/game/actors/d_a_1up.cpp',2,
+        [method('da1up_c','InitResources'),method('da1up_c','OnPendingDestroy','void')],
+        {'actorID':('u16',12),'mMushroomType':('s32',0x384),
+         'mState':('s32',0x388),'mShown':('u8',0x38e),'mBlinkOn':('u8',0x38f),
+         'mUnlockCount':('s32',0x390),'mParticleID':('u32',0x394),
+         'mSpawnPosX':('s32',0x378),'mSpawnPosY':('s32',0x37c),'mSpawnPosZ':('s32',0x380)},
+        {'BMD_File* f;':'void *f;', '(BMD_File *)':'',
+         'dExtSimpleModel_c::LoadFile(data_ov002_0210d9d8)':
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov002_0210d9d8)',
+         'dExtSimpleModel_c::LoadFile(data_ov002_0210da30)':
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov002_0210da30)',
+         'mModel.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0x300,',
+         'mShadowModel.InitCylinder()':'_ZN17dExtShadowModel_c12InitCylinderEv((char *)object+0x350)',
+         '&mdCcAc_c':'((char *)object+0x110)',
+         '(dActor_c*)this':'object',
+         'mdCcAc_c.vulnFlags':'(*(u32 *)((char *)object+0x12c))',
+         'mdCcAc_c.flags':'(*(u32 *)((char *)object+0x128))',
+         '&mWithMeshClsn':'((char *)object+0x144)',
+         'mWithMeshClsn.SetLimMovFlag()':'_ZN10dBgCh_Actr13SetLimMovFlagEv((char *)object+0x144)',
+         'MarkForDestruction()':'_ZN7fBase_c18MarkForDestructionEv(object)'},MODEL_API+'''
+int IsStarCollectedInCurLevel(u32);
+void _ZN7fBase_c18MarkForDestructionEv(void *);
+void _ZN7dCcAc_c4InitEP8dActor_c5Fix12IiES3_jj(void *,void *,int,int,u32,u32);
+void _ZN10dBgCh_Actr4InitEP8dActor_c5Fix12IiES3_P10Vector3_16S5_(void *,void *,int,int,void *,void *);
+void _ZN10dBgCh_Actr13SetLimMovFlagEv(void *);
+''','enum { ACTOR_ONEUPKINOKO=276,ACTOR_SCALEUP_KINOKO=277,CC_VULN_YOSHI_TONGUE=0x8000,CC_FLAGS_DISABLED=1,ACTOR_FLAG_CLIP_TEST=1 };\n')
+
     for name in ('func_ov100_0214491c','func_ov100_02144c64'):
         row,bindings=free_c('external/sm64ds-pc/src/'+name+'.c')
         for binding in bindings: binding['overlay']=100

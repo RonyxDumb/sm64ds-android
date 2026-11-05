@@ -179,6 +179,12 @@
     "external/sm64ds-pc/config/arm9/overlays/ov094/delinks.txt": "0ff0869d7ebb87c62006b6901b2ae2c6430bb3959792d51e67fd9aba0d68f33a",
     "external/sm64ds-pc/config/arm9/overlays/ov100/delinks.txt": "2d4f4618d50e39f74f40df55b21208762fa5d58088536f3c4f2e3fc614021896",
     "external/sm64ds-pc/config/arm9/overlays/ov098/delinks.txt": "ac5bbeb4dfefb7c0e5558e671434e5e131b32d582352228a3512fe9a2858db82",
-    "external/sm64ds-pc/config/arm9/overlays/ov102/delinks.txt": "4c547e81c3850599b985c4a1e27124551d9bc033bbacb195157ebb64d8769fa7"
+    "external/sm64ds-pc/config/arm9/overlays/ov102/delinks.txt": "4c547e81c3850599b985c4a1e27124551d9bc033bbacb195157ebb64d8769fa7",
+    "src/game/actors/d_a_obj_hatena_block.cpp": "823d5aea368f9a938c1311718005ccb673979b45bb1a6ce79415e4631c2a7cc0",
+    "include/daObjHatenaBlock_c.h": "4cbe19cf266306265d85f1bd6fbc0f746cb002529a4694b5d5c93c5b122e4c74",
+    "src/game/actors/d_a_1up.cpp": "df32154e38477d51e2b5f8ef60066f6939766811da9be07dff2c28e3d40af5ca",
+    "include/da1up_c.h": "0d7feef67096a2557c9f4a7476648bde477374466505865efc2ec6cae532d233",
+    "src/runtime/actor/d_enemy_base.cpp": "e7d4c1caa7961838a0d75814d90ac8d32af7ce083fa3605b3ea18678b42966c4",
+    "include/dEnemyBase_c.h": "dde1d658ff989a67897141cbdf6764ea995294e830d5033e11ff9d5d93f7d1ca"
   }
 }

@@ -1,3 +1,41 @@
+# Current checkpoint — 2026-11-05, original item blocks and mushroom resources
+
+Continues published main 7e7fdb95454b2eb7f9243038eceb3e0869c4464c.
+Version 0.4.19-native-items, versionCode 23. Not playable.
+
+All six original item-block factories now construct their 0x3f8-byte records,
+background collider, animated model and cuboid shadow. Complete InitResources,
+model/collider matrix helpers and Idle enter execute. SetState invokes the
+original overlay's real member-pointer table, including checked adjustment and
+unknown-callback failure. Original content/model selection remains intact.
+The 1UP/mega-mushroom factories preserve their 0x398-byte enemy records,
+cylinder, sphere/line query, model and cylindrical shadow. Complete original
+InitResources and empty OnPendingDestroy are projected, including hidden-type,
+collision, display, save and course conditions. The unlock counter is a full
+32-bit field as its source header requires. Movement and prize behavior are
+not yet verified for these actors.
+
+ASan/UBSan passes all four private-ROM save/character launches beyond both
+former factories to daMip_c_classInit at 0x0212cc2c (overlay 85). Live actor
+checks cover models/BCA/shadow ownership, original Idle scale/gravity, copied
+shadow matrix, moving KCL/CLPS, mushroom owner links, home positions, type and
+unlock fields. No-ROM checks execute the real block Idle PMF and reject an
+unbound state callback. Earlier Player, camera, scheduler, KCL, signpost and
+400-step water/material checks still pass. Source hashes and diff checks pass;
+LeakSanitizer is disabled locally. Native filesystem, video/math, input, saves,
+heap/resources, scheduler and audio/PCM regressions also passed this session.
+
+The 7e7fdb9 Android workflow completed successfully: build, ARM64 debug/release,
+lint and frontend-arm64. This increment awaits its own CI. No Android device
+or emulator is attached; local javac/SDK are absent. There are still no complete
+original world frames, Player movement/jump/render verification or playable-APK
+claim. Next: original rabbit initialization, then remaining scene/particle/HUD
+and actual per-frame Player/camera/render/audio dependencies. Matching sources,
+side-by-side screens and previous graphics fixes are preserved; no game data
+is committed.
+
+---
+
 # Current checkpoint — 2026-11-05, original castle water and texture animation
 
 Continues published main 39e13b3bb779b22a89a5768903cd2d263428ee79.

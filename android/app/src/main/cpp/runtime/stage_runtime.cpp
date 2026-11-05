@@ -849,6 +849,42 @@ uint32_t stage_signpost_factory() {
     stage_mesh_query_construct(actor+0x3c8);
     return actor;
 }
+uint32_t stage_hatena_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x3f8);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x0214e47cu;
+    stage_anim_model_construct(actor+0x320);
+    stage_shadow_construct(actor+0x384);
+    return actor;
+}
+uint32_t stage_mushroom_factory() {
+    const uint32_t actor=packed::Space::current().allocate(0x398);
+    // dEnemyBase_c's empty-body C2 adds only its vptr after dActor_c.
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=0x021081e4u;
+    at<uint32_t>(actor)=0x021083c8u;
+    stage_actor_cylinder_construct(actor+0x110,false);
+    stage_mesh_query_construct(actor+0x144);
+    native_simple_model_construct(actor+0x300);
+    stage_shadow_construct(actor+0x350);
+    return actor;
+}
+void stage_actor_mesh_limit(uint32_t query) {
+    (void)packed::Space::current().data(query,0x1bc);
+    at<uint32_t>(query+0x10)|=0x80;
+}
+void stage_hatena_set_state(uint32_t actor,int state) {
+    // Complete func_ov102_02149da8: store state, invoke its original enter PMF.
+    auto &space=packed::Space::current();
+    at<int32_t>(actor+0x3e8)=state;
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(0x0214e890u+uint32_t(state)*16u,8),8);
+    const auto target=space.resolve_member(actor,member);
+    using Callback=void (*)(uint32_t);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    callback(target.object);
+}
 void stage_actor_mesh_start_water(uint32_t query) {
     // dBgCh_Actr::StartDetectingWater, line first, then sphere.
     (void)packed::Space::current().data(query,0x1bc);
@@ -1174,6 +1210,12 @@ void stage_actor_frame() {
 }
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
+    if(id==102) {
+        for(uint32_t factory : {0x0214a7ecu,0x0214a82cu,0x0214a86cu,
+                                0x0214a8acu,0x0214a8ecu,0x0214a92cu})
+            space.bind(factory,&stage_hatena_factory);
+        space.bind(0x02149da8u,&stage_hatena_set_state);
+    }
     if (id==9) {
         space.bind(0x02111d8cu,&stage_castle_water_factory);
         space.bind(0x02112048u,&stage_metalnet_factory);
@@ -1190,6 +1232,8 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x02146d38u,&stage_fish_factory);
     }
     if (id!=2) return;
+    space.bind(0x020b0580u,&stage_mushroom_factory);
+    space.bind(0x020b0530u,&stage_mushroom_factory);
     space.bind(0x020b6ee8u,&stage_plain_actor_factory<0xdc,0x021094a0u>);
     space.bind(0x020bc3c8u,&stage_signpost_factory);
     space.bind(0x020e6c0cu,&stage_player_factory);
@@ -1237,6 +1281,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0201490cu,&stage_centered_cylinder_init);
     space.bind(0x02037388u,&stage_actor_mesh_init);
     space.bind(0x02035840u,&stage_actor_mesh_start_water);
+    space.bind(0x020356b4u,&stage_actor_mesh_limit);
     space.bind(0x02037570u,&stage_ground_construct);
     space.bind(0x020377b0u,&stage_line_construct);
     space.bind(0x02037764u,&stage_line_destroy);
