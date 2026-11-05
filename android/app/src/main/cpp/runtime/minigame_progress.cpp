@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 extern "C" {
-int data_0209caa0[];
+extern int data_0209caa0[];
 void func_02013568(int slot, int rank, int value);
 int func_02013580(int slot, int rank);
 int func_020135d0(int index);
