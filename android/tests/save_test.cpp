@@ -2,6 +2,7 @@
 #include "runtime/minigame_progress.h"
 #include "runtime/minigame_controls.h"
 #include "runtime/minigame_catalog.h"
+#include "runtime/minigame_menu_session.h"
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -85,6 +86,13 @@ int main() {
         assert(MinigameMenuControls::tap(0x12, 0x65, 0, 0).kind == MinigameTapKind::Group);
         assert(MinigameMenuControls::tap(0xe0, 0xa0, 0, 0).kind == MinigameTapKind::Exit);
         assert(MinigameMenuControls::tap(0x45, 0x20, 0, 0, false).kind == MinigameTapKind::None);
+        // A fresh original menu only permits unlocked selections. The
+        // recovered event is a scene-dispatch request, not a fake round win.
+        sm64ds::MinigameMenuSession selectMenu;
+        auto selected = selectMenu.tick(true, 0x45, 0x20, true);
+        assert(selected.event == sm64ds::MinigameMenuEvent::Selection && selected.row == 0);
+        assert(selectMenu.exiting());
+        assert(selectMenu.tick(true, 0x45, 0x20, true).event == sm64ds::MinigameMenuEvent::None);
         assert(!MinigameProgress::unlocked(35));
         // Original menu InitResources: one-time defaults, cap repair and the
         // ownRecords==1 exception. This runs against the recovered 8KiB save.
@@ -119,6 +127,25 @@ int main() {
                MinigameTapKind::PreviousPage);
         const auto second = MinigameMenuControls::tap(0x65, 0x60, 1, 0);
         assert(second.kind == MinigameTapKind::Select && second.index == 24);
+        sm64ds::MinigameMenuSession paging;
+        assert(paging.tick(true, 0xe0, 0x60, false).event == sm64ds::MinigameMenuEvent::None);
+        assert(paging.next_page_timer() == 0);
+        assert(paging.tick(true, 0xe0, 0x60, true).event == sm64ds::MinigameMenuEvent::None);
+        assert(paging.next_page_timer() == 0x12);
+        for (int i = 0; i < 18; ++i) paging.tick(false, -1, -1, true);
+        assert(paging.page() == 1 && paging.scrolling() && paging.scroll_x() == 8);
+        assert(paging.tick(true, 0x65, 0x60, true).event == sm64ds::MinigameMenuEvent::None);
+        for (int i = 0; i < 21; ++i) paging.tick(false, -1, -1, true);
+        assert(!paging.scrolling() && paging.scroll_x() == 0xb0);
+        selected = paging.tick(true, 0x65, 0x60, true);
+        assert(selected.event == sm64ds::MinigameMenuEvent::Selection && selected.row == 24);
+        sm64ds::MinigameMenuSession exitMenu;
+        exitMenu.tick(true, 0xe0, 0xa0, true);
+        assert(exitMenu.exit_timer() == 0x1c);
+        for (int i = 0; i < 26; ++i)
+            assert(exitMenu.tick(false, -1, -1, true).event == sm64ds::MinigameMenuEvent::None);
+        assert(exitMenu.tick(false, -1, -1, true).event == sm64ds::MinigameMenuEvent::Exit);
+        assert(exitMenu.exiting());
         assert(MinigameProgress::is_new(0));
         assert(MinigameProgress::is_new(35));
         MinigameProgress::clear_new(0);

@@ -114,7 +114,7 @@ set_source_files_properties(runtime/resources.cpp PROPERTIES COMPILE_DEFINITIONS
 target_link_libraries(sm64ds_android PRIVATE sm64ds_save)
 
 target_sources(sm64ds_android PRIVATE ${GAME_SOURCES} runtime/game_program.cpp runtime/cartridge.cpp
-    runtime/stage_flow.cpp runtime/stage_runtime.cpp runtime/stage_assets.cpp runtime/minigame_catalog.cpp runtime/minigame_progress.cpp runtime/minigame_controls.cpp runtime/title_files.cpp runtime/native_math.cpp
+    runtime/stage_flow.cpp runtime/stage_runtime.cpp runtime/stage_assets.cpp runtime/minigame_catalog.cpp runtime/minigame_progress.cpp runtime/minigame_controls.cpp runtime/minigame_menu_session.cpp runtime/title_files.cpp runtime/native_math.cpp
     # Execute recovered ARM9 minigame record/unlock leaf bodies directly.
     # func_02013598 has a negative shift for indices <28 and needs a
     # separate audited native projection before inclusion.

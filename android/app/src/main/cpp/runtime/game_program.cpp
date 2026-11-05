@@ -375,7 +375,13 @@ bool GameProgram::prepare_minigame_menu() {
     std::array<MinigameEntry, MinigameCatalog::Count> rows{};
     for (size_t i = 0; i < rows.size(); ++i)
         rows[i] = catalog.row(i);
-    return MinigameProgress::initialize_records(rows.data(), rows.size());
+    const bool dirty = MinigameProgress::initialize_records(rows.data(), rows.size());
+    // Preserve the menu's last tab/page once it returns from a minigame.
+    // A first launch defaults to original tab 0, page 0.
+    const unsigned page = minigameMenu_ ? minigameMenu_->page() : 0;
+    const unsigned group = minigameMenu_ ? minigameMenu_->group() : 0;
+    minigameMenu_ = std::make_unique<MinigameMenuSession>(page, group);
+    return dirty;
 }
 uint16_t GameProgram::requested_scene() const {
     return data_02092664;

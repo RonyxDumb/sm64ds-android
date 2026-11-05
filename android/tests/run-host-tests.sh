@@ -96,6 +96,7 @@ g++ -std=c++17 -Wall -Wextra -Werror -Wno-unknown-pragmas -Wno-unused-variable \
     android/app/src/main/cpp/runtime/save_store.cpp \
     android/app/src/main/cpp/runtime/minigame_progress.cpp \
     android/app/src/main/cpp/runtime/minigame_controls.cpp \
+    android/app/src/main/cpp/runtime/minigame_menu_session.cpp \
     "$TEST_BUILD/native-src/src/engine/save/SaveData.cpp" \
     "$TEST_BUILD/native-src/src/engine/save/SaveData2.cpp" \
     "${ORIGINAL_MG_OBJS[@]}" -o "$TEST_BUILD/save_test"
