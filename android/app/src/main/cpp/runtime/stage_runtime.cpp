@@ -1154,6 +1154,14 @@ void stage_process_kuppa_script() {
     ++timer;
     if (timer==0) --timer;
 }
+uint32_t stage_demo_factory() {
+    // Complete daDemo_c_classInit (ov002 0x020f8808): operator new(0x104),
+    // dActor_c C2, then the CutsceneObject vtable.
+    const uint32_t actor=packed::Space::current().allocate(0x104);
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=0x0210bd60u;
+    return actor;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1592,6 +1600,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020c7e84u,&stage_player_is_entering_level);
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
     space.bind(0x020fb8bcu,&stage_minimap_factory);
+    space.bind(0x020f8808u,&stage_demo_factory);
     for (uint32_t factory : {0x020b406cu,0x020b409cu,0x020b40ccu,0x020b40fcu,0x020b412cu})
         space.bind(factory,&stage_block_l_factory);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);

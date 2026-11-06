@@ -182,6 +182,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject'),
     ('_ZN8dActor_c10FindWithIDEj', 0, 'dActor_c'),
 ]
 
