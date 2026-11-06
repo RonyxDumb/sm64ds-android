@@ -130,9 +130,12 @@ def free_unit(projected, symbol, overlay, replacements=None):
         if (ROOT/rel).exists():
             break
     raw = (ROOT/rel).read_text()
-    raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
+    shared = shared_declarations(raw)
+    raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
         raw = raw.replace(old, new)
+    if shared:
+        raw = shared+'\n'+raw
     extra = ''
     if not re.search(r'struct Vector3\s*\{|\}\s*Vector3\s*;', raw):
         extra += 'struct Vector3 { s32 x,y,z; };\n'
@@ -146,6 +149,9 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_02009414', 0),
+    ('func_020094a8', 0),
+    ('func_020082a0', 0),
     ('func_ov002_020bd600', 2),
     ('func_0200e5fc', 0, {
         # Same volatile byte read-modify-write; the packed reference has no +=.
