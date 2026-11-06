@@ -295,6 +295,25 @@ void stage_path_defs(uint32_t definitions,int count) {
     at<uint32_t>(0x020a0d84u)=definitions;
     at<int32_t>(0x020a0d8cu)=count;
 }
+// Complete PathPtr leaves (src/engine/path/PathPtr.cpp). PathDef records
+// are six bytes; node rows are three s16 values scaled by 1 << 12.
+uint32_t stage_path_construct(uint32_t path) {
+    at<uint32_t>(path)=0; at<uint32_t>(path+4)=0; return path;
+}
+void stage_path_set_def(uint32_t path,uint32_t def) { at<uint32_t>(path)=def; }
+void stage_path_from_id(uint32_t path,uint32_t id) {
+    stage_path_set_def(path,at<uint32_t>(0x020a0d84u)+id*6u);
+}
+uint32_t stage_path_node_table() { return at<uint32_t>(0x020a0d88u); }
+uint32_t stage_path_num_nodes(uint32_t path) { return at<uint8_t>(at<uint32_t>(path)+2); }
+uint32_t stage_path_unk004(uint32_t path) { return at<uint8_t>(at<uint32_t>(path)+4); }
+uint32_t stage_path_pull_factor(uint32_t path) { return at<uint8_t>(at<uint32_t>(path)+5)&0x7fu; }
+uint32_t stage_path_loops(uint32_t path) { return at<uint8_t>(at<uint32_t>(path)+5)&0x80u; }
+void stage_path_get_node(uint32_t path,uint32_t node,uint32_t index) {
+    const uint32_t row=stage_path_node_table()+uint32_t(at<uint16_t>(at<uint32_t>(path)))*6u+index*6u;
+    for (unsigned i=0;i<3;++i)
+        at<int32_t>(node+i*4)=int32_t(uint32_t(int32_t(at<int16_t>(row+i*2)))<<12);
+}
 void stage_kcl_rebase(uint32_t file) {
     auto &space=packed::Space::current();
     (void)space.data(file,0x38);
@@ -1440,6 +1459,15 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02017450u,&stage_wipe_destroy);
     space.bind(0x020172c0u,&stage_wipe_load);
     space.bind(0x0203acccu,&stage_path_nodes);
+    space.bind(0x0203ac80u,&stage_path_from_id);
+    space.bind(0x0203acbcu,&stage_path_node_table);
+    space.bind(0x0203acdcu,&stage_path_get_node);
+    space.bind(0x0203ad34u,&stage_path_loops);
+    space.bind(0x0203ad44u,&stage_path_pull_factor);
+    space.bind(0x0203ad54u,&stage_path_unk004);
+    space.bind(0x0203ad60u,&stage_path_num_nodes);
+    space.bind(0x0203ad6cu,&stage_path_set_def);
+    space.bind(0x0203ad74u,&stage_path_construct);
     space.bind(0x0203aca0u,&stage_path_defs);
     space.bind(0x02039760u,&stage_kcl_rebase);
     space.bind(0x020396f0u,&stage_kcl_set_file);

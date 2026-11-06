@@ -1,0 +1,129 @@
+"""Reviewed views of recovered isolated member units (external/sm64ds-pc/src).
+
+Each unit is one original function whose calls are already spelled as their
+mangled ABI symbols. Only the receiver changes: `this` becomes the cartridge
+object address and named fields become their header-recorded offsets. The
+body, branches and constants stay the recovered function's own.
+"""
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+SCALARS = {'u8': 'u8', 's8': 's8', 'u16': 'u16', 's16': 's16', 'u32': 'u32',
+           's32': 's32', 'int': 's32', 'Fix12i': 's32', 'short': 's16',
+           'char': 's8', 'bool': 'u8', 'unsigned': 'u32'}
+FIELD = re.compile(r'^\s+(?:unsigned\s+)?([A-Za-z_]\w*)\s*(\*?)\s*(\w+)\s*;\s*/\*\s*0x([0-9a-f]+)')
+
+
+def header_fields(rel, minimum=0):
+    fields = {}
+    for line in (ROOT/rel).read_text().splitlines():
+        match = FIELD.match(line)
+        if not match:
+            continue
+        typ, pointer, name, offset = match[1], match[2], match[3], int(match[4], 16)
+        if offset < minimum:
+            continue
+        if pointer:
+            fields[name] = ('u32', offset)
+        elif typ in SCALARS:
+            fields[name] = (SCALARS[typ], offset)
+    return fields
+
+
+def player_fields():
+    from stage_actor_views import ACTOR_FIELDS
+    fields = dict(ACTOR_FIELDS)
+    fields.update(header_fields('include/Player.h', 0xd0))
+    return fields
+
+
+def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None):
+    rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
+    raw = (ROOT/rel).read_text()
+    if name:
+        from native_sources import function
+        raw = function(raw, name)
+        # In-body file-scope externs become ordinary declarations.
+        hoisted = re.findall(r'^\s*(extern [^;\n(]+;)\s*$', raw, re.M)
+        raw = re.sub(r'^\s*extern [^;\n(]+;\s*$\n', '', raw, flags=re.M)
+        raw = 'extern "C" {\n'+'\n'.join(hoisted)+'\n}\n'+raw
+    raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
+    declarations = []
+    for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
+        declarations.append(block)
+    raw = re.sub(r'extern "C" \{\n.*?\n\}\n', '', raw, flags=re.S)
+    signature = re.search(r'^(\w[\w\s\*]*?)\s+'+cls+r'::(\w+)\(([^)]*)\)\s*(?:const\s*)?\{', raw, re.M)
+    if not signature:
+        raise ValueError('no member body in '+rel)
+    result = signature[1].strip()
+    params = signature[3].strip()
+    params = '' if params in ('', 'void') else ', '+params
+    start = signature.start()
+    body = raw[:start]+'extern "C" '+result+' '+symbol+'(void *object'+params+') {'+raw[signature.end():]
+    for old, new in (replacements or {}).items():
+        body = body.replace(old, new)
+    body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
+    body = re.sub(r'\bthis\b', 'object', body)
+    for name, (typ, offset) in fields.items():
+        body = re.sub(r'(?<![.>\w])'+name+r'\b',
+                      '(*('+typ+' *)((char *)object+0x%x))' % offset, body)
+    # Older isolated units spell unnamed members unk_<offset>; take the type
+    # the reviewed header records at that same offset.
+    by_offset = {offset: typ for typ, offset in fields.values()}
+    def unknown(match):
+        offset = int(match[1], 16)
+        if offset not in by_offset:
+            raise ValueError('untyped member unk_%x in %s' % (offset, rel))
+        return '(*('+by_offset[offset]+' *)((char *)object+0x%x))' % offset
+    body = re.sub(r'(?<![.>\w])unk_([0-9a-f]+)\b', unknown, body)
+    declarations = '\n'.join(declarations)
+    row, bindings = projected(rel, body, declarations, [symbol], extra=extra, auto_globals=False)
+    row['unit'] = 'stage_isolated_'+symbol
+    for binding in bindings:
+        binding['overlay'] = overlay
+    return row, bindings
+
+
+PLAYER_STATES = [
+    '_ZN6Player12St_Wait_InitEv',
+]
+
+
+VECTOR_TYPES = 'struct Vector3 { s32 x,y,z; }; struct Vector3_16 { s16 x,y,z; };\n'
+
+
+def free_unit(projected, symbol, overlay):
+    """A recovered isolated free function: raw offsets, mangled callees."""
+    for ext in ('.c', '.cpp'):
+        rel = 'external/sm64ds-pc/src/'+symbol+ext
+        if (ROOT/rel).exists():
+            break
+    raw = (ROOT/rel).read_text()
+    raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
+    extra = '' if re.search(r'struct Vector3\s*\{', raw) else VECTOR_TYPES
+    row, bindings = projected(rel, raw, '', [symbol], extra=extra, auto_globals=False)
+    row['unit'] = 'stage_isolated_'+symbol
+    for binding in bindings:
+        binding['overlay'] = overlay
+    return row, bindings
+
+
+FREE_UNITS = [
+]
+
+
+PLAYER_SOURCE = [
+    ('_ZN6Player9GetHealthEv', 'int Player::GetHealth()'),
+]
+
+
+def slices(projected):
+    fields = player_fields()
+    for symbol in PLAYER_STATES:
+        yield isolated(projected, symbol, 2, 'Player', fields)
+    for symbol, overlay in FREE_UNITS:
+        yield free_unit(projected, symbol, overlay)
+    for symbol, name in PLAYER_SOURCE:
+        yield isolated(projected, symbol, 2, 'Player', fields,
+                       rel='src/game/player/Player.cpp', name=name)
