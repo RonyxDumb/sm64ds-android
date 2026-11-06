@@ -1186,6 +1186,11 @@ void stage_demo_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
     std::memcpy(&callback,&target.code,sizeof callback);
     callback(target.object,p+7,a2,a3);
 }
+int stage_demo_bg_thunk(uint32_t c) {
+    // Complete func_ov002_020f26d4: a register-preserving tail call
+    // (ldr ip / bx ip) into func_ov002_020f2630 with the same r0.
+    return Ptr<int(uint32_t)>(0x020f2630u)(c);
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1626,6 +1631,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020fb8bcu,&stage_minimap_factory);
     space.bind(0x020f8808u,&stage_demo_factory);
     space.bind(0x020f7d74u,&stage_demo_dispatch_command);
+    space.bind(0x020f26d4u,&stage_demo_bg_thunk);
     for (uint32_t factory : {0x020b406cu,0x020b409cu,0x020b40ccu,0x020b40fcu,0x020b412cu})
         space.bind(factory,&stage_block_l_factory);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);

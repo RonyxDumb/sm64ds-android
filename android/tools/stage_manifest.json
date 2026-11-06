@@ -1010,6 +1010,13 @@
       "unit": "stage_isolated__ZN6Player12St_Wait_InitEv"
     },
     {
+      "path": "external/sm64ds-pc/src/func_ov002_020f2630.c",
+      "sha256": "3124f573b32d005973bf2bfb2fc30549d94afd22736639d5d663c99007f9e956",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\nstruct Vector3 { s32 x;\ns32 y;\ns32 z; };\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n\n\nstatic Ptr<void> pk__Znwj(unsigned int a0) { return Ptr<Ptr<void>(unsigned int)>(0x0203cbe4u)(a0); }\nstatic void pk_SetSubBg0Offset(int a0, int a1) { Ptr<void(int, int)>(0x02018f8cu)(a0, a1); }\nstatic void pk_SetSubBg1Offset(int a0, int a1) { Ptr<void(int, int)>(0x02018f70u)(a0, a1); }\nextern \"C\" int pk_func_ov002_020f2630(Ptr<char> c) {\n  Ptr<short> p;\n  *(Ptr<Ptr<void>>)((c+0xd4)) = pk__Znwj(0x36);\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[0] = 0x30;\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[2] = 0x20;\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[1] = 0;\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[3] = 0;\n  (*(Ptr<Ptr<unsigned short>>)((c+0xd4)))[4] = 0xfff8;\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[5] = 0xc8;\n  (*(Ptr<Ptr<short>>)((c+0xd4)))[0x17] = 0x10;\n  p = *(Ptr<Ptr<short>>)((c+0xd4)); pk_SetSubBg0Offset(p[0], p[2]);\n  p = *(Ptr<Ptr<short>>)((c+0xd4)); pk_SetSubBg1Offset(p[1], p[3]);\n  return 1;\n}\n\nextern \"C\" unsigned int abi_func_ov002_020f2630(unsigned int a0) { return uword(pk_func_ov002_020f2630((Ptr<char>)(a0))); }\n",
+      "unit": "stage_isolated_func_ov002_020f2630"
+    },
+    {
       "path": "external/sm64ds-pc/src/func_0200e4e4.c",
       "sha256": "5bb7156c994e5571e16de96cd4faa6e8fb7c5bf82067ffe2d211966b89ca0e63",
       "header": false,
@@ -2733,6 +2740,11 @@
     {
       "address": 34419388,
       "symbol": "abi__ZN6Player12St_Wait_InitEv",
+      "overlay": 2
+    },
+    {
+      "address": 34547248,
+      "symbol": "abi_func_ov002_020f2630",
       "overlay": 2
     },
     {
