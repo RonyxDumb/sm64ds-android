@@ -149,6 +149,25 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f6618', 2, {
+        # The unit's local SharedFilePtr {int a, file;} is the shared 8-byte
+        # record (file pointer at +4); references are pointers in the ABI.
+        'struct SharedFilePtr { int a, file; };\n': '',
+        '(SharedFilePtr& f)': '(SharedFilePtr* f)',
+        'void* _Znwj(unsigned int sz);': 'void* _Znwj(unsigned int sz);\nvoid _ZN15TextureSequence7PrepareER8BMD_FileR8BTP_File(void*, void*);',
+        '_ZN5Model8LoadFileER13SharedFilePtr(**(SharedFilePtr**)(self + 0x70))':
+            '_ZN5Model8LoadFileER13SharedFilePtr(*(SharedFilePtr**)(self + 0x70))',
+        '_ZN9Animation8LoadFileER13SharedFilePtr(*(*(SharedFilePtr***)(self + 0x74))[i])':
+            '_ZN9Animation8LoadFileER13SharedFilePtr((*(SharedFilePtr***)(self + 0x74))[i])',
+        '(void*)(*(*(SharedFilePtr***)(self + 0x74))[0]).file':
+            '(void*)(*(SharedFilePtr***)(self + 0x74))[0]->filePtr',
+        '(void*)(*(SharedFilePtr**)(self + 0x70))->file': '(void*)(*(SharedFilePtr**)(self + 0x70))->filePtr',
+        '_ZN15TextureSequence8LoadFileER13SharedFilePtr(*(*(SharedFilePtr***)(self + 0x78))[i])':
+            '_ZN15TextureSequence8LoadFileER13SharedFilePtr((*(SharedFilePtr***)(self + 0x78))[i])',
+        'TextureSequence::Prepare(*(BMD_File*)bmd, *(BTP_File*)btp);':
+            '_ZN15TextureSequence7PrepareER8BMD_FileR8BTP_File(bmd, btp);',
+        '(void*)(*(*(SharedFilePtr***)(self + 0x78))[0]).file':
+            '(void*)(*(SharedFilePtr***)(self + 0x78))[0]->filePtr'}),
     ('func_ov002_020f7020', 2),
     ('func_ov002_020f6960', 2, {
         # A reference parameter is a pointer in the ARM ABI.
