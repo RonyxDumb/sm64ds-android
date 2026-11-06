@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SCALARS = {'u8': 'u8', 's8': 's8', 'u16': 'u16', 's16': 's16', 'u32': 'u32',
            's32': 's32', 'int': 's32', 'Fix12i': 's32', 'short': 's16',
-           'char': 's8', 'bool': 'u8', 'unsigned': 'u32'}
+           'char': 's8', 'bool': 'u8', 'unsigned': 'u32', 's64': 's64', 'u64': 'u64'}
 FIELD = re.compile(r'^\s+(?:unsigned\s+)?([A-Za-z_]\w*)\s*(\*?)\s*(\w+)\s*;\s*/\*\s*0x([0-9a-f]+)')
 
 
@@ -215,6 +215,8 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_0201964c', 0),
+    ('func_02011a5c', 0),
     ('func_02008b4c', 0),
     ('func_ov002_020f7bb8', 2),
 ]
