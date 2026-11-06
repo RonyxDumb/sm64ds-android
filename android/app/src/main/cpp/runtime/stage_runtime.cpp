@@ -869,6 +869,21 @@ uint32_t stage_mushroom_factory() {
     stage_shadow_construct(actor+0x350);
     return actor;
 }
+uint32_t stage_mip_factory() {
+    // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
+    // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
+    // ShadowModel member constructors before the final daMip_c vtable.
+    const uint32_t actor=packed::Space::current().allocate(0x474);
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=0x021081e4u;
+    stage_actor_cylinder_construct(actor+0x110,false);
+    stage_mesh_query_construct(actor+0x144);
+    stage_anim_model_construct(actor+0x300);
+    stage_shadow_construct(actor+0x368);
+    stage_shadow_construct(actor+0x3c0);
+    at<uint32_t>(actor)=0x021300f8u;
+    return actor;
+}
 void stage_actor_mesh_limit(uint32_t query) {
     (void)packed::Space::current().data(query,0x1bc);
     at<uint32_t>(query+0x10)|=0x80;
@@ -1222,7 +1237,10 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x021121f0u,&stage_castle_flag_factory);
         space.bind(0x02111a30u,&stage_bird_factory);
     }
-    if (id==85) space.bind(0x0212f244u,&stage_sign_factory);
+    if (id==85) {
+        space.bind(0x0212f244u,&stage_sign_factory);
+        space.bind(0x0212cc2cu,&stage_mip_factory);
+    }
     if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
     if (id==100) {
         space.bind(0x0214589cu,&stage_door_factory);

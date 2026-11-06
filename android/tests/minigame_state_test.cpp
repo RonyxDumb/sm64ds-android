@@ -5,6 +5,7 @@
 #include "runtime/cartridge.h"
 #include "runtime/packed_ptr.h"
 #include "runtime/boot_seams.h"
+#include "ntr/fs.h"
 #include "runtime/minigame_progress.h"
 #include "runtime/save_store.h"
 #include <array>
@@ -192,8 +193,12 @@ void minigame_state_cartridge(sm64ds::Cartridge &cartridge) {
     const auto image=cartridge.overlay_data(6);
     assert(game.scene()==0x169);
     assert(game.space().contains(image.base,image.bytes.size()));
-    assert(std::memcmp(game.space().data(image.base,image.bytes.size()),
-                       image.bytes.data(),image.bytes.size())==0);
+    // Compare the loaded overlay file image only. Its BSS starts zeroed but
+    // the original overlay-6 static initializers legitimately populate it.
+    ntr::OverlayInfo info{};
+    assert(ntr::fs_overlay_info(6,info) && info.ramSize<=image.bytes.size());
+    assert(std::memcmp(game.space().data(image.base,info.ramSize),
+                       image.bytes.data(),info.ramSize)==0);
     uint32_t firstProfile=0;
     std::memcpy(&firstProfile,game.space().data(0x02090864u+0x169u*4u,4),4);
     assert(firstProfile!=0); // the cartridge scene table, not a native allow-list

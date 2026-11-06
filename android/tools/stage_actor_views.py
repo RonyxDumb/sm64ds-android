@@ -372,6 +372,74 @@ void _ZN10dBgCh_Actr4InitEP8dActor_c5Fix12IiES3_P10Vector3_16S5_(void *,void *,i
 void _ZN10dBgCh_Actr13SetLimMovFlagEv(void *);
 ''','enum { ACTOR_ONEUPKINOKO=276,ACTOR_SCALEUP_KINOKO=277,CC_VULN_YOSHI_TONGUE=0x8000,CC_FLAGS_DISABLED=1,ACTOR_FLAG_CLIP_TEST=1 };\n')
 
+    # daMip_c::InitResources (ov085 0x0212c7fc). Its in-body file-scope
+    # externs move to the declaration block; the body itself is unchanged.
+    mip_raw=function((ROOT/'src/game/actors/d_a_mip.cpp').read_text(),'int daMip_c::InitResources()')
+    mip_raw+=function((ROOT/'src/game/actors/d_a_mip.cpp').read_text(),'int daMip_c::CleanupResources()')
+    mip_replacements={line:'' for line in re.findall(r'\n\s*extern [^;\n]+;',mip_raw)}
+    mip_replacements.update({
+         'gMipRunAnimationFile':'data_ov085_021305d0',
+         '(BMD_File *)':'',
+         'mModelAnim.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0x300,',
+         'mModelAnim.speed':'(*(s32 *)((char *)object+0x35c))',
+         '*(s32*)((char*)mModelAnim.data.materials + 0x20)':
+             '*(s32 *)((char *)(*(void **)((char *)object+0x30c)) + 0x20)',
+         'mShadowModel1.InitCylinder()':'_ZN17dExtShadowModel_c12InitCylinderEv((char *)object+0x368)',
+         'mShadowModel2.InitCylinder()':'_ZN17dExtShadowModel_c12InitCylinderEv((char *)object+0x3c0)',
+         '&mdCcAc_c':'((char *)object+0x110)',
+         '&mWithMeshClsn':'((char *)object+0x144)',
+         'PathPtr path;':'struct MipPath path; path.def=0; path.unk_004=0;',
+         'path.FromID(mPathId)':'_ZN7PathPtr6FromIDEj(&path,mPathId)',
+         'path.GetNode(mPos, mPathNodeIndex)':
+             '_ZNK7PathPtr7GetNodeER7Vector3j(&path,(char *)object+0x5c,mPathNodeIndex)',
+         'path.NumNodes()':'_ZNK7PathPtr8NumNodesEv(&path)',
+         'UpdateMatrixAndShadow()':'_ZN7daMip_c21UpdateMatrixAndShadowEv(object)',
+         'ClosestPlayer()':'_ZN8dActor_c13ClosestPlayerEv(object)',
+         '((Player *)player)->mCharacter':'(*(u8 *)((char *)player+0x6d9))',
+         '((Player *)closest)->param1':'(*(u32 *)((char *)closest+0x8))',
+         'SetState(&data_ov085_021306cc)':'_ZN7daMip_c8SetStateEPv(object,&data_ov085_021306cc)'})
+    for name in ('data_ov085_021305b8','data_ov085_021305d0','data_ov085_021305b0',
+                 'data_ov085_021305c8','data_ov085_021305c0','data_ov085_021305d8'):
+        mip_replacements['dExtFrameCtrl_c::LoadFile(*(SharedFilePtr *)&'+name+')']=\
+            '_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(&'+name+')'
+        mip_replacements['dExtSimpleModel_c::LoadFile(*(SharedFilePtr *)&'+name+')']=\
+            '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&'+name+')'
+    for name in ('data_ov085_021305d8','data_ov085_021305b8','data_ov085_021305d0','data_ov085_021305b0',
+                 'data_ov085_021305c8','data_ov085_021305c0','data_ov085_021305e0'):
+        mip_replacements['((SharedFilePtr *)(&'+name+'))->Release()']=\
+            '_ZN13SharedFilePtr7ReleaseEv(&'+name+')'
+    mip_replacements['dExtSimpleModel_c::LoadFile(*(SharedFilePtr *)&data_ov085_021305e0)']=\
+        '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov085_021305e0)'
+    add('stage_mip_init','src/game/actors/d_a_mip.cpp',85,
+        [method('daMip_c','InitResources'),method('daMip_c','CleanupResources'),
+         method('daMip_c','OnPendingDestroy','void')],
+        {'mEatingPlayer':('s32',0xd0),'mColorVariant':('s32',0x420),
+         'mIsDisabled':('u8',0x428),'mIsGlowing':('u8',0x429),
+         'mPathId':('s32',0x438),'mRabbitId':('s32',0x43c),'mCharacterId':('s32',0x440),
+         'mNumPathNodes':('s32',0x444),'mPathNodeIndex':('s32',0x448),
+         'mTalkingPlayer':('u32',0x45c),'mMaterialColor':('s32',0x468)},
+        mip_replacements,MODEL_API+'''
+extern SharedFilePtr data_ov085_021305b8,data_ov085_021305d0,data_ov085_021305b0;
+extern SharedFilePtr data_ov085_021305c8,data_ov085_021305c0,data_ov085_021305d8,data_ov085_021305e0;
+extern struct MipStatePair data_ov085_021306cc;
+extern s32 data_ov085_021305ac;
+extern int data_0209caa0[];
+extern s8 data_0209f2f8;
+extern int data_0209e650;
+void _ZN7dCcAc_c4InitEP8dActor_c5Fix12IiES3_jj(void *,void *,int,int,u32,u32);
+void _ZN10dBgCh_Actr4InitEP8dActor_c5Fix12IiES3_P10Vector3_16S5_(void *,void *,int,int,void *,void *);
+void _ZN7PathPtr6FromIDEj(struct MipPath *,u32);
+void _ZNK7PathPtr7GetNodeER7Vector3j(struct MipPath *,void *,u32);
+u32 _ZNK7PathPtr8NumNodesEv(struct MipPath *);
+void _ZN7daMip_c21UpdateMatrixAndShadowEv(void *);
+void *_ZN8dActor_c13ClosestPlayerEv(void *);
+int func_02013890(int,int);
+u32 RandomIntInternal(int *);
+u8 NumStars(void);
+void _ZN7daMip_c8SetStateEPv(void *,void *);
+void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
+''','struct MipPath { void *def; s32 unk_004; };\nstruct MipStatePair { u32 w[4]; };\n')
+
     for name in ('func_ov100_0214491c','func_ov100_02144c64'):
         row,bindings=free_c('external/sm64ds-pc/src/'+name+'.c')
         for binding in bindings: binding['overlay']=100
