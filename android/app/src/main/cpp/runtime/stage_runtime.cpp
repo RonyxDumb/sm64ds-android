@@ -1282,6 +1282,32 @@ void stage_load_fog(uint32_t self) {
             at<uint16_t>(src+4),at<uint16_t>(src+6));
     }
 }
+uint32_t stage_texture_transformer_ctor(uint32_t self) {
+    // Complete TextureTransformer::TextureTransformer() (0x02015950):
+    // Animation base (currFrame 0, speed 0x1000), _ZTV18TextureTransformer,
+    // file = 0 (TextureTransformer.h: 0x14 bytes).
+    (void)packed::Space::current().data(self,0x14);
+    stage_frame_construct(self,0x0208e7c4u);
+    at<uint32_t>(self+0x10)=0;
+    return self;
+}
+void stage_load_texture_transformers(uint32_t self) {
+    // Complete Stage::LoadTextureTransformers (recovered isolated unit):
+    // mModel.data.modelFile at 0x874, mTexAnimSlots[8] (0xc each) at 0x8bc.
+    const uint32_t info=at<uint32_t>(0x0209f340u);
+    uint32_t entry=at<uint32_t>(info+0x10),slot=self+0x8bc;
+    const uint32_t bmd=at<uint32_t>(self+0x874);
+    const int count=at<uint8_t>(info+0x14);
+    for (int i=0;i<count;++i,entry+=12,slot+=0xc) {
+        const uint32_t bta=at<uint32_t>(entry+4);
+        if (!bta) continue;
+        Ptr<void(uint32_t,uint32_t)>(0x0201587cu)(bmd,bta);
+        uint32_t t=Ptr<uint32_t(uint32_t)>(0x0203cbe4u)(0x14);
+        if (t) t=Ptr<uint32_t(uint32_t)>(0x02015950u)(t);
+        at<uint32_t>(slot)=t;
+        Ptr<void(uint32_t,uint32_t,int32_t,int32_t,uint32_t)>(0x020158acu)(at<uint32_t>(slot),bta,0,0x1000,0);
+    }
+}
 uint32_t stage_clipper_ctor(uint32_t self) {
     // Complete Clipper::Clipper() (external/sm64ds-pc/src/_ZN7ClipperC1Ev.cpp):
     // the ROM stores _ZTV7Clipper, then the shared frustum init helper.
@@ -1834,6 +1860,8 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02015730u,&stage_clipper_ctor);
     space.bind(0x0202b710u,&stage_load_fog);
+    space.bind(0x0202b534u,&stage_load_texture_transformers);
+    space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
