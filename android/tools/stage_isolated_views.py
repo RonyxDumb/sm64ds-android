@@ -115,6 +115,8 @@ def free_unit(projected, symbol, overlay):
 
 
 FREE_UNITS = [
+    ('func_0200e55c', 0),
+    ('func_0200e494', 0),
     ('RunKuppaScript', 0),
     ('StartIntroCutscene', 0),
     ('IsStarCollected', 0), ('IsStarCollectedInLevel', 0), ('IsStarCollectedInCurLevel', 0),
@@ -167,7 +169,26 @@ MINIMAP_UNITS = [
 ]
 
 
+MEMBER_UNITS = [
+]
+
+
+def class_fields(cls):
+    from stage_actor_views import ACTOR_FIELDS
+    fields = dict(ACTOR_FIELDS) if cls.startswith(('d', 'Player')) else {}
+    for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
+        if (ROOT/rel).exists():
+            fields.update(header_fields(rel, 0))
+            break
+    return fields
+
+
 def slices(projected):
+    for symbol, overlay, cls in MEMBER_UNITS:
+        row, bindings = isolated(projected, symbol, overlay, cls, class_fields(cls))
+        if not overlay:
+            for binding in bindings: binding.pop('overlay', None)
+        yield row, bindings
     minimap = header_fields('external/sm64ds-pc/include/Minimap.h', 0x50)
     for symbol, replacements in MINIMAP_UNITS:
         yield isolated(projected, symbol, 2, 'Minimap', minimap, replacements=replacements)
