@@ -1282,6 +1282,64 @@ void stage_load_fog(uint32_t self) {
             at<uint16_t>(src+4),at<uint16_t>(src+6));
     }
 }
+uint32_t stage_particle_alloc_tex_vram(uint32_t size,uint32_t isTexel4x4) {
+    // Complete Particle::Texture::AllocTexVram (recovered isolated unit).
+    if (isTexel4x4&0xff) {
+        const uint32_t address=at<uint32_t>(0x0209ee88u);
+        at<uint32_t>(0x0209ee88u)=address+size;
+        return address;
+    }
+    return Ptr<uint32_t(uint32_t)>(0x02045c60u)(size); // Model::GetVramOffset
+}
+uint32_t stage_particle_alloc_pal_vram(uint32_t size,uint32_t fromLowAddress) {
+    // Complete Particle::Texture::AllocPalVram (recovered isolated unit).
+    if (fromLowAddress&0xff) {
+        const uint32_t aligned=(size+7)&~7u,address=at<uint32_t>(0x0209ee84u);
+        at<uint32_t>(0x0209ee84u)=address+aligned;
+        return address;
+    }
+    const uint32_t aligned=(size+15)&~15u,address=at<uint32_t>(0x0209ee8cu)-aligned;
+    at<uint32_t>(0x0209ee8cu)=address;
+    return address;
+}
+void stage_particle_tracker_initialise(uint32_t self) {
+    // Complete Particle::SysTracker::Initialise (recovered isolated unit).
+    // Callbacks are passed as their original code handles.
+    const int8_t level=at<int8_t>(0x0209f2f8u);
+    uint32_t allocSize=0x8c00; int countA=0x28,countB=0x100;
+    if (level==0x24 || level==0x26 || level==0x28) { countA=0x40; countB=0x140; allocSize=0xa800; }
+    const uint32_t base=Ptr<uint32_t(uint32_t)>(0x0203cbd8u)(allocSize);
+    at<uint32_t>(0x0209ee80u)=base;
+    at<uint32_t>(0x0209ee78u)=base;
+    at<uint32_t>(0x0209ee7cu)=base+allocSize;
+    at<int32_t>(0x0209ee88u)=Ptr<int32_t()>(0x02045d10u)();
+    at<int32_t>(0x0209ee84u)=Ptr<int32_t()>(0x02045cf0u)();
+    at<int32_t>(0x0209ee8cu)=Ptr<int32_t()>(0x02045ce0u)();
+    const uint32_t manager=Ptr<uint32_t(uint32_t,int32_t,int32_t,int32_t,uint32_t)>(0x0204a4c8u)(
+        0x02023178u,countA,countB,0x1a,0x3e);
+    at<uint32_t>(self+4)=manager;
+    at<int32_t>(manager+0x30)=0x8000;
+    constexpr uint32_t embedded=0x02075f14u;
+    if (Ptr<int32_t(uint32_t,uint32_t,uint32_t)>(0x0206e28cu)(embedded,0x0208f668u,4)!=0) {
+        at<uint32_t>(self)=embedded;
+    } else {
+        const uint32_t size=at<uint32_t>(embedded+4)>>8;
+        const uint32_t dst=Ptr<uint32_t(uint32_t)>(0x0203c1c4u)(size);
+        Ptr<void(uint32_t,uint32_t)>(0x0205a754u)(embedded+4,dst);
+        Ptr<void(uint32_t,uint32_t)>(0x02058c24u)(dst,size);
+        at<uint32_t>(self)=dst;
+    }
+    Ptr<void(uint32_t,uint32_t)>(0x0204a17cu)(at<uint32_t>(self+4),at<uint32_t>(self));
+    Ptr<int32_t(uint32_t,uint32_t)>(0x0204a0dcu)(at<uint32_t>(self+4),0x02023134u);
+    Ptr<int32_t(uint32_t,uint32_t)>(0x0204a028u)(at<uint32_t>(self+4),0x020230ecu);
+    const uint32_t resource=at<uint32_t>(self);
+    if (resource!=embedded) {
+        const uint32_t heap=at<uint32_t>(0x020a0ea0u);
+        const uint32_t oldSize=at<uint32_t>(resource+0x18);
+        Ptr<uint32_t(uint32_t,uint32_t)>(0x0203c274u)(heap,resource);
+        Ptr<uint32_t(uint32_t,uint32_t,uint32_t)>(0x0203c578u)(heap,resource,oldSize);
+    }
+}
 void stage_load_skybox(uint32_t self) {
     // Complete Stage::LoadSkybox (recovered isolated unit); mSkyboxModel 0x9bc.
     const uint32_t skyboxID=Ptr<uint32_t(uint32_t)>(0x0202a93cu)(self);
@@ -1873,6 +1931,9 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b534u,&stage_load_texture_transformers);
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
+    space.bind(0x02022f40u,&stage_particle_tracker_initialise);
+    space.bind(0x02023134u,&stage_particle_alloc_tex_vram);
+    space.bind(0x020230ecu,&stage_particle_alloc_pal_vram);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
