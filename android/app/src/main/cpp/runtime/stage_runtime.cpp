@@ -1621,6 +1621,38 @@ int stage_approach_linear_short(uint32_t ref,int16_t target,int16_t step) {
     }
     return 0;
 }
+// Recovered destructor bodies (external/sm64ds-pc/src/*D1Ev.cpp). Their
+// implicit vptr stores have no observable effect once the object is freed.
+void stage_shadow_destruct(uint32_t shadow) {
+    // ShadowModel::~ShadowModel: unlink from the list at data_0209cef4.
+    const uint32_t prev=at<uint32_t>(shadow+0x20),next=at<uint32_t>(shadow+0x24);
+    if (prev) at<uint32_t>(prev+0x24)=next;
+    else if (at<uint32_t>(0x0209cef4u)==shadow) at<uint32_t>(0x0209cef4u)=next;
+    if (next) at<uint32_t>(next+0x20)=prev;
+    at<uint32_t>(shadow+0x20)=at<uint32_t>(shadow+0x24)=0;
+}
+void stage_model_destruct(uint32_t model) {
+    // Model::~Model frees transformsBuf (0x4c); ModelBase::~ModelBase frees
+    // its owned modelFile (0x04). Both are native heap allocations here.
+    if (const uint32_t transforms=at<uint32_t>(model+0x4c)) packed::Space::current().release(transforms);
+    if (const uint32_t file=at<uint32_t>(model+0x04)) packed::Space::current().release(file);
+}
+void stage_actor_destruct(uint32_t actor) {
+    // dActor_c::~dActor_c: leave the actor list (data_0209b468) via
+    // mActorListNode (0x50); fBase_c::~fBase_c is empty.
+    Ptr<void(uint32_t,uint32_t)>(0x0203b27cu)(0x0209b468u,actor+0x50);
+}
+uint32_t stage_mip_destruct(uint32_t actor) {
+    // daMip_c::~daMip_c (ov085 0x0212a6d4): members in reverse order --
+    // two ShadowModels, ModelAnim, dBgCh_Actr (empty), dCcAc_c
+    // (dCc_c::Unlink) -- then dEnemyBase_c/dActor_c.
+    stage_shadow_destruct(actor+0x3c0);
+    stage_shadow_destruct(actor+0x368);
+    stage_model_destruct(actor+0x300);
+    Ptr<void(uint32_t)>(0x02014fa4u)(actor+0x110);
+    stage_actor_destruct(actor);
+    return actor;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -2035,6 +2067,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==85) {
         space.bind(0x0212f244u,&stage_sign_factory);
         space.bind(0x0212cc2cu,&stage_mip_factory);
+        space.bind(0x0212a6d4u,&stage_mip_destruct);
         space.bind(0x0212bc78u,&stage_mip_set_state);
         space.bind(0x0212ed54u,&stage_jugem_factory);
         space.bind(0x0212e728u,&stage_jugem_set_state);
@@ -2343,7 +2376,7 @@ void fbase_after_cleanup(uint32_t self,uint32_t success) {
     if (const uint32_t heap=at<uint32_t>(self+0x4c)) Ptr<void(uint32_t)>(0x0203c74cu)(heap);
     if (const uint32_t lifecycle=at<uint32_t>(self+0x48)) Ptr<void(uint32_t)>(0x02044334u)(lifecycle);
     stage_virtual<uint32_t>(self,16);
-    Ptr<void(uint32_t,uint32_t)>(0x0203c1e8u)(self,at<uint32_t>(0x020a0eacu));
+    packed::Space::current().release(self); // the actor heap is native-owned
 }
 // fBase_c::AfterBehavior/AfterRender (0x02043af8/0x02043ac4) are empty
 // (size 4); dScene_c's overrides (0x0202e3c8/0x0202e398) only forward.

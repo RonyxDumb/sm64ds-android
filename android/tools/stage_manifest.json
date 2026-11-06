@@ -1464,6 +1464,20 @@
       "unit": "stage_isolated_GetMinimapScale"
     },
     {
+      "path": "external/sm64ds-pc/src/func_0203b27c.c",
+      "sha256": "eead244f51912fbf5c19504c81c2c2764aa165fd59684413b31b71075d69fec7",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\nstruct Vector3 { s32 x;\ns32 y;\ns32 z; };\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n\n\nstruct Node { Ptr<struct Node> next; Ptr<struct Node> prev; };\nstruct List { Ptr<struct Node> head; Ptr<struct Node> tail; };\nextern \"C\" int pk_func_0203b27c(Ptr<struct List> l, Ptr<struct Node> n) {\n  if(n == 0) goto fail;\n  if(n->next != 0){\n    n->next->prev = n->prev;\n  } else {\n    if(n == l->head) l->head = n->prev;\n  }\n  if(n->prev != 0){\n    n->prev->next = n->next;\n  } else {\n    if(n == l->tail) l->tail = n->next;\n  }\n  n->next = 0;\n  n->prev = 0;\n  goto ok;\nfail:\n  return 0;\nok:\n  return 1;\n}\n\nextern \"C\" unsigned int abi_func_0203b27c(unsigned int a0, unsigned int a1) { return uword(pk_func_0203b27c((Ptr<struct List>)(a0), (Ptr<struct Node>)(a1))); }\n",
+      "unit": "stage_isolated_func_0203b27c"
+    },
+    {
+      "path": "external/sm64ds-pc/src/func_0203b3c0.c",
+      "sha256": "1942006d0db7d1641724256284c7e2726a20baaa8761d0e5f607628916634731",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\nstruct Vector3 { s32 x;\ns32 y;\ns32 z; };\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n\n\nstruct Node { int f0; int f4; Ptr<struct Node> f8; Ptr<struct Node> fc; };\n\nextern \"C\" int pk_func_0203b3c0(Ptr<int> list, Ptr<struct Node> n) {\n    if(n == 0) goto fail;\n    if(n->f4 != 0) return 0;\n    if(n->f8 != 0){\n        n->f8->fc = n->fc;\n    }else{\n        if(n->f0 != 0){\n            *(Ptr<int>)((n->f0 + 4)) = word(n->fc);\n        }else{\n            *list = 0;\n        }\n    }\n    if(n->fc != 0){\n        n->fc->f8 = n->f8;\n    }\n    n->f8 = 0;\n    n->fc = 0;\n    n->f0 = 0;\n    goto success;\nfail:\n    return 0;\nsuccess:\n    return 1;\n}\n\nextern \"C\" unsigned int abi_func_0203b3c0(unsigned int a0, unsigned int a1) { return uword(pk_func_0203b3c0((Ptr<int>)(a0), (Ptr<struct Node>)(a1))); }\n",
+      "unit": "stage_isolated_func_0203b3c0"
+    },
+    {
       "path": "external/sm64ds-pc/src/func_0203db3c.c",
       "sha256": "415345f858e67b1fee9f1ddce8666d317a9b451882cc91f4c5f20582265e4115",
       "header": false,
@@ -3524,6 +3538,14 @@
     {
       "address": 33730376,
       "symbol": "abi_GetMinimapScale"
+    },
+    {
+      "address": 33796732,
+      "symbol": "abi_func_0203b27c"
+    },
+    {
+      "address": 33797056,
+      "symbol": "abi_func_0203b3c0"
     },
     {
       "address": 33807164,
