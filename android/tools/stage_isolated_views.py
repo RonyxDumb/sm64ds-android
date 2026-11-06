@@ -85,6 +85,10 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         return '(*('+by_offset[offset]+' *)((char *)object+0x%x))' % offset
     body = re.sub(r'(?<![.>\w])unk_([0-9a-f]+)\b', unknown, body)
     declarations = '\n'.join(declarations)
+    # Opaque class handles: the bodies only pass these pointers through.
+    opaque = sorted(set(re.findall(r'\b(\w+_c|Player)\b', declarations+body)) - {symbol})
+    extra = ''.join('struct %s;\n' % name for name in opaque
+                    if not re.search(r'struct\s+'+name+r'\s*\{', extra+body)) + extra
     row, bindings = projected(rel, body, declarations, [symbol], extra=extra, auto_globals=False)
     row['unit'] = 'stage_isolated_'+symbol
     for binding in bindings:
@@ -172,6 +176,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN8dActor_c10FindWithIDEj', 0, 'dActor_c'),
 ]
 
 
