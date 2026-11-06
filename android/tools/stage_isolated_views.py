@@ -296,6 +296,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZNK6Camera12IsUnderwaterEv', 0, 'Camera'),
     ('_ZN5Stage9RenderFogEv', 0, 'Stage'),
     ('_ZN5Stage11GetSkyboxIDEv', 0, 'Stage'),
     ('_ZN5Timer10ResetTimerEv', 0, 'Timer'),

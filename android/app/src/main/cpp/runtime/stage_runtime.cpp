@@ -1372,6 +1372,47 @@ void stage_particle_tracker_update(uint32_t self) {
     Ptr<void(uint32_t)>(0x02021becu)(self+8);
     Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
 }
+void stage_shadow_render_all() {
+    // Complete static ShadowModel::RenderAll (ShadowModel.h: data 0x08, mat
+    // 0x0c, scale 0x10, opacity 0x1c, next 0x24); scratch matrix data_020a0e68.
+    constexpr uint32_t scratch=0x020a0e68u;
+    for (uint32_t node=at<uint32_t>(0x0209cef4u);node;node=at<uint32_t>(node+0x24)) {
+        const uint32_t model=at<uint32_t>(node+0x08);
+        Ptr<void(uint32_t,int32_t,int32_t,int32_t)>(0x0203c178u)(scratch,
+            at<int32_t>(node+0x10),at<int32_t>(node+0x14),at<int32_t>(node+0x18));
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02052914u)(scratch,at<uint32_t>(node+0x0c),scratch);
+        at<int32_t>(scratch+0x28)+=0x2000; // t.y
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02052914u)(scratch,0x0209b3ecu,scratch);
+        const uint32_t opacity=at<uint8_t>(node+0x1c);
+        Ptr<void(uint32_t,uint32_t)>(0x02046120u)(model,opacity);
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(0x020443c8u)(model,scratch,0);
+        Ptr<void(uint32_t,uint32_t,int)>(0x02046088u)(model,opacity,1);
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(0x020443c8u)(model,scratch,0);
+    }
+    at<uint8_t>(0x0209ceecu)=1;
+}
+void stage_render_model(uint32_t self) {
+    // Complete Stage::RenderModel (0x0202b268; recovered isolated unit):
+    // mModel 0x86c, its ModelComponents at 0x874 (modelFile, materials of
+    // 0x30 bytes), per-slot material groups of 0x40 at *(modelFile+8).
+    const uint32_t components=self+0x874;
+    uint32_t inner=at<uint32_t>(at<uint32_t>(components)+8);
+    const uint32_t materials=at<uint32_t>(components+4);
+    uint32_t slot=self+0x8bc;
+    const int count=at<uint8_t>(at<uint32_t>(0x0209f340u)+0x14);
+    for (int i=0;i<count;++i,slot+=0xc,inner+=0x40) {
+        const uint16_t n=at<uint16_t>(inner+0x30);
+        const uint32_t ids=at<uint32_t>(inner+0x34);
+        for (uint16_t j=0;j<n;++j) {
+            auto &flags=at<uint32_t>(materials+at<uint8_t>(ids+j)*0x30+0x24);
+            if (at<uint8_t>(slot+4) && (flags&0x1f0000)==0x1f0000) flags&=~0x80000000u;
+            else flags|=0x80000000u;
+        }
+        if (at<uint8_t>(slot+4) && at<uint32_t>(slot))
+            Ptr<void(uint32_t,uint32_t)>(0x02015888u)(at<uint32_t>(slot),components);
+    }
+    stage_virtual<void>(self+0x86c,5,0x020755d4u); // Model::Render(&data_020755d4)
+}
 int stage_render(uint32_t self) {
     // Complete Stage::Render (0x0202b8a4; external/sm64ds-pc/src/_ZN5Stage6RenderEv.cpp).
     const auto u8at=[](uint32_t a) { return at<uint8_t>(a); };
@@ -2030,6 +2071,8 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0202b8a4u,&stage_render);
+    space.bind(0x0202b268u,&stage_render_model);
+    space.bind(0x02015d38u,&stage_shadow_render_all);
     space.bind(0x02022f20u,&stage_particle_tracker_update);
     space.bind(0x02021becu,&stage_particle_contents_update);
     space.bind(0x02022f40u,&stage_particle_tracker_initialise);
