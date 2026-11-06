@@ -117,6 +117,11 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     opaque = sorted(set(re.findall(r'\b(\w+_c|Player)\b', declarations+body)) - {symbol})
     extra = ''.join('struct %s;\n' % name for name in opaque
                     if not re.search(r'struct\s+'+name+r'\s*\{', extra+body)) + extra
+    for vector in ('struct Vector3 { s32 x,y,z; };\n', 'struct Vector3_16 { s16 x,y,z; };\n'):
+        name = vector.split()[1]
+        if re.search(r'\b'+name+r'\b', declarations+body) and not re.search(
+                r'struct\s+'+name+r'\s*\{|\}\s*'+name+r'\s*;', extra+body+declarations):
+            extra += vector
     row, bindings = projected(rel, body, declarations, [symbol], extra=extra, auto_globals=False)
     row['unit'] = 'stage_isolated_'+symbol
     for binding in bindings:
