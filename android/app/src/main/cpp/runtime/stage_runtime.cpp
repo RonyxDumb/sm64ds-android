@@ -1351,6 +1351,27 @@ void stage_particle_tracker_initialise(uint32_t self) {
         Ptr<uint32_t(uint32_t,uint32_t,uint32_t)>(0x0203c578u)(heap,resource,oldSize);
     }
 }
+void stage_particle_contents_update(uint32_t self) {
+    // Complete Particle::SysTracker::Contents::Update (Particle__SysTracker.h):
+    // 0x40 entries of 0x1c at +8; callback_c::OnUpdate is vtable slot 1.
+    uint32_t entry=self+8;
+    for (int i=0;i<0x40;++i,entry+=0x1c) {
+        if (!at<uint32_t>(entry)) continue;
+        if (const uint32_t callback=at<uint32_t>(entry+0x10)) {
+            const bool active=at<uint8_t>(entry+0xa)==1;
+            if (stage_virtual<int>(callback,1,at<uint32_t>(entry+0xc),uint32_t(active)))
+                at<uint8_t>(entry+0xa)=1;
+        }
+        if (at<uint8_t>(entry+0xa)==1) { at<uint8_t>(entry+0xa)=0; continue; }
+        Ptr<void(uint32_t,uint32_t)>(0x02021a04u)(self,entry); // Contents::Unlink
+        at<uint8_t>(self+4)=uint8_t(i);
+    }
+}
+void stage_particle_tracker_update(uint32_t self) {
+    // Complete Particle::SysTracker::Update: mContents (0x8) then the manager.
+    Ptr<void(uint32_t)>(0x02021becu)(self+8);
+    Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
+}
 int stage_render(uint32_t self) {
     // Complete Stage::Render (0x0202b8a4; external/sm64ds-pc/src/_ZN5Stage6RenderEv.cpp).
     const auto u8at=[](uint32_t a) { return at<uint8_t>(a); };
@@ -2009,6 +2030,8 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0202b8a4u,&stage_render);
+    space.bind(0x02022f20u,&stage_particle_tracker_update);
+    space.bind(0x02021becu,&stage_particle_contents_update);
     space.bind(0x02022f40u,&stage_particle_tracker_initialise);
     space.bind(0x02023134u,&stage_particle_alloc_tex_vram);
     space.bind(0x02015e14u,&stage_shadow_clean_all);
