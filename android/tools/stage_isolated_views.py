@@ -215,6 +215,10 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_02059ba0', 0),
+    ('func_0201aac8', 0),
+    ('func_0201aad4', 0),
+    ('func_0201aa18', 0),
     ('func_0201964c', 0),
     ('func_02011a5c', 0),
     ('func_02008b4c', 0),
@@ -266,6 +270,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5Timer10ResetTimerEv', 0, 'Timer'),
     ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject', {
         # The unit names overlay-9 data at 0x02113c20 as a function.
         '&func_02113c20': '&data_ov009_02113c20',
