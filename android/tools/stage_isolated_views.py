@@ -38,6 +38,24 @@ def player_fields():
     return fields
 
 
+def shared_declarations(raw):
+    """Imports from the unit's decl_*.h headers, limited to names it uses."""
+    text = re.sub(r'^\s*#[^\n]*', '', raw, flags=re.M)
+    used = set(re.findall(r'\b\w+\b', text))
+    # Names the unit declares itself keep the unit's own spelling.
+    own = set(re.findall(r'^\s*extern\b[^;{]*?(\w+)\s*(?:\(|\[|;)', text, re.M))
+    found = []
+    for header in re.findall(r'#include "(decl_\w+\.h)"', raw):
+        for rel in ('external/sm64ds-pc/include/'+header, 'include/'+header):
+            if (ROOT/rel).exists():
+                for line in re.findall(r'^extern [^;\n{}]+;', (ROOT/rel).read_text(), re.M):
+                    name = re.search(r'(\w+)\s*(?:\(|\[|;)', line)
+                    if name and name[1] in used and name[1] not in own:
+                        found.append(line)
+                break
+    return '\n'.join(dict.fromkeys(found))
+
+
 def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None,
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
@@ -51,10 +69,11 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         for old, new in (types or {}).items():
             hoisted = [re.sub(r'\b'+old+r'\b', new, line) for line in hoisted]
         raw = prelude+'extern "C" {\n'+'\n'.join(hoisted)+'\n}\n'+raw
+    shared = shared_declarations(raw)
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
         raw = raw.replace(old, new)
-    declarations = []
+    declarations = [shared] if shared else []
     for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
         declarations.append(block)
     raw = re.sub(r'extern "C" \{\n.*?\n\}\n', '', raw, flags=re.S)
