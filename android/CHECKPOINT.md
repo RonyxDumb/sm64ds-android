@@ -1,3 +1,17 @@
+# Checkpoint — 2026-11-06, original Wanted and common minigame execution
+
+Work continues on main. The native link now includes original Wanted gameplay,
+base lifecycle, pause/options, 29 banner resources and animations, shared FX,
+2D sprite wrappers and the original BSS callback initializers. The projection
+preserves four-byte records and resolves source imports at cartridge addresses.
+
+Local no-ROM game suite passed with AddressSanitizer/UndefinedBehaviorSanitizer.
+The private EU title -> room -> Wanted integration is being exercised; no
+successful launch, complete round or Android phone test is claimed here yet.
+No ROM, extracted resource or rendered cartridge artwork is committed.
+
+---
+
 # Checkpoint — 2026-11-05, Hanachan Wiggler array and original state constructor
 
 A third original 2D scene factory is now bound: Hanachan (0x182),

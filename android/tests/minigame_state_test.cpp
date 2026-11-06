@@ -349,7 +349,7 @@ void minigame_constructor_runtime() {
             assert(*Ptr<int32_t>(actor+0x0e4u)==-1);
             assert(*Ptr<uint32_t>(actor+0xbcu)==19);
             assert(*Ptr<int32_t>(actor+0x4650u)==12345);
-            assert(*Ptr<int32_t>(actor+0x058u)==(pair.first==0x16e?60:120));
+        assert(*Ptr<int32_t>(actor+0x058u)==(pair.first==0x16e || pair.first==0x182?60:120));
             assert(space.allocation_size(actor)==pair.second);
             if (pair.first==0x182) {
                 assert(*Ptr<uint32_t>(actor+0x4f60u)==0);

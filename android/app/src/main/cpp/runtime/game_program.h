@@ -45,6 +45,7 @@ public:
     const MinigameMenuSession *minigame_menu_session() const { return minigameMenu_.get(); }
     const MinigameMenuArtwork *minigame_artwork() const { return minigameArtwork_.get(); }
     const MinigameRuntime *minigame_runtime() const { return minigameRuntime_.get(); }
+    const MinigameGameplayRuntime *minigame_gameplay_runtime() const { return minigameGameplayRuntime_.get(); }
     int active_scene() const { return activeScene_; }
     const BootState &boot() const {
         return boot_;

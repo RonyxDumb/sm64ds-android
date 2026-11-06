@@ -224,6 +224,7 @@ def oam():
         'u8 OAM::GetObjWidth(int shape, int sizeBits)':'mg_OamWidth',
         'void OAM::Render(bool sub, struct OamAttr *attr_, int xOff, int yOff, int palette, int priority,\n                 int scaleX, int scaleY, int rotation, int mode)':'mg_Oam10',
         'OamAttr *OAM::Render(bool draw, OamAttr *obj_, int px, int py, int pal, int prio, int scale0,\n                     int rot0)':'mg_Oam8',
+        'void OAM::Render(bool draw, OamAttr *obj_, int px, int py, int pal, int prio, Matrix2x2 *mtx)':'mg_OamMatrix',
         'void OAM::RenderSub(OamAttr *data, s32 x, s32 y, s32 palette, s32 priority)':'mg_OamSub',
         'void OAM::Reset()':'mg_OamReset', 'void OAM::Flush()':'mg_OamFlush',
         'void OAM::Load()':'mg_OamLoad',
@@ -238,6 +239,8 @@ def oam():
              'OAM::LoadAffineParams':'mg_OamAffine','OAM::Render':'mg_Oam10',
              'CP15::FlushAndInvalidateDataCache':'mg_Cache'}
     for old,new in aliases.items(): body=body.replace(old,new)
+    for old,new in [('GetObjWidth','mg_OamWidth'),('GetObjHeight','mg_OamHeight'),('LoadAffineParams','mg_OamAffine')]:
+        body=re.sub(r'(?<!\w)'+old+r'\(',new+'(',body)
     body=body.replace('MultiCopy_Int(', 'mg_CopyWords(').replace('MultiCopy32Bytes(', 'mg_CopyWords(')
     for table in ('data_020755a0','data_020755ac'):
         body=replace_once(body,'*(unsigned char *)&((int *)((char *)'+table+' + sizeBits))[shape]',
@@ -262,12 +265,14 @@ void func_02056674(const void *,u32,u32);
 def main():
     from lift_minigame_state import generate
     from lift_minigame_records import generate as records
+    from lift_minigame_gameplay import generate as gameplay, SYMBOL_FILES
     state,bindings,_=generate(digest)
     record_sources,record_bindings=records(digest)
     for binding in record_bindings: binding['overlay']=4
-    data={'version':1,'namespace':'minigame_sources','entries':[menu(),oam(),state,record_sources],
-          'bindings':bindings+record_bindings,
-          'dependencies':{p:digest(p) for p in ('config/arm9/symbols.txt','config/arm9/itcm/symbols.txt')}}
+    game_sources,game_bindings=gameplay(digest,{b['address'] for b in bindings+record_bindings})
+    data={'version':1,'namespace':'minigame_sources','entries':[menu(),oam(),state,record_sources]+game_sources,
+          'bindings':bindings+record_bindings+game_bindings,
+          'dependencies':{p:digest(p) for p in SYMBOL_FILES}}
     (ROOT/'android/tools/minigame_manifest.json').write_text(json.dumps(data,indent=2)+'\n')
 
 

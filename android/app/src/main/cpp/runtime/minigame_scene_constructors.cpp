@@ -74,6 +74,7 @@ uint32_t construct_minigame_2d(uint32_t scene,uint32_t originalVptr) {
     at<uint32_t>(0x020beb68u)=actor; // gMgScene
     // Recovered dScMgBase_c::dScMgBase_c fields (ov004:0x020b2adc).
     const uint32_t param=at<uint32_t>(actor+8u);
+    at<int16_t>(actor+0x465eu)=at<int16_t>(0x020bc070u+((param>>16)&0xffu)*2u);
     at<uint32_t>(actor+8u)=param&0xffffu;
     at<uint32_t>(actor+0xbcu)=at<uint32_t>(0x0209b308u+0x30u);
     at<int32_t>(actor+0x064u)=-1;

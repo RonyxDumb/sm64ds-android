@@ -194,13 +194,13 @@ void pk_mg_LoadGroup(int group,int bank) {
     at<uint8_t>(0x0209b478u)=0;
 }
 void pk_mg_UnsetVoice() { at<uint8_t>(0x0209b478u)=0; }
-int pk_mg_Effect(int n) { return current().program().sound(2,static_cast<uint32_t>(n))?1:0; }
+int pk_mg_Effect(int n) { return sm64ds::GameProgram::active().sound(2,static_cast<uint32_t>(n))?1:0; }
 void pk_mg_Music(int n) {
-    if (!current().program().native_audio({sm64ds::SoundOp::Music,0,0,n}))
+    if (!sm64ds::GameProgram::active().native_audio({sm64ds::SoundOp::Music,0,0,n}))
         throw std::runtime_error("Could not start original minigame music.");
 }
 void pk_mg_StopMusic(unsigned frames) {
-    if (!current().program().native_audio({sm64ds::SoundOp::Stop,0,0,static_cast<int>(frames)}))
+    if (!sm64ds::GameProgram::active().native_audio({sm64ds::SoundOp::Stop,0,0,static_cast<int>(frames)}))
         throw std::runtime_error("Could not stop original minigame music.");
 }
 int pk_mg_FaderReady() { return data_0209f5bc->IsAtStart(); }

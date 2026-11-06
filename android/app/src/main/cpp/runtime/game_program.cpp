@@ -539,6 +539,7 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 finish_tick(); return;
             }
             if (data_02092664 == 5) {
+                if (minigameGameplayRuntime_) minigameGameplayRuntime_->cleanup();
                 minigameGameplayRuntime_.reset();
                 const unsigned group=minigameRuntime_?minigameRuntime_->group():minigameGroup_;
                 const unsigned page=minigameRuntime_?minigameRuntime_->page():minigamePage_;

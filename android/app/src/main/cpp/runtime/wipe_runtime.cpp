@@ -16,13 +16,17 @@ alignas(4) u8 data_0209f648[0x600]{};
 alignas(4) short data_023c0000[0x2000]{};
 namespace {
 IRQ::Handler hblank=nullptr;
+IRQ::Handler tableFlip=sm64ds_wipe_vblank;
 bool interruptEnabled=false,displayEnabled=false;
 }
 namespace sm64ds::wipe_detail {
 void set_handler(u32 mask,IRQ::Handler handler) {
     if (mask!=2 || (handler && handler!=sm64ds_wipe_hblank))
         throw std::runtime_error("Unsupported original wipe IRQ callback.");
-    hblank=handler;
+    hblank=handler; tableFlip=sm64ds_wipe_vblank;
+}
+void set_external_handlers(IRQ::Handler handler,IRQ::Handler flip) {
+    hblank=handler; tableFlip=flip?flip:sm64ds_wipe_vblank;
 }
 u32 enable(u32 mask) {
     if (mask!=2) throw std::runtime_error("Unsupported original wipe IRQ mask.");
@@ -78,10 +82,11 @@ void palette_sub(const void *source,u32 offset,u32 bytes) {
 }
 }
 namespace sm64ds {
-bool wipe_hblank_active() { return hblank && interruptEnabled && displayEnabled; }
+bool wipe_hblank_active() { return hblank && interruptEnabled && (ntr::io_read(0x04000004,2)&0x10u); }
 void reset_wipe() {
     sm64ds_wipe_reset_original();
     hblank=nullptr; interruptEnabled=displayEnabled=false;
+    tableFlip=sm64ds_wipe_vblank;
     data_0209f5f8=0; data_0209f5fc=0; data_0209f608=data_0209f60c=0;
     ntr::ppu_clear_window_lines();
 }
@@ -101,7 +106,7 @@ void prepare_wipe_scanlines() {
     // Execute the original VBlank table flip and original HBlank routine.
     // The host rasterizer consumes the resulting per-line window registers
     // once for BG and OBJ on both engines, without advancing game time.
-    sm64ds_wipe_vblank();
+    tableFlip();
     for (unsigned line=0;line<ntr::SCREEN_H;++line) {
         main[line]=ntr::io_read(0x04000040,4);
         sub[line]=ntr::io_read(0x04001040,4);

@@ -50,12 +50,16 @@ void map_minigame_live_arm9(packed::Space &space, Cartridge::DataImage &arm9) {
     struct Live { uint32_t address; void *bytes; size_t size; };
     const Live live[]={{0x0209caa0u,data_0209caa0,0x32c},
                        {0x0209f5f8u,&data_0209f5f8,1},
+                       {0x0209f608u,const_cast<uint32_t *>(&data_0209f608),4},
+                       {0x0209f60cu,const_cast<uint32_t *>(&data_0209f60c),4},
+                       {0x0209f648u,data_0209f648,sizeof data_0209f648},
                        {0x020a0de8u,gTouchHeld,16},
                        {0x020a0e40u,&gActivePlayerSlot,1},
                        {0x020a0e58u,data_020a0e58,16}};
     uint32_t begin=arm9.base;
     for (const auto &span:live) {
-        space.map(begin,arm9.bytes.data()+begin-arm9.base,span.address-begin);
+        if (span.address>begin)
+            space.map(begin,arm9.bytes.data()+begin-arm9.base,span.address-begin);
         space.map(span.address,span.bytes,span.size);
         begin=span.address+static_cast<uint32_t>(span.size);
     }

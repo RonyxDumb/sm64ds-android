@@ -17,6 +17,7 @@ namespace GXS { void LoadBGPltt(const void *,u32,u32); }
 namespace cstd { int sqrt(unsigned long long); }
 namespace sm64ds::wipe_detail {
 void set_handler(u32,IRQ::Handler);
+void set_external_handlers(IRQ::Handler,IRQ::Handler);
 u32 enable(u32); u32 disable(u32);
 int set_hblank(int);
 void flush(const void *,size_t);

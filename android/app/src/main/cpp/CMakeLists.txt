@@ -69,7 +69,7 @@ include("${MINIGAME_ROOT}/inputs.cmake")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${REPO_ROOT}/android/tools/minigame_manifest.json" ${PACKED_FRONTEND_INPUTS})
 # Projected POD headers must never enter native runtime includes.
-target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include"
+target_include_directories(sm64ds_frontend PRIVATE "${PACKED_ROOT}/include" "${MINIGAME_ROOT}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${REPO_ROOT}/port/ntr/include" "${REPO_ROOT}/include")
 # The downloadable debug APK is for on-device playtesting. Keep symbols,
 # but do not compile the hundreds of native scene/frontend routines and the

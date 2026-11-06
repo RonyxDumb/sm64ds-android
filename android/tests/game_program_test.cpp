@@ -42,6 +42,7 @@ void minigame_constructor_runtime();
 void minigame_record_runtime();
 void wipe_runtime_tests();
 void minigame_state_cartridge(sm64ds::Cartridge &);
+void minigame_gameplay_cartridge(const char *);
 namespace {
 void put16(std::vector<uint8_t> &v, size_t at, uint16_t x) {
     v[at] = x;
@@ -844,6 +845,10 @@ void minigame_art_decode() {
 }
 
 int main(int argc, char **argv) {
+    if (argc>1 && std::getenv("SM64DS_MINIGAME_ONLY")) {
+        minigame_gameplay_cartridge(argv[1]);
+        return 0;
+    }
     minigame_oam_runtime();
     minigame_state_runtime();
     minigame_base_leaf_runtime();
