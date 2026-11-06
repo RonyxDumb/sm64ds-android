@@ -1248,6 +1248,13 @@ void stage_player_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
     stage_static_pmf_dispatch(0x0210e158u,0x02110794u,sources,self,p,a2,a3);
 }
 extern "C" void abi___sinit_02075154();
+uint32_t stage_clipper_ctor(uint32_t self) {
+    // Complete Clipper::Clipper() (external/sm64ds-pc/src/_ZN7ClipperC1Ev.cpp):
+    // the ROM stores _ZTV7Clipper, then the shared frustum init helper.
+    at<uint32_t>(self)=0x0208e730u;
+    Ptr<void(uint32_t,int32_t,uint32_t,int32_t,int32_t)>(0x020156dcu)(self,0x1555,0xe38,0x1000,0x1388000);
+    return self;
+}
 int stage_demo_bg_thunk(uint32_t c) {
     // Complete func_ov002_020f26d4: a register-preserving tail call
     // (ldr ip / bx ip) into func_ov002_020f2630 with the same r0.
@@ -1763,8 +1770,6 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
     space.bind(0x020fb8bcu,&stage_minimap_factory);
     space.bind(0x020f8808u,&stage_demo_factory);
-    // The same recovered __sinit_02075154 unit the minigame manifest links.
-    space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x020f7d74u,&stage_demo_dispatch_command);
     space.bind(0x020bd664u,&stage_player_dispatch_command);
     space.bind(0x020f26d4u,&stage_demo_bg_thunk);
@@ -1786,6 +1791,9 @@ void bind_stage_audio_runtime(packed::Space &space) {
 }
 
 void bind_stage_runtime(packed::Space &space) {
+    // The same recovered __sinit_02075154 unit the minigame manifest links.
+    space.bind(0x02075154u,&abi___sinit_02075154);
+    space.bind(0x02015730u,&stage_clipper_ctor);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
