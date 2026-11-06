@@ -19,5 +19,6 @@ int scene_before_behavior(uint32_t actor);
 int scene_waiting_children(uint32_t actor);
 int actor_before_behavior(uint32_t actor);
 int actor_before_render(uint32_t actor);
+int scene_before_render(uint32_t actor);
 void fbase_after_process(uint32_t actor,uint32_t success);
 }

@@ -1351,6 +1351,64 @@ void stage_particle_tracker_initialise(uint32_t self) {
         Ptr<uint32_t(uint32_t,uint32_t,uint32_t)>(0x0203c578u)(heap,resource,oldSize);
     }
 }
+int stage_render(uint32_t self) {
+    // Complete Stage::Render (0x0202b8a4; external/sm64ds-pc/src/_ZN5Stage6RenderEv.cpp).
+    const auto u8at=[](uint32_t a) { return at<uint8_t>(a); };
+    if (((u8at(0x0209f294u)|u8at(0x0209f2c4u)|u8at(0x0209f20cu))&0xff)==0) {
+        uint32_t slot=self+0x8bc;
+        const int count=at<uint8_t>(at<uint32_t>(0x0209f340u)+0x14);
+        for (int i=0;i<count;++i,slot+=0xc)
+            if (at<uint8_t>(slot+4) && at<uint32_t>(slot))
+                Ptr<void(uint32_t)>(0x02015c3cu)(at<uint32_t>(slot)); // Animation::Advance
+        Ptr<void(uint32_t)>(0x02022f20u)(self+0x50); // Particle::SysTracker::Update
+    }
+    Ptr<void()>(0x020391f0u)();
+    Ptr<void(uint32_t)>(0x0202b67cu)(self); // RenderFog
+    if (const uint32_t sky=at<uint32_t>(self+0x9bc)) {
+        const uint32_t src=at<uint32_t>(0x0209f318u)+0x8c;
+        for (unsigned lane=0;lane<3;++lane)
+            at<int32_t>(sky+0x1c+(9+lane)*4)=at<int32_t>(src+lane*4)>>3;
+        stage_virtual<void>(at<uint32_t>(self+0x9bc),5,0); // Draw(0)
+    }
+    Ptr<void(uint32_t)>(0x0202b268u)(self); // RenderModel
+    Ptr<void()>(0x02015d38u)();            // ShadowModel::RenderAll
+    Ptr<void(uint32_t)>(0x0202b164u)(self); // RenderModelTransparent
+    if (u8at(0x0209f2d8u)==1) {
+        if (u8at(0x0209fc9cu)==0 && u8at(0x0209f2c4u)==0) {
+            Ptr<void()>(0x0202a168u)();
+            Ptr<void()>(0x02029ef8u)();
+            if (u8at(0x0209f294u)!=0 && u8at(0x0209f290u)!=2) Ptr<void()>(0x02023be0u)();
+        }
+        Ptr<void()>(0x0203083cu)();
+    }
+    Ptr<void()>(0x02014aa8u)();   // dCc_c::Process
+    Ptr<void()>(0x020aaf40u)();   // func_ov001_020aaf40
+    {
+        int x=0,y=0;
+        const int n=u8at(0x0209f21cu);
+        for (int j=0;j<n;++j) {
+            const uint32_t p=at<uint32_t>(0x0209f394u+j*4);
+            if (!p) continue;
+            const uint8_t bit=at<uint8_t>(p+0x6ff);
+            x^=uint8_t(at<int32_t>(p+0x64)^(at<int32_t>(p+0x5c)^at<int32_t>(p+0x60)));
+            y|=uint8_t((bit&1)<<j);
+        }
+        Ptr<void(int,int)>(0x0203db3cu)(0x10,x);
+        Ptr<void(int,int)>(0x0203db3cu)(0x10,y);
+    }
+    if (u8at(0x0209f2c4u)) {
+        Ptr<void()>(0x020251d0u)(); // PS_Render
+    } else if (u8at(0x0209f20cu) && u8at(0x0209f2d4u)) {
+        int v=Ptr<int(int)>(0x02013558u)(at<int8_t>(0x02092124u))<0xf ? 0x80 : 0x70;
+        if (u8at(0x0209f2b0u)) v+=0x10;
+        using OamRender=int(int,uint32_t,int,int,int,int,uint32_t);
+        Ptr<OamRender>(0x020214a4u)(0,0x020abad8u,0x68,v,-1,-1,0);
+        Ptr<OamRender>(0x020214a4u)(0,0x020ab9c8u,0x78,v+8,-1,-1,0);
+        Ptr<void(int,int,int,int,int)>(0x020250d0u)(u8at(0x0209f260u),0x80,v,1,8);
+    }
+    Ptr<void()>(0x02023db8u)(); // LC_Render
+    return 1;
+}
 void stage_load_skybox(uint32_t self) {
     // Complete Stage::LoadSkybox (recovered isolated unit); mSkyboxModel 0x9bc.
     const uint32_t skyboxID=Ptr<uint32_t(uint32_t)>(0x0202a93cu)(self);
@@ -1941,6 +1999,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202e3d4u,&scene_before_behavior);
     space.bind(0x02010fd4u,&actor_before_behavior);
     space.bind(0x02010f78u,&actor_before_render);
+    space.bind(0x0202e3a4u,&scene_before_render);
     // dActor_c::AfterBehavior/AfterRender only forward to the empty fBase_c ones.
     for (uint32_t after : {0x02043af8u,0x02043ac4u,0x0202e3c8u,0x0202e398u,0x02010fc8u,0x02010f6cu})
         space.bind(after,&fbase_after_process);
@@ -1949,6 +2008,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b534u,&stage_load_texture_transformers);
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
+    space.bind(0x0202b8a4u,&stage_render);
     space.bind(0x02022f40u,&stage_particle_tracker_initialise);
     space.bind(0x02023134u,&stage_particle_alloc_tex_vram);
     space.bind(0x02015e14u,&stage_shadow_clean_all);
@@ -2150,6 +2210,8 @@ int actor_before_behavior(uint32_t self) {
     for (unsigned lane=0;lane<3;++lane) at<int32_t>(self+0x68+lane*4)=at<int32_t>(self+0x5c+lane*4);
     return 1;
 }
+// Complete dScene_c::BeforeRender (0x0202e3a4).
+int scene_before_render(uint32_t actor) { return native_fbase_before_render(actor) ? 1 : 0; }
 int actor_before_render(uint32_t self) {
     // Complete dActor_c::BeforeRender (0x02010f78): skip hidden (0x20) or
     // off-screen-and-culled (8 with 2) actors.

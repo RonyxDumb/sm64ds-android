@@ -123,7 +123,6 @@ int game_scene_before_init(uint32_t actor) {
     Ptr<void()>(0x0202e6c8u)();
     return 1; // fBase_c::BeforeInitResources is true
 }
-int game_scene_before_render(uint32_t actor) { return sm64ds::native_fbase_before_render(actor); }
 void game_scene_after_cleanup(uint32_t actor,uint32_t result) {
     if (result==2) data_02092660=0;
     Ptr<void(uint32_t,uint32_t)>(0x02043b2c)(actor,result);
@@ -153,7 +152,7 @@ void bind_game_services(Space &space) {
     for (uint32_t address:{0x02058c08u,0x02058c24u,0x02058c40u,0x02058c68u})
         space.bind(address,&pk_mg_Cache);
     space.bind(0x02019028,&game_reset_files);
-    space.bind(0x0202e3a4,&game_scene_before_render);
+    space.bind(0x0202e3a4,&sm64ds::scene_before_render);
     space.bind(0x0202e3d4,&sm64ds::scene_before_behavior);
     space.bind(0x020431c4,&sm64ds::scene_waiting_children);
     space.bind(0x02043c80,&sm64ds::native_fbase_init);
