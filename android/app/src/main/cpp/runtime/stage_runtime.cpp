@@ -1372,6 +1372,22 @@ void stage_particle_tracker_update(uint32_t self) {
     Ptr<void(uint32_t)>(0x02021becu)(self+8);
     Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
 }
+void stage_render_model_transparent(uint32_t self) {
+    // Complete Stage::RenderModelTransparent (0x0202b164): the second pass
+    // enables only the non-opaque materials of active texture-animation slots.
+    const uint32_t components=self+0x874;
+    uint32_t arr=at<uint32_t>(at<uint32_t>(components)+8),slot=self+0x8bc;
+    const int count=at<uint8_t>(at<uint32_t>(0x0209f340u)+0x14);
+    for (int i=0;i<count;++i,slot+=0xc,arr+=0x40) {
+        if (!at<uint8_t>(slot+4)) continue;
+        const uint32_t ids=at<uint32_t>(arr+0x34);
+        for (uint16_t j=0;j<at<uint16_t>(arr+0x30);++j) {
+            auto &flags=at<uint32_t>(at<uint32_t>(components+4)+at<uint8_t>(ids+j)*0x30+0x24);
+            if ((flags&0x1f0000)!=0x1f0000) flags&=~0x80000000u; else flags|=0x80000000u;
+        }
+    }
+    stage_virtual<void>(self+0x86c,5,0x020755d4u);
+}
 void stage_shadow_render_all() {
     // Complete static ShadowModel::RenderAll (ShadowModel.h: data 0x08, mat
     // 0x0c, scale 0x10, opacity 0x1c, next 0x24); scratch matrix data_020a0e68.
@@ -2073,6 +2089,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b8a4u,&stage_render);
     space.bind(0x0202b268u,&stage_render_model);
     space.bind(0x02015d38u,&stage_shadow_render_all);
+    space.bind(0x0202b164u,&stage_render_model_transparent);
     space.bind(0x02022f20u,&stage_particle_tracker_update);
     space.bind(0x02021becu,&stage_particle_contents_update);
     space.bind(0x02022f40u,&stage_particle_tracker_initialise);

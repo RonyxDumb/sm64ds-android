@@ -22,6 +22,12 @@ for path in ('config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt',
         if match:
             SYMBOLS.setdefault(match[1], int(match[2], 16))
 SYMBOLS['func_ov001_020ab2e4'] = 0x020ab2e4
+# Overlay 1 (the resident common module) functions and data: original stage
+# frames call its HUD/coin routines at their cartridge addresses.
+for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov001/symbols.txt').read_text().splitlines():
+    match = re.match(r'(\S+) kind:function.*?addr:0x([0-9a-f]+)', line)
+    if match:
+        SYMBOLS.setdefault(match[1], int(match[2], 16))
 SYMBOLS['_ZN10dScStage_c18LoadClsnAndObjectsER11LVL_OverlayjR7dBgW_Kc'] = 0x020fe190
 SYMBOLS['_ZN6Player7SetAnimEjiit'] = 0x020bef2c
 for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov002/symbols.txt').read_text().splitlines():
