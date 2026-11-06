@@ -1248,6 +1248,15 @@ void stage_player_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
     stage_static_pmf_dispatch(0x0210e158u,0x02110794u,sources,self,p,a2,a3);
 }
 extern "C" void abi___sinit_02075154();
+int32_t stage_cstd_sqrt(uint64_t value) {
+    // cstd::sqrt(u64) through the same native hardware-root model
+    // (native_math.cpp) the title and collision code already use.
+    return cstd::sqrt(value);
+}
+int16_t stage_cstd_atan2(int32_t y,int32_t x) {
+    // cstd::atan2 (src/cstd_atan2.cpp, linked natively as runtime/input_atan2).
+    return cstd::atan2(y,x);
+}
 uint32_t stage_clipper_ctor(uint32_t self) {
     // Complete Clipper::Clipper() (external/sm64ds-pc/src/_ZN7ClipperC1Ev.cpp):
     // the ROM stores _ZTV7Clipper, then the shared frustum init helper.
@@ -1781,6 +1790,11 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020f1b94u,&stage_plain_actor_factory<0xd8,0x0210b4c8u>);
 }
 
+void bind_stage_arm9_math(packed::Space &space) {
+    // Stage-only: the minigame owner binds its own cstd::sqrt veneer.
+    space.bind(0x0203d744u,&stage_cstd_sqrt);
+    space.bind(0x0203b4dcu,&stage_cstd_atan2);
+}
 void bind_stage_audio_runtime(packed::Space &space) {
     // Stage scenes only: the minigame runtime owns its own Sound boundary.
     space.bind(0x02051fb4u,&stage_snd_start_seq);

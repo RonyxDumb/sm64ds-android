@@ -215,6 +215,8 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('Vec3_HorzLen', 0),
+    ('Vec3_Equal', 0),
     ('func_ov002_020effb8', 2),
     ('func_0200af0c', 0),
     ('func_0202ed14', 0),
