@@ -38,7 +38,8 @@ def slices(projected, free_c, symbols, data_symbols):
     symbols.update({'_ZN8daDoor_c13InitResourcesEv':0x021455a0,
                     '_ZN9daSBird_c13InitResourcesEv':0x0211197c,
                     '_ZN9daBtfly_c13InitResourcesEv':0x02141c6c,
-                    '_ZN15daObjTatefuda_c18UpdateShadowMatrixEv':0x020baf80})
+                    '_ZN15daObjTatefuda_c18UpdateShadowMatrixEv':0x020baf80,
+                    '_ZN11daC_Jugem_c8SetStateEPMS_FivE':0x0212e728})
     rows=[]
 
     def add(unit,rel,overlay,methods,fields=None,replacements=None,declarations='',extra=''):
@@ -439,6 +440,45 @@ u8 NumStars(void);
 void _ZN7daMip_c8SetStateEPv(void *,void *);
 void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
 ''','struct MipPath { void *def; s32 unk_004; };\nstruct MipStatePair { u32 w[4]; };\n')
+
+    # daC_Jugem_c (ov085 cartridge symbols spell it LakituBro).
+    jugem_files={'data_ov085_0213074c':'BMD','data_ov085_02130744':'BCA','data_ov085_0213073c':'BTP'}
+    jugem_replacements={
+         'BMD_File *bmd = (BMD_File *)':'void *bmd = ',
+         'dExtSimpleModel_c::LoadFile(data_ov085_0213074c)':
+             '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov085_0213074c)',
+         'dExtFrameCtrl_c::LoadFile(data_ov085_02130744)':
+             '_ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(&data_ov085_02130744)',
+         'dExtAnmTexPat_c::LoadFile(data_ov085_0213073c)':
+             '_ZN15dExtAnmTexPat_c8LoadFileER13SharedFilePtr(&data_ov085_0213073c)',
+         'mModelAnim1.SetFile(':'_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0x110,',
+         'mModelAnim1.SetAnim(':'_ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit((char *)object+0x110,',
+         'mModelAnim1.speed':'(*(s32 *)((char *)object+0x16c))',
+         'mShadowModel1.InitCylinder()':'_ZN17dExtShadowModel_c12InitCylinderEv((char *)object+0x1f0)',
+         'mShadowModel2.InitCylinder()':'_ZN17dExtShadowModel_c12InitCylinderEv((char *)object+0x218)',
+         'dExtAnmTexPat_c::Prepare(**(BMD_File **)((char *)&data_ov085_0213074c + 4),\n                             **(BTP_File **)((char *)&data_ov085_0213073c + 4))':
+             '_ZN15TextureSequence7PrepareER8BMD_FileR8BTP_File(data_ov085_0213074c.filePtr,data_ov085_0213073c.filePtr)',
+         '*(BCA_File **)((char *)&data_ov085_02130744 + 4)':'data_ov085_02130744.filePtr',
+         'mTextureSequence.SetFile(**(BTP_File **)((char *)&data_ov085_0213073c + 4),':
+             '_ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj((char *)object+0x1d8,data_ov085_0213073c.filePtr,',
+         'SetState(':'_ZN11daC_Jugem_c8SetStateEPMS_FivE(object,'}
+    for name in jugem_files:
+        jugem_replacements[name+'.Release()']='_ZN13SharedFilePtr7ReleaseEv(&'+name+')'
+    add('stage_jugem_init','src/game/actors/d_a_c_jugem.cpp',85,
+        [method('daC_Jugem_c','InitResources',export='_ZN9LakituBro13InitResourcesEv'),
+         method('daC_Jugem_c','CleanupResources',export='_ZN9LakituBro16CleanupResourcesEv'),
+         method('daC_Jugem_c','OnPendingDestroy','void',export='_ZN9LakituBro16OnPendingDestroyEv')],
+        {'mVariant':('s32',0x2d0),'mHidden':('u8',0x2dc)},
+        jugem_replacements,MODEL_API+'''
+extern SharedFilePtr data_ov085_0213074c,data_ov085_02130744,data_ov085_0213073c;
+extern u32 data_ov085_02130790[4],data_ov085_021307d0[4],data_ov085_021307e0[4];
+extern int data_0209caa0[];
+void *_ZN15dExtAnmTexPat_c8LoadFileER13SharedFilePtr(SharedFilePtr *);
+void _ZN15TextureSequence7PrepareER8BMD_FileR8BTP_File(void *,void *);
+void _ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj(void *,void *,int,int,u32);
+int _ZN11daC_Jugem_c8SetStateEPMS_FivE(void *,void *);
+void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
+''')
 
     for name in ('func_ov100_0214491c','func_ov100_02144c64'):
         row,bindings=free_c('external/sm64ds-pc/src/'+name+'.c')

@@ -884,6 +884,45 @@ uint32_t stage_mip_factory() {
     at<uint32_t>(actor)=0x021300f8u;
     return actor;
 }
+void stage_texture_sequence_construct(uint32_t sequence) {
+    // TextureSequence::TextureSequence: Animation C2, its vptr, file = 0.
+    (void)packed::Space::current().data(sequence,0x14);
+    stage_frame_construct(sequence,0x0208e7d4u);
+    at<uint32_t>(sequence+0x10)=0;
+}
+uint32_t stage_texture_sequence_ctor(uint32_t sequence) {
+    stage_texture_sequence_construct(sequence);
+    return sequence;
+}
+uint32_t stage_jugem_factory() {
+    // Complete daC_Jugem_c_classInit (ov085 0x0212ed54): operator new(0x2e8),
+    // dEnemyBase_c C2, two ModelAnim, TextureSequence and two ShadowModel
+    // member constructors, then the final daC_Jugem_c vtable.
+    const uint32_t actor=packed::Space::current().allocate(0x2e8);
+    stage_actor_construct(actor);
+    at<uint32_t>(actor)=0x021081e4u;
+    stage_anim_model_construct(actor+0x110);
+    stage_anim_model_construct(actor+0x174);
+    stage_texture_sequence_construct(actor+0x1d8);
+    stage_shadow_construct(actor+0x1f0);
+    stage_shadow_construct(actor+0x218);
+    at<uint32_t>(actor)=0x02130344u;
+    return actor;
+}
+int stage_jugem_set_state(uint32_t actor,uint32_t record) {
+    // Complete daC_Jugem_c::SetState (ov085 0x0212e728): store the
+    // {enter, run} record, then invoke its enter PMF when present.
+    auto &space=packed::Space::current();
+    at<uint32_t>(actor+0x1ec)=record;
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(record,8),8);
+    if (!at<uint32_t>(record)) return 1;
+    const auto target=space.resolve_member(actor,member);
+    using Callback=int (*)(uint32_t);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    return callback(target.object);
+}
 void stage_actor_mesh_limit(uint32_t query) {
     (void)packed::Space::current().data(query,0x1bc);
     at<uint32_t>(query+0x10)|=0x80;
@@ -1240,6 +1279,8 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==85) {
         space.bind(0x0212f244u,&stage_sign_factory);
         space.bind(0x0212cc2cu,&stage_mip_factory);
+        space.bind(0x0212ed54u,&stage_jugem_factory);
+        space.bind(0x0212e728u,&stage_jugem_set_state);
     }
     if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
     if (id==100) {
@@ -1275,6 +1316,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0203cbc0u,&stage_deallocate);
     space.bind(0x0203cbccu,&stage_deallocate);
     space.bind(0x02016958u,&stage_anim_model_ctor);
+    space.bind(0x02015a50u,&stage_texture_sequence_ctor);
     space.bind(0x020163a0u,&stage_anim2_model_construct);
     space.bind(0x02016fd4u,&stage_model_set_file);
     space.bind(0x02015bf8u,&stage_frame_flags);
