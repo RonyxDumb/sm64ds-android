@@ -229,6 +229,9 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov001_020aaf40', 1, {
+        # C's local false/true enum; C++ already has the keywords.
+        'enum { false, true };\n': ''}),
     ('func_020391f0', 0),
     ('func_0206e28c', 0),
     ('func_02023178', 0),

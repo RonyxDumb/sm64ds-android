@@ -1372,6 +1372,21 @@ void stage_particle_tracker_update(uint32_t self) {
     Ptr<void(uint32_t)>(0x02021becu)(self+8);
     Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
 }
+int stage_player_has_no_cap(uint32_t self) {
+    // Complete Player::HasNoCap (src/game/player/Player.cpp): fBase param1
+    // at 0x08, mState at PLAYER_STATE, mHasNoCap at 0x71a.
+    if (at<int8_t>(0x0209f2f8u)==0x1f) return 0;
+    if (at<uint8_t>(0x0209f2d8u)!=2 && at<uint32_t>(self+0x370)!=0x0211058cu &&
+        at<uint8_t>(0x0209f2d8u)!=1 && Ptr<int()>(0x02013b18u)())
+        return 1;
+    if (at<uint32_t>(self+8)==3) return 0;
+    return at<uint8_t>(self+0x71a)!=0;
+}
+int stage_player_is_collecting_cap(uint32_t self) {
+    // Complete Player::IsCollectingCap: mCapFlags (0x73c) phases 1..4.
+    const uint16_t v=at<uint16_t>(self+0x73c);
+    return v!=0 && (v&7)<5;
+}
 void stage_render_model_transparent(uint32_t self) {
     // Complete Stage::RenderModelTransparent (0x0202b164): the second pass
     // enables only the non-opaque materials of active texture-animation slots.
@@ -2001,6 +2016,10 @@ void stage_actor_frame() {
 }
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
+    if (id==2) {
+        space.bind(0x020bda98u,&stage_player_has_no_cap);
+        space.bind(0x020bea94u,&stage_player_is_collecting_cap);
+    }
     if(id==102) {
         for(uint32_t factory : {0x0214a7ecu,0x0214a82cu,0x0214a86cu,
                                 0x0214a8acu,0x0214a8ecu,0x0214a92cu})
