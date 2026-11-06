@@ -5,6 +5,7 @@
 #include "packed_ptr.h"
 #include "platform/arm9_services.h"
 #include "ntr/mmio.h"
+#include "game_program.h"
 #include <cstring>
 #include <exception>
 #include <unordered_set>
@@ -1191,6 +1192,50 @@ int stage_demo_bg_thunk(uint32_t c) {
     // (ldr ip / bx ip) into func_ov002_020f2630 with the same r0.
     return Ptr<int(uint32_t)>(0x020f2630u)(c);
 }
+// NNS sound-player boundary of the stage address space. The original
+// Sound:: bodies above this boundary run unchanged; the SDK player handles
+// map onto native sequencer players: 0x0209b4a0 (music layer 1) -> 0 and
+// 0x0209b4b0 (music layer 2) -> 4. Unknown handles fail explicitly.
+int stage_sound_player(uint32_t handle) {
+    if (handle==0x0209b4a0u) return 0;
+    if (handle==0x0209b4b0u) return 4;
+    throw std::runtime_error("Unmapped original NNS sound handle: "+std::to_string(handle));
+}
+int stage_snd_start_seq(uint32_t handle,int sequence) {
+    // NNS_SndArcPlayerStartSeq (0x02051fb4).
+    return GameProgram::active().native_audio({SoundOp::Music,stage_sound_player(handle),0,sequence})?1:0;
+}
+int stage_snd_stop_seq(uint32_t handle,int frames) {
+    // NNS_SndPlayerStopSeq (0x0204fa2c).
+    GameProgram::active().native_audio({SoundOp::Stop,stage_sound_player(handle),0,frames});
+    return 1;
+}
+void stage_snd_move_volume(uint32_t handle,int volume,int frames) {
+    // NNS_SndPlayerMoveVolume (0x0204f8cc).
+    GameProgram::active().native_audio({SoundOp::Fade,stage_sound_player(handle),0,volume,frames});
+}
+void stage_sound_load_and_set_music_layer1(int music) {
+    // Complete Sound::LoadAndSetMusic_Layer1 (0x0201320c).
+    at<int32_t>(0x0208e438u)=-1;
+    at<int32_t>(0x0208e434u)=-1;
+    at<int32_t>(0x0209b48cu)=0;
+    if (music<0) {
+        stage_snd_stop_seq(0x0209b4a0u,0);
+    } else {
+        if (!(at<int32_t>(0x0208e430u)>=0 && at<int32_t>(0x0209b4acu)>=0 && at<int32_t>(0x0208e43cu)==music))
+            (void)Ptr<int(uint32_t,int)>(0x02011dccu)(0x0209b4a0u,music);
+        Ptr<void(uint32_t,int,int)>(0x02013524u)(0x0209b4a0u,0x7f,0);
+        stage_snd_stop_seq(0x0209b4b0u,0);
+    }
+    at<int32_t>(0x0209b4acu)=music;
+    at<int32_t>(0x0208e43cu)=music;
+    Ptr<void()>(0x02011b7cu)();
+}
+void stage_sound_stop_loaded_music_layer1(uint32_t frames) {
+    // Complete Sound::StopLoadedMusic_Layer1 (0x02013050).
+    at<uint32_t>(0x0209b4acu)=~0u;
+    stage_snd_stop_seq(0x0209b4a0u,int(frames));
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1650,6 +1695,11 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
+    space.bind(0x02051fb4u,&stage_snd_start_seq);
+    space.bind(0x0204fa2cu,&stage_snd_stop_seq);
+    space.bind(0x0204f8ccu,&stage_snd_move_volume);
+    space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
+    space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
     space.bind(0x0200e768u,&stage_read_unaligned_short);
     space.bind(0x0200e748u,&stage_read_unaligned_int);
     space.bind(0x0200e8d4u,&stage_process_kuppa_script);
