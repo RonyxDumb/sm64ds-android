@@ -112,7 +112,11 @@ def free_unit(projected, symbol, overlay):
             break
     raw = (ROOT/rel).read_text()
     raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
-    extra = '' if re.search(r'struct Vector3\s*\{', raw) else VECTOR_TYPES
+    extra = ''
+    if not re.search(r'struct Vector3\s*\{|\}\s*Vector3\s*;', raw):
+        extra += 'struct Vector3 { s32 x,y,z; };\n'
+    if not re.search(r'struct Vector3_16\s*\{|\}\s*Vector3_16\s*;', raw):
+        extra += 'struct Vector3_16 { s16 x,y,z; };\n'
     row, bindings = projected(rel, raw, '', [symbol], extra=extra, auto_globals=False)
     row['unit'] = 'stage_isolated_'+symbol
     for binding in bindings:
@@ -121,6 +125,8 @@ def free_unit(projected, symbol, overlay):
 
 
 FREE_UNITS = [
+    ('func_0200e4e4', 0),
+    ('func_02043f98', 0),
     ('func_0200e55c', 0),
     ('func_0200e494', 0),
     ('RunKuppaScript', 0),
