@@ -170,6 +170,7 @@ void StageFlow::prepare_scene() {
     nextSpace->bind(0x02014fa4u, &native_collision_unlink);
     nextSpace->bind(0x02014aa8u, &native_collision_process);
     bind_stage_runtime(*nextSpace);
+    bind_stage_audio_runtime(*nextSpace);
     bind_packed_fs(*nextSpace);
     initialize_packed_fs(*nextSpace);
     bind_packed_audio(*nextSpace);

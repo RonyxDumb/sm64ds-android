@@ -123,7 +123,7 @@ PLAYER_STATES = [
 VECTOR_TYPES = 'struct Vector3 { s32 x,y,z; }; struct Vector3_16 { s16 x,y,z; };\n'
 
 
-def free_unit(projected, symbol, overlay):
+def free_unit(projected, symbol, overlay, replacements=None):
     """A recovered isolated free function: raw offsets, mangled callees."""
     for ext in ('.c', '.cpp'):
         rel = 'external/sm64ds-pc/src/'+symbol+ext
@@ -131,6 +131,8 @@ def free_unit(projected, symbol, overlay):
             break
     raw = (ROOT/rel).read_text()
     raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
+    for old, new in (replacements or {}).items():
+        raw = raw.replace(old, new)
     extra = ''
     if not re.search(r'struct Vector3\s*\{|\}\s*Vector3\s*;', raw):
         extra += 'struct Vector3 { s32 x,y,z; };\n'
@@ -144,6 +146,15 @@ def free_unit(projected, symbol, overlay):
 
 
 FREE_UNITS = [
+    ('func_0200e5fc', 0, {
+        # Same volatile byte read-modify-write; the packed reference has no +=.
+        '*pb += 1;': '*pb = *pb + 1;'}),
+    ('func_0200e6d8', 0),
+    ('func_0200e5ac', 0),
+    ('func_02013524', 0),
+    ('func_02013078', 0),
+    ('func_02049764', 0),
+    ('func_02011dcc', 0),
     ('func_ov002_020f2630', 2),
     ('func_0200e4e4', 0),
     ('func_02043f98', 0),
@@ -240,8 +251,8 @@ def slices(projected):
     fields = player_fields()
     for symbol in PLAYER_STATES:
         yield isolated(projected, symbol, 2, 'Player', fields)
-    for symbol, overlay in FREE_UNITS:
-        row, bindings = free_unit(projected, symbol, overlay)
+    for symbol, overlay, *rest in FREE_UNITS:
+        row, bindings = free_unit(projected, symbol, overlay, rest[0] if rest else None)
         if not overlay:
             for binding in bindings: binding.pop('overlay', None)
         yield row, bindings

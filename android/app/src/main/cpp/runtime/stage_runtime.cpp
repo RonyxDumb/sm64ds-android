@@ -1685,6 +1685,15 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020f1b94u,&stage_plain_actor_factory<0xd8,0x0210b4c8u>);
 }
 
+void bind_stage_audio_runtime(packed::Space &space) {
+    // Stage scenes only: the minigame runtime owns its own Sound boundary.
+    space.bind(0x02051fb4u,&stage_snd_start_seq);
+    space.bind(0x0204fa2cu,&stage_snd_stop_seq);
+    space.bind(0x0204f8ccu,&stage_snd_move_volume);
+    space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
+    space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
+}
+
 void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
@@ -1695,11 +1704,6 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
-    space.bind(0x02051fb4u,&stage_snd_start_seq);
-    space.bind(0x0204fa2cu,&stage_snd_stop_seq);
-    space.bind(0x0204f8ccu,&stage_snd_move_volume);
-    space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
-    space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
     space.bind(0x0200e768u,&stage_read_unaligned_short);
     space.bind(0x0200e748u,&stage_read_unaligned_int);
     space.bind(0x0200e8d4u,&stage_process_kuppa_script);

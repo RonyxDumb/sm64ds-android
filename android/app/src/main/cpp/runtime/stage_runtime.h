@@ -5,6 +5,7 @@ namespace sm64ds {
 // Cartridge-layout constructors and actor scheduler, with native code and
 // checked 32-bit data handles. No native C++ vptr enters a cartridge record.
 void bind_stage_runtime(packed::Space &space);
+void bind_stage_audio_runtime(packed::Space &space);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id);
 uint32_t native_stage_factory();
 uint32_t native_fbase_construct(uint32_t actor);
