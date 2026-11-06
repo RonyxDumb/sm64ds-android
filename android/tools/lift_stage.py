@@ -1272,6 +1272,7 @@ if __name__ == '__main__':
                 'src/Matrix4x3_ApplyInPlaceToRotationY.c',
                 'src/Matrix4x3_ApplyInPlaceToRotationX.c',
                 'src/Matrix4x3_FromRotationY.c','src/Matrix4x3_FromRotationX.c',
+                'src/Matrix4x3_FromRotationZ.c','src/Matrix4x3_ApplyInPlaceToRotationXYZExt.c',
                 'src/GetLevelPart.c','src/RandomIntInternal.c','src/AngleDiff.c',
                 'src/SetBg0Offset.c','src/SetSubBg0Offset.c','src/SetSubBg1Offset.c','src/SetSubBg2Offset.c',
                 'external/sm64ds-pc/src/func_0201eaac.c',

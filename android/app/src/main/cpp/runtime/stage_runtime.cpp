@@ -24,6 +24,7 @@ extern "C" void pk_MultiCopy_Int(sm64ds::packed::Ptr<int>,sm64ds::packed::Ptr<in
 extern "C" int pk__ZN4cstd4fdivEii(int,int);
 extern "C" void pk_func_02052820(sm64ds::packed::Ptr<int>,int,int);
 extern "C" void pk_func_02052800(sm64ds::packed::Ptr<int>,int,int);
+extern "C" void pk_func_0205283c(sm64ds::packed::Ptr<int>,int,int);
 namespace cstd { int sqrt(unsigned long long); int16_t atan2(int32_t,int32_t); }
 
 namespace sm64ds {
@@ -941,6 +942,101 @@ uint32_t stage_mushroom_factory() {
     stage_shadow_construct(actor+0x350);
     return actor;
 }
+void stage_shadow_init_model(uint32_t shadow,uint32_t matrix,int32_t x,int32_t y,int32_t z,uint8_t opacity) {
+    // Complete ShadowModel::InitModel (0x02015e64): store the frame inputs
+    // and push the shadow onto the per-frame list unless it is suspended.
+    at<uint32_t>(shadow+0x0c)=matrix;
+    at<int32_t>(shadow+0x10)=x; at<int32_t>(shadow+0x14)=y; at<int32_t>(shadow+0x18)=z;
+    at<uint8_t>(shadow+0x1c)=opacity;
+    if (at<uint8_t>(0x0209ceecu)) return;
+    const uint32_t head=at<uint32_t>(0x0209cef4u);
+    at<uint32_t>(shadow+0x24)=head;
+    if (head) at<uint32_t>(head+0x20)=shadow;
+    at<uint32_t>(0x0209cef4u)=shadow;
+}
+void stage_drop_shadow_rad_height(uint32_t actor,uint32_t shadow,uint32_t matrix,
+                                  int32_t radius,int32_t depth,uint8_t opacity) {
+    // Complete dActor_c::DropShadowRadHeight (0x02010be8).
+    if (at<uint32_t>(actor+0xb0)&0x10) return;
+    stage_shadow_init_model(shadow,matrix,radius,depth,radius,opacity);
+}
+int stage_mip_set_state(uint32_t actor,uint32_t record) {
+    // Complete daMip_c::SetState (ov085 0x0212bc78): mState at +0x364.
+    auto &space=packed::Space::current();
+    at<uint32_t>(actor+0x364)=record;
+    if (!at<uint32_t>(record)) return 1;
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(record,8),8);
+    const auto target=space.resolve_member(actor,member);
+    using Callback=int (*)(uint32_t);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    return callback(target.object);
+}
+int stage_mbg_detect_ground(uint32_t self,uint32_t ray) {
+    // Complete dBgW_KcMbg::DetectClsn(dBgCh_Gnd &) (0x02039cb8, recovered
+    // isolated unit): test the ground probe in the mesh's local space via
+    // the shared line query at 0x020a0d0c, then map the hit back to world.
+    auto &space=packed::Space::current();
+    int32_t probe[3],lineEnd[3],localStart[3],localEnd[3],world[3];
+    std::memcpy(probe,space.data(ray+0x38,12),12);              // func_020374b8
+    std::memcpy(lineEnd,probe,12);
+    int32_t probeHeight=at<int32_t>(ray+0x4c);
+    if (at<uint8_t>(ray+0x48)) {
+        const int32_t distance=probe[1]-at<int32_t>(ray+0x44);
+        if (distance<probeHeight) probeHeight=distance;
+    }
+    lineEnd[1]-=probeHeight;
+    using Map=void(uint32_t,uint32_t,uint32_t);
+    Ptr<Map>(0x02039e48u)(self,space.address(probe),space.address(localStart));
+    Ptr<Map>(0x02039e48u)(self,space.address(lineEnd),space.address(localEnd));
+    const uint32_t line=0x020a0d0cu;
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(
+        line,space.address(localStart),space.address(localEnd),0);
+    at<uint8_t>(line+4)=at<uint8_t>(ray+4);                      // func_02035394
+    at<int32_t>(line+8)=at<int32_t>(ray+8);
+    at<uint32_t>(line+12)=at<uint32_t>(ray+12);
+    const int hit=Ptr<int(uint32_t,uint32_t)>(0x01ffb0fcu)(self,line);
+    if (hit) {
+        Ptr<Map>(0x02039e30u)(self,0x020a0d60u,space.address(world));
+        // dBgPi copy assignment: members after the vptr (0x04..0x27).
+        std::memcpy(space.data(ray+0x14,0x24),space.data(0x020a0d20u,0x24),0x24);
+        at<int32_t>(ray+0x44)=world[1];
+        at<uint8_t>(ray+0x48)=1;
+    }
+    return hit;
+}
+uint32_t stage_block_l_factory() {
+    // Complete daObjBlockL_c_classInit_* (five identical ov002 factories):
+    // operator new(0x330), dBgActor_c C2, then the daObjBlockL_c vtable.
+    const uint32_t actor=packed::Space::current().allocate(0x330);
+    stage_bg_actor_construct(actor);
+    at<uint32_t>(actor)=0x02108adcu;
+    return actor;
+}
+bool stage_block_l_has_angle_x(uint32_t actor) {
+    // Complete daObjBlockL_c::HasNonzeroAngleX (0x020b36a0).
+    return at<int16_t>(actor+0x8c)!=0;
+}
+int32_t stage_event_get_bit(uint32_t bit) {
+    // Complete Event::GetBit (0x02029ee0).
+    return at<int32_t>(0x0209f34cu)&int32_t(1u<<bit);
+}
+bool stage_player_is_state(uint32_t player,uint32_t state) {
+    // Complete Player::IsState (0x020e308c): pointer identity of mState.
+    return at<uint32_t>(player+0x370)==state;
+}
+int stage_player_is_state_entering_level(uint32_t player) {
+    // Complete Player::IsStateEnteringLevel (0x020c7ed4).
+    if (stage_player_is_state(player,0x021104b4u)) return 1;
+    return stage_player_is_state(player,0x0211025cu);
+}
+int stage_player_is_entering_level(uint32_t player) {
+    // Complete Player::IsEnteringLevel (0x020c7e84).
+    if (!stage_player_is_state_entering_level(player)) return 0;
+    const uint8_t step=at<uint8_t>(player+0x6e3);
+    return step==8||step==9||step==0x10;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1351,6 +1447,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==85) {
         space.bind(0x0212f244u,&stage_sign_factory);
         space.bind(0x0212cc2cu,&stage_mip_factory);
+        space.bind(0x0212bc78u,&stage_mip_set_state);
         space.bind(0x0212ed54u,&stage_jugem_factory);
         space.bind(0x0212e728u,&stage_jugem_set_state);
     }
@@ -1373,6 +1470,12 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020e30a0u,&stage_player_change_state);
     space.bind(0x020c7dd0u,&stage_player_entrance_state);
     space.bind(0x020c6f34u,&stage_player_level_enter_cleanup);
+    space.bind(0x020e308cu,&stage_player_is_state);
+    space.bind(0x020c7ed4u,&stage_player_is_state_entering_level);
+    space.bind(0x020c7e84u,&stage_player_is_entering_level);
+    space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
+    for (uint32_t factory : {0x020b406cu,0x020b409cu,0x020b40ccu,0x020b40fcu,0x020b412cu})
+        space.bind(factory,&stage_block_l_factory);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);
     space.bind(0x020b0f24u,&stage_plain_actor_factory<0x104,0x021086b4u>);
     space.bind(0x020ec32cu,&stage_tree_factory);
@@ -1389,6 +1492,9 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
+    space.bind(0x02029ee0u,&stage_event_get_bit);
+    space.bind(0x02010be8u,&stage_drop_shadow_rad_height);
+    space.bind(0x02015e64u,&stage_shadow_init_model);
     space.bind(0x0200cae4u,&stage_camera_state_init);
     space.bind(0x0203cbd8u,&stage_allocate);
     space.bind(0x0203cbe4u,&stage_allocate);
@@ -1402,6 +1508,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015c0cu,&stage_frame_count);
     space.bind(0x02052820u,&pk_func_02052820);
     space.bind(0x02052800u,&pk_func_02052800);
+    space.bind(0x0205283cu,&pk_func_0205283c);
     space.bind(0x020527e8u,&stage_scale_matrix);
     space.bind(0x02015c20u,&stage_frame_set_animation);
     space.bind(0x02016748u,&stage_anim_model_set_animation);
@@ -1425,6 +1532,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x020377b0u,&stage_line_construct);
     space.bind(0x02037764u,&stage_line_destroy);
     space.bind(0x02037670u,&stage_line_set);
+    space.bind(0x02039cb8u,&stage_mbg_detect_ground);
     space.bind(0x020375d0u,&stage_line_position);
     space.bind(0x02037eecu,&stage_surface_construct);
     space.bind(0x02037ee8u,&stage_surface_destroy);

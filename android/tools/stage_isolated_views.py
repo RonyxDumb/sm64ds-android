@@ -38,7 +38,8 @@ def player_fields():
     return fields
 
 
-def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None):
+def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None,
+             types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
     raw = (ROOT/rel).read_text()
     if name:
@@ -47,7 +48,9 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         # In-body file-scope externs become ordinary declarations.
         hoisted = re.findall(r'^\s*(extern [^;\n(]+;)\s*$', raw, re.M)
         raw = re.sub(r'^\s*extern [^;\n(]+;\s*$\n', '', raw, flags=re.M)
-        raw = 'extern "C" {\n'+'\n'.join(hoisted)+'\n}\n'+raw
+        for old, new in (types or {}).items():
+            hoisted = [re.sub(r'\b'+old+r'\b', new, line) for line in hoisted]
+        raw = prelude+'extern "C" {\n'+'\n'.join(hoisted)+'\n}\n'+raw
     raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
     declarations = []
     for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
@@ -110,6 +113,8 @@ def free_unit(projected, symbol, overlay):
 
 
 FREE_UNITS = [
+    ('IsStarCollected', 0), ('IsStarCollectedInLevel', 0), ('IsStarCollectedInCurLevel', 0),
+    ('SetStarMarker', 0),
 ]
 
 
@@ -118,12 +123,41 @@ PLAYER_SOURCE = [
 ]
 
 
+def mip_fields():
+    from stage_actor_views import ACTOR_FIELDS
+    fields = dict(ACTOR_FIELDS)
+    fields.update(header_fields('include/dEnemyBase_c.h', 0xd0))
+    fields.update(header_fields('include/daMip_c.h', 0x110))
+    return fields
+
+
+MIP_SOURCE = [
+    ('_ZN7daMip_c13StateIdleInitEv', 'int daMip_c::StateIdleInit()', {
+        'mModelAnim.SetAnim((BCA_File *)(*(void **)((char *)&data_ov085_021305c0 + 4)),':
+            '_ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit((char *)object+0x300,data_ov085_021305c0.filePtr,'}),
+]
+MIP_DECLARATIONS = '''
+extern "C" {
+void _ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit(void *,void *,int,int,u16);
+}
+'''
+
+
 def slices(projected):
+    mip = mip_fields()
+    for symbol, name, replacements in MIP_SOURCE:
+        yield isolated(projected, symbol, 85, 'daMip_c', mip, replacements=replacements,
+                       rel='src/game/actors/d_a_mip.cpp', name=name,
+                       types={'DaMipAnimationFilePtr': 'SharedFilePtr', 'DaMipModelFile': 'SharedFilePtr'},
+                       prelude=MIP_DECLARATIONS)
     fields = player_fields()
     for symbol in PLAYER_STATES:
         yield isolated(projected, symbol, 2, 'Player', fields)
     for symbol, overlay in FREE_UNITS:
-        yield free_unit(projected, symbol, overlay)
+        row, bindings = free_unit(projected, symbol, overlay)
+        if not overlay:
+            for binding in bindings: binding.pop('overlay', None)
+        yield row, bindings
     for symbol, name in PLAYER_SOURCE:
         yield isolated(projected, symbol, 2, 'Player', fields,
                        rel='src/game/player/Player.cpp', name=name)

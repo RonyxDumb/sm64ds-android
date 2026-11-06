@@ -189,6 +189,8 @@
     "src/game/actors/d_a_mip.cpp": "a1a32123fa0efd022d68b244447ea6f426fc4922cdedb9fc39907cb141bd6a94",
     "include/daMip_c.h": "6ed9c71a3c7c02b0f7a16b37a34b55196d818ac1999a31005a58bdd0b1dc34dd",
     "src/game/actors/d_a_c_jugem.cpp": "b02a5b372ff3e94a4a8202f6418d2ea7864d9fe70cd5051c23465450143e73ac",
-    "include/daC_Jugem_c.h": "9efc00b904a0b2b7cbb5da7a098316d7f86a40a8acea849692be05648e414d07"
+    "include/daC_Jugem_c.h": "9efc00b904a0b2b7cbb5da7a098316d7f86a40a8acea849692be05648e414d07",
+    "src/game/actors/d_a_obj_block_l.cpp": "91a687b2a8247695a01113fa2f86ef89d0168bd2ec0de781afdb1ab0b6c25224",
+    "include/daObjBlockL_c.h": "53bdcb691771f3dc0a2d0efb7a4f646b09e04930143b31bb874dfa147db59589"
   }
 }

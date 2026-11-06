@@ -377,6 +377,7 @@ void _ZN10dBgCh_Actr13SetLimMovFlagEv(void *);
     # externs move to the declaration block; the body itself is unchanged.
     mip_raw=function((ROOT/'src/game/actors/d_a_mip.cpp').read_text(),'int daMip_c::InitResources()')
     mip_raw+=function((ROOT/'src/game/actors/d_a_mip.cpp').read_text(),'int daMip_c::CleanupResources()')
+    mip_raw+=function((ROOT/'src/game/actors/d_a_mip.cpp').read_text(),'void daMip_c::UpdateMatrixAndShadow()')
     mip_replacements={line:'' for line in re.findall(r'\n\s*extern [^;\n]+;',mip_raw)}
     mip_replacements.update({
          'gMipRunAnimationFile':'data_ov085_021305d0',
@@ -398,7 +399,14 @@ void _ZN10dBgCh_Actr13SetLimMovFlagEv(void *);
          'ClosestPlayer()':'_ZN8dActor_c13ClosestPlayerEv(object)',
          '((Player *)player)->mCharacter':'(*(u8 *)((char *)player+0x6d9))',
          '((Player *)closest)->param1':'(*(u32 *)((char *)closest+0x8))',
-         'SetState(&data_ov085_021306cc)':'_ZN7daMip_c8SetStateEPv(object,&data_ov085_021306cc)'})
+         'SetState(&data_ov085_021306cc)':'_ZN7daMip_c8SetStateEPv(object,&data_ov085_021306cc)',
+         '    struct Vector3 { s32 x, y, z; };\n':'','    struct Mtx43 { s32 m[12]; };\n':'',
+         '&mPos':'(char *)object+0x5c',
+         '*(struct Mtx43 *)&mModelAnim.mat4x3':'*(struct Mtx43 *)((char *)object+0x31c)',
+         'MulMat4x3Mat4x3(mModelAnim.data.transforms, &mModelAnim.mat4x3, tmp)':
+             'MulMat4x3Mat4x3(*(void **)((char *)object+0x314), (char *)object+0x31c, tmp)',
+         '*(struct Mtx43 *)mShadowMtx':'*(struct Mtx43 *)((char *)object+0x390)',
+         'this, &mShadowModel1, mShadowMtx,':'object, (char *)object+0x368, (char *)object+0x390,'})
     for name in ('data_ov085_021305b8','data_ov085_021305d0','data_ov085_021305b0',
                  'data_ov085_021305c8','data_ov085_021305c0','data_ov085_021305d8'):
         mip_replacements['dExtFrameCtrl_c::LoadFile(*(SharedFilePtr *)&'+name+')']=\
@@ -413,7 +421,7 @@ void _ZN10dBgCh_Actr13SetLimMovFlagEv(void *);
         '_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(&data_ov085_021305e0)'
     add('stage_mip_init','src/game/actors/d_a_mip.cpp',85,
         [method('daMip_c','InitResources'),method('daMip_c','CleanupResources'),
-         method('daMip_c','OnPendingDestroy','void')],
+         method('daMip_c','OnPendingDestroy','void'),method('daMip_c','UpdateMatrixAndShadow','void')],
         {'mEatingPlayer':('s32',0xd0),'mColorVariant':('s32',0x420),
          'mIsDisabled':('u8',0x428),'mIsGlowing':('u8',0x429),
          'mPathId':('s32',0x438),'mRabbitId':('s32',0x43c),'mCharacterId':('s32',0x440),
@@ -433,13 +441,19 @@ void _ZN7PathPtr6FromIDEj(struct MipPath *,u32);
 void _ZNK7PathPtr7GetNodeER7Vector3j(struct MipPath *,void *,u32);
 u32 _ZNK7PathPtr8NumNodesEv(struct MipPath *);
 void _ZN7daMip_c21UpdateMatrixAndShadowEv(void *);
+extern struct Mtx43 data_020a0e68;
+void Vec3_Asr(void *,void *,int);
+void Matrix4x3_FromTranslation(void *,int,int,int);
+void Matrix4x3_ApplyInPlaceToRotationXYZExt(void *,int,int,int);
+void MulMat4x3Mat4x3(void *,void *,void *);
+void _ZN8dActor_c19DropShadowRadHeightER17dExtShadowModel_cR9Matrix4x35Fix12IiES5_j(void *,void *,void *,int,int,u32);
 void *_ZN8dActor_c13ClosestPlayerEv(void *);
 int func_02013890(int,int);
 u32 RandomIntInternal(int *);
 u8 NumStars(void);
 void _ZN7daMip_c8SetStateEPv(void *,void *);
 void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
-''','struct MipPath { void *def; s32 unk_004; };\nstruct MipStatePair { u32 w[4]; };\n')
+''','struct MipPath { void *def; s32 unk_004; };\nstruct MipStatePair { u32 w[4]; };\nstruct Vector3 { s32 x,y,z; };\nstruct Mtx43 { s32 m[12]; };\n')
 
     # daC_Jugem_c (ov085 cartridge symbols spell it LakituBro).
     jugem_files={'data_ov085_0213074c':'BMD','data_ov085_02130744':'BCA','data_ov085_0213073c':'BTP'}
@@ -490,6 +504,42 @@ void _ZN6Camera6SetPosERK7Vector3(void *,const struct Vector3 *);
 void func_ov002_020d228c(void *);
 extern void *data_0209f318;
 ''','struct Vector3 { s32 x,y,z; };\n')
+
+    # daObjBlockL_c (cartridge symbols: BigBrickBlock) InitResources.
+    add('stage_block_l_init','src/game/actors/d_a_obj_block_l.cpp',2,
+        [method('daObjBlockL_c','InitResources',export='_ZN13BigBrickBlock13InitResourcesEv')],
+        {'actorID':('u16',12),'mVariant':('u8',0x32c),'mStarID':('u8',0x322),
+         'mTrackStarID':('s8',0x323),'mEventID':('u8',0x320),'mPrevEventBit':('u8',0x31f)},
+        {'mModel.SetFile((BMD_File *)dExtSimpleModel_c::LoadFile(*':
+             '_ZN11dExtModel_c7SetFileEP8BMD_Fileii((char *)object+0xd4,_ZN17dExtSimpleModel_c8LoadFileER13SharedFilePtr(',
+         'UpdateModelPosAndRotY()':'_ZN10dBgActor_c21UpdateModelPosAndRotYEv(object)',
+         'UpdateClsnPosAndRot()':'_ZN10dBgActor_c19UpdateClsnPosAndRotEv(object)',
+         'IsActorID(this, ':'BlockActorID(this, ',
+         'TrackStar(mStarID, 2)':'_ZN8dActor_c9TrackStarEjj(this,mStarID, 2)',
+         'KCL_File *kcl = (KCL_File *)dBgW_Kc::LoadFile(*':'void *kcl = _ZN7dBgW_Kc8LoadFileER13SharedFilePtr(',
+         '((dBgW_KcMbg *)(&mMeshCollider))':'',
+         '->dBgW_KcMbg::SetFile(kcl, *(&mClsnMat),':
+             '_ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block((char *)this+0x124,kcl,(char *)this+0x2ec,',
+         '*(data_ov002_02108ab8[idx].block))':'data_ov002_02108ab8[idx].block)',
+         'Event::GetBit(mEventID)':'_ZN5Event6GetBitEj(mEventID)',
+         'Player *pl = ClosestPlayer();':'void *pl = _ZN8dActor_c13ClosestPlayerEv(this);',
+         'pl->IsEnteringLevel()':'_ZN6Player15IsEnteringLevelEv(pl)',
+         'HasNonzeroAngleX()':'_ZN13BigBrickBlock16HasNonzeroAngleXEv(this)'},MODEL_API+'''
+extern struct BigBrickBlockFileRow data_ov002_02108ab0[],data_ov002_02108ab4[];
+extern struct ClpsRow data_ov002_02108ab8[];
+extern s8 data_0209f2f8; extern u8 data_0209f220;
+void _ZN10dBgActor_c21UpdateModelPosAndRotYEv(void *);
+void _ZN10dBgActor_c19UpdateClsnPosAndRotEv(void *);
+s32 _ZN8dActor_c9TrackStarEjj(void *,u32,u32);
+void *_ZN7dBgW_Kc8LoadFileER13SharedFilePtr(SharedFilePtr *);
+void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x3isR10CLPS_Block(void *,void *,void *,int,s16,void *);
+s32 _ZN5Event6GetBitEj(u32);
+void *_ZN8dActor_c13ClosestPlayerEv(void *);
+int _ZN6Player15IsEnteringLevelEv(void *);
+int _ZN13BigBrickBlock16HasNonzeroAngleXEv(void *);
+int IsStarCollectedInCurLevel(u32);
+''','struct BigBrickBlockFileRow { SharedFilePtr *file; u8 pad[8]; };\nstruct ClpsRow { void *block; u8 pad[8]; };\n'
+        'static inline int BlockActorID(void *actor,int id) { return *(u16 *)((char *)actor+0xc) == id; }\n')
 
     for name in ('func_ov100_0214491c','func_ov100_02144c64'):
         row,bindings=free_c('external/sm64ds-pc/src/'+name+'.c')
