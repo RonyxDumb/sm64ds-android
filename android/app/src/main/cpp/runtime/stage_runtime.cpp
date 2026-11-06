@@ -2096,6 +2096,9 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202e3d4u,&scene_before_behavior);
     space.bind(0x02010fd4u,&actor_before_behavior);
     space.bind(0x02010f78u,&actor_before_render);
+    // dActor_c's cleanup overrides only normalise/forward to fBase_c.
+    for (uint32_t before : {0x02043bacu,0x02011220u}) space.bind(before,&fbase_before_cleanup);
+    for (uint32_t after : {0x02043b2cu,0x02011214u}) space.bind(after,&fbase_after_cleanup);
     space.bind(0x0202e3a4u,&scene_before_render);
     // dActor_c::AfterBehavior/AfterRender only forward to the empty fBase_c ones.
     for (uint32_t after : {0x02043af8u,0x02043ac4u,0x0202e3c8u,0x0202e398u,0x02010fc8u,0x02010f6cu})
@@ -2321,6 +2324,26 @@ int actor_before_render(uint32_t self) {
     const uint32_t flags=at<uint32_t>(self+0xb0);
     if (flags&0x20) return 0;
     return ((flags&8) && (flags&2)) ? 0 : 1;
+}
+int fbase_before_cleanup(uint32_t self) {
+    // Complete fBase_c::BeforeCleanupResources (0x02043bac): wait for the
+    // lifecycle state and for every scene child (sceneNode.child, 0x18).
+    if (const uint32_t lifecycle=at<uint32_t>(self+0x48))
+        if (!Ptr<int(uint32_t)>(0x0204424cu)(lifecycle)) return 0;
+    return at<uint32_t>(self+0x18)==0 ? 1 : 0;
+}
+void fbase_after_cleanup(uint32_t self,uint32_t success) {
+    // Complete fBase_c::AfterCleanupResources (0x02043b2c): on success 2,
+    // leave the scene tree and cleanup list, destroy the owned heap and
+    // lifecycle state, run the virtual D1 (slot 16) and free from the actor
+    // heap (fBase_c::operator delete, data_020a0eac).
+    if (success!=2) return;
+    Ptr<void(uint32_t,uint32_t)>(0x0203b3c0u)(0x020a4b6cu,self+0x14);
+    Ptr<void(uint32_t,uint32_t)>(0x0203b27cu)(0x020a4ba8u,self+0x28);
+    if (const uint32_t heap=at<uint32_t>(self+0x4c)) Ptr<void(uint32_t)>(0x0203c74cu)(heap);
+    if (const uint32_t lifecycle=at<uint32_t>(self+0x48)) Ptr<void(uint32_t)>(0x02044334u)(lifecycle);
+    stage_virtual<uint32_t>(self,16);
+    Ptr<void(uint32_t,uint32_t)>(0x0203c1e8u)(self,at<uint32_t>(0x020a0eacu));
 }
 // fBase_c::AfterBehavior/AfterRender (0x02043af8/0x02043ac4) are empty
 // (size 4); dScene_c's overrides (0x0202e3c8/0x0202e398) only forward.
