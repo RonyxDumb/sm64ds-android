@@ -11,12 +11,14 @@
 #include "ntr/gx.h"
 #include "ntr/mmio.h"
 #include "ntr/lz77.h"
+#include "ntr/fs.h"
 #include <cstring>
 #include <algorithm>
 #include <array>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <unordered_set>
 
 namespace sm64ds::frontend { void bind_arm9_sources(packed::Space &); }
 namespace sm64ds::stage_sources { void bind_sources(packed::Space &); }
@@ -24,6 +26,7 @@ namespace sm64ds::minigame_sources { void bind_overlay_sources(packed::Space &,u
 int ApproachLinear(int &,int,int);
 extern "C" {
 void abi_mg_InitNativeStatics();
+void pk_mg_Cache(uint32_t,uint32_t);
 void abi_mg_OamReset(); void abi_mg_OamFlush(); void abi_mg_OamLoad();
 void pk_mg_DecompressLZ16(sm64ds::packed::Ptr<void>,sm64ds::packed::Ptr<void>);
 void pk_mg_LoadGroup(int,int); void pk_mg_Music(int); void pk_mg_StopMusic(unsigned);
@@ -40,6 +43,7 @@ uint32_t game_load(int handle) {
     if (handle<0) throw std::out_of_range("Negative minigame asset handle.");
     return sm64ds::MinigameGameplayRuntime::current().load(static_cast<uint32_t>(handle));
 }
+uint32_t game_allocate(uint32_t bytes) { return Space::current().allocate(bytes); }
 uint32_t game_path(uint32_t path) { return sm64ds::MinigameGameplayRuntime::current().load_path(path); }
 void game_free(uint32_t address) { if (address) sm64ds::MinigameGameplayRuntime::current().free(address); }
 uint32_t game_compressed(int handle,uint32_t target) {
@@ -62,13 +66,33 @@ void game_stop_effects() {
         program.native_audio({sm64ds::SoundOp::Stop,player,0});
 }
 int game_effect(unsigned entry) { return sm64ds::GameProgram::active().sound(2,entry)?1:0; }
-void game_effect_params(int entry,int,int,int) { (void)game_effect(static_cast<unsigned>(entry)); }
 uint32_t nextEffectToken=0x200000;
+void game_effect_params(int bank,int entry,int tracks,int pan) {
+    auto &program=sm64ds::GameProgram::active();
+    const uint32_t token=++nextEffectToken;
+    if (program.native_audio({sm64ds::SoundOp::Effect,1,token,bank,entry}))
+        program.native_audio({sm64ds::SoundOp::TrackParam,1,token,tracks,9,pan});
+}
+int game_effect_pan(int x) {
+    // func_020126e8: screen Fix12 x -> original 26..102 stereo pan.
+    return static_cast<int>(std::clamp<int64_t>(int64_t(x)*0x4c/0x100000+0x1a,0x1a,0x66));
+}
+void game_effect_at(int entry,int x) { game_effect_params(2,entry,0xffff,game_effect_pan(x)-64); }
 int game_effect_if_idle(int previous,int archive,int entry,int) {
     auto &program=sm64ds::GameProgram::active();
     if (previous>0 && program.native_audio({sm64ds::SoundOp::Status,1,static_cast<uint32_t>(previous)})) return previous;
     const uint32_t token=++nextEffectToken;
     return program.native_audio({sm64ds::SoundOp::Effect,1,token,archive,entry}) ? static_cast<int>(token) : 0;
+}
+int game_effect_configured(int previous,int archive,int entry,int flags,int volume,int pitch,int pan,short priority) {
+    const int token=game_effect_if_idle(previous,archive,entry,priority);
+    if (token) {
+        auto &program=sm64ds::GameProgram::active();
+        if (flags&1) program.native_audio({sm64ds::SoundOp::TrackParam,1,static_cast<uint32_t>(token),0xffff,0x0a,volume});
+        if (flags&2) program.native_audio({sm64ds::SoundOp::TrackParam,1,static_cast<uint32_t>(token),0xffff,0x0c,pitch});
+        if (flags&4) program.native_audio({sm64ds::SoundOp::TrackParam,1,static_cast<uint32_t>(token),0xffff,9,pan-64});
+    }
+    return token;
 }
 int game_submusic(unsigned entry,unsigned,unsigned volume,int,bool start) {
     // PlaySub's zero-volume form stops its current jingle.
@@ -93,9 +117,31 @@ int game_scene_before_init(uint32_t actor) {
     at<uint32_t>(0x0209f5c0)=actor;
     dScene_c::SetFaders(&data_0209f5e8);
     at<uint32_t>(0x0209f1e4)=0;
-    game_stop_effects(); return 1; // fBase_c::BeforeInitResources is true
+    game_stop_effects();
+    // dScene_c::BeforeInitResources also executes its full original graphics
+    // reset. Title display-base/window state must not survive into a game.
+    Ptr<void()>(0x0202e6c8u)();
+    return 1; // fBase_c::BeforeInitResources is true
 }
 int game_scene_before_render(uint32_t actor) { return sm64ds::native_fbase_before_render(actor); }
+int game_scene_waiting_children(uint32_t actor) {
+    // func_020431c4: walk the scene's descendants, waiting only for an
+    // original actor whose aliveState is still pending initialization.
+    const uint32_t root=actor+0x14;
+    uint32_t node=at<uint32_t>(root+4);
+    std::unordered_set<uint32_t> visited;
+    while (node) {
+        if (!visited.insert(node).second) throw std::runtime_error("Cyclic minigame scene tree.");
+        const uint32_t owner=at<uint32_t>(node+16);
+        if (!at<uint8_t>(owner+14)) return 1;
+        if (at<uint32_t>(node+4)) { node=at<uint32_t>(node+4); continue; }
+        while (node!=root && !at<uint32_t>(node+12)) node=at<uint32_t>(node);
+        if (!node || node==root) break;
+        node=at<uint32_t>(node+12);
+    }
+    return 0;
+}
+void game_after_process(uint32_t,uint32_t) {} // original fBase after-behavior/render bodies
 int game_scene_before_behavior(uint32_t actor) {
     if (!sm64ds::native_fbase_before_behavior(actor)) return 0;
     if (at<uint8_t>(0x0209f1e0))
@@ -139,12 +185,29 @@ void bind_game_services(Space &space) {
     for (uint32_t address:{0x020182bcu,0x020adc74u}) space.bind(address,&game_path);
     for (uint32_t address:{0x02018144u,0x020adc5cu}) space.bind(address,&game_free);
     space.bind(0x0205a754,&pk_mg_DecompressLZ16);
+    for (uint32_t address:{0x02058c08u,0x02058c24u,0x02058c40u,0x02058c68u})
+        space.bind(address,&pk_mg_Cache);
     space.bind(0x02019028,&game_reset_files);
     space.bind(0x0202e3a4,&game_scene_before_render);
     space.bind(0x0202e3d4,&game_scene_before_behavior);
+    space.bind(0x020431c4,&game_scene_waiting_children);
+    space.bind(0x02043c80,&sm64ds::native_fbase_init);
+    space.bind(0x02043b24,&sm64ds::native_fbase_behavior);
+    space.bind(0x02043af0,&sm64ds::native_fbase_render);
+    space.bind(0x02043afc,&sm64ds::native_fbase_before_behavior);
+    space.bind(0x02043ac8,&sm64ds::native_fbase_before_render);
+    space.bind(0x02043fdc,&sm64ds::native_fbase_process_list);
+    space.bind(0x02043af8,&game_after_process);
+    space.bind(0x02043ac4,&game_after_process);
+    space.bind(0x0202e3c8,&game_after_process);
+    space.bind(0x0202e398,&game_after_process);
     space.bind(0x0202e5d0,&game_scene_after_cleanup);
     space.bind(0x02012790,&game_effect);
     space.bind(0x020127a4,&game_effect_params);
+    space.bind(0x02012754,&game_effect);
+    space.bind(0x020126e8,&game_effect_pan);
+    space.bind(0x02012718,&game_effect_at);
+    space.bind(0x02012468,&game_effect_configured);
     space.bind(0x020124c4,&game_effect_if_idle);
     space.bind(0x02013050,&pk_mg_StopMusic);
     space.bind(0x0201320c,&pk_mg_Music);
@@ -154,6 +217,8 @@ void bind_game_services(Space &space) {
     space.bind(0x02056de0,&game_irq_enable);
     space.bind(0x02056d98,&game_irq_disable);
     space.bind(0x0203d744,&game_sqrt);
+    space.bind(0x0203c1c4,&game_allocate);
+    space.bind(0x0203c1b4,&game_free);
     space.bind(0x0203d47c,&game_null_destructor);
     space.bind(0x02019574,&game_sound_mode);
     space.bind(0x02019510,&game_set_sound_mode);
@@ -198,6 +263,7 @@ MinigameGameplayRuntime::MinigameGameplayRuntime(GameHeap &heap, Cartridge &cart
     validate_minigame_shared_runtime(space_);
     bind_minigame_scene_factory(space_,game_,scene_);
     Scope scope(*this);
+    packed::Ptr<void()>(0x02075154u)(); // original ARM9 process-list/scene-tree initializer
     abi_mg_InitNativeStatics();
     liveGame=this;
 }
@@ -234,7 +300,23 @@ uint32_t MinigameGameplayRuntime::load_path(uint32_t path) {
     std::string name;
     for (size_t i=0;i<1024;++i) {
         const char c=*Ptr<char>(path+static_cast<uint32_t>(i));
-        if (!c) return load(Resources::active().handle_by_path(name.c_str()));
+        if (!c) {
+            // Ov004_LoadFileByPath uses FS paths (Wanted uses /MG/...),
+            // not overlay-0 asset handles. Nitro accepts a leading root.
+            const auto first=name.find_first_not_of('/');
+            if (first==std::string::npos) throw std::runtime_error("Empty minigame resource path.");
+            name.erase(0,first);
+            const int32_t id=ntr::fs_id_by_path(name.c_str());
+            const int32_t bytes=ntr::fs_size(id);
+            if (bytes<=0 || bytes>16*1024*1024)
+                throw std::runtime_error("Missing original minigame file: "+name);
+            const uint32_t address=space_.allocate(static_cast<uint32_t>(bytes));
+            if (ntr::fs_read(id,space_.data(address,bytes),bytes)!=bytes) {
+                space_.release(address);
+                throw std::runtime_error("Could not read original minigame file: "+name);
+            }
+            return address;
+        }
         name.push_back(c);
     }
     throw std::runtime_error("Unterminated original minigame resource path.");
@@ -320,7 +402,7 @@ void pk_mg_GameLoadGroup(int group,int bank) { pk_mg_LoadGroup(group,bank); }
 uint32_t pk_mg_GameCompressed(int handle,Ptr<void> destination) { return game_compressed(handle,destination.address()); }
 int pk_mg_GameBeforeInit(Ptr<void> actor) { return game_scene_before_init(actor.address()); }
 int pk_mg_NativeVirtual(Ptr<void> actor,int slot,int a,int b,int c,int d) {
-    if (slot<0 || slot>=36) throw std::out_of_range("Invalid original minigame virtual slot.");
+    if (slot<0 || slot>=37) throw std::out_of_range("Invalid original minigame virtual slot.");
     return virtual_word(actor.address(),slot,a,b,c,d);
 }
 void pk_mg_NativeInvoke(Ptr<void> object,Ptr<sm64ds::packed::MemberCall> call) {

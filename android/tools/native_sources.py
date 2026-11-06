@@ -174,6 +174,13 @@ def font(text):
     )
     for old, new in pairs:
         text = replace_once(text, old, new)
+    # Retail LoadFont(2) requests 0x20 bytes at palette_file+2 although the
+    # actual EU NCL is only 0x20 bytes. Copy the fifteen owned 4bpp colours;
+    # its extra read/write targets the unused next palette's colour zero.
+    # Do not read allocator padding or relax the native upload bounds.
+    text = replace_once(text,
+        'GX::LoadBGPltt((void *)(file + 2), 2, 0x20);',
+        'GX::LoadBGPltt((void *)(file + 2), 2, 0x1e);')
     return hostgen.transform(text)[0]
 
 

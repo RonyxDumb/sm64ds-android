@@ -1,3 +1,32 @@
+# Checkpoint — 2026-11-06, Wanted earns its first original point
+
+Work continues on main. Added 43 original function units, including all 23
+Amida gameplay methods, five missing shared sprite/banner wrappers, the line
+rasterizer, vector helpers, BG offsets and the actual ARM9 actor-list initializer.
+The scene now schedules original behavior/render callbacks, waits on original
+child actor readiness and retains its genuine overlay-6 vtable and PMF records.
+
+Verified against a private EU cartridge with ASan/UBSan: actual title touch ->
+room -> Wanted, original four-picture board, 3,413 OBJ pixels, a correct stylus
+hit, original reward animation, an earned score of 1 and the next board.
+The no-ROM actor/controller/constructor/record/wipe/math regressions pass too.
+This is host execution of the Android runtime, not an Android phone test.
+
+Corrected multidimensional array order, unaligned stepped scene views, Amida
+Point value-copy ABI and null-based offsetof expressions. Original src/include
+remain unchanged. Path-based /MG assets now use the actual cartridge filesystem.
+Retail LoadFont(2) reads 0x20 bytes at +2 in a 0x20-byte palette; the native view
+copies its fifteen owned 4bpp colours without reading the unused extra halfword.
+
+Still being checked: background rendering (the first gameplay capture showed
+sprites/timer but missing BGs), Amida startup/pen input, full Wanted game-over,
+retry/quit/record persistence and final Android compilation. The full original
+scene graphics reset is now connected and is under the private-cartridge test.
+No complete minigame-room catalogue, final rendering or phone play is claimed.
+No ROM, extracted file, screenshot or save is committed.
+
+---
+
 # Checkpoint — 2026-11-06, original Wanted and common minigame execution
 
 Work continues on main. The native link now includes original Wanted gameplay,

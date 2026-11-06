@@ -6,7 +6,7 @@ original address; no native pointer or C++ vtable enters a four-byte record.
 """
 import re
 from pathlib import Path
-from lift_frontend import Lift, PARSER, DATA_SYMBOLS
+from lift_frontend import Lift, PARSER, DATA_SYMBOLS, normalize
 
 ROOT = Path(__file__).resolve().parents[2]
 SYMBOL_FILES = ['config/arm9/symbols.txt', 'config/arm9/itcm/symbols.txt'] + [
@@ -18,6 +18,10 @@ for path in SYMBOL_FILES:
         SYMBOLS[name] = int(address,16)
         if kind != 'function': DATA_SYMBOLS[name] = int(address,16)
 DATA_SYMBOLS['sMgBannerFileTemplate']=0x020bc6e8
+# The source keeps the explicit receiver used by its C imports; the
+# symbol map retains the earlier member spelling for the same entry point.
+SYMBOLS['Mg_DrawLine']=SYMBOLS['_ZN11dScMgBase_c11Mg_DrawLineEiiiiii']
+SDK_NAMES=('GX','GXS','G2','G2S','IRQ','cstd','Sound','Memory')
 
 
 def clean(text):
@@ -33,6 +37,8 @@ ICON = fields('include/dThIcon_c.h','    s16 mX;', '    dThIcon_c()')
 OPTIONS = fields('include/dMgPsOpt_c.h','    TouchIcon_c mIcons[8];','    dMgPsOpt_c();')
 BASE = fields('include/dScMgBase_c.h','    s32 mTallyShown;', '\n};')
 LUIGI = fields('include/dScMgLuigi_c.h','    dScMgLuigi_Penalty mPenalty[16];','\n};')
+AMIDA = fields('include/dScMgAmida_c.h','    s32 mWalkerCell[4][2];','\n};')
+AMIDA_PIECE = fields('include/dScMgAmida_c.h','    s32 posX;', '\n};')
 BASE_PREFIX = 'u32 vptr,uniqueID,param1; u16 actorID; u8 actorRest[0x42];\n'
 COMMON = '''
 typedef unsigned char u8; typedef signed char s8; typedef short s16;
@@ -47,6 +53,9 @@ typedef void (*Handler)();
 struct dMgPsOpt_c { OPTIONS_FIELDS };
 struct dScMgBase_c { BASE_PREFIX BASE_FIELDS };
 struct dScMgLuigi_c { BASE_PREFIX BASE_FIELDS LUIGI_FIELDS };
+struct Point { s32 x,y; };
+struct dScMgAmida_c_Piece { AMIDA_PIECE_FIELDS };
+struct dScMgAmida_c { BASE_PREFIX BASE_FIELDS AMIDA_FIELDS };
 struct MgRecordDefaults { s32 v[5]; };
 struct MgEntry { u16 id,pad; s32 sceneParam,scoringMode,scoreCap,ownRecords;
     MgRecordDefaults recordDefaults; s32 musicTrack,musicMode,level; };
@@ -60,6 +69,13 @@ static_assert(sizeof(dMgPsOpt_c)==0x128);
 static_assert(sizeof(dMgState_c)==0x28);
 static_assert(sizeof(dScMgBase_c)==0x4660);
 static_assert(sizeof(dScMgLuigi_c)==0x545c);
+static_assert(sizeof(dScMgAmida_c_Piece)==0x18);
+static_assert(sizeof(dScMgAmida_c)==0x53fc);
+static_assert(offsetof(dScMgAmida_c,mStrokeGrid)==0x470c);
+static_assert(offsetof(dScMgAmida_c,mPieces)==0x4768);
+static_assert(sizeof(((dScMgAmida_c *)0)->mWalkerCell[0])==8);
+static_assert(sizeof(((dScMgAmida_c *)0)->mLanePos[0])==8);
+static_assert(sizeof(((dScMgLuigi_c *)0)->mGrid[0])==9);
 static_assert(offsetof(dScMgBase_c,mStateController)==0xcc);
 static_assert(offsetof(dScMgBase_c,mTouchOptions)==0xf4);
 static_assert(offsetof(dScMgBase_c,mMenuOpen)==0x4628);
@@ -74,7 +90,7 @@ void mg_Oam10(bool,OamAttr *,int,int,int,int,int,int,int,int);
 OamAttr *mg_Oam8(bool,OamAttr *,int,int,int,int,int,int);
 void mg_OamMatrix(bool,OamAttr *,int,int,int,int,Matrix2x2 *);
 void mg_OamSub(OamAttr *,int,int,int,int);
-'''.replace('ICON_FIELDS',ICON).replace('OPTIONS_FIELDS',OPTIONS).replace('BASE_PREFIX',BASE_PREFIX).replace('BASE_FIELDS',BASE).replace('LUIGI_FIELDS',LUIGI)
+'''.replace('ICON_FIELDS',ICON).replace('OPTIONS_FIELDS',OPTIONS).replace('BASE_PREFIX',BASE_PREFIX).replace('BASE_FIELDS',BASE).replace('LUIGI_FIELDS',LUIGI).replace('AMIDA_PIECE_FIELDS',AMIDA_PIECE).replace('AMIDA_FIELDS',AMIDA)
 
 # Complete original member records; retain their cartridge extents.
 lh = (ROOT/'include/dScMgLuigi_c.h').read_text()
@@ -95,7 +111,7 @@ COMMON += '''
 #define FX_MUL(a,b) ((int)(((s64)(a)*(b)+0x800)>>12))
 '''
 
-CLASSES = {'dScMgBase_c':'base','dScMgLuigi_c':'luigi','MgFx':'fx',
+CLASSES = {'dScMgBase_c':'base','dScMgLuigi_c':'luigi','dScMgAmida_c':'amida','MgFx':'fx',
            'dMgPsOpt_c':'options','dMgPsOpt_c::TouchIcon_c':'option_icon',
            'dThIcon_c':'icon','dScMgBase_c::graphCallback_c':'graph'}
 VIRTUALS = {'BeforeInitResources':1,'AfterInitResources':2,'AfterCleanupResources':5,
@@ -105,13 +121,13 @@ VIRTUALS = {'BeforeInitResources':1,'AfterInitResources':2,'AfterCleanupResource
             'OnGraphCallback2':24,'OnGraphCallback3':25,'GetDisplayMode':26,
             'OpenMenu':27,'CloseMenu':28,'SaveScreenForMenu':29,
             'RestoreScreenFromMenu':30,'InitSubScreenBg':31,'InitMainScreenBg':32,
-            'InitEngines':33,'PaintSquare':34,'IsAltVariant':35}
+            'InitEngines':33,'PaintSquare':34,'IsAltVariant':35,'IsVariant2':36}
 CLASS_FIELDS = {c:set(re.findall(r'\b(?:m\w+|unk_\w+|param1|actorID)\b',
-    BASE+LUIGI if c=='dScMgLuigi_c' else BASE if c=='dScMgBase_c' else
+    BASE+LUIGI if c=='dScMgLuigi_c' else BASE+AMIDA if c=='dScMgAmida_c' else BASE if c=='dScMgBase_c' else
     ICON if c.endswith('Icon_c') else OPTIONS if c=='dMgPsOpt_c' else
     'mScene' if c.endswith('graphCallback_c') else 'mPos mVecA mVecB mTimer mDuration mState'))
     for c in CLASSES}
-for c in ('dScMgBase_c','dScMgLuigi_c'): CLASS_FIELDS[c].update(('param1','actorID'))
+for c in ('dScMgBase_c','dScMgLuigi_c','dScMgAmida_c'): CLASS_FIELDS[c].update(('param1','actorID'))
 
 
 def walk(node):
@@ -139,9 +155,38 @@ def symbol_for(qualified, params=''):
 
 def address_of(name):
     if name in SYMBOLS: return SYMBOLS[name]
+    if name=='Memory::Allocate': return SYMBOLS['_ZN6Memory8AllocateEj']
+    if name=='Memory::Deallocate': return SYMBOLS['_ZN6Memory10DeallocateEPv']
     m = re.search(r'(0[12][0-9a-f]{6})$',name)
     if m: return int(m[1],16)
     return SYMBOLS[symbol_for(name)]
+
+
+class GameLift(Lift):
+    def address(self,name):
+        return DATA_SYMBOLS[name] if name in DATA_SYMBOLS else super().address(name)
+
+    @staticmethod
+    def array_parts(value):
+        dimensions=[]
+        while isinstance(value,tuple) and value[0]=='array':
+            dimensions.append('['+value[2]+']')
+            value=value[1]
+        return value,''.join(dimensions)
+
+    def named(self,name,value):
+        # decode builds arrays outside-in. Preserve that order when spelling
+        # both scene fields and local arrays; [13][9] must retain 9-byte rows.
+        if isinstance(value,tuple) and value[0]=='array':
+            inner,dimensions=self.array_parts(value)
+            return super().named(name,inner)+dimensions
+        return super().named(name,value)
+
+    def typename(self,value):
+        if isinstance(value,tuple) and value[0]=='array':
+            inner,dimensions=self.array_parts(value)
+            return super().typename(inner)+dimensions
+        return super().typename(value)
 
 
 class Source:
@@ -192,6 +237,16 @@ def transform(text, cls, own_name, methods):
         for field in CLASS_FIELDS[cls]:
             b=re.sub(r'(?<![\w>.])\b'+field+r'\b','self->'+field,b)
         text=h+'{'+b
+    if own_name=='mc_luigi_RestartPicture':
+        # The retail addressing trick steps a whole scene by a byte index.
+        # Access its byte arrays directly instead of forming an unaligned
+        # scene object at scene+idx on ARM64.
+        for field in ('mShown','mStarted','mKind'):
+            text=text.replace('((dScMgLuigi_c *)rawSelf)->'+field+'[0]',
+                              'self->'+field+'[idx]')
+    if own_name=='mc_luigi_PlaceNextPicture':
+        text=text.replace('((dScMgLuigi_c *)((char *)self + col * 9 + row))->mGrid[0]',
+                          '((u8 *)self+offsetof(dScMgLuigi_c,mGrid)+col*9+row)')
     # Native service boundaries retain real fader ownership.
     text=text.replace('data_0209f5bc->IsActive()', 'mg_FaderReady()')
     text=text.replace('dScene_c::SetFaders','mg_SetFaders')
@@ -241,7 +296,8 @@ def transform(text, cls, own_name, methods):
                 values=[a] if a else []
                 count=len(args.named_children)
                 if count>4: raise ValueError('Unexpected scene virtual arity')
-                replacement='mg_NativeVirtual('+('' if op=='->' else '&')+receiver+','+str(VIRTUALS[method])+','+(a+',' if a else '')+','.join('0' for _ in range(4-count))+')'
+                values=([a] if a else [])+['0']*(4-count)
+                replacement='mg_NativeVirtual('+('' if op=='->' else '&')+receiver+','+str(VIRTUALS[method])+','+','.join(values)+')'
         elif f in methods.get(cls,{}):
             replacement=methods[cls][f]+'(self'+(','+a if a else '')+')'
         elif f.startswith('dScMgBase_c::'):
@@ -260,7 +316,7 @@ def transform(text, cls, own_name, methods):
         if last>end: continue
         data=data[:first]+value.encode()+data[last:]; end=first
     text=data.decode()
-    for ns in ('GX','GXS','G2','G2S','IRQ','cstd','Sound'):
+    for ns in SDK_NAMES:
         text=text.replace(ns+'::', ns+'_')
     text=text.replace('::OamAttr','OamAttr')
     text=text.replace('__register_global_object','mg_RegisterGlobal')
@@ -274,7 +330,7 @@ def transform(text, cls, own_name, methods):
             text=re.sub(r'(?<![\w>.])\b(unk_01c|unk_020)\b',r'self->\1',text)
     # Recovered functions with unused return values ended in a tail-call.
     # Return that actual result, avoiding a native fall-through with UB.
-    if own_name in ('mc_base_CloseMenu','mc_base_SaveScreenForMenu','mc_base_InitSubScreenBg'):
+    if own_name in ('mc_base_CloseMenu','mc_base_SaveScreenForMenu','mc_base_InitSubScreenBg','mc_amida_InitSubScreenBg'):
         h,b=text.rsplit('}',1)
         h=h.rstrip()+'\n    return 0; // original callers discard the unspecified return word\n'
         text=h+'}'+b
@@ -282,16 +338,31 @@ def transform(text, cls, own_name, methods):
     text=text.replace('x = (x = (e->mX + oamX) + 0x10);','x = (e->mX + oamX) + 0x10;')
     text=re.sub(r'\bPEN\((\w+)\)',r'(((dScMgLuigi_c *)\1)->mPenalty[0])',text)
     text=re.sub(r'TOUCH_REC\((\w+)\)\[([^\]]+)\]\[0\]',r'\1[(\2)*4]',text)
+    text=re.sub(r'\b((?:unsigned char|u8) gTouch(?:Held|Edge|X|Y))\[\]\[4\]',r'\1[]',text)
+    text=re.sub(r'\b(gTouch(?:Held|Edge|X|Y))\[([^\]]+)\]\[([^\]]+)\]',r'\1[(\2)*4+(\3)]',text)
     text=text.replace('func_02012e1c((char *)self)','func_02012e1c()')
+    # The original macros only preserve mwcc addressing choices. Express
+    # the same DS field offsets without dereferencing a null native object.
+    text=re.sub(r'\b(?:IP|IAP)\((\w+),\s*PIECE_OFF\((\w+)\)\)',r'(((dScMgAmida_c_Piece *)((char *)\1+offsetof(dScMgAmida_c,mPieces)))->\2)',text)
+    text=re.sub(r'\bPIECE_OFF\((\w+)\)',r'(offsetof(dScMgAmida_c,mPieces)+offsetof(dScMgAmida_c_Piece,\1))',text)
+    text=re.sub(r'\bPIECE_AT\((\w+)\)',r'((dScMgAmida_c_Piece *)((char *)\1+offsetof(dScMgAmida_c,mPieces)))',text)
     text=text.replace('((e->mOamCount + 1) << 2) + 0x1e << 0xc','(((e->mOamCount + 1) << 2) + 0x1e) << 0xc')
-    return text
+    return normalize(text)
 
 
 def generate(digest, existing):
     paths=['src/minigames/d_s_mg_base.cpp','src/minigames/unit020b2c84.cpp',
            'src/minigames/d_s_mg_luigi.cpp','src/minigames/d_mg_ps_opt.cpp',
            'src/ui/hud/d_th_icon.cpp','src/ui/hud/d_cap_icon.cpp',
-           'src/TouchArea_Update.c','src/unnamed/ov001/func_ov001_020ab41c.c']
+           'src/TouchArea_Update.c','src/unnamed/ov001/func_ov001_020ab41c.c',
+           'src/minigames/d_s_mg_amida.cpp','src/Vec2_Len.c','src/MultiCopyHalf.c']
+    # BG0 and sub BG0..2 already use original stage-source bindings.
+    paths += ['src/SetBg'+str(layer)+'Offset.c' for layer in (1,2,3)]
+    paths += ['src/SetSubBg3Offset.c']
+    paths += ['src/DecIfAbove0_Byte.c']
+    paths += ['src/unnamed/arm9/0207/__sinit_02075154.c']
+    paths += ['src/unnamed/arm9/0203/func_'+address+'.c' for address in
+              ('0203d388','0203d434','0203d480','0203d630','0203d704','0203b958')]
     sources=[Source(p) for p in paths]
     methods={}; definitions=[]; method_definitions=[]; imports={}
     native_leaves={0x020ad660,0x020b04e0,0x020b04ec,0x020b04f0,0x020b1aec,
@@ -309,13 +380,13 @@ def generate(digest, existing):
                     method='Ctor'
                 exported='mc_'+CLASSES[cls]+'_'+method
                 methods.setdefault(cls,{})[method]=exported
-            else: exported=name
+            else: exported='mg_GameCopyHalf' if name=='MultiCopyHalf' else name
             tag=src.tag(node) or name
             if not tag or tag not in SYMBOLS: continue
             address=SYMBOLS[tag]
             if cls: method_definitions.append((src,node,scope,cls,name,exported,address))
             if address in existing or address in native_leaves: continue
-            if not cls and not name.startswith(('Mg_','Banner_','Luigi_','PsOpt_', 'func_ov001_020ab','TouchArea_Update')): continue
+            if not cls and not name.startswith(('Mg_','Banner_','Luigi_','Amida_RestoreBgChars','Amida_SaveBgChars','PsOpt_', 'func_ov001_020ab','TouchArea_Update','SetBg','SetSubBg','Vec2_Len','MultiCopyHalf','func_0203','DecIfAbove0_Byte','Hud_RenderSprite','RenderOamMainScreen','DrawOamSprite','RenderOamBothScreens','FreeGfxSlotsById','__sinit_02075154')): continue
             if src.path.endswith('d_cap_icon.cpp') and name not in ('func_ov001_020ab3f0','func_ov001_020ab41c','TouchArea_Update'): continue
             definitions.append((src,node,scope,cls,name,exported,address))
     # Method imports use the recovered mangled address, with a POD self.
@@ -337,7 +408,15 @@ def generate(digest, existing):
     records=[]
     for src in sources:
         for node,scope in src.structs:
-            name=src.text(node.child_by_field_name('name'))
+            tag=node.child_by_field_name('name')
+            if tag is None:
+                if node.parent.type!='type_definition':
+                    raise ValueError('Unnamed source record without typedef: '+src.path)
+                name=src.text(node.parent.child_by_field_name('declarator'))
+                text=clean(src.text(node.parent))
+                if name not in [n for n,_ in records]: records.append((name,text))
+                continue
+            name=src.text(tag)
             if name in ('MgFx','SceneVCall6','Obj','MgBanner','OamAttr','Matrix2x2'):
                 continue
             text=clean(src.text(node))+';'
@@ -362,7 +441,7 @@ def generate(digest, existing):
             t=clean(src.text(n)).strip()
             if not t or t.startswith(('static ','typedef ')): continue
             names=prototype_names(t)
-            if scope and scope[-1] in ('GX','GXS','G2','G2S','IRQ','cstd','Sound'):
+            if scope and scope[-1] in SDK_NAMES:
                 for name in names:
                     t=re.sub(r'\b'+name+r'\b',scope[-1]+'_'+name,t)
                 names=[scope[-1]+'_'+name for name in names]
@@ -371,14 +450,15 @@ def generate(digest, existing):
             if '=' in t:
                 t='extern '+t.split('=',1)[0].strip()+';'
             declarations.append((src,n,scope,t,names))
-    projected_common=Lift(common).result()
+    projected_common=GameLift(common).result()
     entries=[{'path':'include/dScMgBase_c.h','sha256':digest('include/dScMgBase_c.h'),
               'header':True,'dependencies':{p:digest(p) for p in
               ('include/dScMgLuigi_c.h','include/dMgState_c.h','include/dMgPsOpt_c.h',
-               'include/dThIcon_c.h')},'source':projected_common}]
+               'include/dThIcon_c.h','include/dScMgAmida_c.h')},'source':projected_common}]
     bindings=[]
     for src,node,scope,cls,name,exported,address in definitions:
         text=clean(src.text(node))
+        if not cls and exported!=name: text=text.replace(name,exported,1)
         if cls=='dMgPsOpt_c' and name=='dMgPsOpt_c::dMgPsOpt_c': text='void '+text
         if cls:
             text=text.replace(name,exported,1)
@@ -403,10 +483,10 @@ def generate(digest, existing):
         used_ns.update(re.findall(r'using namespace (\w+)',src.text(node)))
         candidates=sorted(declarations,key=lambda d:(d[0] is src,d[2] in (scope,),bool(d[2] and d[2][-1] in used_ns),d[1].start_byte<node.start_byte,d[1].start_byte))
         for owner,n,ns,t,names in candidates:
-            if owner is src and ns and ns!=scope and ns[-1] not in used_ns and ns[-1] not in ('GX','GXS','G2','G2S','IRQ','cstd','Sound'): continue
+            if owner is src and ns and ns!=scope and ns[-1] not in used_ns and ns[-1] not in SDK_NAMES: continue
             for declared in names:
                 if declared in words: chosen[declared]=t
-        for declared in words & imports.keys(): chosen[declared]=imports[declared][0]
+        for declared in sorted(words & imports.keys()): chosen[declared]=imports[declared][0]
         chosen.pop(exported,None)
         for n in PARSER.parse(COMMON.encode()).root_node.named_children:
             if n.type=='declaration':
@@ -418,7 +498,7 @@ def generate(digest, existing):
             if touch in words: chosen[touch]='extern unsigned char '+touch+'[];'
         if 'gActivePlayerSlot' in words: chosen['gActivePlayerSlot']='extern unsigned char gActivePlayerSlot;'
         # Global references declared in a matching header must also remain live.
-        for declared in words & DATA_SYMBOLS.keys():
+        for declared in sorted(words & DATA_SYMBOLS.keys()):
             if declared not in chosen:
                 if declared=='gMgScene': chosen[declared]='extern dScMgBase_c *gMgScene;'
                 elif declared=='gMgMenuRow': chosen[declared]='extern MgEntry gMgMenuRow;'
@@ -447,13 +527,14 @@ static int sdiv4(int a) { return a/4; }
         pre='\n'.join(dict.fromkeys(transform(t,None,'',methods) for t in chosen.values()))
         # Namespace-static SDK functions are given C import spellings.
         text=pre+'\n'+needed_helpers+text
-        class GameLift(Lift):
-            def address(self,name):
-                return DATA_SYMBOLS[name] if name in DATA_SYMBOLS else super().address(name)
         try:
             lifted=GameLift(text).result()
         except Exception as exc:
             raise ValueError('Projection failed for '+name+': '+str(exc)) from exc
+        if exported=='mc_amida_ProbeRung':
+            # The original nontrivial Point travels via a caller-owned
+            # copy on ARM. Preserve that boundary and C++ value semantics.
+            for i in (1,2): lifted=lifted.replace('(Point)(a%d)'%i,'*Ptr<Point>(a%d)'%i)
         # Turn all imports into local typed calls through the original address.
         protected='pk_'+exported
         seen=set()
@@ -468,7 +549,7 @@ static int sdiv4(int a) { return a/4; }
             if original in local_imports: target=local_imports[original][1]
             else:
                 q=original
-                for ns in ('GX','GXS','G2','G2S','IRQ','cstd','Sound'):
+                for ns in SDK_NAMES:
                     if q not in SYMBOLS and q.startswith(ns+'_'): q=ns+'::'+q[len(ns)+1:]; break
                 target=address_of(q)
             probe=Lift('void probe('+params+');')
@@ -480,8 +561,9 @@ static int sdiv4(int a) { return a/4; }
                     typ=probe.typename(typ)
                     if typ!='void': types.append(typ)
             args=', '.join(t+' a'+str(i) for i,t in enumerate(types))
-            call='Ptr<'+ret+'('+', '.join(types)+')>(0x%08xu)'%target
-            call+='('+', '.join('a'+str(i) for i in range(len(types)))+');'
+            abi_types=['Ptr<Point>' if t=='Point' else t for t in types]
+            call='Ptr<'+ret+'('+', '.join(abi_types)+')>(0x%08xu)'%target
+            call+='('+', '.join('Ptr<Point>(&a%d)'%i if t=='Point' else 'a'+str(i) for i,t in enumerate(types))+');'
             service={0x02011b7c:'mg_GameStopEffects',0x0201200c:'mg_GameLoadGroup',
                      0x0202e638:'mg_GameBeforeInit',0x02018100:'mg_GameCompressed'}.get(target)
             extra=''
@@ -493,8 +575,8 @@ static int sdiv4(int a) { return a/4; }
         entries.append({'path':src.path,'unit':'mg_%08x'%address,'sha256':digest(src.path),
                         'header':False,'dependencies':{p:digest(p) for p in
                         ('include/dScMgBase_c.h','include/dScMgLuigi_c.h','include/dMgState_c.h',
-                         'include/dMgPsOpt_c.h','include/dThIcon_c.h','include/decl_common.h')},'source':lifted})
-        bindings.append({'address':address,'symbol':'abi_'+exported,'overlay':6 if src.path.endswith('d_s_mg_luigi.cpp') else 4})
+                         'include/dMgPsOpt_c.h','include/dThIcon_c.h','include/dScMgAmida_c.h','include/decl_common.h')},'source':lifted})
+        bindings.append({'address':address,'symbol':'abi_'+exported,'overlay':6 if src.path.endswith(('d_s_mg_luigi.cpp','d_s_mg_amida.cpp')) else 4})
     # These original __sinit arrays live in BSS. Loading the overlay bytes
     # alone leaves zero callbacks: reproduce the source initializers exactly.
     init=['void mg_InitNativeStatics() {']
