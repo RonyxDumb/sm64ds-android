@@ -149,6 +149,11 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('Vec3_LslInPlace', 0),
+    ('Vec3_Add', 0),
+    ('Vec3_MulScalar', 0),
+    ('Math_Function_0203b0fc', 0),
+    ('func_ov002_020f7538', 2),
     ('func_ov002_020f6618', 2, {
         # The unit's local SharedFilePtr {int a, file;} is the shared 8-byte
         # record (file pointer at +4); references are pointers in the ABI.

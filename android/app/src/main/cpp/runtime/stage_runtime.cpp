@@ -1295,6 +1295,33 @@ void stage_sound_stop_loaded_music_layer1(uint32_t frames) {
     at<uint32_t>(0x0209b4acu)=~0u;
     stage_snd_stop_seq(0x0209b4a0u,int(frames));
 }
+int stage_approach_linear_int(uint32_t ref,int target,int step) {
+    // Complete ApproachLinear(int &, int, int) (src/ApproachAngle.cpp),
+    // with the ARM's wrapping 32-bit arithmetic.
+    auto &value=at<int32_t>(ref);
+    if (step!=0) {
+        if (value>target) step=int(0u-uint32_t(step));
+        value=int32_t(uint32_t(value)+uint32_t(step));
+        if (int64_t(step)*int32_t(uint32_t(value)-uint32_t(target))>=0) { value=target; return 1; }
+    } else if (value==target) {
+        return 1;
+    }
+    return 0;
+}
+int stage_approach_linear_short(uint32_t ref,int16_t target,int16_t step) {
+    // Complete ApproachLinear(short &, short, short).
+    auto &value=at<int16_t>(ref);
+    if (step!=0) {
+        int16_t d=int16_t(value-target);
+        if (d>0) step=int16_t(-step);
+        value=int16_t(value+step);
+        d=int16_t(value-target);
+        if (step*d>=0) { value=target; return 1; }
+    } else if (value==target) {
+        return 1;
+    }
+    return 0;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1765,6 +1792,8 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
+    space.bind(0x0203ae58u,&stage_approach_linear_int);
+    space.bind(0x0203adecu,&stage_approach_linear_short);
     space.bind(0x0200e768u,&stage_read_unaligned_short);
     space.bind(0x0200e748u,&stage_read_unaligned_int);
     space.bind(0x0200e8d4u,&stage_process_kuppa_script);
