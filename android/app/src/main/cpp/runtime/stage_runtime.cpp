@@ -235,6 +235,17 @@ uint32_t native_simple_model_construct(uint32_t model) {
     return model;
 }
 
+uint32_t native_model_base_construct(uint32_t model) {
+    // Complete Model::Model() C2 (0x02016da8, recovered unit): the Model
+    // vptr, transformsBuf = 0 and an identity mat4x3.
+    auto &space=packed::Space::current();
+    (void)space.data(model,0x50);
+    at<uint32_t>(model)=0x0208e90cu;
+    at<uint32_t>(model+0x4c)=0;
+    std::memcpy(space.data(model+0x1c,48),space.data(0x02082128u,48),48);
+    return model;
+}
+
 namespace {
 uint32_t stage_allocate(uint32_t bytes) { return packed::Space::current().allocate(bytes); }
 void stage_deallocate(uint32_t address) { if (address) packed::Space::current().release(address); }
@@ -1776,6 +1787,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015ed8u,&stage_shadow_init_cuboid);
     space.bind(0x0203d384u,&stage_vector_lifetime);
     space.bind(0x020733a8u,&stage_vec_ctor);
+    space.bind(0x02016da8u,&native_model_base_construct);
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
     space.bind(0x02014878u,&stage_position_cylinder_construct);
