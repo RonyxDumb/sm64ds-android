@@ -201,7 +201,11 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
-    ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject'),
+    ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject', {
+        # The unit names overlay-9 data at 0x02113c20 as a function.
+        '&func_02113c20': '&data_ov009_02113c20',
+        'int CutsceneObject::InitResources()':
+            'extern "C" {\nextern char data_ov009_02113c20;\n}\nint CutsceneObject::InitResources()'}),
     ('_ZN8dActor_c10FindWithIDEj', 0, 'dActor_c'),
 ]
 
@@ -217,8 +221,9 @@ def class_fields(cls):
 
 
 def slices(projected):
-    for symbol, overlay, cls in MEMBER_UNITS:
-        row, bindings = isolated(projected, symbol, overlay, cls, class_fields(cls))
+    for symbol, overlay, cls, *rest in MEMBER_UNITS:
+        row, bindings = isolated(projected, symbol, overlay, cls, class_fields(cls),
+                                 replacements=rest[0] if rest else None)
         if not overlay:
             for binding in bindings: binding.pop('overlay', None)
         yield row, bindings
