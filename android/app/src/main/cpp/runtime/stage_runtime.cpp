@@ -4,6 +4,7 @@
 #include "boot_seams.h"
 #include "packed_ptr.h"
 #include "platform/arm9_services.h"
+#include "ntr/mmio.h"
 #include <cstring>
 #include <exception>
 #include <unordered_set>
@@ -750,11 +751,20 @@ void stage_camera_set_look_at(uint32_t camera,uint32_t target) {
                 packed::Space::current().data(target,12),12);
 }
 void stage_camera_set_flag_3(uint32_t camera) {
-    // Complete Camera::SetFlag_3 (0x0200d048): set bit 3, then pass the
-    // updated flag word to FUN_02029a68 exactly as the original call does.
-    auto &flags=at<uint32_t>(camera+0x154);
-    flags|=8;
-    Ptr<void(uint32_t)>(0x02029a68u)(flags);
+    // Complete Camera::SetFlag_3 (0x0200d048): set bit 3, then call
+    // FUN_02029a68 (the r0 flag word it receives is unused by that body).
+    at<uint32_t>(camera+0x154)|=8;
+    Ptr<void()>(0x02029a68u)();
+}
+void stage_wipe_release() {
+    // Complete FUN_02029a68 (d_s_stage_methods.cpp): when the active wipe is
+    // the seventh 0x60-byte fader after data_0209f324, clear it and BLDCNT.
+    // Camera::SetFlag_3 passes a flag word in r0 that this body never reads.
+    if (at<uint32_t>(0x0209d4b0u)==at<uint32_t>(0x0209f324u)+0x240u) {
+        at<uint32_t>(0x0209d4b0u)=0;
+        ntr::io_write(0x04000050u,0,2);
+    }
+    at<uint8_t>(0x0209f274u)=0;
 }
 int stage_player_level_enter_cleanup(uint32_t) {
     // Complete Player::St_LevelEnter_Cleanup (ov002 0x020c6f34): returns 1.
@@ -787,6 +797,12 @@ int stage_camera_change_state(uint32_t camera,uint32_t state) {
         at<uint8_t>(camera+0x1a6)=0;
     }
     return stage_camera_state_init(camera);
+}
+void stage_camera_player_reset(uint32_t camera,int player) {
+    // Complete func_0200d81c: only the local player's camera enters state
+    // 0x0209b008 through the original Camera::ChangeState.
+    if (player!=int(at<uint8_t>(0x0209f250u))) return;
+    (void)stage_camera_change_state(camera,0x0209b008u);
 }
 // Factories mirror the source constructors' original allocation, member
 // construction order and vtables. All storage keeps cartridge-width handles.
@@ -1348,9 +1364,11 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
+    space.bind(0x0200d81cu,&stage_camera_player_reset);
     space.bind(0x0200ccacu,&stage_camera_set_pos);
     space.bind(0x0200ccc8u,&stage_camera_set_look_at);
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
+    space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
     space.bind(0x0200cae4u,&stage_camera_state_init);
     space.bind(0x0203cbd8u,&stage_allocate);
