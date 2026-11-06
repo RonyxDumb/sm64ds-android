@@ -1167,7 +1167,7 @@ uint32_t stage_demo_factory() {
 // first use the eight-byte PMFs are copied from their ROM constants, then
 // entry p[6] runs on self with (p+7,a2,a3).
 template<size_t N>
-void stage_static_pmf_dispatch(uint32_t guardAddress,uint32_t table,const uint32_t (&sources)[N],
+int stage_static_pmf_dispatch(uint32_t guardAddress,uint32_t table,const uint32_t (&sources)[N],
                                uint32_t self,uint32_t p,int a2,int a3) {
     auto &space=packed::Space::current();
     auto &guard=at<uint32_t>(guardAddress);
@@ -1181,10 +1181,16 @@ void stage_static_pmf_dispatch(uint32_t guardAddress,uint32_t table,const uint32
     packed::MemberCall member{};
     std::memcpy(&member,space.data(table+index*8,8),8);
     const auto target=space.resolve_member(self,member);
-    using Callback=void (*)(uint32_t,uint32_t,int,int);
+    // The int-returning callee form; void callees leave r0 unused.
+    using Callback=int (*)(uint32_t,uint32_t,int,int);
     Callback callback=nullptr;
     std::memcpy(&callback,&target.code,sizeof callback);
-    callback(target.object,p+7,a2,a3);
+    return callback(target.object,p+7,a2,a3);
+}
+int stage_camera_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
+    // Complete func_02008550 (camera cutscene commands, 39 PMFs).
+    static constexpr uint32_t sources[39]={0x02086c80u,0x02086d80u,0x02086c60u,0x02086c90u,0x02086bd8u,0x02086d18u,0x02086d98u,0x02086c88u,0x02086d00u,0x02086bc0u,0x02086e30u,0x02086ce8u,0x02086e38u,0x02086e20u,0x02086cd0u,0x02086e08u,0x02086df0u,0x02086cb8u,0x02086dd8u,0x02086dc0u,0x02086c20u,0x02086da0u,0x02086d60u,0x02086d88u,0x02086cf8u,0x02086d68u,0x02086c78u,0x02086d40u,0x02086d38u,0x02086d20u,0x02086c50u,0x02086d08u,0x02086cf0u,0x02086c38u,0x02086cd8u,0x02086cc0u,0x02086cb0u,0x02086ca8u,0x02086ca0u};
+    return stage_static_pmf_dispatch(0x0209b004u,0x0209b138u,sources,self,p,a2,a3);
 }
 void stage_demo_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
     // Complete func_ov002_020f7d74 (cutscene object commands).
@@ -1715,6 +1721,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
+    space.bind(0x02008550u,&stage_camera_dispatch_command);
     space.bind(0x0200d81cu,&stage_camera_player_reset);
     space.bind(0x0200ccacu,&stage_camera_set_pos);
     space.bind(0x0200ccc8u,&stage_camera_set_look_at);

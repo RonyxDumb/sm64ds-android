@@ -146,6 +146,7 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020bd600', 2),
     ('func_0200e5fc', 0, {
         # Same volatile byte read-modify-write; the packed reference has no +=.
         '*pb += 1;': '*pb = *pb + 1;'}),
