@@ -25,6 +25,16 @@ public final class ControllerState {
     private final Map<Integer, Pointer> pointers = new LinkedHashMap<>();
     private int joystick = -1;
     private boolean gameplayControls = true;
+    private boolean showControls = true;
+    public boolean showControls() {
+        return showControls;
+    }
+    public void showControls(boolean show) {
+        if (showControls == show)
+            return;
+        showControls = show;
+        cancelTouch();
+    }
     private boolean surfaceConfigured;
     private float touchLeft, touchTop, touchWidth, touchHeight;
     public boolean gameplayControls() {
@@ -37,7 +47,7 @@ public final class ControllerState {
         cancelTouch();
     }
     public boolean visibleButton(int index) {
-        return gameplayControls || BITS[index] == START;
+        return showControls && (gameplayControls || BITS[index] == START);
     }
     public float buttonX(int index) {
         return gameplayControls ? CX[index] : .5f;
@@ -81,7 +91,7 @@ public final class ControllerState {
     }
     public void down(int id, float px, float py, float aspect) {
         pointers.put(id, new Pointer(px, py));
-        if (gameplayControls && joystick < 0 &&
+        if (showControls && gameplayControls && joystick < 0 &&
             Math.hypot((px - .16f) * aspect, py - .70f) < .23f)
             joystick = id;
         rebuild(aspect);

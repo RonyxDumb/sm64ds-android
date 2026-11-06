@@ -1,6 +1,11 @@
 package io.github.ronyxdumb.sm64ds;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
+import android.widget.LinearLayout;
+import android.widget.Switch;
+import android.widget.TextView;
 import android.media.AudioManager;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -13,6 +18,8 @@ import android.view.MotionEvent;
 import android.hardware.input.InputManager;
 import android.widget.FrameLayout;
 public final class RuntimeActivity extends Activity implements InputManager.InputDeviceListener {
+    private static final String UI_PREFS = "controller_ui";
+    private static final String SHOW_CONTROLS = "show_controls";
     private GameSurface surface;
     private ControlsView controls;
     private AudioManager audioManager;
@@ -37,11 +44,39 @@ public final class RuntimeActivity extends Activity implements InputManager.Inpu
                     .show();
             });
         controls = new ControlsView(this, surface);
+        controls.showControls(getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                                  .getBoolean(SHOW_CONTROLS, true));
         surface.presentation(controls::gameplayControls);
         FrameLayout root = new FrameLayout(this);
         root.addView(surface);
         root.addView(controls);
+        TextView settings = new TextView(this);
+        settings.setText("\u2699");
+        settings.setTextSize(23);
+        settings.setTextColor(0xffe2e8f0);
+        settings.setGravity(Gravity.CENTER);
+        settings.setContentDescription("Impostazioni controller");
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(0xaa1d293b);
+        background.setCornerRadius(dp(13));
+        background.setStroke(dp(1), 0x885c8ca5);
+        settings.setBackground(background);
+        settings.setElevation(dp(5));
+        FrameLayout.LayoutParams settingsPosition =
+            new FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP | Gravity.START);
+        settingsPosition.leftMargin = dp(12);
+        settingsPosition.topMargin = dp(12);
+        root.addView(settings, settingsPosition);
+        settings.setOnClickListener(v -> showControllerSettings());
+        settings.setOnApplyWindowInsetsListener((v, insets) -> {
+            FrameLayout.LayoutParams position = (FrameLayout.LayoutParams)v.getLayoutParams();
+            position.leftMargin = insets.getSystemWindowInsetLeft() + dp(12);
+            position.topMargin = insets.getSystemWindowInsetTop() + dp(12);
+            v.setLayoutParams(position);
+            return insets;
+        });
         setContentView(root);
+        settings.requestApplyInsets();
         inputManager = (InputManager)getSystemService(INPUT_SERVICE);
         controls.requestApplyInsets();
         audioManager = (AudioManager)getSystemService(AUDIO_SERVICE);
@@ -70,6 +105,41 @@ public final class RuntimeActivity extends Activity implements InputManager.Inpu
                     android.widget.Toast.LENGTH_LONG).show();
             }
         }
+    }
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+    private void showControllerSettings() {
+        controls.clear();
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(22), dp(8), dp(22), dp(16));
+        Switch show = new Switch(this);
+        show.setChecked(getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                            .getBoolean(SHOW_CONTROLS, true));
+        show.setText(show.isChecked() ? "MOSTRA: ON" : "MOSTRA: OFF");
+        show.setTextSize(17);
+        show.setMinHeight(dp(56));
+        panel.addView(show, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(56)));
+        TextView description = new TextView(this);
+        description.setText("Nasconde i pulsanti virtuali, non lo schermo touch DS. " +
+                            "I controller Bluetooth e USB restano attivi.");
+        description.setTextSize(13);
+        panel.addView(description);
+        show.setOnCheckedChangeListener((v, enabled) -> {
+            controls.showControls(enabled);
+            getSharedPreferences(UI_PREFS, MODE_PRIVATE).edit()
+                .putBoolean(SHOW_CONTROLS, enabled).apply();
+            show.setText(enabled ? "MOSTRA: ON" : "MOSTRA: OFF");
+        });
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle("Controller visivo")
+            .setView(panel)
+            .setPositiveButton("Chiudi", null)
+            .create();
+        dialog.setOnDismissListener(d -> immersive());
+        dialog.show();
     }
     private void immersive() {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |

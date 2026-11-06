@@ -38,6 +38,12 @@ final class ControlsView extends View {
             publish();
         }
     }
+    void showControls(boolean show) {
+        if (state.showControls() != show) {
+            state.showControls(show);
+            publish();
+        }
+    }
     private float areaWidth() {
         return Math.max(1, getWidth() - safe.left - safe.right);
     }
@@ -87,32 +93,67 @@ final class ControlsView extends View {
         super.performClick();
         return true;
     }
+    private void disk(Canvas canvas, float x, float y, float radius, int fill, int outline) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(fill);
+        canvas.drawCircle(x, y, radius, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1f, radius * .035f));
+        paint.setColor(outline);
+        canvas.drawCircle(x, y, radius, paint);
+        paint.setStyle(Paint.Style.FILL);
+    }
     @Override
     protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        if (!state.showControls())
+            return;
         float w = areaWidth(), h = areaHeight();
         canvas.save();
         canvas.translate(safe.left, safe.top);
-        paint.setStyle(Paint.Style.FILL);
         if (state.gameplayControls()) {
-            paint.setColor(0x55486484);
-            canvas.drawCircle(w * .16f, h * .70f, h * .18f, paint);
-            paint.setColor(0xaa9abfff);
-            canvas.drawCircle(w * .16f + state.x * h * .14f,
-                              h * .70f - state.y * h * .14f, h * .065f, paint);
+            float baseX = w * .16f, baseY = h * .70f;
+            disk(canvas, baseX, baseY, h * .18f, 0x66202c3e, 0x888aa7c4);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(Math.max(1f, h * .002f));
+            paint.setColor(0x668aa7c4);
+            canvas.drawCircle(baseX, baseY, h * .105f, paint);
+            paint.setStyle(Paint.Style.FILL);
+            float knobX = baseX + state.x * h * .14f;
+            float knobY = baseY - state.y * h * .14f;
+            if (Math.abs(state.x) + Math.abs(state.y) > .01f) {
+                paint.setColor(0xaa38bdf8);
+                paint.setStrokeWidth(Math.max(2f, h * .009f));
+                canvas.drawLine(baseX, baseY, knobX, knobY, paint);
+            }
+            disk(canvas, knobX, knobY, h * .065f, 0xbb435a70, 0xff38bdf8);
+            disk(canvas, knobX, knobY, h * .018f, 0xffc6ecfc, 0x8838bdf8);
         }
         for (int i = 0; i < ControllerState.BITS.length; i++) {
             if (!state.visibleButton(i))
                 continue;
-            paint.setColor((state.buttons & ControllerState.BITS[i]) != 0 ? 0xcc7cafff
-                                                                          : 0x55486484);
-            canvas.drawCircle(w * state.buttonX(i), h * state.buttonY(i),
-                              h * state.buttonRadius(), paint);
-            paint.setColor(0xffeeeeff);
+            final int tint;
+            switch (i) {
+            case 0: tint = 0xff38bdf8; break; // Jump
+            case 1: tint = 0xfffbbf24; break;
+            case 2: tint = 0xff34d399; break;
+            case 3: tint = 0xffa78bfa; break;
+            default: tint = 0xff94a3b8; break;
+            }
+            boolean pressed = (state.buttons & ControllerState.BITS[i]) != 0;
+            float cx = w * state.buttonX(i), cy = h * state.buttonY(i);
+            float radius = h * state.buttonRadius();
+            disk(canvas, cx, cy, radius, pressed ? 0xbb426078 : 0x66313e50,
+                 pressed ? 0xffffffff : tint);
+            paint.setColor(pressed ? 0xffffffff : 0xffe2e8f0);
+            paint.setStyle(Paint.Style.FILL);
             paint.setTextAlign(Paint.Align.CENTER);
+            paint.setFakeBoldText(true);
             paint.setTextSize(h * (state.gameplayControls() ?
                 (i == 6 || i == 7 ? .027f : .043f) : .018f));
-            canvas.drawText(ControllerState.LABELS[i], w * state.buttonX(i),
-                            h * state.buttonY(i) + h * (state.gameplayControls() ? .014f : .006f), paint);
+            canvas.drawText(ControllerState.LABELS[i], cx,
+                            cy + h * (state.gameplayControls() ? .014f : .006f), paint);
+            paint.setFakeBoldText(false);
         }
         canvas.restore();
     }

@@ -83,6 +83,29 @@ public class ControllerStateTest {
         check((s.buttons & ControllerState.A) != 0);
         s.gameplayControls(false);
         check(s.buttons == 0 && s.touchX == -1 && s.x == 0);
-        System.out.println("Controller multitouch, menu routing and cutout viewport tests passed");
+        // User preference hides the visuals and disables only virtual hit targets.
+        // Touchscreen LCD coordinates and physical controllers must still work.
+        s.showControls(false);
+        check(!s.showControls());
+        for (int i = 0; i < ControllerState.BITS.length; ++i)
+            check(!s.visibleButton(i));
+        s.gameplayControls(true);
+        s.down(17, .16f, .70f, aspect);
+        s.move(17, .25f, .70f, aspect);
+        check(s.x == 0 && s.y == 0);
+        s.up(17, aspect);
+        s.down(18, .90f, .70f, aspect);
+        check((s.buttons & ControllerState.A) == 0 && s.touchX >= 0 && s.touchY >= 0);
+        s.up(18, aspect);
+        s.hardware(ControllerState.B, .6f, 0);
+        check((s.buttons & ControllerState.B) != 0 && s.x == .6f);
+        s.hardware(0, 0, 0);
+        s.showControls(true);
+        check(s.showControls() && s.visibleButton(0));
+        s.down(19, .90f, .70f, aspect);
+        check((s.buttons & ControllerState.A) != 0);
+        s.showControls(false);
+        check(s.buttons == 0 && s.touchX == -1);
+        System.out.println("Controller multitouch, visibility, hardware and cutout tests passed");
     }
 }
