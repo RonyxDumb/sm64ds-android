@@ -15,10 +15,27 @@
 #endif
 #ifdef SM64DS_PACKED_ASAN
 #include <sanitizer/asan_interface.h>
+#include <sanitizer/common_interface_defs.h>
 #endif
+#include <cstdlib>
 
 namespace sm64ds::packed {
-namespace { thread_local Space *threadSpace = nullptr; }
+namespace {
+thread_local Space *threadSpace = nullptr;
+// Host diagnostics: SM64DS_TRACE_FAULTS=1 prints the native call chain of a
+// rejected handle (sanitizer builds only) before the normal exception.
+void trace_fault(const char *what) {
+#ifdef SM64DS_PACKED_ASAN
+    static const bool enabled = std::getenv("SM64DS_TRACE_FAULTS") != nullptr;
+    if (enabled) {
+        std::fprintf(stderr, "packed fault: %s\n", what);
+        __sanitizer_print_stack_trace();
+    }
+#else
+    (void)what;
+#endif
+}
+}
 Space &Space::current() {
     if (!threadSpace) throw std::runtime_error("No packed frontend address context.");
     return *threadSpace;
@@ -91,7 +108,10 @@ bool Space::contains(uint32_t a, size_t n) const {
     return offset<=it->size && n<=it->size-offset;
 }
 void *Space::data(uint32_t a, size_t n) const {
-    if (!a) throw std::runtime_error("Null packed data handle.");
+    if (!a) {
+        trace_fault("null data handle");
+        throw std::runtime_error("Null packed data handle.");
+    }
     // Native ARM64 projection resolves direct DS VRAM pointers through this
     // API. The original program may just have written VRAMCNT through a raw
     // pointer. Bank aliases must be correct BEFORE the first tile upload,
@@ -233,7 +253,10 @@ void Space::bind_code(uint32_t a, uintptr_t p) {
 }
 uintptr_t Space::code(uint32_t a) const {
     auto at=code_.find(a);
-    if (at==code_.end()) throw std::runtime_error("Unlinked native code handle: " + std::to_string(a));
+    if (at==code_.end()) {
+        trace_fault("unlinked code handle");
+        throw std::runtime_error("Unlinked native code handle: " + std::to_string(a));
+    }
     return at->second;
 }
 MemberTarget Space::resolve_member(uint32_t object, MemberCall method) const {

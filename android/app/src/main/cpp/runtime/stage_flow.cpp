@@ -175,6 +175,24 @@ void StageFlow::prepare_scene() {
     initialize_packed_fs(*nextSpace);
     bind_packed_audio(*nextSpace);
     initialize_packed_audio(*nextSpace);
+    {
+        // crt0: the main module's static initializers run before main. The
+        // fresh ARM9 image must receive them too (script path pointers,
+        // global faders/wipe/clipper/BG probes and destructor records).
+        // The table is the cartridge's own .ctors list, zero-terminated.
+        packed::Space::Scope scope(*nextSpace);
+        constexpr uint32_t ctors = 0x02086b60u; // .p__sinit_02073a24, EU symbol map
+        unsigned count = 0;
+        for (uint32_t entry = ctors;; entry += 4) {
+            uint32_t initializer = 0;
+            std::memcpy(&initializer, nextSpace->data(entry, 4), 4);
+            if (!initializer) break;
+            if (++count > 64) throw std::runtime_error("Unterminated ARM9 .ctors table.");
+            packed::Ptr<void()> call(initializer);
+            call();
+        }
+        if (count != 23) throw std::runtime_error("Unexpected ARM9 .ctors table length.");
+    }
     // Boot already loaded and parsed the actual language BMG bank. Its
     // immutable native-owned bytes remain live through gameplay; retain each
     // original pointer lane without narrowing native heap addresses.

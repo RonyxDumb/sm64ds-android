@@ -1214,6 +1214,7 @@ int stage_static_pmf_dispatch(uint32_t guardAddress,uint32_t table,const uint32_
             std::memcpy(space.data(table+i*8,8),space.data(sources[i],8),8);
     }
     const unsigned index=at<uint8_t>(p+6);
+    if (std::getenv("SM64DS_TRACE_CMDS")) { std::fprintf(stderr,"CMD tbl=%08x p=%08x idx=%u:",table,p,index); for(int i=0;i<16;++i) std::fprintf(stderr," %02x",at<uint8_t>(p+i)); std::fprintf(stderr,"\n"); }
     if (index>=N) throw std::runtime_error("Original command PMF index out of range.");
     packed::MemberCall member{};
     std::memcpy(&member,space.data(table+index*8,8),8);
@@ -1246,6 +1247,7 @@ void stage_player_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
         0x0210a064u,0x0210a36cu};
     stage_static_pmf_dispatch(0x0210e158u,0x02110794u,sources,self,p,a2,a3);
 }
+extern "C" void abi___sinit_02075154();
 int stage_demo_bg_thunk(uint32_t c) {
     // Complete func_ov002_020f26d4: a register-preserving tail call
     // (ldr ip / bx ip) into func_ov002_020f2630 with the same r0.
@@ -1761,6 +1763,8 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
     space.bind(0x020fb8bcu,&stage_minimap_factory);
     space.bind(0x020f8808u,&stage_demo_factory);
+    // The same recovered __sinit_02075154 unit the minigame manifest links.
+    space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x020f7d74u,&stage_demo_dispatch_command);
     space.bind(0x020bd664u,&stage_player_dispatch_command);
     space.bind(0x020f26d4u,&stage_demo_bg_thunk);

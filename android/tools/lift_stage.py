@@ -1017,6 +1017,54 @@ bool func_020397b8(int); int Vec3_Dist(Vector3 *,Vector3 *);
     return projected(rel,body,declarations,[symbol],extra=extra,auto_globals=False)
 
 
+def arm9_initializers():
+    # crt0 runs the main module's static-initializer table (.ctors at
+    # 0x02086b60) before main. The recovered bodies patch script pointers,
+    # build the global faders/wipe/clipper and register their destructors;
+    # destructor arguments are original code handles, never host pointers.
+    imports={'func_020731dc':'void func_020731dc(void *,void *,void *);'}
+    destructors=('_ZN10dFdColor_cD1Ev','_ZN15dFdBrightness_cD1Ev','func_0201973c',
+                 'func_0201aaec','_ZN8dClipperD1Ev','_ZN7dWipe_cD1Ev','dBgPc_Destroy',
+                 '_ZN9dBgCh_LinD1Ev','NoOpDestructor','_ZN7Vector3D1Ev',
+                 'NullDestructor_0203d47c','_ZN8Vector3sD1Ev')
+    # dBgPc.h spells the dBgPc destructor through a C alias.
+    SYMBOLS.setdefault('dBgPc_Destroy',SYMBOLS['_ZN5dBgPcD1Ev'])
+    for path in sorted((ROOT/'src/unnamed/arm9/0207').glob('__sinit_*')):
+        rel=str(path.relative_to(ROOT)); name=path.stem
+        if name=='__sinit_02075154':
+            continue  # already linked once by the minigame manifest; bound in stage_runtime
+        raw=re.sub(r'^#include[^\n]*','',path.read_text(),flags=re.M)
+        raw=re.sub(r'^//cpp\n','',raw,flags=re.M)
+        if name=='__sinit_02074dc4':
+            # Timer.h is not imported; the timer record is passed by address.
+            raw=raw.replace('extern struct Timer data_0209d4c8;','extern char data_0209d4c8[];')
+            raw=raw.replace('extern struct Timer *func_0201964c(struct Timer *timer);',
+                            'extern void *func_0201964c(void *timer);')
+            raw=raw.replace('func_0201964c(&data_0209d4c8);','func_0201964c(data_0209d4c8);')
+        if name=='__sinit_02074e0c':
+            # The ABI of func_0201aa18 (external/sm64ds-pc/src/func_0201aa18.c).
+            raw=raw.replace('extern void func_0201aa18();','extern void *func_0201aa18(char *c);')
+            raw=raw.replace('extern int data_0209d574[];','extern char data_0209d574[];')
+        if name=='__sinit_02074fe4':
+            # dBgPc.h's C aliases for the class constructor; the BSS record
+            # is passed through as an opaque address.
+            raw=raw.replace('extern struct dBgPc data_020a0cec[];',
+                            'extern char data_020a0cec[];\nextern void *_ZN5dBgPcC1Ev(void *);')
+            raw=raw.replace('dBgPc_Construct(','_ZN5dBgPcC1Ev(')
+        raw=raw.replace('extern "C" void '+name+'(void);\n','')
+        raw=raw.replace('extern "C" ','extern ')
+        for imported,declaration in imports.items():
+            raw=re.sub(r'^extern [^;\n]*?\b'+imported+r'\([^;]*;',declaration,raw,flags=re.M)
+        for destructor in destructors:
+            raw=re.sub(r'^extern [^;\n]*?\b'+destructor+r'(?:\([^;]*|\[\]);','',raw,flags=re.M)
+            if re.search(r'\b'+destructor+r'\s*\(',raw):
+                raise ValueError('initializer invokes destructor: '+rel)
+            raw=re.sub(r'&\s*\b'+destructor+r'\b','((void *)0x%08xu)'%SYMBOLS[destructor],raw)
+            raw=re.sub(r'\b'+destructor+r'\b','((void *)0x%08xu)'%SYMBOLS[destructor],raw)
+        row,bindings=projected(rel,raw,'',[name],auto_globals=False)
+        yield row,bindings
+
+
 def overlay_initializers():
     # The pinned dependency retains complete matching C bodies for initializers
     # which newer class TUs express as implicit C++ static construction. Keep
@@ -1232,6 +1280,8 @@ if __name__ == '__main__':
     row,code=stage_areas();row['unit']='stage_areas'
     rows.append(row);bindings.extend(code)
     for row,code in overlay_initializers():
+        rows.append(row); bindings.extend(code)
+    for row,code in arm9_initializers():
         rows.append(row); bindings.extend(code)
     from stage_actor_views import slices
     for row,code in slices(projected,free_c,SYMBOLS,DATA_SYMBOLS):
