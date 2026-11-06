@@ -1939,7 +1939,10 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02015730u,&stage_clipper_ctor);
     space.bind(0x0202e3d4u,&scene_before_behavior);
-    for (uint32_t after : {0x02043af8u,0x02043ac4u,0x0202e3c8u,0x0202e398u})
+    space.bind(0x02010fd4u,&actor_before_behavior);
+    space.bind(0x02010f78u,&actor_before_render);
+    // dActor_c::AfterBehavior/AfterRender only forward to the empty fBase_c ones.
+    for (uint32_t after : {0x02043af8u,0x02043ac4u,0x0202e3c8u,0x0202e398u,0x02010fc8u,0x02010f6cu})
         space.bind(after,&fbase_after_process);
     space.bind(0x020431c4u,&scene_waiting_children);
     space.bind(0x0202b710u,&stage_load_fog);
@@ -2102,6 +2105,59 @@ void bind_stage_runtime(packed::Space &space) {
 }
 
 namespace sm64ds {
+int actor_before_behavior(uint32_t self) {
+    // Complete dActor_c::BeforeBehavior (0x02010fd4; recovered isolated unit)
+    // with dActor_c.h offsets: mPos 0x5c, mPrevPos 0x68, mCamSpacePos 0x74,
+    // mFlags 0xb0, clip offset/radius/distance/far 0xb4..0xc0, result 0xc4,
+    // mAreaId 0xcc.
+    if (!native_fbase_before_behavior(self)) return 0;
+    at<uint32_t>(0x0209b458u)=0;
+    auto &flags=at<uint32_t>(self+0xb0);
+    const int8_t area=at<int8_t>(self+0xcc);
+    if (area>=0 && !Ptr<uint8_t(int)>(0x0202aa6cu)(area)) {
+        flags|=0x38;
+        for (unsigned lane=0;lane<3;++lane) at<int32_t>(self+0x74+lane*4)=0x7fffffff;
+        if (at<int32_t>(0x0209fc68u)==0 || (flags&0x10000)) return 0;
+    } else {
+        if (at<int32_t>(self+0xb8)!=0) {
+            int32_t tmp[3]={at<int32_t>(self+0x5c)>>3,
+                            (at<int32_t>(self+0x60)+at<int32_t>(self+0xb4))>>3,
+                            at<int32_t>(self+0x64)>>3};
+            Ptr<void(Ptr<void>,uint32_t,uint32_t)>(0x02052858u)(Ptr<void>(tmp),0x0209b3ecu,self+0x74);
+        }
+        if (flags&0x10003) {
+            const int32_t r=Ptr<int32_t(uint32_t,uint32_t,int32_t,uint32_t)>(0x020150e8u)(
+                0x0209f43cu,self+0x74,at<int32_t>(self+0xb8),self+0xc4);
+            int32_t thresh=at<int32_t>(self+0xbc);
+            if (at<uint8_t>(0x0209f274u)) thresh<<=1;
+            if (r>thresh) {
+                flags|=0x18;
+                if (flags&0x10000) return 0;
+            } else {
+                flags&=~0x38u;
+                if (r>at<int32_t>(self+0xc0)) flags|=0x10;
+            }
+        } else {
+            flags&=~0x38u;
+        }
+    }
+    bool copy=false;
+    if (((at<uint8_t>(0x0209f2c4u)|at<uint8_t>(0x0209f20cu)|at<uint8_t>(0x0209f294u))&0xff)==0) {
+        const uint32_t f=flags,mask=at<uint32_t>(0x0209b464u);
+        if (((f&9)!=9 && (mask==0 || (f&mask)!=0)) || at<int32_t>(0x0209fc68u)!=0) copy=true;
+    }
+    if (!copy) return 0;
+    for (unsigned lane=0;lane<3;++lane) at<int32_t>(self+0x68+lane*4)=at<int32_t>(self+0x5c+lane*4);
+    return 1;
+}
+int actor_before_render(uint32_t self) {
+    // Complete dActor_c::BeforeRender (0x02010f78): skip hidden (0x20) or
+    // off-screen-and-culled (8 with 2) actors.
+    if (!native_fbase_before_render(self)) return 0;
+    const uint32_t flags=at<uint32_t>(self+0xb0);
+    if (flags&0x20) return 0;
+    return ((flags&8) && (flags&2)) ? 0 : 1;
+}
 // fBase_c::AfterBehavior/AfterRender (0x02043af8/0x02043ac4) are empty
 // (size 4); dScene_c's overrides (0x0202e3c8/0x0202e398) only forward.
 void fbase_after_process(uint32_t,uint32_t) {}
