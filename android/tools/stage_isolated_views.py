@@ -51,7 +51,9 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         for old, new in (types or {}).items():
             hoisted = [re.sub(r'\b'+old+r'\b', new, line) for line in hoisted]
         raw = prelude+'extern "C" {\n'+'\n'.join(hoisted)+'\n}\n'+raw
-    raw = re.sub(r'^\s*#include[^\n]*\n', '', raw, flags=re.M)
+    raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
+    for old, new in (replacements or {}).items():
+        raw = raw.replace(old, new)
     declarations = []
     for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
         declarations.append(block)
@@ -114,7 +116,9 @@ def free_unit(projected, symbol, overlay):
 
 FREE_UNITS = [
     ('IsStarCollected', 0), ('IsStarCollectedInLevel', 0), ('IsStarCollectedInCurLevel', 0),
-    ('SetStarMarker', 0),
+    ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
+    ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
+    ('GetMinimapID', 0), ('GetMinimapScale', 0),
 ]
 
 
@@ -143,7 +147,28 @@ void _ZN14dExtAnmModel_c7SetAnimEP8BCA_Fileiit(void *,void *,int,int,u16);
 '''
 
 
+MINIMAP_UNITS = [
+    ('_ZN7Minimap13InitResourcesEv', {
+        # The recovered unit under-declares this member call; the ROM passes
+        # the same receiver in r0.
+        'void _ZN7Minimap19UpdateLevelSpecificEv(void);': 'void _ZN7Minimap19UpdateLevelSpecificEv(void *);',
+        '_ZN7Minimap19UpdateLevelSpecificEv();': '_ZN7Minimap19UpdateLevelSpecificEv(this);'}),
+    ('_ZN7Minimap19UpdateLevelSpecificEv', {
+        'namespace G2S {\n    void* GetBG3CharPtr();\n}\n': '',
+        'struct Event {\n    static int GetBit(unsigned int bit);\n};\n': '',
+        'int IsStarCollected(int level, int star);':
+            'int IsStarCollected(int level, int star);\nvoid *_ZN3G2S13GetBG3CharPtrEv(void);\nint _ZN5Event6GetBitEj(unsigned int);',
+        'G2S::GetBG3CharPtr()': '_ZN3G2S13GetBG3CharPtrEv()',
+        'Event::GetBit(': '_ZN5Event6GetBitEj('}),
+    ('_ZN7Minimap16CleanupResourcesEv', {}),
+    ('_ZN7Minimap16OnPendingDestroyEv', {}),
+]
+
+
 def slices(projected):
+    minimap = header_fields('external/sm64ds-pc/include/Minimap.h', 0x50)
+    for symbol, replacements in MINIMAP_UNITS:
+        yield isolated(projected, symbol, 2, 'Minimap', minimap, replacements=replacements)
     mip = mip_fields()
     for symbol, name, replacements in MIP_SOURCE:
         yield isolated(projected, symbol, 85, 'daMip_c', mip, replacements=replacements,

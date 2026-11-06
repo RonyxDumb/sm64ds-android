@@ -25,6 +25,7 @@ extern "C" int pk__ZN4cstd4fdivEii(int,int);
 extern "C" void pk_func_02052820(sm64ds::packed::Ptr<int>,int,int);
 extern "C" void pk_func_02052800(sm64ds::packed::Ptr<int>,int,int);
 extern "C" void pk_func_0205283c(sm64ds::packed::Ptr<int>,int,int);
+extern "C" void pk_mg_DecompressLZ16(sm64ds::packed::Ptr<void>,sm64ds::packed::Ptr<void>);
 namespace cstd { int sqrt(unsigned long long); int16_t atan2(int32_t,int32_t); }
 
 namespace sm64ds {
@@ -1037,6 +1038,19 @@ int stage_player_is_entering_level(uint32_t player) {
     const uint8_t step=at<uint8_t>(player+0x6e3);
     return step==8||step==9||step==0x10;
 }
+void stage_sound_load_initial_group(int group) {
+    // Complete Sound::LoadInitialGroup (0x02011ffc).
+    Ptr<void(int,int)>(0x0201200cu)(group,0x20);
+}
+uint32_t stage_minimap_factory() {
+    // Complete dMap_c_classInit (ov002 0x020fb8bc): operator new(0x258),
+    // fBase_c C2, the dBase_c vtable, then the Minimap vtable.
+    const uint32_t map=packed::Space::current().allocate(0x258);
+    native_fbase_construct(map);
+    at<uint32_t>(map)=0x0208e4b8u;
+    at<uint32_t>(map)=0x0210c1c0u;
+    return map;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1474,6 +1488,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020c7ed4u,&stage_player_is_state_entering_level);
     space.bind(0x020c7e84u,&stage_player_is_entering_level);
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
+    space.bind(0x020fb8bcu,&stage_minimap_factory);
     for (uint32_t factory : {0x020b406cu,0x020b409cu,0x020b40ccu,0x020b40fcu,0x020b412cu})
         space.bind(factory,&stage_block_l_factory);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);
@@ -1492,6 +1507,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
+    space.bind(0x02011ffcu,&stage_sound_load_initial_group);
     space.bind(0x02029ee0u,&stage_event_get_bit);
     space.bind(0x02010be8u,&stage_drop_shadow_rad_height);
     space.bind(0x02015e64u,&stage_shadow_init_model);
@@ -1509,6 +1525,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02052820u,&pk_func_02052820);
     space.bind(0x02052800u,&pk_func_02052800);
     space.bind(0x0205283cu,&pk_func_0205283c);
+    space.bind(0x0205a754u,&pk_mg_DecompressLZ16);
     space.bind(0x020527e8u,&stage_scale_matrix);
     space.bind(0x02015c20u,&stage_frame_set_animation);
     space.bind(0x02016748u,&stage_anim_model_set_animation);
