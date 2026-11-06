@@ -229,6 +229,8 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_0203db3c', 0),
+    ('func_ov001_020aa960', 1),
     ('func_ov001_020aaa54', 1, {
         # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
         # only reads and writes these fields.
@@ -308,6 +310,9 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    # Static Stage::LC_Render: the generated receiver word is unused.
+    ('_ZN5Stage9LC_RenderEv', 0, 'Stage', {
+        '        RenderBouncingArrows();': '        _ZN5Stage20RenderBouncingArrowsEv();'}),
     ('_ZNK6Camera12IsUnderwaterEv', 0, 'Camera'),
     ('_ZN5Stage9RenderFogEv', 0, 'Stage'),
     ('_ZN5Stage11GetSkyboxIDEv', 0, 'Stage'),
