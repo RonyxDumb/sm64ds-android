@@ -58,10 +58,12 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
         declarations.append(block)
     raw = re.sub(r'extern "C" \{\n.*?\n\}\n', '', raw, flags=re.S)
-    signature = re.search(r'^(\w[\w\s\*]*?)\s+'+cls+r'::(\w+)\(([^)]*)\)\s*(?:const\s*)?\{', raw, re.M)
+    signature = re.search(r'^(\w[\w\s\*]*?[\s\*])\s*'+cls+r'::(\w+)\(([^)]*)\)\s*(?:const\s*)?\{', raw, re.M)
     if not signature:
         raise ValueError('no member body in '+rel)
     result = signature[1].strip()
+    if '*' in result:
+        result = 'void *'  # object pointers are opaque four-byte handles here
     params = signature[3].strip()
     params = '' if params in ('', 'void') else ', '+params
     start = signature.start()
