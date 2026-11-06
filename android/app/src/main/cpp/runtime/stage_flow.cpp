@@ -47,7 +47,8 @@ asm(".global data_0209f4ae\n.set data_0209f4ae, data_0209f498 + 0x16\n");
 u8 data_0209fc50 = 0, data_0209fc5c[4]{};
 u8 data_0209f298 = 0;
 char data_0209fc64[4]{};
-u8 data_0209f21c = 0, data_0209f350[4]{}, data_0209fc48 = 0;
+u8 data_0209f21c = 0, data_0209f350[4]{};
+u32 data_0209fc48 = 0;
 u8 data_0209f294 = 0, data_0209f2c4 = 0, data_0209f20c = 0, data_020a1166[4 * 0x24]{};
 u16 data_0209f368[4]{};
 s16 data_020756b0[16]{}, data_02082214[8192]{};
@@ -340,17 +341,10 @@ void StageFlow::sync_state(bool toPacked) {
     SYNC_STAGE(data_0209d45c,0x0209d45cu);
     SYNC_STAGE(data_ov002_02111180,0x02111180u);
 #undef SYNC_STAGE
-    // The original stage views this flag as a word. Its native boot owner
-    // exposes a byte; copy the value with its proper width on each side.
-    if (toPacked) {
-        const uint32_t value=data_0209fc48;
-        std::memcpy(addressSpace_->data(0x0209fc48u,4),&value,4);
-    } else {
-        uint32_t value=0;
-        std::memcpy(&value,addressSpace_->data(0x0209fc48u,4),4);
-        if (value>UINT8_MAX) throw std::runtime_error("Invalid stage music-control flag.");
-        data_0209fc48=static_cast<uint8_t>(value);
-    }
+    // The running cutscene script pointer (src/RunKuppaScript.c); native
+    // input only tests it for zero. Carry the whole DS word each way.
+    std::memcpy(toPacked ? addressSpace_->data(0x0209fc48u,4) : static_cast<void *>(&data_0209fc48),
+                toPacked ? static_cast<const void *>(&data_0209fc48) : addressSpace_->data(0x0209fc48u,4),4);
     copy(0x0209caa0u,data_0209caa0,0x32c);
 }
 

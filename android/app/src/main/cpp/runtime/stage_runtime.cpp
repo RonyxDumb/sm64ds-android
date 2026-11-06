@@ -1302,6 +1302,17 @@ uint32_t stage_particle_alloc_pal_vram(uint32_t size,uint32_t fromLowAddress) {
     at<uint32_t>(0x0209ee8cu)=address;
     return address;
 }
+void stage_shadow_clean_all() {
+    // Complete static ShadowModel::CleanAll (recovered isolated unit):
+    // unlink the list at data_0209cef4 (prev 0x20, next 0x24).
+    while (const uint32_t head=at<uint32_t>(0x0209cef4u)) {
+        const uint32_t next=at<uint32_t>(head+0x24);
+        if (next) at<uint32_t>(next+0x20)=0;
+        at<uint32_t>(head+0x24)=0;
+        at<uint32_t>(0x0209cef4u)=next;
+    }
+    at<uint8_t>(0x0209ceecu)=0;
+}
 void stage_particle_tracker_initialise(uint32_t self) {
     // Complete Particle::SysTracker::Initialise (recovered isolated unit).
     // Callbacks are passed as their original code handles.
@@ -1933,6 +1944,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x02022f40u,&stage_particle_tracker_initialise);
     space.bind(0x02023134u,&stage_particle_alloc_tex_vram);
+    space.bind(0x02015e14u,&stage_shadow_clean_all);
     space.bind(0x020230ecu,&stage_particle_alloc_pal_vram);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);

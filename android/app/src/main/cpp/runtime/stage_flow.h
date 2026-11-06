@@ -63,7 +63,9 @@ extern u8 data_0209f1f0, data_0209f220, data_0209f26c, data_0209f200;
 extern u8 data_0209f268, data_0209f24c, data_0209f270, data_0209f2d8, data_0209f254;
 extern u8 data_0209f228[4], data_0209f4ae[];
 extern sm64ds::ControllerInput data_0209f498[4];
-extern u8 data_0209f21c, data_0209f350[4], data_0209fc48;
+extern u8 data_0209f21c, data_0209f350[4];
+// The running KuppaScript (RunKuppaScript stores its DS address; 0 = none).
+extern u32 data_0209fc48;
 extern u8 data_0209d660;
 extern u8 data_0209f294, data_0209f2c4, data_0209f20c, data_020a1166[4 * 0x24];
 extern u16 data_0209f368[4];
