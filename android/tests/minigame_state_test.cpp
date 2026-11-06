@@ -334,24 +334,32 @@ void minigame_constructor_runtime() {
         sm64ds::bind_minigame_shared_runtime(space);
         *Ptr<uint32_t>(0x020a4bb8u)=0x02090864u;
         sm64ds::MinigameProgress::set_record(2,0,12345);
-        for (auto pair : {std::pair<uint32_t,uint32_t>{0x16e,0x545c},
-                          {0x173,0x53fc},{0x182,0x4f68}}) {
-            *Ptr<uint16_t>(0x020a4b54u)=static_cast<uint16_t>(pair.first);
+        // Independently assert the original scene timing; Hanachan (0x182)
+        // uses 60 ticks, not Amida's 120. Keep the expected values explicit.
+        struct ConstructorCase {
+            uint32_t scene;
+            uint32_t allocationBytes;
+            int32_t expectedFrameCount;
+        };
+        for (const auto test : {ConstructorCase{0x16e,0x545c,60},
+                                ConstructorCase{0x173,0x53fc,120},
+                                ConstructorCase{0x182,0x4f68,60}}) {
+            *Ptr<uint16_t>(0x020a4b54u)=static_cast<uint16_t>(test.scene);
             *Ptr<uint32_t>(0x020a4b60u)=0x00000201u;
             *Ptr<uint32_t>(0x0209b308u+0x30u)=19;
-            *Ptr<uint32_t>(0x02090864u+pair.first*4u)=0x020bff20u;
+            *Ptr<uint32_t>(0x02090864u+test.scene*4u)=0x020bff20u;
             *Ptr<uint16_t>(0x020bff24u)=0x16e;
             *Ptr<uint16_t>(0x020bff26u)=0x16e;
-            const uint32_t actor=sm64ds::construct_minigame_2d(pair.first,0x02130008u);
+            const uint32_t actor=sm64ds::construct_minigame_2d(test.scene,0x02130008u);
             assert(*Ptr<uint32_t>(actor)==0x02130008u);
             assert(*Ptr<uint32_t>(actor+8u)==0x201u);
             assert(*Ptr<int32_t>(actor+0x064u)==-1);
             assert(*Ptr<int32_t>(actor+0x0e4u)==-1);
             assert(*Ptr<uint32_t>(actor+0xbcu)==19);
             assert(*Ptr<int32_t>(actor+0x4650u)==12345);
-        assert(*Ptr<int32_t>(actor+0x058u)==(pair.first==0x16e || pair.first==0x182?60:120));
-            assert(space.allocation_size(actor)==pair.second);
-            if (pair.first==0x182) {
+            assert(*Ptr<int32_t>(actor+0x058u)==test.expectedFrameCount);
+            assert(space.allocation_size(actor)==test.allocationBytes);
+            if (test.scene==0x182) {
                 assert(*Ptr<uint32_t>(actor+0x4f60u)==0);
                 for (unsigned i=0;i<15;++i)
                     assert(*Ptr<uint32_t>(actor+0x4678u+i*0x98u+0x18u)==0);
