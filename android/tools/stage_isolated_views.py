@@ -149,6 +149,11 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f6960', 2, {
+        # A reference parameter is a pointer in the ARM ABI.
+        'LoadFileER13SharedFilePtr(SharedFilePtr&)': 'LoadFileER13SharedFilePtr(SharedFilePtr*)',
+        '_ZN5Model8LoadFileER13SharedFilePtr(*(*(SharedFilePtr**)(self + 0x5c)))':
+            '_ZN5Model8LoadFileER13SharedFilePtr(*(SharedFilePtr**)(self + 0x5c))'}),
     ('func_ov002_020f6a50', 2, {
         # Callbacks are the original code addresses (Vector3 C1/D1), not
         # zero-argument host veneers.

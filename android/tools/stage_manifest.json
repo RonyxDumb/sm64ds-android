@@ -1010,6 +1010,13 @@
       "unit": "stage_isolated__ZN6Player12St_Wait_InitEv"
     },
     {
+      "path": "external/sm64ds-pc/src/func_ov002_020f6960.cpp",
+      "sha256": "59503181b6be81c924abd662cc5cd57e2f9a6428c565b96e08f4fa0adab77398",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\nstruct Vector3 { s32 x;\ns32 y;\ns32 z; };\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n\n\n//cpp\nstruct SharedFilePtr;\nstruct BMD_File;\nstatic Ptr<BMD_File> pk__ZN5Model8LoadFileER13SharedFilePtr(Ptr<SharedFilePtr> a0) { return Ptr<Ptr<BMD_File>(Ptr<SharedFilePtr>)>(0x02017a3cu)(a0); }\nstatic int pk__ZN9ModelBase7SetFileEP8BMD_Fileii(Ptr<void> a0, Ptr<BMD_File> a1, int a2, int a3) { return Ptr<int(Ptr<void>, Ptr<BMD_File>, int, int)>(0x02016fd4u)(a0, a1, a2, a3); }\nextern \"C\" int pk_func_ov002_020f6960(Ptr<char> self, Ptr<SharedFilePtr> fp, int n) {\n    *(Ptr<Ptr<SharedFilePtr>>)((self + 0x5c)) = fp;\n    Ptr<BMD_File> f = pk__ZN5Model8LoadFileER13SharedFilePtr(*(Ptr<Ptr<SharedFilePtr>>)((self + 0x5c)));\n    return pk__ZN9ModelBase7SetFileEP8BMD_Fileii(self, f, 1, n) != 0 ? 1 : 0;\n}\n\nextern \"C\" unsigned int abi_func_ov002_020f6960(unsigned int a0, unsigned int a1, unsigned int a2) { return uword(pk_func_ov002_020f6960((Ptr<char>)(a0), (Ptr<SharedFilePtr>)(a1), (int)(a2))); }\n",
+      "unit": "stage_isolated_func_ov002_020f6960"
+    },
+    {
       "path": "external/sm64ds-pc/src/func_ov002_020f6a50.c",
       "sha256": "8eb9fb20d4e6ecb5c39b5134cbe7b4c571e6200064ed3a73075d8f124eb8670e",
       "header": false,
@@ -2838,6 +2845,11 @@
     {
       "address": 34419388,
       "symbol": "abi__ZN6Player12St_Wait_InitEv",
+      "overlay": 2
+    },
+    {
+      "address": 34564448,
+      "symbol": "abi_func_ov002_020f6960",
       "overlay": 2
     },
     {
