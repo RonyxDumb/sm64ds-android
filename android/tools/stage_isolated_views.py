@@ -154,6 +154,11 @@ FREE_UNITS = [
     ('Vec3_MulScalar', 0),
     ('Math_Function_0203b0fc', 0),
     ('func_ov002_020f7538', 2),
+    ('func_ov002_020f7410', 2, {
+        # `register` is not C++17; the 16-bit angle store keeps its ROM value.
+        'register int *p': 'int *p',
+        '*(short *)(self + 0x8e) = 0xffffb3c0;': '*(short *)(self + 0x8e) = (short)-0x4c40;'}),
+    ('func_0201ef38', 0),
     ('func_ov002_020f6618', 2, {
         # The unit's local SharedFilePtr {int a, file;} is the shared 8-byte
         # record (file pointer at +4); references are pointers in the ABI.

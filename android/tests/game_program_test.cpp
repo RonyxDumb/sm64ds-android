@@ -1150,6 +1150,20 @@ int main(int argc, char **argv) {
             try { (void)stageSpace->code(0x020e6c0cu); }
             catch (const std::runtime_error &) { unloadedPlayer=true; }
             assert(unloadedPlayer);
+            // SM64DS_STAGE_FRAMES=N keeps running the original castle frames
+            // (no input) and reports the first actual missing dependency.
+            const char *framesEnv=std::getenv("SM64DS_STAGE_FRAMES");
+            const unsigned stageFrames=framesEnv?unsigned(std::strtoul(framesEnv,nullptr,0)):0;
+            if (stageFrames) {
+                unsigned frame=0;
+                try {
+                    for (;frame<stageFrames;++frame) game.tick();
+                    std::cerr << "Stage frames completed: " << frame << '\n';
+                } catch (const std::runtime_error &e) {
+                    std::cerr << "Stage frame " << frame << " dependency: " << e.what() << '\n';
+                }
+                std::exit(0);
+            }
             try {
                 game.tick();
             } catch (const std::runtime_error &e) {
