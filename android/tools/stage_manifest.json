@@ -1086,6 +1086,13 @@
       "unit": "stage_hatena_init"
     },
     {
+      "path": "external/sm64ds-pc/src/_ZN5Stage11GetSkyboxIDEv.cpp",
+      "sha256": "7d136700bb648499f387d17f88503695c828e184bf72cf6fe9ec0f37bd5e2bc6",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\n//cpp\n/* Stage::GetSkyboxID() at 0x0202a93c. Member, not static: LoadSkybox reaches it\n * with r0 still holding `object` and no argument set up. The body reads the level\n * record through the global at 0x0209f340 rather than through a field, so the\n * bytes cannot show the `object` -- the call site is the evidence. */\n\n \n#define data_0209f340 ArrayRef<int>(0x0209f340u)\n \n\nextern \"C\" int pk__ZN5Stage11GetSkyboxIDEv(Ptr<void> object) {\n  Ptr<unsigned int> p = *(Ptr<Ptr<unsigned int>>)(data_0209f340);\n  return (p[6] >> 4) & 0x1f;\n}\n\nextern \"C\" unsigned int abi__ZN5Stage11GetSkyboxIDEv(unsigned int a0) { return uword(pk__ZN5Stage11GetSkyboxIDEv((Ptr<void>)(a0))); }\n",
+      "unit": "stage_isolated__ZN5Stage11GetSkyboxIDEv"
+    },
+    {
       "path": "external/sm64ds-pc/src/_ZN5Timer10ResetTimerEv.cpp",
       "sha256": "e1842ba4ede4fd2891ae6bbe81beea619f0d2f1dfce80ea46282fa8d4b3791fb",
       "header": false,
@@ -3216,6 +3223,10 @@
       "address": 34905472,
       "symbol": "abi_func_ov102_02149d80",
       "overlay": 102
+    },
+    {
+      "address": 33728828,
+      "symbol": "abi__ZN5Stage11GetSkyboxIDEv"
     },
     {
       "address": 33658424,

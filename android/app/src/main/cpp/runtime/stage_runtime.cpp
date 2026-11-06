@@ -1282,6 +1282,16 @@ void stage_load_fog(uint32_t self) {
             at<uint16_t>(src+4),at<uint16_t>(src+6));
     }
 }
+void stage_load_skybox(uint32_t self) {
+    // Complete Stage::LoadSkybox (recovered isolated unit); mSkyboxModel 0x9bc.
+    const uint32_t skyboxID=Ptr<uint32_t(uint32_t)>(0x0202a93cu)(self);
+    if (!skyboxID) return;
+    uint32_t model=Ptr<uint32_t(uint32_t)>(0x0203cbe4u)(0x50);
+    if (model) model=Ptr<uint32_t(uint32_t)>(0x02016d58u)(model);
+    at<uint32_t>(self+0x9bc)=model;
+    const uint16_t fileID=at<uint16_t>(0x02075620u+(skyboxID-1)*2);
+    Ptr<void(uint32_t,uint32_t,int32_t,int32_t)>(0x02016f9cu)(at<uint32_t>(self+0x9bc),fileID,0,2);
+}
 uint32_t stage_texture_transformer_ctor(uint32_t self) {
     // Complete TextureTransformer::TextureTransformer() (0x02015950):
     // Animation base (currFrame 0, speed 0x1000), _ZTV18TextureTransformer,
@@ -1862,6 +1872,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b710u,&stage_load_fog);
     space.bind(0x0202b534u,&stage_load_texture_transformers);
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
+    space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);

@@ -60,6 +60,15 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
     raw = (ROOT/rel).read_text()
+    if '::' in cls:
+        # A nested class (Particle::SysTracker): drop the enclosing namespace
+        # block so the member body is matched as Inner::method.
+        outer, cls = cls.split('::')
+        opened = re.search(r'^namespace '+outer+r'\s*\{\s*$', raw, re.M)
+        if opened:
+            raw = raw[:opened.start()]+raw[opened.end():]
+            close = raw.rstrip().rfind('}')
+            raw = raw[:close]+raw[close+1:]
     if name:
         from native_sources import function
         raw = function(raw, name)
@@ -279,6 +288,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5Stage11GetSkyboxIDEv', 0, 'Stage'),
     ('_ZN5Timer10ResetTimerEv', 0, 'Timer'),
     ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject', {
         # The unit names overlay-9 data at 0x02113c20 as a function.
@@ -290,6 +300,7 @@ MEMBER_UNITS = [
 
 
 def class_fields(cls):
+    cls = cls.replace('::', '__')
     from stage_actor_views import ACTOR_FIELDS
     fields = dict(ACTOR_FIELDS) if cls.startswith(('d', 'Player')) else {}
     for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
