@@ -240,6 +240,22 @@ uint32_t stage_allocate(uint32_t bytes) { return packed::Space::current().alloca
 void stage_deallocate(uint32_t address) { if (address) packed::Space::current().release(address); }
 // MSL func_02073470: preserve the cartridge's eight-byte cookie and use
 // registered native callbacks for element construction and exception cleanup.
+void stage_vec_ctor(uint32_t base,uint32_t count,uint32_t stride,uint32_t constructor,uint32_t destructor) {
+    // MSL __cxa_vec_ctor (0x020733a8): construct in place; on an exception
+    // destroy the built prefix in reverse (func_02073534) and rethrow, so
+    // native diagnostics keep propagating unchanged.
+    if (!constructor) return;
+    uint32_t built=0;
+    try {
+        for (;built<count;++built) Ptr<void(uint32_t)>{constructor}(base+built*stride);
+    } catch (...) {
+        if (destructor) {
+            try { while (built) Ptr<void(uint32_t)>{destructor}(base+(--built)*stride); }
+            catch (...) { std::terminate(); }
+        }
+        throw;
+    }
+}
 uint32_t stage_array_new(uint32_t count,uint32_t stride,uint32_t cookie,
                          uint32_t constructor,uint32_t destructor) {
     auto &space=packed::Space::current();
@@ -1759,6 +1775,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015ebcu,&stage_shadow_init_cylinder);
     space.bind(0x02015ed8u,&stage_shadow_init_cuboid);
     space.bind(0x0203d384u,&stage_vector_lifetime);
+    space.bind(0x020733a8u,&stage_vec_ctor);
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
     space.bind(0x02014878u,&stage_position_cylinder_construct);

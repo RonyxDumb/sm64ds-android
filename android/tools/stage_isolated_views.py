@@ -149,6 +149,13 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f6a50', 2, {
+        # Callbacks are the original code addresses (Vector3 C1/D1), not
+        # zero-argument host veneers.
+        '(void*)func_0203d384, (void*)_ZN7Vector3D1Ev': '(void*)0x0203d384u, (void*)0x020072c0u',
+        'extern void _ZN7Vector3D1Ev(void);\n': '', 'extern void func_0203d384(void);\n': ''}),
+    ('Vec3_Sub', 0),
+    ('func_020089f8', 0),
     ('func_02009414', 0),
     ('func_020094a8', 0),
     ('func_020082a0', 0),
