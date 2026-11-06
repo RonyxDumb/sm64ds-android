@@ -229,6 +229,15 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov001_020aaa54', 1, {
+        # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
+        # only reads and writes these fields.
+        'extern dCapIcon_c* data_ov001_020ad634[];':
+            'struct dActor_c;\nstruct dCapIcon_c { void *vptr; struct dActor_c *mOwner; u32 mOwnerUniqueID;\n'
+            '    struct dCapIcon_c *mPrev; struct dCapIcon_c *mNext; s32 mSlot;\n'
+            '    u8 mCharacter; u8 unk_19; u8 unk_1a; u8 mFlags; };\n'
+            'extern dCapIcon_c* data_ov001_020ad634[];\nvoid _ZN10dCapIcon_c6UnlinkEv(dCapIcon_c *);',
+        'sl->Unlink();': '_ZN10dCapIcon_c6UnlinkEv(sl);'}),
     ('func_ov001_020aaf40', 1, {
         # C's local false/true enum; C++ already has the keywords.
         'enum { false, true };\n': ''}),
