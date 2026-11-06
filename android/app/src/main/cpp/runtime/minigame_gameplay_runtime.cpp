@@ -124,41 +124,6 @@ int game_scene_before_init(uint32_t actor) {
     return 1; // fBase_c::BeforeInitResources is true
 }
 int game_scene_before_render(uint32_t actor) { return sm64ds::native_fbase_before_render(actor); }
-int game_scene_waiting_children(uint32_t actor) {
-    // func_020431c4: walk the scene's descendants, waiting only for an
-    // original actor whose aliveState is still pending initialization.
-    const uint32_t root=actor+0x14;
-    uint32_t node=at<uint32_t>(root+4);
-    std::unordered_set<uint32_t> visited;
-    while (node) {
-        if (!visited.insert(node).second) throw std::runtime_error("Cyclic minigame scene tree.");
-        const uint32_t owner=at<uint32_t>(node+16);
-        if (!at<uint8_t>(owner+14)) return 1;
-        if (at<uint32_t>(node+4)) { node=at<uint32_t>(node+4); continue; }
-        while (node!=root && !at<uint32_t>(node+12)) node=at<uint32_t>(node);
-        if (!node || node==root) break;
-        node=at<uint32_t>(node+12);
-    }
-    return 0;
-}
-void game_after_process(uint32_t,uint32_t) {} // original fBase after-behavior/render bodies
-int game_scene_before_behavior(uint32_t actor) {
-    if (!sm64ds::native_fbase_before_behavior(actor)) return 0;
-    if (at<uint8_t>(0x0209f1e0))
-        throw std::runtime_error("Original scene sleep transition is not linked.");
-    if (data_02092664!=0x187) {
-        if (data_0209f5bc->IsAtStart()) data_0209f5bc->SetForwardTime(30);
-        else if (data_0209f5bc->IsAtEnd()) Ptr<void(uint32_t)>(0x02043824)(actor);
-        return 1;
-    }
-    auto &flags=at<uint8_t>(actor+0x13);
-    if (flags&1) {
-        if (!Ptr<int(uint32_t)>(0x020431c4)(actor)) flags&=static_cast<uint8_t>(~5u);
-        return 0;
-    }
-    if (data_0209f5bc->IsAtEnd()) data_0209f5bc->SetBackwardTime(30);
-    return 1;
-}
 void game_scene_after_cleanup(uint32_t actor,uint32_t result) {
     if (result==2) data_02092660=0;
     Ptr<void(uint32_t,uint32_t)>(0x02043b2c)(actor,result);
@@ -189,18 +154,18 @@ void bind_game_services(Space &space) {
         space.bind(address,&pk_mg_Cache);
     space.bind(0x02019028,&game_reset_files);
     space.bind(0x0202e3a4,&game_scene_before_render);
-    space.bind(0x0202e3d4,&game_scene_before_behavior);
-    space.bind(0x020431c4,&game_scene_waiting_children);
+    space.bind(0x0202e3d4,&sm64ds::scene_before_behavior);
+    space.bind(0x020431c4,&sm64ds::scene_waiting_children);
     space.bind(0x02043c80,&sm64ds::native_fbase_init);
     space.bind(0x02043b24,&sm64ds::native_fbase_behavior);
     space.bind(0x02043af0,&sm64ds::native_fbase_render);
     space.bind(0x02043afc,&sm64ds::native_fbase_before_behavior);
     space.bind(0x02043ac8,&sm64ds::native_fbase_before_render);
     space.bind(0x02043fdc,&sm64ds::native_fbase_process_list);
-    space.bind(0x02043af8,&game_after_process);
-    space.bind(0x02043ac4,&game_after_process);
-    space.bind(0x0202e3c8,&game_after_process);
-    space.bind(0x0202e398,&game_after_process);
+    space.bind(0x02043af8,&sm64ds::fbase_after_process);
+    space.bind(0x02043ac4,&sm64ds::fbase_after_process);
+    space.bind(0x0202e3c8,&sm64ds::fbase_after_process);
+    space.bind(0x0202e398,&sm64ds::fbase_after_process);
     space.bind(0x0202e5d0,&game_scene_after_cleanup);
     space.bind(0x02012790,&game_effect);
     space.bind(0x020127a4,&game_effect_params);

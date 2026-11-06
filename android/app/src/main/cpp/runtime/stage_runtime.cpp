@@ -1938,6 +1938,10 @@ void bind_stage_runtime(packed::Space &space) {
     // The same recovered __sinit_02075154 unit the minigame manifest links.
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02015730u,&stage_clipper_ctor);
+    space.bind(0x0202e3d4u,&scene_before_behavior);
+    for (uint32_t after : {0x02043af8u,0x02043ac4u,0x0202e3c8u,0x0202e398u})
+        space.bind(after,&fbase_after_process);
+    space.bind(0x020431c4u,&scene_waiting_children);
     space.bind(0x0202b710u,&stage_load_fog);
     space.bind(0x0202b534u,&stage_load_texture_transformers);
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
@@ -2094,5 +2098,47 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0205a448u,&pk_MultiStore16);
     space.bind(0x0205a47cu,&pk_MultiStore_Int);
     space.bind(0x0205a490u,&pk_MultiCopy_Int);
+}
+}
+
+namespace sm64ds {
+// fBase_c::AfterBehavior/AfterRender (0x02043af8/0x02043ac4) are empty
+// (size 4); dScene_c's overrides (0x0202e3c8/0x0202e398) only forward.
+void fbase_after_process(uint32_t,uint32_t) {}
+int scene_waiting_children(uint32_t actor) {
+    // func_020431c4: walk the scene's descendants, waiting only for an
+    // original actor whose aliveState is still pending initialization.
+    const uint32_t root=actor+0x14;
+    uint32_t node=at<uint32_t>(root+4);
+    std::unordered_set<uint32_t> visited;
+    while (node) {
+        if (!visited.insert(node).second) throw std::runtime_error("Cyclic scene tree.");
+        const uint32_t owner=at<uint32_t>(node+16);
+        if (!at<uint8_t>(owner+14)) return 1;
+        if (at<uint32_t>(node+4)) { node=at<uint32_t>(node+4); continue; }
+        while (node!=root && !at<uint32_t>(node+12)) node=at<uint32_t>(node);
+        if (!node || node==root) break;
+        node=at<uint32_t>(node+12);
+    }
+    return 0;
+}
+int scene_before_behavior(uint32_t actor) {
+    // Complete dScene_c::BeforeBehavior (0x0202e3d4) over the native fader
+    // and scene request owned by GameProgram; shared by stage and minigames.
+    if (!native_fbase_before_behavior(actor)) return 0;
+    if (at<uint8_t>(0x0209f1e0))
+        throw std::runtime_error("Original scene sleep transition is not linked.");
+    if (data_02092664!=0x187) {
+        if (data_0209f5bc->IsAtStart()) data_0209f5bc->SetForwardTime(30);
+        else if (data_0209f5bc->IsAtEnd()) Ptr<void(uint32_t)>(0x02043824)(actor);
+        return 1;
+    }
+    auto &flags=at<uint8_t>(actor+0x13);
+    if (flags&1) {
+        if (!Ptr<int(uint32_t)>(0x020431c4)(actor)) flags&=static_cast<uint8_t>(~5u);
+        return 0;
+    }
+    if (data_0209f5bc->IsAtEnd()) data_0209f5bc->SetBackwardTime(30);
+    return 1;
 }
 }

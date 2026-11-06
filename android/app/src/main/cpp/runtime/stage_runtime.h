@@ -14,4 +14,8 @@ uint32_t native_particle_tracker_construct(uint32_t tracker);
 uint32_t native_simple_model_construct(uint32_t model);
 uint32_t native_mesh_collider_construct(uint32_t collider);
 void native_actor_post_construct(uint32_t actor);
+// dScene_c::BeforeBehavior and func_020431c4 over the native fader/scene request.
+int scene_before_behavior(uint32_t actor);
+int scene_waiting_children(uint32_t actor);
+void fbase_after_process(uint32_t actor,uint32_t success);
 }
