@@ -739,6 +739,39 @@ int stage_camera_state_init(uint32_t camera) {
     std::memcpy(&callback,&target.code,sizeof callback);
     return callback(target.object);
 }
+void stage_camera_set_pos(uint32_t camera,uint32_t position) {
+    // Complete Camera::SetPos (0x0200ccac): copy the vector to +0x8c.
+    std::memcpy(packed::Space::current().data(camera+0x8c,12),
+                packed::Space::current().data(position,12),12);
+}
+void stage_camera_set_look_at(uint32_t camera,uint32_t target) {
+    // Complete Camera::SetLookAt (0x0200ccc8): copy the vector to +0x80.
+    std::memcpy(packed::Space::current().data(camera+0x80,12),
+                packed::Space::current().data(target,12),12);
+}
+void stage_camera_set_flag_3(uint32_t camera) {
+    // Complete Camera::SetFlag_3 (0x0200d048): set bit 3, then pass the
+    // updated flag word to FUN_02029a68 exactly as the original call does.
+    auto &flags=at<uint32_t>(camera+0x154);
+    flags|=8;
+    Ptr<void(uint32_t)>(0x02029a68u)(flags);
+}
+uint32_t stage_closest_player(uint32_t actor) {
+    // Complete dActor_c::ClosestPlayer (0x02010ad8): the per-frame cache at
+    // 0x0209b458 is filled once with the nearest and farthest players.
+    if (!at<uint32_t>(0x0209b458u)) {
+        at<int32_t>(0x0208e380u)=0x7fffffff;
+        at<int32_t>(0x0208e37cu)=int32_t(0x80000000u);
+        for (unsigned i=0;i<at<uint8_t>(0x0209f21cu);++i) {
+            const uint32_t player=at<uint32_t>(0x0209f394u+i*4);
+            if (!player) continue;
+            const int32_t d=Ptr<int32_t(uint32_t,uint32_t)>(0x0203cfdcu)(actor+0x5c,player+0x5c);
+            if (d<at<int32_t>(0x0208e380u)) { at<int32_t>(0x0208e380u)=d; at<uint32_t>(0x0209b458u)=player; }
+            if (d>at<int32_t>(0x0208e37cu)) { at<int32_t>(0x0208e37cu)=d; at<uint32_t>(0x0209b450u)=player; }
+        }
+    }
+    return at<uint32_t>(0x0209b458u);
+}
 int stage_camera_change_state(uint32_t camera,uint32_t state) {
     if (at<uint32_t>(camera+0x154)&0x10) return 0;
     if (at<uint32_t>(camera+0x138)!=state) {
@@ -1310,6 +1343,10 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
+    space.bind(0x0200ccacu,&stage_camera_set_pos);
+    space.bind(0x0200ccc8u,&stage_camera_set_look_at);
+    space.bind(0x0200d048u,&stage_camera_set_flag_3);
+    space.bind(0x02010ad8u,&stage_closest_player);
     space.bind(0x0200cae4u,&stage_camera_state_init);
     space.bind(0x0203cbd8u,&stage_allocate);
     space.bind(0x0203cbe4u,&stage_allocate);

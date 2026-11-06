@@ -1254,6 +1254,10 @@ if __name__ == '__main__':
         row,code=free_c('external/sm64ds-pc/src/'+name+'.c')
         for binding in code: binding['overlay']=2
         rows.append(row); bindings.extend(code)
+    for name,overlay in [('func_ov002_020d228c',2)]:
+        row,code=free_c('external/sm64ds-pc/src/'+name+'.cpp')
+        for binding in code: binding['overlay']=overlay
+        rows.append(row); bindings.extend(code)
     for name in ['_ZN10ModelAnim213Func_020162C4Eji5Fix12IiEt',
                  '_ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj']:
         row,code=free_c('external/sm64ds-pc/src/'+name+'.c')

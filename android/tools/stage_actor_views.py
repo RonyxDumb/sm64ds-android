@@ -480,6 +480,17 @@ int _ZN11daC_Jugem_c8SetStateEPMS_FivE(void *,void *);
 void _ZN13SharedFilePtr7ReleaseEv(SharedFilePtr *);
 ''')
 
+    # daC_Jugem_c::StateArriveInit, from the recovered isolated unit.
+    add('stage_jugem_arrive_init','external/sm64ds-pc/src/func_ov085_0212df84.cpp',85,
+        [('extern "C" int func_ov085_0212df84(char* c)','func_ov085_0212df84','char *c')],{},{},'''
+void *_ZN8dActor_c13ClosestPlayerEv(void *);
+void _ZN6Camera9SetFlag_3Ev(void *);
+void _ZN6Camera9SetLookAtERK7Vector3(void *,const struct Vector3 *);
+void _ZN6Camera6SetPosERK7Vector3(void *,const struct Vector3 *);
+void func_ov002_020d228c(void *);
+extern void *data_0209f318;
+''','struct Vector3 { s32 x,y,z; };\n')
+
     for name in ('func_ov100_0214491c','func_ov100_02144c64'):
         row,bindings=free_c('external/sm64ds-pc/src/'+name+'.c')
         for binding in bindings: binding['overlay']=100
