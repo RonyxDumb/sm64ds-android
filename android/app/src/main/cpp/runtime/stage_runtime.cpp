@@ -756,6 +756,10 @@ void stage_camera_set_flag_3(uint32_t camera) {
     flags|=8;
     Ptr<void(uint32_t)>(0x02029a68u)(flags);
 }
+int stage_player_level_enter_cleanup(uint32_t) {
+    // Complete Player::St_LevelEnter_Cleanup (ov002 0x020c6f34): returns 1.
+    return 1;
+}
 uint32_t stage_closest_player(uint32_t actor) {
     // Complete dActor_c::ClosestPlayer (0x02010ad8): the per-frame cache at
     // 0x0209b458 is filled once with the nearest and farthest players.
@@ -1333,6 +1337,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020becc8u,&stage_player_body_model);
     space.bind(0x020e30a0u,&stage_player_change_state);
     space.bind(0x020c7dd0u,&stage_player_entrance_state);
+    space.bind(0x020c6f34u,&stage_player_level_enter_cleanup);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);
     space.bind(0x020b0f24u,&stage_plain_actor_factory<0x104,0x021086b4u>);
     space.bind(0x020ec32cu,&stage_tree_factory);

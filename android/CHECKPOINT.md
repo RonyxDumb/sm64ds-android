@@ -1,3 +1,38 @@
+# Checkpoint — 2026-11-06, castle grounds past MIPS into the Lakitu intro
+
+Branch `claude/sm64ds-android-port-54w4q4` (local commits; push blocked by
+missing GitHub write access, HTTP 403). Area: **castle / actors / camera**.
+
+Private EU ROM (SHA-256 ce5829aa…) host runs of the production stage path
+(ASan/UBSan, `run-game-tests.sh <rom>`, `SM64DS_TRACE_STAGE=1`) moved the
+first missing castle dependency through, in order:
+- `0x0212cc2c` daMip_c_classInit → native factory from its relocations
+  (0x474, dEnemyBase_c, dCcAc_c, dBgCh_Actr, ModelAnim, 2× ShadowModel).
+- `0x0212c7fc` original daMip_c::InitResources (reviewed view of
+  src/game/actors/d_a_mip.cpp). On the fresh save it returns 0 at the
+  original 0x40000000 progress-flag check, as the source does.
+- `0x0212c070`/`0x0212c004` original OnPendingDestroy / CleanupResources.
+- `0x0212ed54` daC_Jugem_c_classInit (0x2e8, two ModelAnim, TextureSequence,
+  two ShadowModel), original LakituBro InitResources/Cleanup/OnPendingDestroy,
+  native TextureSequence ctor (0x02015a50) and SetState PMF dispatch (0x0212e728).
+- `0x0212df84` StateArriveInit (castle intro) from the recovered isolated unit,
+  with Camera::SetPos/SetLookAt/SetFlag_3, dActor_c::ClosestPlayer and
+  func_ov002_020d228c (Player intro state + animation).
+- `0x020c6f34` Player::St_LevelEnter_Cleanup.
+
+Test fix: the overlay-6 image check now compares the loaded file only;
+its BSS is legitimately populated by the original static initializers
+(first difference was 0x021421ec, BSS). This failure predated this session.
+
+Not yet done: the castle-test frontier assertion (still pinned to
+0x0212cc2c) must be updated to the new frontier and assertions added for
+the MIPS/Lakitu instances; Android NDK/APK compile of the new generated
+units is unverified here (no SDK in this container); no device test.
+Next: continue the Lakitu intro (state run PMFs, FUN_02029a68, Sound::PlaySub,
+messages) until the castle grounds reach a steady playable frame.
+
+---
+
 # Checkpoint — 2026-11-06, Wanted earns its first original point
 
 Work continues on main. Added 43 original function units, including all 23
