@@ -479,6 +479,16 @@ void stage_anim_model_construct(uint32_t model) {
     stage_frame_construct(model+0x50,0x0208e9a4u);
     at<uint32_t>(model+0x60)=0;
 }
+uint32_t stage_anim_model_base_ctor(uint32_t model) {
+    // Complete ModelAnim::ModelAnim() C2 (0x02016998): Model C2, the
+    // ModelAnim vptr, the Animation member and file = 0.
+    (void)packed::Space::current().data(model,0x64);
+    native_model_base_construct(model);
+    at<uint32_t>(model)=0x0208e980u;
+    stage_frame_construct(model+0x50,0x0208e9a4u);
+    at<uint32_t>(model+0x60)=0;
+    return model;
+}
 uint32_t stage_anim_model_ctor(uint32_t model) {
     (void)packed::Space::current().data(model,0x64);
     stage_anim_model_construct(model);
@@ -1788,6 +1798,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0203d384u,&stage_vector_lifetime);
     space.bind(0x020733a8u,&stage_vec_ctor);
     space.bind(0x02016da8u,&native_model_base_construct);
+    space.bind(0x02016998u,&stage_anim_model_base_ctor);
     space.bind(0x020072c0u,&stage_vector_lifetime);
     space.bind(0x020148c8u,&stage_actor_cylinder_init);
     space.bind(0x02014878u,&stage_position_cylinder_construct);

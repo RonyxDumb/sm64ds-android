@@ -149,6 +149,7 @@ def free_unit(projected, symbol, overlay, replacements=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f7020', 2),
     ('func_ov002_020f6960', 2, {
         # A reference parameter is a pointer in the ARM ABI.
         'LoadFileER13SharedFilePtr(SharedFilePtr&)': 'LoadFileER13SharedFilePtr(SharedFilePtr*)',
