@@ -1051,6 +1051,109 @@ uint32_t stage_minimap_factory() {
     at<uint32_t>(map)=0x0210c1c0u;
     return map;
 }
+int16_t stage_read_unaligned_short(uint32_t p) {
+    return int16_t(at<uint8_t>(p)|(at<uint8_t>(p+1)<<8));
+}
+uint32_t stage_read_unaligned_int(uint32_t p) {
+    return at<uint8_t>(p)|(at<uint8_t>(p+1)<<8)|(at<uint8_t>(p+2)<<16)|(uint32_t(at<uint8_t>(p+3))<<24);
+}
+// Original virtual dispatch: the DS vtable word at slot*4, receiver in r0.
+template<class R,class... A> R stage_virtual(uint32_t object,unsigned slot,A... args) {
+    return Ptr<R(uint32_t,A...)>(at<uint32_t>(at<uint32_t>(object)+slot*4))(object,args...);
+}
+void stage_process_kuppa_script() {
+    // Complete ProcessKuppaScript (0x0200e8d4, recovered isolated unit).
+    // FaderBrightness slots: 3 SetBackwardTime, 4 SetForwardTime,
+    // 8 SetToEnd, 9 SetToStart; data_0209f5bc slot 7.
+    uint32_t s=at<uint32_t>(0x0209fc48u);
+    if (!s) return;
+    uint32_t next=0;
+    int fin=1;
+    const uint32_t fader=0x0209b294u;
+    while (at<uint8_t>(s)) {
+        int beg=stage_read_unaligned_short(s+2);
+        const int end=stage_read_unaligned_short(s+4);
+        const uint16_t t=at<uint16_t>(0x0209b274u);
+        if (beg>t) {
+            fin=0;
+        } else if (end<0 || end>=t) {
+            const uint8_t cmd=at<uint8_t>(s+1);
+            if (cmd==5) {
+                if (stage_virtual<int>(at<uint32_t>(0x0209f5bcu),7)==0) {
+                    const uint32_t i=at<uint8_t>(0x020a0e40u),off=i*4;
+                    if (at<uint16_t>(0x020a0e58u+i*4+2)!=0 ||
+                        (at<uint8_t>(0x020a0de8u+off)!=0 && at<uint8_t>(0x020a0de8u+off+1)!=0)) {
+                        Ptr<void(uint32_t,uint32_t,uint16_t)>(0x0202e348u)(1,0,0);
+                        Ptr<void(uint32_t)>(0x02013050u)(0x3c);
+                    }
+                }
+                fin=0;
+            } else if (cmd==6) {
+                next=stage_read_unaligned_int(s+6);
+            } else if (cmd==7) {
+                Ptr<void(int)>(0x0201320cu)(int(stage_read_unaligned_int(s+6)));
+            } else if (cmd==8) {
+                Ptr<void(uint32_t,uint32_t)>(0x02012840u)(1,stage_read_unaligned_int(s+6));
+            } else if (cmd==9) {
+                (void)Ptr<uint32_t(uint32_t)>(0x02012790u)(stage_read_unaligned_int(s+6));
+            } else if (cmd==0xa) {
+                if (beg==t) {
+                    beg=stage_read_unaligned_short(s+6);
+                    if (beg==0xd && Ptr<int(uint32_t)>(0x0201392cu)(1)==0 &&
+                        Ptr<int(uint32_t)>(0x0201392cu)(2)==0)
+                        beg=0x16;
+                    Ptr<void(int)>(0x0201f32cu)(beg);
+                } else if (end==t) {
+                    at<uint8_t>(0x0209d66cu)=1;
+                }
+            } else if (cmd==0xb) {
+                Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x0202acc0u)(
+                    uint32_t(int32_t(at<int8_t>(s+6))),at<uint8_t>(s+7),uint32_t(int32_t(at<int8_t>(s+8))),0);
+                at<uint32_t>(0x0209fc4cu)=stage_read_unaligned_int(s+9);
+                if (at<uint8_t>(0x0209f2d8u)!=2) Ptr<void(uint32_t)>(0x02013050u)(0x3c);
+                Ptr<void()>(0x0202e1b4u)();
+                at<uint32_t>(0x0209d4b0u)=0;
+            } else if (cmd>=0xc && cmd<=0xf) {
+                // 0xc/0xe start at the beginning and run forward; 0xd/0xf
+                // start at the end and run backward. 0xc/0xd fade white.
+                const bool backward=cmd==0xd||cmd==0xf;
+                if (cmd==0xf) at<int8_t>(0x0209d45cu)=0x10;
+                stage_virtual<void>(fader,backward?8:9);
+                at<uint16_t>(fader+0xc)=cmd<=0xd?0x7fff:0;
+                stage_virtual<int,unsigned,unsigned>(fader,backward?3:4,
+                    cmd==0xc?0xeu:cmd==0xe?0x1eu:0x50u,0u);
+                at<uint32_t>(0x0209d4b0u)=fader;
+            } else if (cmd==0x10) {
+                stage_virtual<void>(fader,8);
+                at<uint16_t>(fader+0xc)=0;
+                stage_virtual<int,unsigned,unsigned>(fader,4,0x1eu,0u);
+                Ptr<void(uint32_t)>(0x0202e1e0u)(fader);
+            } else if (cmd==0x11) {
+                at<uint32_t>(0x02110aecu)=0;
+            } else if (cmd==4) {
+                (void)Ptr<int(uint32_t,uint32_t,int,int)>(0x02008550u)(at<uint32_t>(0x0209f318u),s,beg,end);
+            } else if (cmd<=3) {
+                (void)Ptr<int(uint32_t,int,int)>(0x0200e5acu)(s,beg,end);
+            } else if (cmd>=0x12) {
+                (void)Ptr<int(uint32_t,int,int)>(0x0200e494u)(s,beg,end);
+            }
+            if (end>=0) fin=0;
+        }
+        s+=at<uint8_t>(s);
+    }
+    if (next) {
+        at<uint32_t>(0x0209fc48u)=next;
+        at<uint16_t>(0x0209b274u)=0;
+        return;
+    }
+    if (fin && at<int8_t>(0x02092110u)<0) {
+        Ptr<void()>(0x0200e798u)();
+        return;
+    }
+    auto &timer=at<uint16_t>(0x0209b274u);
+    ++timer;
+    if (timer==0) --timer;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1507,6 +1610,9 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0200d048u,&stage_camera_set_flag_3);
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
+    space.bind(0x0200e768u,&stage_read_unaligned_short);
+    space.bind(0x0200e748u,&stage_read_unaligned_int);
+    space.bind(0x0200e8d4u,&stage_process_kuppa_script);
     space.bind(0x02011ffcu,&stage_sound_load_initial_group);
     space.bind(0x02029ee0u,&stage_event_get_bit);
     space.bind(0x02010be8u,&stage_drop_shadow_rad_height);

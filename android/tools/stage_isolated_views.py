@@ -115,6 +115,8 @@ def free_unit(projected, symbol, overlay):
 
 
 FREE_UNITS = [
+    ('RunKuppaScript', 0),
+    ('StartIntroCutscene', 0),
     ('IsStarCollected', 0), ('IsStarCollectedInLevel', 0), ('IsStarCollectedInCurLevel', 0),
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
