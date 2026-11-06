@@ -229,6 +229,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_020391f0', 0),
     ('func_0206e28c', 0),
     ('func_02023178', 0),
     ('func_02023408', 0),
@@ -295,6 +296,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5Stage9RenderFogEv', 0, 'Stage'),
     ('_ZN5Stage11GetSkyboxIDEv', 0, 'Stage'),
     ('_ZN5Timer10ResetTimerEv', 0, 'Timer'),
     ('_ZN14CutsceneObject13InitResourcesEv', 2, 'CutsceneObject', {
