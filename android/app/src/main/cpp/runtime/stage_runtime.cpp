@@ -1257,6 +1257,31 @@ int16_t stage_cstd_atan2(int32_t y,int32_t x) {
     // cstd::atan2 (src/cstd_atan2.cpp, linked natively as runtime/input_atan2).
     return cstd::atan2(y,x);
 }
+void stage_load_fog(uint32_t self) {
+    // Complete Stage::LoadFog (external/sm64ds-pc/src/_ZN5Stage7LoadFogEv.cpp)
+    // with Stage.h/Fog.h offsets: mFog[2] at 0x96c, 0x28-byte records.
+    const uint32_t fog=self+0x96c;
+    uint8_t a=0,b=0x28;
+    for (unsigned i=0;i<0x20;++i) {
+        at<uint8_t>(fog+i)=a; at<uint8_t>(fog+0x28+i)=b;
+        a=uint8_t(a+4); b=uint8_t(b+2);
+    }
+    at<uint8_t>(fog+0x20)=0;
+    at<uint8_t>(fog+0x28+0x20)=1;
+    at<uint8_t>(fog+0x28+0x21)=6;
+    at<uint16_t>(fog+0x28+0x22)=0;
+    at<uint16_t>(fog+0x28+0x24)=0x6000;
+    const int count=at<int32_t>(0x0209f258u);
+    if (count==0) return;
+    uint32_t src=at<uint32_t>(0x0209f31cu),dst=fog;
+    for (int j=0;j<count;++j,src+=8,dst+=0x28) {
+        if (at<uint8_t>(src)!=1) { at<uint8_t>(dst+0x20)=0; continue; }
+        const uint16_t color=uint16_t((at<uint8_t>(src+1)>>3)|((at<uint8_t>(src+2)>>3)<<5)|
+                                      ((at<uint8_t>(src+3)>>3)<<10));
+        Ptr<void(uint32_t,uint32_t,int32_t,int32_t)>(0x0202c830u)(dst,color,
+            at<uint16_t>(src+4),at<uint16_t>(src+6));
+    }
+}
 uint32_t stage_clipper_ctor(uint32_t self) {
     // Complete Clipper::Clipper() (external/sm64ds-pc/src/_ZN7ClipperC1Ev.cpp):
     // the ROM stores _ZTV7Clipper, then the shared frustum init helper.
@@ -1808,6 +1833,7 @@ void bind_stage_runtime(packed::Space &space) {
     // The same recovered __sinit_02075154 unit the minigame manifest links.
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02015730u,&stage_clipper_ctor);
+    space.bind(0x0202b710u,&stage_load_fog);
     space.bind(0x0201367cu,&NumStars);
     space.bind(0x0200e444u,&stage_camera_factory);
     space.bind(0x0200cb70u,&stage_camera_change_state);
