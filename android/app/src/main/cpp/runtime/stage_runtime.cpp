@@ -1162,6 +1162,30 @@ uint32_t stage_demo_factory() {
     at<uint32_t>(actor)=0x0210bd60u;
     return actor;
 }
+void stage_demo_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
+    // Complete func_ov002_020f7d74: the guarded function-local static table
+    // at 0x0211104c receives 24 eight-byte PMFs copied from their ROM
+    // constants on first use, then entry p[6] runs on self with (p+7,a2,a3).
+    static constexpr uint32_t sources[24]={
+        0x0210b708u,0x0210b678u,0x0210b618u,0x0210b620u,0x0210b640u,0x0210b628u,
+        0x0210b648u,0x0210b8c0u,0x0210b900u,0x0210b938u,0x0210b930u,0x0210b928u,
+        0x0210b920u,0x0210b918u,0x0210b910u,0x0210b908u,0x0210b750u,0x0210b8f8u,
+        0x0210b8f0u,0x0210b8e8u,0x0210b8e0u,0x0210b8d8u,0x0210b8d0u,0x0210b8c8u};
+    auto &space=packed::Space::current();
+    auto &guard=at<uint32_t>(0x02110b00u);
+    if (!(guard&1)) {
+        guard|=1;
+        for (unsigned i=0;i<24;++i)
+            std::memcpy(space.data(0x0211104cu+i*8,8),space.data(sources[i],8),8);
+    }
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(0x0211104cu+uint32_t(at<uint8_t>(p+6))*8,8),8);
+    const auto target=space.resolve_member(self,member);
+    using Callback=void (*)(uint32_t,uint32_t,int,int);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    callback(target.object,p+7,a2,a3);
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -1601,6 +1625,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
     space.bind(0x020fb8bcu,&stage_minimap_factory);
     space.bind(0x020f8808u,&stage_demo_factory);
+    space.bind(0x020f7d74u,&stage_demo_dispatch_command);
     for (uint32_t factory : {0x020b406cu,0x020b409cu,0x020b40ccu,0x020b40fcu,0x020b412cu})
         space.bind(factory,&stage_block_l_factory);
     space.bind(0x020c9e40u,&stage_player_disable_interaction);
