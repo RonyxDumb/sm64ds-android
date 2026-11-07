@@ -117,6 +117,33 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// Constructors/destructors of the sphere query and its bases, from the
+// cartridge code: dBgCh (vptr 0x020991d8), dBgPi (0x02099368, dBgPc at +4),
+// dM3dGSph (0x020994cc); dBgCh_SphCrr = dBgCh + dBgPi@0x10 + dM3dGSph@0x38
+// with vptrs 0x02099338/48/58 and three dBgPi results at 0x74/0x9c/0xc4.
+uint32_t bgch_construct2(uint32_t self) {
+    at<uint32_t>(self)=0x020991d8u; at<uint8_t>(self+4)=1; at<uint32_t>(self+0xc)=0; at<int32_t>(self+8)=-1;
+    return self;
+}
+uint32_t bgch_destruct2(uint32_t self) { at<uint32_t>(self)=0x020991d8u; return self; }
+uint32_t m3dgsph_vptr(uint32_t self) { at<uint32_t>(self)=0x020994ccu; return self; }
+uint32_t sphcrr_construct(uint32_t self) {
+    bgch_construct2(self);
+    Ptr<uint32_t(uint32_t)>{0x0203816cu}(self+0x10); // dBgPi C2 == C1 body
+    m3dgsph_vptr(self+0x38);
+    at<uint32_t>(self)=0x02099338u; at<uint32_t>(self+0x10)=0x02099348u; at<uint32_t>(self+0x38)=0x02099358u;
+    for (uint32_t r : {0x74u,0x9cu,0xc4u}) Ptr<uint32_t(uint32_t)>{0x0203816cu}(self+r);
+    at<uint32_t>(self+0xec)=0;
+    return self;
+}
+uint32_t sphcrr_destruct(uint32_t self) {
+    at<uint32_t>(self)=0x02099338u; at<uint32_t>(self+0x10)=0x02099348u; at<uint32_t>(self+0x38)=0x02099358u;
+    for (uint32_t r : {0xc4u,0x9cu,0x74u}) Ptr<uint32_t(uint32_t)>{0x02038144u}(self+r);
+    m3dgsph_vptr(self+0x38);
+    Ptr<uint32_t(uint32_t)>{0x02038144u}(self+0x10); // dBgPi D2 == D1 body
+    bgch_destruct2(self);
+    return self;
+}
 // dBgW_KcMbg::DetectClsn(dBgCh_SphCrr &) (0x02039a3c; recovered isolated
 // unit, laid out against the cartridge code): a local dBgCh_SphCrr (0x110)
 // in the mesh's frame (invScale 0x164), the KCL sphere test, results scaled
@@ -260,6 +287,12 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x02037c00u,&sphcrr_set_obj_and_sphere);
     space.bind(0x02038b78u,&sphcrr_detect);
     space.bind(0x02039a3cu,&mbg_detect_sphere);
+    space.bind(0x02035514u,&bgch_construct2);
+    space.bind(0x020354d0u,&bgch_destruct2);
+    space.bind(0x0203ac70u,&m3dgsph_vptr);
+    space.bind(0x0203ac1cu,&m3dgsph_vptr);
+    space.bind(0x02037d18u,&sphcrr_construct);
+    space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
