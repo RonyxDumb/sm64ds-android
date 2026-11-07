@@ -370,6 +370,12 @@ FREE_UNITS = [
 ]
 
 
+# Members projected from the recovered class sources in src/ (symbol,
+# overlay, class, source file, exact definition head, optional replacements).
+SOURCE_MEMBERS = [
+]
+
+
 PLAYER_SOURCE = [
     ('_ZN6Player9GetHealthEv', 'int Player::GetHealth()'),
 ]
@@ -494,6 +500,12 @@ def slices(projected):
         yield isolated(projected, symbol, 2, 'Player', fields)
     for symbol, overlay, *rest in FREE_UNITS:
         row, bindings = free_unit(projected, symbol, overlay, rest[0] if rest else None)
+        if not overlay:
+            for binding in bindings: binding.pop('overlay', None)
+        yield row, bindings
+    for symbol, overlay, cls, rel, name, *rest in SOURCE_MEMBERS:
+        row, bindings = isolated(projected, symbol, overlay, cls, player_fields() if cls == 'Player' else class_fields(cls),
+                                 rel=rel, name=name, replacements=rest[0] if rest else None)
         if not overlay:
             for binding in bindings: binding.pop('overlay', None)
         yield row, bindings
