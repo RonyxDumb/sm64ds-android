@@ -1086,6 +1086,13 @@
       "unit": "stage_hatena_init"
     },
     {
+      "path": "external/sm64ds-pc/src/_ZN9ModelBase12ApplyOpacityEj.cpp",
+      "sha256": "7e7d2c9f942121fd15da9326ecbe827671bc3859a8eb05164321a763d2a6f784",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\n//cpp\n// @symbol pk__ZN9ModelBase12ApplyOpacityEj\nstatic void pk_func_020461b4(Ptr<ModelComponents> a0, u32 a1) { Ptr<void(Ptr<ModelComponents>, u32)>(0x020461b4u)(a0, a1); }\n\n/* The base itself ends at 0x8; object addresses the derived class's components\n   view at +0x8 blindly. That is only meaningful where the components are\n   EMBEDDED there (Model) -- on the pointer-holding siblings object slot is a\n   ModelComponents*, so the original can only ever have called object on a\n   Model-shaped object. The cast preserves the ROM's object+8. */\nextern \"C\" void pk__ZN9ModelBase12ApplyOpacityEj(Ptr<void> object, u32 a) {\n    pk_func_020461b4((Ptr<ModelComponents>)(((Ptr<char>)(object) + 8)), a);\n}\n\nextern \"C\" void abi__ZN9ModelBase12ApplyOpacityEj(unsigned int a0, unsigned int a1) { pk__ZN9ModelBase12ApplyOpacityEj((Ptr<void>)(a0), (u32)(a1)); }\n",
+      "unit": "stage_isolated__ZN9ModelBase12ApplyOpacityEj"
+    },
+    {
       "path": "external/sm64ds-pc/src/_ZN7Minimap6RenderEv.cpp",
       "sha256": "89bc42be01fb0b0e3d87985b45ba0b3367fc59324e62a89704d8e7751f4900f8",
       "header": false,
@@ -3524,6 +3531,10 @@
       "address": 34905472,
       "symbol": "abi_func_ov102_02149d80",
       "overlay": 102
+    },
+    {
+      "address": 33647260,
+      "symbol": "abi__ZN9ModelBase12ApplyOpacityEj"
     },
     {
       "address": 34578072,

@@ -400,6 +400,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN9ModelBase12ApplyOpacityEj', 0, 'ModelBase'),
     ('_ZN7Minimap6RenderEv', 2, 'Minimap', {
         # The local Player view's one method is the overlay-2 ABI symbol.
         '    int HasNoCap();\n};': '};\nextern "C" int _ZN6Player8HasNoCapEv(Player *);',

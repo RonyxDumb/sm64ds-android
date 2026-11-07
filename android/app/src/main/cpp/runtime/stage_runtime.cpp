@@ -1564,6 +1564,13 @@ int stage_set_se_behavior(uint32_t self) {
         at<uint32_t>(self+0xd4),3,at<uint32_t>(0x0210b498u+effect*4),self+0x74,0);
     return 1;
 }
+int stage_texture_sequence_update(uint32_t self,uint32_t model) {
+    // Complete TextureSequence::Update(ModelComponents &) (0x02015988):
+    // apply the BTP (file at 0x10) at the integer current frame (0x08).
+    Ptr<void(uint32_t,uint32_t,int)>(0x02046bbcu)(model,at<uint32_t>(self+0x10),
+                                                   uint16_t(uint32_t(at<int32_t>(self+8))>>12));
+    return 0;
+}
 int stage_player_render(uint32_t self) {
     // Complete Player::Render (ov002 0x020e3a08; external/sm64ds-pc/src/
     // _ZN6Player6RenderEv.cpp) with Player.h offsets: mBodyModels 0xdc,
@@ -2496,6 +2503,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0202b710u,&stage_load_fog);
     space.bind(0x0202b534u,&stage_load_texture_transformers);
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
+    space.bind(0x02015988u,&stage_texture_sequence_update);
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0202b8a4u,&stage_render);
     space.bind(0x0202194cu,&stage_oam_render_sub);
