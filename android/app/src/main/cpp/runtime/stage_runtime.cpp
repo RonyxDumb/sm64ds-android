@@ -999,6 +999,23 @@ void stage_drop_shadow_rad_height(uint32_t actor,uint32_t shadow,uint32_t matrix
     if (at<uint32_t>(actor+0xb0)&0x10) return;
     stage_shadow_init_model(shadow,matrix,radius,depth,radius,opacity);
 }
+int stage_door_behavior(uint32_t self) {
+    // Complete Door::Behavior (ov100 0x02145550): the player-relative test,
+    // then the callback node's PMF (mCallbackNode 0x140, PMF at node+8).
+    auto &space=packed::Space::current();
+    const int res=Ptr<int(uint32_t)>(0x02145370u)(self);
+    const uint32_t node=at<uint32_t>(self+0x140);
+    if (at<uint32_t>(node+8)) {
+        packed::MemberCall member{};
+        std::memcpy(&member,space.data(node+8,8),8);
+        const auto target=space.resolve_member(self,member);
+        using Callback=void (*)(uint32_t,int);
+        Callback callback=nullptr;
+        std::memcpy(&callback,&target.code,sizeof callback);
+        callback(target.object,res);
+    }
+    return 1;
+}
 int stage_mip_set_state(uint32_t actor,uint32_t record) {
     // Complete daMip_c::SetState (ov085 0x0212bc78): mState at +0x364.
     auto &space=packed::Space::current();
@@ -2243,6 +2260,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
     if (id==100) {
         space.bind(0x0214589cu,&stage_door_factory);
+        space.bind(0x02145550u,&stage_door_behavior);
         space.bind(0x02145370u,&stage_door_relative_player);
         space.bind(0x021453d8u,&stage_door_change_state);
         space.bind(0x02141ea4u,&stage_butterfly_factory);
