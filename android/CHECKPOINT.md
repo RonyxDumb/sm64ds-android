@@ -1,3 +1,62 @@
+# Checkpoint — 2026-11-07 (session 3), Yoshi castle opening runs; Player states linked
+
+Branch: `main` (pushed). Area: **player / castle / camera / collision / audio / particles / tooling**.
+Evidence: private EU ROM (SHA-256 ce5829aa…) host runs of the production stage
+path with ASan/UBSan (`run-game-tests.sh` mirror, leak detection off). No APK
+build, no Android device in this session.
+
+What is new (original code; native views only where the projection cannot
+express the ABI, each citing its recovered source or the cartridge code):
+- **Player state machine**: 80 recovered `Player::St_*` units (Wait/Walk/Run/
+  Jump/Fall/Land/Swim/Slide/...) linked in one batch; 20 more (cannon, grab,
+  kicks, balloon, Yoshi mouth) still need struct-member projections.
+  Level entry: `St_LevelEnter_Main` (8-byte PMF step table), entrance steps
+  0/1/2/5, `FinishedAnim`, floor-pitch probe, walk-physics core
+  `func_ov002_020d3b9c` (upstream port/unmatched C body), many Player.cpp
+  blocks (020c44c4, 020c0434, 020c18b0, 020c04e0, 020caf68, 020bf224, ...).
+- **Real bug fixed**: `dActor_c::FindWithID` is a static member; its member
+  view added a receiver, so every lookup by unique ID returned null. With
+  the fix the opening KuppaScript reaches Mario/Luigi/Wario (warp pipe, door).
+- **Audio boundary**: `NNS_SndArcPlayerStartSeqArc(Ex)`, `SetVolume`,
+  `SetTrackPan` over a cartridge-visible NNSSndSeqPlayer shadow record per
+  native effect player (handle words point at it, as in the SDK); SND3D
+  handle update `func_020485f0/func_02048d80`; `Sound::PlayBank0/3`.
+- **Models/structors** read from cartridge code where the sources only
+  declare them: Model/ModelAnim::Virtual10, TextureSequence D0/D1,
+  dExtFrameCtrl_c/dExtAnmModel_c/Model/dExtModel_c D2, dActor_c D2,
+  CutsceneObject D1, daDemo_c::anmModel_c D0, `__cxa_vec_cleanup`.
+- **Collision**: dBgPi::CopyTo/operator=, dBgCh_SphCrr::SetFloorResult,
+  dBgW_KcMbg::GetNormal. **Particles**: SysTracker::Contents registry
+  (FindData/Create/Link/Unlink, Entry Initialise/Reset), simpleCallback_c
+  SpawnParticles/OnUpdate, running dust. `__aeabi_idiv`, `cstd::abs`.
+- HUD factory `dMeter_c_classInit` (only reached on a save that already saw
+  the opening; HUD::InitResources is the next unit there).
+
+Tooling (speeds every next session):
+- `android/tools/frontier_batch.py <addr|symbol> [--apply]`: plans the batch
+  for a missing handle -- free units, member units, Player.cpp members and
+  free blocks, ldr-ip tail-call veneers -- and appends them.
+- Member views: reference parameters, Player self calls (IsState/ChangeState/
+  FinishedAnim/...), Sound statics on mCamSpacePos, scalar dActor_c base
+  members of actor classes, opaque State records, C units naming `this`.
+- Castle probe env: `SM64DS_STAGE_CHARACTER=3` (Yoshi), `SM64DS_STAGE_SKIP_INTRO=1`
+  (SaveData+8 bit 7, the ROM's own "opening seen" flag), `SM64DS_STAGE_INPUT=
+  "first-last:keys:x:y,..."`, `SM64DS_STAGE_TRACE_PLAYER=N`, `SM64DS_STAGE_LIST_ACTORS=1`.
+
+Measured (Yoshi slot, no input): the opening runs past frame 1884 -- warp
+pipe, Mario/Luigi/Wario spawned by the script (IDs 84-86) and walking to
+their marks, all four Player actors in `St_Wait`, Yoshi (param1 3) on the
+castle roof (y = 13303872). Rendered PPM frames show the pipe and the grounds.
+Full castle ROM test rc=0 and no-ROM suite rc=0 (assertions that pinned the
+old FindWithID-failed first frame now check invariants).
+
+NOT verified: Yoshi under player control (the opening is still running at
+the frontier; input is ignored while the KuppaScript holds the players),
+walking/jumping from input, camera following, door entry, APK build, device.
+Frontier: see the latest entry of the auto loop below.
+
+---
+
 # Checkpoint — 2026-11-07 (later), castle intro renders; Player::Behavior reached
 
 Branch `ccr-f1be4bbe-fzzi8q`. Area: **graphics / castle / player / audio**.

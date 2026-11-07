@@ -432,6 +432,37 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020e28d4', 2),
+    ('func_ov002_020e25f0', 2),
+    ('func_ov002_020e2ad0', 2),
+    ('func_ov002_020e2b6c', 2),
+    ('func_ov002_020e2be4', 2),
+    ('func_ov002_020bd3a0', 2),
+    ('ReadUnalignedUshort', 0),
+    ('func_ov002_020f035c', 2),
+    ('func_ov002_020d4748', 2),
+    ('func_ov002_020d4c30', 2, {
+        # Sound::PlayBank0's reference parameter is the ARM pointer word.
+        'struct Sound {\n    static void PlayBank0(unsigned int id, const Vector3 &v);\n};':
+            'extern "C" void _ZN5Sound9PlayBank0EjRK7Vector3(unsigned int id, const Vector3 *v);',
+        'Sound::PlayBank0(0xb3, self->p74);': '_ZN5Sound9PlayBank0EjRK7Vector3(0xb3, &self->p74);',
+        'Sound::PlayBank0(self->p66c + 0x70, self->p74);': '_ZN5Sound9PlayBank0EjRK7Vector3(self->p66c + 0x70, &self->p74);',
+        'Sound::PlayBank0(0xa4, self->p74);': '_ZN5Sound9PlayBank0EjRK7Vector3(0xa4, &self->p74);',
+        # The namespace-local declarations only pin mwccarm's call shape.
+        '    struct System {\n        static void NewSimple(unsigned int id, Fix12i a, Fix12i b, Fix12i c);\n    };\n': '',
+        'Particle::_ZN8Particle6System9NewSimple': '_ZN8Particle6System9NewSimple',
+        'namespace Particle {\n': '', '\n}\n\nstruct Obj {': '\nstruct Obj {'}),
+    ('func_0201251c', 0),
+    ('func_02048a18', 0),
+    ('func_02048af4', 0),
+    ('func_0203da4c', 0),
+    ('func_ov085_0212e59c', 85),
+    ('func_02011ee4', 0, {
+        # K&R declarations: NNS_SndHeapLoadState(heap, level) and the group
+        # loader (this, heap), as func_02011f7c declares them.
+        'extern int func_020510a4();': 'extern int func_020510a4(int, int);',
+        'extern int func_020134d8();': 'extern int func_020134d8(void *, int);'}),
+    ('func_02011f7c', 0),
     ('func_ov002_020bd4e0', 2),
     ('func_0203db0c', 0),
     ('func_ov002_020d413c', 2),
@@ -823,6 +854,14 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020bf2d8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c04ac', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf224', 2, 'external/sm64ds-pc/src/actors/Player.cpp', {
+        # Entry18 (Player.cpp file scope): 0x18-byte controller records whose
+        # s16 val leads each record.
+        'extern struct Entry18 data_0209f4a0[];': 'extern short data_0209f4a0[];',
+        'data_0209f4a0[data_020a0e40].val': 'data_0209f4a0[data_020a0e40 * 12]'}),
+    ('func_ov002_020bf5e0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c18b0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c04e0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c0434', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),

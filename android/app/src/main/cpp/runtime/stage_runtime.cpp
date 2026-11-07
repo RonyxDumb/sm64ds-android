@@ -1178,6 +1178,15 @@ uint32_t stage_minimap_factory() {
     at<uint32_t>(map)=0x0210c1c0u;
     return map;
 }
+uint32_t stage_meter_factory() {
+    // Complete dMeter_c_classInit (ov002 0x020fe154, the HUD actor 334):
+    // operator new(0x7c), fBase_c C2, the dBase_c vtable, then 0x0210c2c8.
+    const uint32_t meter=packed::Space::current().allocate(0x7c);
+    native_fbase_construct(meter);
+    at<uint32_t>(meter)=0x0208e4b8u;
+    at<uint32_t>(meter)=0x0210c2c8u;
+    return meter;
+}
 int16_t stage_read_unaligned_short(uint32_t p) {
     return int16_t(at<uint8_t>(p)|(at<uint8_t>(p+1)<<8));
 }
@@ -2794,6 +2803,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     space.bind(0x020c7e84u,&stage_player_is_entering_level);
     space.bind(0x020b36a0u,&stage_block_l_has_angle_x);
     space.bind(0x020fb8bcu,&stage_minimap_factory);
+    space.bind(0x020fe154u,&stage_meter_factory);
     space.bind(0x020f8808u,&stage_demo_factory);
     space.bind(0x020f7d74u,&stage_demo_dispatch_command);
     space.bind(0x020bd664u,&stage_player_dispatch_command);
@@ -2978,6 +2988,20 @@ uint32_t stage_particle_create(uint32_t self,uint32_t definition,uint32_t positi
     }
     return 0;
 }
+void stage_simple_callback_spawn(uint32_t self,uint32_t system) {
+    // dPa_c::level_c::simpleCallback_c::SpawnParticles (0x02022640, recovered
+    // unit): System::callbackFlags (+0x1c) |= 2, callbackValue (+0x3a) =
+    // value (+4), then func_02049d60(data_0209ee74->mManager, &system).
+    at<uint32_t>(system+0x1c)|=2;
+    at<uint16_t>(system+0x3a)=at<uint16_t>(self+4);
+    Ptr<void(uint32_t,uint32_t)>(0x02049d60u)(at<uint32_t>(at<uint32_t>(0x0209ee74u)+4),system);
+}
+int stage_simple_callback_update(uint32_t self,uint32_t system,int) {
+    // dPa_c::level_c::simpleCallback_c::OnUpdate (0x02022630): value (+4) =
+    // System::callbackValue (+0x3a).
+    at<uint16_t>(self+4)=at<uint16_t>(system+0x3a);
+    return 1;
+}
 uint32_t stage_actor_d2(uint32_t self) {
     // dActor_c D2 (0x020112c8): leave the actor list (stage_actor_destruct).
     stage_actor_destruct(self);
@@ -3019,6 +3043,8 @@ void bind_stage_model_runtime(packed::Space &space) {
     space.bind(0x02016ca8u,&stage_model_d2);
     space.bind(0x020170b8u,&stage_ext_model_d2);
     space.bind(0x020112c8u,&stage_actor_d2);
+    space.bind(0x02022640u,&stage_simple_callback_spawn);
+    space.bind(0x02022630u,&stage_simple_callback_update);
     space.bind(0x02021b58u,&stage_particle_find_data);
     space.bind(0x02021cd4u,&stage_particle_entry_reset);
     space.bind(0x02021a48u,&stage_particle_link);

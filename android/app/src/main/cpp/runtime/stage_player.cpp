@@ -259,6 +259,44 @@ int player_floor_pitch(uint32_t self,int angle) {
     Ptr<uint32_t(uint32_t)>{0x02037534u}(rg); // dBgCh_Gnd D1
     return r;
 }
+// func_ov002_020c19d0 (external/sm64ds-pc/src/actors/Player.cpp): a
+// horizontal dBgCh_Lin (0x78 bytes, SurfaceInfo at +0x14) of length arg1
+// along mAngleY at height arg2 above the player; 1 when it hits a wall
+// (a surface whose normal has no y component).
+int player_wall_ahead(uint32_t self,int arg1,int arg2) {
+    auto &space=packed::Space::current();
+    const unsigned k=unsigned(at<uint16_t>(self+0x8e))>>4;
+    const int cs=at<int16_t>(0x02082214u+k*4),sn=at<int16_t>(0x02082214u+k*4+2);
+    const int32_t y=int32_t(uint32_t(at<int32_t>(self+0x60))+(uint32_t(arg2)<<12));
+    int32_t v1[3]={at<int32_t>(self+0x5c),y,at<int32_t>(self+0x64)};
+    int32_t v2[3]={int32_t(uint32_t(arg1*cs)+uint32_t(at<int32_t>(self+0x5c))),y,
+                   int32_t(uint32_t(arg1*sn)+uint32_t(at<int32_t>(self+0x64)))};
+    int32_t normal[3]={};
+    alignas(8) uint8_t buffer[0x78];
+    const uint32_t line=space.address(buffer);
+    Ptr<uint32_t(uint32_t)>{0x020377b0u}(line); // dBgCh_Lin C1
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>{0x02037670u}(line,space.address(v1),space.address(v2),self);
+    int result=0;
+    if (Ptr<int(uint32_t)>{0x02038638u}(line)) {
+        Ptr<void(uint32_t,uint32_t)>{0x02037dccu}(line+0x14,space.address(normal)); // CopyNormalTo
+        result=normal[1]==0;
+    }
+    Ptr<uint32_t(uint32_t)>{0x02037764u}(line); // dBgCh_Lin D1
+    return result;
+}
+// func_ov002_020eeca8 (external/sm64ds-pc/src/func_ov002_020eeca8.cpp):
+// when the dBgCh_Actr touched a moving mesh, notify its owner through the
+// ROM vtable slot +0x70 with arg.
+int player_notify_mesh_owner(uint32_t self,int arg) {
+    if (!Ptr<int(uint32_t)>{0x02035638u}(self)) return 0;
+    const uint32_t res=Ptr<uint32_t(uint32_t)>{0x0203567cu}(self);
+    const uint32_t id=Ptr<uint32_t(uint32_t)>{0x02037f4cu}(res); // dBgPi::GetClsnID
+    if (id==0xffffffffu) return 0;
+    const uint32_t actor=Ptr<uint32_t(uint32_t)>{0x02010f3cu}(id); // dActor_c::FindWithID
+    if (!actor) return 0;
+    Ptr<void(uint32_t,int)>{at<uint32_t>(at<uint32_t>(actor)+0x70)}(actor,arg);
+    return 1;
+}
 // Player::St_LevelEnter_Main (0x020c6f3c, src/game/player/Player.cpp):
 // six mStateStep values make the player dCamera_c::mFocusActor (+0x118),
 // then (this->*data_ov002_0211075c[mStateWork])() runs the entrance step
@@ -569,6 +607,8 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x020c7350u,&player_level_enter_pose);
     space.bind(0x020bed98u,&player_finished_anim);
     space.bind(0x020c179cu,&player_floor_pitch);
+    space.bind(0x020c19d0u,&player_wall_ahead);
+    space.bind(0x020eeca8u,&player_notify_mesh_owner);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);

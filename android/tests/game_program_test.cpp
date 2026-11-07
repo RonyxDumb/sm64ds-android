@@ -902,7 +902,7 @@ int main(int argc, char **argv) {
                 // SM64DS_STAGE_SKIP_INTRO: slot A has already seen the opening
                 // (SaveData flags2 bit 7, which func_ov085_0212d5dc sets at the
                 // end of the original flight), so the castle starts controllable.
-                if (std::getenv("SM64DS_STAGE_SKIP_INTRO") && slot==0)
+                if (const char *skip=std::getenv("SM64DS_STAGE_SKIP_INTRO"); skip && *skip && slot==0)
                     expected[slot][8] |= 0x80;
                 assert(store.save_file(slot, expected[slot]));
             }
