@@ -1005,7 +1005,8 @@ int stage_jugem_render(uint32_t self) {
     // mModelAnim1's components (0x118) and draw it (vtable slot 5).
     if (at<uint8_t>(self+0x2dc)==1) return 1;
     Ptr<int(uint32_t,uint32_t)>(0x02015988u)(self+0x1d8,self+0x118);
-    stage_virtual<int>(self+0x110,5,0u);
+    const uint32_t model=self+0x110;
+    Ptr<int(uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(model)+5*4))(model,0);
     return 1;
 }
 int stage_door_behavior(uint32_t self) {
