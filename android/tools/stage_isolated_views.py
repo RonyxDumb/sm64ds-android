@@ -180,6 +180,8 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
                              ('u16', 'unsigned short'), ('s16', 'short'),
                              ('u8', 'unsigned char'), ('s8', 'signed char')):
                 line = re.sub(r'\b'+old+r'\b', new, line)
+            # Record pointers in hoisted declarations are opaque ARM words.
+            line = re.sub(r'\b(?:struct\s+)?(?:Vector3|Vector3_16|Matrix4x3|Player|dActor_c)\s*\*', 'void *', line)
             return line
         raw = re.sub(r'^[ \t]+extern [^;\n]*;', builtin, raw, flags=re.M)
     else:

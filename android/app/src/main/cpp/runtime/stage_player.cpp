@@ -5,6 +5,7 @@
 #include "stage_runtime.h"
 #include "packed_ptr.h"
 #include <cstring>
+#include <stdexcept>
 
 namespace sm64ds {
 namespace {
@@ -68,9 +69,18 @@ void player_check_warp(uint32_t self) {
     at<uint8_t>(self+kTeleportId)=w;
     at<uint16_t>(self+kStateFlags)|=8;
 }
+// func_ov002_020bfa74: conveyor/current surfaces (CLPS type 0xb). The
+// entry test is the recovered body; the push path (PathPtr nodes, flow
+// particle, velocity bend) is not ported yet and fails explicitly.
+int player_conveyor_push(uint32_t self) {
+    if (at<int32_t>(self+0x664)!=0xb) return 0;
+    if (at<int32_t>(self+0x670)==0xff) return 0;
+    throw std::runtime_error("Unported original path: func_ov002_020bfa74 conveyor push.");
+}
 }
 
 void bind_stage_player_runtime(packed::Space &space) {
+    space.bind(0x020bfa74u,&player_conveyor_push);
     space.bind(0x020bdef0u,&player_end_vanish);
     space.bind(0x020bdd9cu,&player_end_metal);
     space.bind(0x020bdd2cu,&player_end_mega);
