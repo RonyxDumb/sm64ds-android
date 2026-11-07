@@ -182,8 +182,8 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
                 line = re.sub(r'\b'+old+r'\b', new, line)
             # Record pointers in hoisted declarations are opaque ARM words.
             builtins = {'void', 'char', 'int', 'short', 'long', 'unsigned', 'signed', 'float', 'double', 'extern', 'const'}
-            line = re.sub(r'\b(?:struct\s+)?(\w+)\s*\*',
-                          lambda m: m[0] if m[1] in builtins else 'void *', line)
+            line = re.sub(r'\b(?:struct\s+)?(\w+)(\s+const)?\s*\*',
+                          lambda m: m[0] if m[1] in builtins else 'const void *' if m[2] else 'void *', line)
             return line
         raw = re.sub(r'^[ \t]+extern [^;\n]*;', builtin, raw, flags=re.M)
     else:
@@ -437,6 +437,7 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c133c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c14b8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c16ec', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020ce798', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
