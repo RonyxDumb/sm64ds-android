@@ -1303,6 +1303,7 @@ void stage_player_dispatch_command(uint32_t self,uint32_t p,int a2,int a3) {
     stage_static_pmf_dispatch(0x0210e158u,0x02110794u,sources,self,p,a2,a3);
 }
 extern "C" void abi___sinit_02075154();
+extern "C" void abi_SetBg3Offset(unsigned int,unsigned int); // minigame manifest unit
 int32_t stage_cstd_sqrt(uint64_t value) {
     // cstd::sqrt(u64) through the same native hardware-root model
     // (native_math.cpp) the title and collision code already use.
@@ -2389,6 +2390,7 @@ void bind_stage_audio_runtime(packed::Space &space) {
 void bind_stage_runtime(packed::Space &space) {
     // The same recovered __sinit_02075154 unit the minigame manifest links.
     space.bind(0x02075154u,&abi___sinit_02075154);
+    space.bind(0x02018fa8u,&abi_SetBg3Offset);
     space.bind(0x02015730u,&stage_clipper_ctor);
     space.bind(0x02015560u,&stage_clipper_transform_and_clip);
     space.bind(0x0202e3d4u,&scene_before_behavior);

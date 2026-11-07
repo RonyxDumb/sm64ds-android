@@ -1406,9 +1406,16 @@ int main(int argc, char **argv) {
             for(uint32_t node=stageWord(0x020aa3f0u);node;node=stageWord(node)) {
                 assert(destructors.insert(node).second && destructors.size()<2000);
                 const uint32_t callback=stageWord(node+4);
+                // Overlay initializers plus the 23 ARM9 .ctors records
+                // (faders, wipe, clipper, BG probes, Vector3 statics).
                 assert(callback==0x02017ab4u || callback==0x02017984u ||
                        callback==0x02017b34u || callback==0x0201791cu ||
-                       callback==0x020072c0u || callback==0x0201973cu);
+                       callback==0x020072c0u || callback==0x0201973cu ||
+                       callback==0x020175c4u || callback==0x02017814u ||
+                       callback==0x0201aaecu || callback==0x02015720u ||
+                       callback==0x0202fc08u || callback==0x02037ee8u ||
+                       callback==0x02037764u || callback==0x0203b98cu ||
+                       callback==0x0203d47cu || callback==0x02011508u);
                 assert(stageSpace->contains(stageWord(node+8),1));
             }
             assert(destructors.size()>100);

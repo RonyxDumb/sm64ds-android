@@ -249,6 +249,8 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_0201b388', 0),
+    ('_ZN7Message7AddCharEc', 0, {'void Message::AddChar(': 'extern "C" void _ZN7Message7AddCharEc(', 'struct Message {\n    static void AddChar(char c);\n};\n': ''}),
     ('func_0201b7cc', 0),
     ('func_0201f138', 0),
     ('func_ov100_021452e4', 100),
