@@ -172,12 +172,25 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
         # Blocks re-declare their own symbol inside the body; the definition
         # already declares it.
         raw = re.sub(r'^\s*extern [^;\n]*\b'+symbol+r'\s*\([^;]*;\n', '', raw, flags=re.M)
+        # In-body externs are hoisted ahead of the stage typedefs: spell
+        # their scalar types with the builtin names.
+        def builtin(match):
+            line = match[0]
+            for old, new in (('u32', 'unsigned int'), ('s32', 'int'), ('Fix12i', 'int'),
+                             ('u16', 'unsigned short'), ('s16', 'short'),
+                             ('u8', 'unsigned char'), ('s8', 'signed char')):
+                line = re.sub(r'\b'+old+r'\b', new, line)
+            return line
+        raw = re.sub(r'^[ \t]+extern [^;\n]*;', builtin, raw, flags=re.M)
     else:
         for ext in ('.c', '.cpp'):
             rel = 'external/sm64ds-pc/src/'+symbol+ext
             if (ROOT/rel).exists():
                 break
         raw = (ROOT/rel).read_text()
+    # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
+    # but take the address of its cartridge instances.
+    raw = raw.replace('\nstruct State;\n', '\nstruct State { unsigned char pmf[0x18]; };\n')
     shared = shared_declarations(raw)
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
@@ -265,6 +278,9 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020e4bb8', 2),
+    ('func_ov002_020db704', 2),
+    ('func_ov002_020d8158', 2),
     ('GetAngleToCamera', 0),
     ('func_ov002_020e032c', 2),
     ('func_ov002_020d80d0', 2),
@@ -391,6 +407,10 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c2db8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf13c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf36c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020ce8bc', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020ca940', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
 ]
 
