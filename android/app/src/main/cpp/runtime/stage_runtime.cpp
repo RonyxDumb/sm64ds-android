@@ -1100,6 +1100,12 @@ int stage_mbg_detect_ground(uint32_t self,uint32_t ray) {
     }
     return hit;
 }
+void stage_cc_set_pos_relative(uint32_t self,uint32_t offset) {
+    // Complete dCcAcPos_c::SetPosRelativeToActor(const Vector3 &): owner at
+    // 0x30 (dCcAc_c.h), pos at 0x34; actor mPos 0x5c, mAngleY 0x8e.
+    const uint32_t actor=at<uint32_t>(self+0x30);
+    Ptr<void(uint32_t,uint32_t,int,uint32_t)>(0x0203b6a4u)(self+0x34,actor+0x5c,at<int16_t>(actor+0x8e),offset);
+}
 int stage_mbg_detect_line(uint32_t self,uint32_t ray) {
     // Complete dBgW_KcMbg::DetectClsn(dBgCh_Lin &) (recovered isolated
     // unit): the line in mesh-local space through the shared query at
@@ -2769,6 +2775,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02037670u,&stage_line_set);
     space.bind(0x02039cb8u,&stage_mbg_detect_ground);
     space.bind(0x02039970u,&stage_mbg_detect_line);
+    space.bind(0x0201489cu,&stage_cc_set_pos_relative);
     space.bind(0x020375d0u,&stage_line_position);
     space.bind(0x02037eecu,&stage_surface_construct);
     space.bind(0x02037ee8u,&stage_surface_destroy);
