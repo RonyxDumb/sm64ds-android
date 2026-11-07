@@ -157,13 +157,27 @@ PLAYER_STATES = [
 VECTOR_TYPES = 'struct Vector3 { s32 x,y,z; }; struct Vector3_16 { s16 x,y,z; };\n'
 
 
-def free_unit(projected, symbol, overlay, replacements=None):
+def symbol_block(rel, symbol):
+    """One `// @symbol` block of a multi-function recovered source file."""
+    text = (ROOT/rel).read_text()
+    start = text.index('// @symbol '+symbol+'\n')
+    end = text.find('\n// @symbol ', start+1)
+    return text[start:] if end < 0 else text[start:end+1]
+
+
+def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     """A recovered isolated free function: raw offsets, mangled callees."""
-    for ext in ('.c', '.cpp'):
-        rel = 'external/sm64ds-pc/src/'+symbol+ext
-        if (ROOT/rel).exists():
-            break
-    raw = (ROOT/rel).read_text()
+    if rel:
+        raw = symbol_block(rel, symbol)
+        # Blocks re-declare their own symbol inside the body; the definition
+        # already declares it.
+        raw = re.sub(r'^\s*extern [^;\n]*\b'+symbol+r'\s*\([^;]*;\n', '', raw, flags=re.M)
+    else:
+        for ext in ('.c', '.cpp'):
+            rel = 'external/sm64ds-pc/src/'+symbol+ext
+            if (ROOT/rel).exists():
+                break
+        raw = (ROOT/rel).read_text()
     shared = shared_declarations(raw)
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
@@ -251,6 +265,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('GetAngleToCamera', 0),
     ('func_ov002_020e032c', 2),
     ('func_ov002_020d80d0', 2),
     ('DecIfAbove0_Short', 0),
@@ -370,6 +385,13 @@ FREE_UNITS = [
     ('func_02011a5c', 0),
     ('func_02008b4c', 0),
     ('func_ov002_020f7bb8', 2),
+]
+
+
+# Free functions taken from one `// @symbol` block of a multi-function
+# recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
+BLOCK_UNITS = [
+    ('func_ov002_020ca940', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
 ]
 
 
@@ -511,6 +533,8 @@ def slices(projected):
         if not overlay:
             for binding in bindings: binding.pop('overlay', None)
         yield row, bindings
+    for symbol, overlay, rel, *rest in BLOCK_UNITS:
+        yield free_unit(projected, symbol, overlay, rest[0] if rest else None, rel=rel)
     for symbol, overlay, cls, rel, name, *rest in SOURCE_MEMBERS:
         row, bindings = isolated(projected, symbol, overlay, cls, player_fields() if cls == 'Player' else class_fields(cls),
                                  rel=rel, name=name, replacements=rest[0] if rest else None)
