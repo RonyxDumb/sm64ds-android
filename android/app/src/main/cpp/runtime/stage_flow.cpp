@@ -98,6 +98,40 @@ StageFlow::StageFlow(Cartridge &cartridge) : cartridge_(cartridge) {
     data_0209f298 = 0;
 }
 
+namespace {
+// The original stage code reaches the current fader through the DS word
+// data_0209f5bc and dFader_c's vtable (slots 2..9). GameProgram owns the
+// real fader natively, so the DS-side object is a proxy whose vtable holds
+// native code handles forwarding to that same fader.
+[[noreturn]] void fader_proxy_destroy(uint32_t) {
+    throw std::runtime_error("The native fader proxy is never destroyed by stage code.");
+}
+void fader_proxy_advance(uint32_t) { data_0209f5bc->AdvanceFade(); }
+int fader_proxy_backward(uint32_t,uint32_t frames) { return data_0209f5bc->SetBackwardTime(frames); }
+int fader_proxy_forward(uint32_t,uint32_t frames) { return data_0209f5bc->SetForwardTime(frames); }
+int fader_proxy_at_start(uint32_t) { return data_0209f5bc->IsAtStart(); }
+int fader_proxy_at_end(uint32_t) { return data_0209f5bc->IsAtEnd(); }
+int fader_proxy_between(uint32_t) { return data_0209f5bc->IsBetweenStartAndEnd(); }
+void fader_proxy_to_end(uint32_t) { data_0209f5bc->SetToEnd(); }
+void fader_proxy_to_start(uint32_t) { data_0209f5bc->SetToStart(); }
+void install_fader_proxy(packed::Space &space) {
+    const uint32_t proxy=space.allocate(4+10*4);
+    const uintptr_t slots[10]={
+        reinterpret_cast<uintptr_t>(&fader_proxy_destroy),reinterpret_cast<uintptr_t>(&fader_proxy_destroy),
+        reinterpret_cast<uintptr_t>(&fader_proxy_advance),reinterpret_cast<uintptr_t>(&fader_proxy_backward),
+        reinterpret_cast<uintptr_t>(&fader_proxy_forward),reinterpret_cast<uintptr_t>(&fader_proxy_at_start),
+        reinterpret_cast<uintptr_t>(&fader_proxy_at_end),reinterpret_cast<uintptr_t>(&fader_proxy_between),
+        reinterpret_cast<uintptr_t>(&fader_proxy_to_end),reinterpret_cast<uintptr_t>(&fader_proxy_to_start)};
+    const uint32_t vtable=proxy+4;
+    std::memcpy(space.data(proxy,4),&vtable,4);
+    for (unsigned i=0;i<10;++i) {
+        const uint32_t handle=space.code_address(slots[i]);
+        std::memcpy(space.data(vtable+i*4,4),&handle,4);
+    }
+    std::memcpy(space.data(0x0209f5bcu,4),&proxy,4);
+}
+}
+
 const ControllerInput &StageFlow::controller(unsigned slot) const {
     if (slot >= 4)
         throw std::out_of_range("Invalid stage controller slot.");
@@ -194,6 +228,7 @@ void StageFlow::prepare_scene() {
             call();
         }
         if (count != 23) throw std::runtime_error("Unexpected ARM9 .ctors table length.");
+        install_fader_proxy(*nextSpace);
     }
     // Boot already loaded and parsed the actual language BMG bank. Its
     // immutable native-owned bytes remain live through gameplay; retain each

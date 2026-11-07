@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCALARS = {'u8': 'u8', 's8': 's8', 'u16': 'u16', 's16': 's16', 'u32': 'u32',
            's32': 's32', 'int': 's32', 'Fix12i': 's32', 'short': 's16',
            'char': 's8', 'bool': 'u8', 'unsigned': 'u32', 's64': 's64', 'u64': 'u64'}
-FIELD = re.compile(r'^\s+(?:unsigned\s+)?([A-Za-z_]\w*)\s*(\*?)\s*(\w+)\s*;\s*/\*\s*0x([0-9a-f]+)')
+FIELD = re.compile(r'^\s+(?:unsigned\s+)?([A-Za-z_]\w*)\s*(\*?)\s*(\w+)\s*(\[\w+\])?\s*;\s*/\*\s*0x([0-9a-f]+)')
 
 
 def header_fields(rel, minimum=0):
@@ -21,8 +21,13 @@ def header_fields(rel, minimum=0):
         match = FIELD.match(line)
         if not match:
             continue
-        typ, pointer, name, offset = match[1], match[2], match[3], int(match[4], 16)
+        typ, pointer, name, array, offset = match[1], match[2], match[3], match[4], int(match[5], 16)
         if offset < minimum:
+            continue
+        if array:
+            # Arrays decay to a typed element pointer at the member offset.
+            if pointer or typ in SCALARS:
+                fields[name] = ('[]'+('u32' if pointer else SCALARS[typ]), offset)
             continue
         if pointer:
             fields[name] = ('u32', offset)
@@ -101,11 +106,15 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
     body = re.sub(r'\bthis\b', 'object', body)
     for name, (typ, offset) in fields.items():
+        if typ.startswith('[]'):
+            body = re.sub(r'(?<![.>\w])'+name+r'\b',
+                          '(('+typ[2:]+' *)((char *)object+0x%x))' % offset, body)
+            continue
         body = re.sub(r'(?<![.>\w])'+name+r'\b',
                       '(*('+typ+' *)((char *)object+0x%x))' % offset, body)
     # Older isolated units spell unnamed members unk_<offset>; take the type
     # the reviewed header records at that same offset.
-    by_offset = {offset: typ for typ, offset in fields.values()}
+    by_offset = {offset: typ for typ, offset in fields.values() if not typ.startswith('[]')}
     def unknown(match):
         offset = int(match[1], 16)
         if offset not in by_offset:
@@ -113,6 +122,13 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         return '(*('+by_offset[offset]+' *)((char *)object+0x%x))' % offset
     body = re.sub(r'(?<![.>\w])unk_([0-9a-f]+)\b', unknown, body)
     declarations = '\n'.join(declarations)
+    # Local record types the imported declarations already name must precede
+    # them: hoist top-level struct definitions of the unit into the prelude.
+    local_types = ''
+    for match in list(re.finditer(r'^struct (\w+) \{\n.*?^\};\n', body, re.M | re.S)):
+        if re.search(r'\b'+match[1]+r'\b', declarations):
+            local_types += match[0]
+            body = body.replace(match[0], '', 1)
     # Opaque class handles: the bodies only pass these pointers through.
     opaque = sorted(set(re.findall(r'\b(\w+_c|Player)\b', declarations+body)) - {symbol})
     extra = ''.join('struct %s;\n' % name for name in opaque
@@ -122,7 +138,7 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
         if re.search(r'\b'+name+r'\b', declarations+body) and not re.search(
                 r'struct\s+'+name+r'\s*\{|\}\s*'+name+r'\s*;', extra+body+declarations):
             extra += vector
-    row, bindings = projected(rel, body, declarations, [symbol], extra=extra, auto_globals=False)
+    row, bindings = projected(rel, body, declarations, [symbol], extra=extra+local_types, auto_globals=False)
     row['unit'] = 'stage_isolated_'+symbol
     for binding in bindings:
         binding['overlay'] = overlay
@@ -229,6 +245,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_0203dafc', 0),
     ('IsAreaShowing', 0),
     ('func_0204302c', 0),
     ('func_0203b27c', 0),
@@ -322,6 +339,9 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN7Minimap8BehaviorEv', 2, 'Minimap', {
+        # `self` aliases the receiver; spell its members directly.
+        '    Minimap *self = this;\n': '', 'self->': '', '(int)self': '(int)this'}),
     # References are pointers in the ARM ABI.
     ('_ZN6Camera8BehaviorEv', 0, 'Camera', {
         'int &dst': 'int *dst', 'short &dst': 'short *dst',

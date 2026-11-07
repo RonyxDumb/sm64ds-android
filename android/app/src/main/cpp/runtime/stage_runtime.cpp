@@ -1786,6 +1786,18 @@ uint32_t stage_tree_destruct(uint32_t self) {
     stage_actor_destruct(self);
     return self;
 }
+int stage_approach_linear2_short(uint32_t ref,int16_t target,int16_t step) {
+    // Complete ApproachLinear2(short &, short, short) (src/ApproachAngle.cpp).
+    auto &x=at<int16_t>(ref);
+    if (step!=0) {
+        if (x>target) step=int16_t(-step);
+        x=int16_t(x+step);
+        if (step*(x-target)>=0) { x=target; return 1; }
+    } else if (x==target) {
+        return 1;
+    }
+    return 0;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -2298,6 +2310,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02029a68u,&stage_wipe_release);
     space.bind(0x02010ad8u,&stage_closest_player);
     space.bind(0x0203ae58u,&stage_approach_linear_int);
+    space.bind(0x0203aed8u,&stage_approach_linear2_short);
     space.bind(0x0203adecu,&stage_approach_linear_short);
     space.bind(0x0200e768u,&stage_read_unaligned_short);
     space.bind(0x0200e748u,&stage_read_unaligned_int);
