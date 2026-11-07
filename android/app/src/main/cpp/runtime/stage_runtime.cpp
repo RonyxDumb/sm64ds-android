@@ -1759,6 +1759,13 @@ int stage_snd_stop_seq(uint32_t handle,int frames) {
     GameProgram::active().native_audio({SoundOp::Stop,stage_sound_player(handle),0,frames});
     return 1;
 }
+void stage_sound_play_2d(uint32_t archive,uint32_t entry) {
+    // Sound::Play2D (0x02012840, src/engine/sound/Sound.cpp):
+    // Player_PlaySoundEffect on the shared effect player (data_0209b4a4),
+    // served by the native SDAT sequencer's effect player 1.
+    static uint32_t token=0x300000;
+    GameProgram::active().native_audio({SoundOp::Effect,1,++token,int(archive),int(entry)});
+}
 void stage_snd_move_volume(uint32_t handle,int volume,int frames) {
     // NNS_SndPlayerMoveVolume (0x0204f8cc).
     GameProgram::active().native_audio({SoundOp::Fade,stage_sound_player(handle),0,volume,frames});
@@ -2383,6 +2390,7 @@ void bind_stage_audio_runtime(packed::Space &space) {
     space.bind(0x02051fb4u,&stage_snd_start_seq);
     space.bind(0x0204fa2cu,&stage_snd_stop_seq);
     space.bind(0x0204f8ccu,&stage_snd_move_volume);
+    space.bind(0x02012840u,&stage_sound_play_2d);
     space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
     space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
 }

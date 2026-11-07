@@ -1406,6 +1406,8 @@ int main(int argc, char **argv) {
             for(uint32_t node=stageWord(0x020aa3f0u);node;node=stageWord(node)) {
                 assert(destructors.insert(node).second && destructors.size()<2000);
                 const uint32_t callback=stageWord(node+4);
+                if (std::getenv("SM64DS_TRACE_STAGE"))
+                    std::fprintf(stderr,"destructor record %08x callback %08x\n",node,callback);
                 // Overlay initializers plus the 23 ARM9 .ctors records
                 // (faders, wipe, clipper, BG probes, Vector3 statics).
                 assert(callback==0x02017ab4u || callback==0x02017984u ||
