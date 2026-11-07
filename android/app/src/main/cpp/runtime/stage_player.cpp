@@ -117,6 +117,45 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// dBgW_KcMbg::DetectClsn(dBgCh_SphCrr &) (0x02039a3c; recovered isolated
+// unit, laid out against the cartridge code): a local dBgCh_SphCrr (0x110)
+// in the mesh's frame (invScale 0x164), the KCL sphere test, results scaled
+// back (scale 0x50) and merged into the caller's sphere.
+int mbg_detect_sphere(uint32_t self,uint32_t sphere) {
+    auto &space=packed::Space::current();
+    const auto fmul=[](int32_t a,int32_t b) { return int32_t((int64_t(a)*b+0x800)>>12); };
+    alignas(8) uint8_t buffer[0x110];
+    int32_t pos[3],d[12];
+    const uint32_t loc=space.address(buffer);
+    Ptr<uint32_t(uint32_t)>{0x02037d18u}(loc); // dBgCh_SphCrr C1
+    Ptr<void(uint32_t,uint32_t,uint32_t)>{0x02039e48u}(self,sphere+0x3c,space.address(pos));
+    const int32_t inv=at<int32_t>(self+0x164);
+    Ptr<void(uint32_t,uint32_t,int32_t,uint32_t)>{0x02037c00u}(loc,space.address(pos),fmul(at<int32_t>(sphere+0x48),inv),0);
+    at<int32_t>(loc+0xec)=fmul(at<int32_t>(sphere+0xec),inv);
+    Ptr<void(uint32_t,uint32_t)>{0x02037940u}(loc,at<uint8_t>(sphere+0x70));
+    Ptr<void(uint32_t,uint32_t)>{0x02035394u}(loc,sphere);
+    int r=Ptr<int(uint32_t,uint32_t)>{0x01ffb830u}(self,loc);
+    if (r) {
+        Ptr<void(uint32_t,uint32_t,uint32_t)>{0x02037a04u}(loc,space.address(d),space.address(d+3));
+        const int32_t scale=at<int32_t>(self+0x50);
+        for (int i=0;i<6;++i) d[6+i]=fmul(d[i],scale);
+        Ptr<void(uint32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t)>{0x02037a6cu}(sphere,d[6],d[7],d[8],d[9],d[10],d[11]);
+        Ptr<void(uint32_t,uint32_t)>{0x02038018u}(sphere+0x10,loc+0x10); // dBgPi::operator=
+        auto &flags=at<uint8_t>(sphere+0x70);
+        flags|=1;
+        const uint8_t locFlags=at<uint8_t>(loc+0x70);
+        if (locFlags&4) {
+            if (flags&4) r&=~1;
+            else Ptr<void(uint32_t,uint32_t)>{0x020378e4u}(sphere,loc+0x74); // SetFloorResult
+            flags|=4;
+            if (at<int32_t>(sphere+0x100)<at<int32_t>(loc+0x100)) Ptr<void(uint32_t,uint32_t)>{0x0203794cu}(sphere,loc+0xfc);
+        }
+        if (locFlags&8) { Ptr<void(uint32_t,uint32_t)>{0x02037888u}(sphere,loc+0x9c); flags|=8; }
+        if (locFlags&0x10) { Ptr<void(uint32_t,uint32_t)>{0x0203782cu}(sphere,loc+0xc4); flags|=0x10; }
+    }
+    Ptr<uint32_t(uint32_t)>{0x02037cb0u}(loc); // dBgCh_SphCrr D1
+    return r;
+}
 // dBgCh_SphCrr::DetectClsn (0x02038b78; recovered isolated unit): the
 // sphere against the stage mesh (data_020a0c80[0]) and every registered
 // moving mesh in range; vtable slot 8 returns the hit mask.
@@ -220,6 +259,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203859cu,&bg_line_first_mesh);
     space.bind(0x02037c00u,&sphcrr_set_obj_and_sphere);
     space.bind(0x02038b78u,&sphcrr_detect);
+    space.bind(0x02039a3cu,&mbg_detect_sphere);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
