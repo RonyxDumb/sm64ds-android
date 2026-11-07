@@ -2040,6 +2040,17 @@ uint32_t stage_sound_play_char_voice(uint32_t character,uint32_t voice,uint32_t 
     stage_sound_play_3d(1,voice+at<uint8_t>(0x02075250u+character),position);
     return 0;
 }
+uint32_t stage_sound_play_long(uint32_t handle,uint32_t a,uint32_t b,uint32_t pos,int e) {
+    // Complete Sound::PlayLong (src/engine/sound/Sound.cpp): keep or start a
+    // looping effect in the slot table at data_0209b53c.
+    if (Ptr<int(uint32_t,uint32_t,uint32_t)>(0x02048a1cu)(pos,a,b)==0) return 0;
+    if (const uint32_t slot=Ptr<uint32_t(uint32_t,uint32_t)>(0x02011934u)(0x0209b53cu,handle)) {
+        at<uint8_t>(slot+6)=1;
+        Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x020123c8u)(slot+8,a,b,pos);
+        return at<uint32_t>(slot);
+    }
+    return Ptr<uint32_t(uint32_t,uint32_t,uint32_t,uint32_t,int)>(0x0201179cu)(0x0209b53cu,a,b,pos,e);
+}
 void stage_snd_move_volume(uint32_t handle,int volume,int frames) {
     // NNS_SndPlayerMoveVolume (0x0204f8cc).
     GameProgram::active().native_audio({SoundOp::Fade,stage_sound_player(handle),0,volume,frames});
@@ -2673,6 +2684,7 @@ void bind_stage_audio_runtime(packed::Space &space) {
     space.bind(0x0204f8ccu,&stage_snd_move_volume);
     space.bind(0x02012840u,&stage_sound_play_2d);
     space.bind(0x02012590u,&stage_sound_play_3d);
+    space.bind(0x02012328u,&stage_sound_play_long);
     space.bind(0x02012154u,&stage_sound_play_char_voice);
     space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
     space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
