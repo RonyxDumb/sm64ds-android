@@ -125,7 +125,9 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     # Local record types the imported declarations already name must precede
     # them: hoist top-level struct definitions of the unit into the prelude.
     local_types = ''
-    for match in list(re.finditer(r'^struct (\w+) \{\n.*?^\};\n', body, re.M | re.S)):
+    records = list(re.finditer(r'^struct (\w+) \{\n.*?^\};\n', body, re.M | re.S))
+    records += list(re.finditer(r'^typedef struct\s*\w*\s*\{.*?^\}\s*(\w+);\n', body, re.M | re.S))
+    for match in records:
         if re.search(r'\b'+match[1]+r'\b', declarations):
             local_types += match[0]
             body = body.replace(match[0], '', 1)
@@ -355,6 +357,20 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN14CutsceneObject8BehaviorEv', 2, 'CutsceneObject', {
+        # The local dBgCh_Gnd probe through its ABI: C1, SetObjAndPos (the
+        # reference is a pointer), DetectClsn, clsnY at 0x44, then D1.
+        # (Replacements run twice; the anchor is consumed on the first pass.)
+        'extern Mtx43 data_020a0e68;\n': 'extern "C" {\n'
+            'void *_ZN9dBgCh_GndC1Ev(void *);\nvoid *_ZN9dBgCh_GndD1Ev(void *);\n'
+            'void _ZN9dBgCh_Gnd12SetObjAndPosERK7Vector3P8dActor_c(void *, Vector3 *, void *);\n'
+            'int _ZN9dBgCh_Gnd10DetectClsnEv(void *);\n}\nextern Mtx43  data_020a0e68;\n',
+        '      dBgCh_Gnd ground;\n      ground.SetObjAndPos(v, 0);\n      if (ground.DetectClsn() != 0)\n      {\n        s32 h = ground.clsnY;':
+            '      unsigned char ground[0x50];\n      _ZN9dBgCh_GndC1Ev(ground);\n'
+            '      _ZN9dBgCh_Gnd12SetObjAndPosERK7Vector3P8dActor_c(ground, &v, 0);\n'
+            '      if (_ZN9dBgCh_Gnd10DetectClsnEv(ground) != 0)\n      {\n        s32 h = *(s32 *)(ground + 0x44);',
+        '          *((u8 *) ((((int) c) + 0x103))) |= 1;\n        }\n      }\n':
+            '          *((u8 *) ((((int) c) + 0x103))) |= 1;\n        }\n      }\n      _ZN9dBgCh_GndD1Ev(ground);\n'}),
     ('_ZN7Minimap8BehaviorEv', 2, 'Minimap', {
         # `self` aliases the receiver; spell its members directly.
         '    Minimap *self = this;\n': '', 'self->': '', '(int)self': '(int)this'}),
