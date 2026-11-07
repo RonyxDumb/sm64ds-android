@@ -108,6 +108,17 @@ int player_no_control_step(uint32_t self,uint32_t kind) {
 void surface_copy_normal(uint32_t self,uint32_t out) {
     for (unsigned lane=0;lane<3;++lane) at<int32_t>(out+lane*4)=at<int32_t>(self+8+lane*4);
 }
+// dBgPi::dBgPi (0x0203816c, from the cartridge code): the dBgPc C2 body on
+// the member at +4 (0xfc0, 0xff, then three zero words), the vptr, then
+// func_020380c0 (its reset).
+uint32_t bgpi_construct(uint32_t self) {
+    const uint32_t pc=self+4;
+    at<uint32_t>(pc)=0xfc0; at<uint32_t>(pc+4)=0xff;
+    at<uint32_t>(pc+0x10)=0; at<uint32_t>(pc+0xc)=0; at<uint32_t>(pc+8)=0;
+    at<uint32_t>(self)=0x02099368u;
+    Ptr<void(uint32_t)>{0x020380c0u}(self);
+    return self;
+}
 // dBgPi::~dBgPi (0x02038144): its vptr, then the dBgPc member at +4
 // (dBgPc D2 is an empty 4-byte body, so nothing else happens).
 uint32_t bgpi_destruct(uint32_t self) {
@@ -142,6 +153,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203566cu,&bgch_actr_floor_result);
     space.bind(0x0203562cu,&bgch_actr_on_wall);
     space.bind(0x02038144u,&bgpi_destruct);
+    space.bind(0x0203816cu,&bgpi_construct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
