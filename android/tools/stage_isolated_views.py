@@ -432,6 +432,8 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020bd4e0', 2),
+    ('func_0203db0c', 0),
     ('func_ov002_020d413c', 2),
     ('func_02010844', 0),
     ('func_ov002_020d4d88', 2),
