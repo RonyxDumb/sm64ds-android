@@ -1653,6 +1653,28 @@ uint32_t stage_mip_destruct(uint32_t actor) {
     stage_actor_destruct(actor);
     return actor;
 }
+int stage_tree_cleanup(uint32_t self) {
+    // Complete daTree_c::CleanupResources (src/game/actors/d_a_tree.cpp):
+    // for each loaded variant (transformsBuf set) free its shared TreeNode
+    // list at data_ov002_02110a48; each node owns a dCcPos_c at +0x0c.
+    for (unsigned i=0;i<5;++i) {
+        if (!at<uint32_t>(self+0xd4+i*0x50+0x4c)) continue;
+        const uint32_t slot=0x02110a48u+i*4;
+        while (const uint32_t node=at<uint32_t>(slot)) {
+            at<uint32_t>(slot)=at<uint32_t>(node+0x48);
+            Ptr<void(uint32_t)>(0x02014fa4u)(node+0x0c); // ~dCcPos_c -> dCc_c::Unlink
+            packed::Space::current().release(node);      // Memory::operator_delete2
+        }
+    }
+    return 1;
+}
+uint32_t stage_tree_destruct(uint32_t self) {
+    // daTree_c::~daTree_c (0x020ebf8c): five dExtSimpleModel_c members in
+    // reverse order, then dActor_c.
+    for (int i=4;i>=0;--i) stage_model_destruct(self+0xd4+i*0x50);
+    stage_actor_destruct(self);
+    return self;
+}
 uint32_t stage_mip_factory() {
     // Complete daMip_c_classInit (ov085 0x0212cc2c): operator new(0x474),
     // dEnemyBase_c C2, then dCcAc_c, dBgCh_Actr, ModelAnim and two
@@ -2049,6 +2071,8 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
+        space.bind(0x020ec020u,&stage_tree_cleanup);
+        space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
         space.bind(0x020bea94u,&stage_player_is_collecting_cap);
     }
