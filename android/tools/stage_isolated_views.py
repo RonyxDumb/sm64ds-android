@@ -264,6 +264,13 @@ FREE_UNITS = [
         # A static member: its reference parameter is the ARM pointer word.
         'void Minimap::FixTHIPaintingRoomPos(Vector3 & v_)\n{\n    struct Vector3* v = &v_;':
             'extern "C" void _ZN7Minimap21FixTHIPaintingRoomPosER7Vector3(struct Vector3 *v)\n{'}),
+    ('_ZN7Minimap15GetPosOnMinimapER7Vector3S1_5Fix12IiEsS1_', 2),
+    ('_ZN7Minimap20GetPosFromMinimapPosER7Vector3S1_5Fix12IiEsS1_', 2, {
+        # References are ARM pointer words.
+        'struct Vec3& a, struct Vec3& b, int c, short d, struct Vec3& e':
+            'struct Vec3* a, struct Vec3* b, int c, short d, struct Vec3* e',
+        'Vec3_Sub(&local, &a, &data_ov002_0211116c);': 'Vec3_Sub(&local, a, &data_ov002_0211116c);',
+        'Vec3_RotateYAndTranslate(&e, &b, d, &local);': 'Vec3_RotateYAndTranslate(e, b, d, &local);'}),
     ('func_ov001_020aaa54', 1, {
         # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
         # only reads and writes these fields.
