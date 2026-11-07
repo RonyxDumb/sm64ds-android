@@ -373,6 +373,11 @@ FREE_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('func_ov002_020c4188', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c4188()', {
+        # dCamera_c::mFlags (0x154) and daSoundObj_c mSoundID/mCounterLimit (0xd4/0xde).
+        '((dCamera_c *)p)->mFlags': '(*(u32 *)((char *)p + 0x154))',
+        'daSoundObj_c *obj = (daSoundObj_c *)mAttachedActor;': 'char *obj = (char *)mAttachedActor;',
+        'obj->mSoundID': '(*(s32 *)(obj + 0xd4))', 'obj->mCounterLimit': '(*(u16 *)(obj + 0xde))'}),
 ]
 
 
