@@ -117,6 +117,53 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// func_ov002_020cef84 (raw-offset recovered block): while rising, probe a
+// vertical line above the player's head; a hang-able ceiling (surface class
+// 3) enters state 0x0211001c, otherwise a close ceiling stops the ascent and
+// notifies the owning actor (vtable +0x70). Local dBgCh_Lin is 0x78 bytes
+// with its dBgPi at +0x10 (SurfaceInfo at +0x14).
+int player_ceiling_probe(uint32_t self) {
+    auto &space=packed::Space::current();
+    const auto isState=[self](uint32_t st) { return Ptr<int(uint32_t,uint32_t)>{kIsState}(self,st)!=0; };
+    if (!Ptr<int(uint32_t)>{0x020c2f3cu}(self) || at<uint8_t>(self+0x706) || at<int32_t>(self+0xa8)<=0 ||
+        isState(0x0211001cu) || at<uint8_t>(self+0x703) || at<uint8_t>(self+0x708) || at<uint8_t>(self+0x709))
+        return 0;
+    int32_t v1[3]={at<int32_t>(self+0x5c),at<int32_t>(self+0x60)+0x64000,at<int32_t>(self+0x64)};
+    int32_t v2[3]={at<int32_t>(self+0x5c),at<int32_t>(self+0x60)+0x96000,at<int32_t>(self+0x64)};
+    int32_t lim=0x8c000,cp[3];
+    if (at<int32_t>(self+0x358) && at<uint32_t>(self+8)==2) { v2[1]+=0x32000; lim=0xb4000; }
+    alignas(8) uint8_t buffer[0x78];
+    const uint32_t line=space.address(buffer);
+    Ptr<uint32_t(uint32_t)>{0x020377b0u}(line);
+    Ptr<void(uint32_t)>{0x02035414u}(line);
+    if (at<uint8_t>(self+0x6fb)) Ptr<void(uint32_t)>{0x02035428u}(line);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>{0x02037670u}(line,space.address(v1),space.address(v2),self);
+    int result=0;
+    if (Ptr<int(uint32_t)>{0x02038638u}(line)) {
+        Ptr<void(uint32_t,uint32_t)>{0x020375d0u}(space.address(cp),line);
+        if (Ptr<int(uint32_t)>{0x02037e38u}(line+0x14)==3 && !at<int32_t>(self+0x358)) {
+            Ptr<int(uint32_t,uint32_t)>{0x020e30a0u}(self,0x0211001cu);
+            at<int32_t>(self+0x60)=cp[1]-0x78000;
+            result=1;
+        } else {
+            int32_t d=cp[1]-at<int32_t>(self+0x60);
+            if (d<0) d=-d;
+            if (d<lim) {
+                at<int32_t>(self+0xa8)=-0x1000;
+                at<uint8_t>(self+0x6e9)|=8;
+                alignas(8) uint8_t tmpBuffer[0x28];
+                const uint32_t tmp=space.address(tmpBuffer);
+                std::memcpy(space.data(tmp+4,0x24),space.data(line+0x14,0x24),0x24);
+                at<uint32_t>(tmp)=0x02099368u; // _ZTV5dBgPi
+                const uint32_t actor=Ptr<uint32_t(uint32_t)>{0x02010f3cu}(Ptr<uint32_t(uint32_t)>{0x02037f4cu}(tmp));
+                if (actor) Ptr<void(uint32_t,uint32_t)>{at<uint32_t>(at<uint32_t>(actor)+0x70)}(actor,self);
+                Ptr<uint32_t(uint32_t)>{0x02038144u}(tmp);
+            }
+        }
+    }
+    Ptr<uint32_t(uint32_t)>{0x02037764u}(line);
+    return result;
+}
 // func_020371fc (recovered isolated unit + cartridge layout): snap a
 // grounded actor down onto a nearby floor below a steep wall contact. The
 // local dBgCh_Gnd (0x50) has its dBgPi base at +0x10 and clsnY at +0x44.
@@ -318,6 +365,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203ac1cu,&m3dgsph_vptr);
     space.bind(0x02037d18u,&sphcrr_construct);
     space.bind(0x020371fcu,&bgch_actr_snap_to_floor);
+    space.bind(0x020cef84u,&player_ceiling_probe);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
