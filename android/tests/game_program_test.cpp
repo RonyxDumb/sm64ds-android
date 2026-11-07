@@ -1162,6 +1162,22 @@ int main(int argc, char **argv) {
                 } catch (const std::runtime_error &e) {
                     std::cerr << "Stage frame " << frame << " dependency: " << e.what() << '\n';
                 }
+                if (const char *dump=std::getenv("SM64DS_STAGE_DUMP")) {
+                    // Host evidence only: the last composed DS screens as PPM.
+                    for (int screen=0;screen<2;++screen) {
+                        const auto &fb=screen ? game.sub_screen() : game.main_screen();
+                        std::string path=std::string(dump)+(screen?"_sub.ppm":"_main.ppm");
+                        if (FILE *out=std::fopen(path.c_str(),"wb")) {
+                            std::fprintf(out,"P6\n256 192\n255\n");
+                            const uint32_t *px=&fb.px[0][0];
+                            for (int i=0;i<256*192;++i) {
+                                const unsigned char rgb[3]={uint8_t(px[i]>>16),uint8_t(px[i]>>8),uint8_t(px[i])};
+                                std::fwrite(rgb,1,3,out);
+                            }
+                            std::fclose(out);
+                        }
+                    }
+                }
                 std::exit(0);
             }
             try {

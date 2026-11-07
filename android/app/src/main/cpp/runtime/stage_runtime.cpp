@@ -1543,6 +1543,12 @@ void stage_particle_tracker_update(uint32_t self) {
 // Render and CleanupResources, src/game/actors/d_a_ch_scene.cpp).
 int stage_return_one(uint32_t) { return 1; }
 void stage_no_op(uint32_t) {}
+// Render bodies that only draw their dExtSimpleModel_c member, e.g.
+// daObjMc_Metalnet_c::Render: mModel.Render(0) (Model::Render 0x02016b78).
+template<uint32_t Model> int stage_render_member_model(uint32_t self) {
+    Ptr<void(uint32_t,uint32_t)>(0x02016b78u)(self+Model,0);
+    return 1;
+}
 int stage_set_se_behavior(uint32_t self) {
     // Complete daSetSE_c::Behavior (src/game/actors/d_a_set_se.cpp):
     // param1 (0x08) picks the ambient effect; mSoundHandle 0xd4, mCamSpacePos 0x74.
@@ -2331,6 +2337,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==9) {
         space.bind(0x02111d8cu,&stage_castle_water_factory);
         space.bind(0x02112048u,&stage_metalnet_factory);
+        space.bind(0x02111ea8u,&stage_render_member_model<0xd4>); // daObjMc_Metalnet_c::Render
         space.bind(0x021121f0u,&stage_castle_flag_factory);
         space.bind(0x02111a30u,&stage_bird_factory);
     }

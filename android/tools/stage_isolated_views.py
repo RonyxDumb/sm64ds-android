@@ -187,7 +187,9 @@ FREE_UNITS = [
     ('Vec3_Add', 0),
     ('Vec3_MulScalar', 0),
     ('Math_Function_0203b0fc', 0),
-    ('func_ov002_020f7538', 2),
+    ('func_ov002_020f7538', 2, {
+        # The registered destructor is the original Vector3 D1 code handle.
+        '(int)_ZN7Vector3D1Ev': '(int)0x020072c0', 'extern void _ZN7Vector3D1Ev(void);\n': ''}),
     ('func_ov002_020f7410', 2, {
         # `register` is not C++17; the 16-bit angle store keeps its ROM value.
         'register int *p': 'int *p',
