@@ -999,6 +999,15 @@ void stage_drop_shadow_rad_height(uint32_t actor,uint32_t shadow,uint32_t matrix
     if (at<uint32_t>(actor+0xb0)&0x10) return;
     stage_shadow_init_model(shadow,matrix,radius,depth,radius,opacity);
 }
+int stage_jugem_render(uint32_t self) {
+    // Complete LakituBro::Render (ov085 0x0212ead0): unless hidden
+    // (unk_2dc == 1), advance the texture sequence (0x1d8) over
+    // mModelAnim1's components (0x118) and draw it (vtable slot 5).
+    if (at<uint8_t>(self+0x2dc)==1) return 1;
+    Ptr<int(uint32_t,uint32_t)>(0x02015988u)(self+0x1d8,self+0x118);
+    stage_virtual<int>(self+0x110,5,0u);
+    return 1;
+}
 int stage_door_behavior(uint32_t self) {
     // Complete Door::Behavior (ov100 0x02145550): the player-relative test,
     // then the callback node's PMF (mCallbackNode 0x140, PMF at node+8).
@@ -2256,6 +2265,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x0212bc78u,&stage_mip_set_state);
         space.bind(0x0212ed54u,&stage_jugem_factory);
         space.bind(0x0212e728u,&stage_jugem_set_state);
+        space.bind(0x0212ead0u,&stage_jugem_render);
     }
     if (id==98) space.bind(0x0213b43cu,&stage_cannon_factory);
     if (id==100) {
