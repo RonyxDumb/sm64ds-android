@@ -282,6 +282,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_02037318', 0),
     ('func_02035798', 0),
     ('func_ov002_020d91b8', 2),
     ('func_0201179c', 0),
@@ -462,6 +463,7 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('_ZN6Player7IsInAirEv', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::IsInAir()'),
     ('func_ov002_020c4188', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c4188()', {
         # dCamera_c::mFlags (0x154) and daSoundObj_c mSoundID/mCounterLimit (0xd4/0xde).
         '((dCamera_c *)p)->mFlags': '(*(u32 *)((char *)p + 0x154))',
