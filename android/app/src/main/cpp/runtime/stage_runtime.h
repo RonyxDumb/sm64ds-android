@@ -10,6 +10,8 @@ void bind_stage_arm9_math(packed::Space &space);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id);
 // Overlay-2 Player members (stage_player.cpp).
 void bind_stage_player_runtime(packed::Space &space);
+// Original register-preserving tail-call veneers (stage_tail_veneers.inc).
+void bind_stage_tail_veneers(packed::Space &space);
 uint32_t native_stage_factory();
 uint32_t native_fbase_construct(uint32_t actor);
 uint32_t native_particle_tracker_construct(uint32_t tracker);

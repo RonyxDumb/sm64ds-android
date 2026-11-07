@@ -125,6 +125,17 @@ int bgch_actr_floor_result(uint32_t self) { return Ptr<int(uint32_t)>{0x02037938
 int bgch_actr_on_wall(uint32_t self) { return at<uint8_t>(self+0x90)&8; }
 }
 
+namespace {
+template<uint32_t Target> uint32_t tail_veneer(uint32_t r0,uint32_t r1,uint32_t r2,uint32_t r3) {
+    return Ptr<uint32_t(uint32_t,uint32_t,uint32_t,uint32_t)>{Target}(r0,r1,r2,r3);
+}
+}
+void bind_stage_tail_veneers(packed::Space &space) {
+#define VENEER(veneer, target) space.bind(veneer,&tail_veneer<target>);
+#include "stage_tail_veneers.inc"
+#undef VENEER
+}
+
 void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x02035820u,&bgch_actr_stop_water);
     space.bind(0x0203565cu,&bgch_actr_wall_result);

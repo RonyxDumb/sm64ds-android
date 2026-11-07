@@ -2679,6 +2679,7 @@ void bind_stage_audio_runtime(packed::Space &space) {
 }
 
 void bind_stage_runtime(packed::Space &space) {
+    bind_stage_tail_veneers(space);
     // The same recovered __sinit_02075154 unit the minigame manifest links.
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02018fa8u,&abi_SetBg3Offset);
