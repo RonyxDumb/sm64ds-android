@@ -260,6 +260,10 @@ FREE_UNITS = [
             'struct Clipper { u8 pad_000[4]; ClipperPlane mPlaneNormals[4]; s32 mAspectRatio;\n'
             '    s32 mNearZ; s32 mFarZ; u16 mFovAngle; };\n'
             'extern "C" int _ZN7Clipper13Func_020150E8ER7Vector35Fix12IiEPh('}),
+    ('_ZN7Minimap21FixTHIPaintingRoomPosER7Vector3', 2, {
+        # A static member: its reference parameter is the ARM pointer word.
+        'void Minimap::FixTHIPaintingRoomPos(Vector3 & v_)\n{\n    struct Vector3* v = &v_;':
+            'extern "C" void _ZN7Minimap21FixTHIPaintingRoomPosER7Vector3(struct Vector3 *v)\n{'}),
     ('func_ov001_020aaa54', 1, {
         # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
         # only reads and writes these fields.
