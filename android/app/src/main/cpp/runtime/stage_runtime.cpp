@@ -1510,6 +1510,10 @@ void stage_particle_tracker_update(uint32_t self) {
     Ptr<void(uint32_t)>(0x02021becu)(self+8);
     Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
 }
+// Recovered empty bodies that return 1 / do nothing (e.g. daChScene_c::
+// Render and CleanupResources, src/game/actors/d_a_ch_scene.cpp).
+int stage_return_one(uint32_t) { return 1; }
+void stage_no_op(uint32_t) {}
 int stage_set_se_behavior(uint32_t self) {
     // Complete daSetSE_c::Behavior (src/game/actors/d_a_set_se.cpp):
     // param1 (0x08) picks the ambient effect; mSoundHandle 0xd4, mCamSpacePos 0x74.
@@ -2271,6 +2275,9 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
+        space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
+        space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
+        space.bind(0x020b0a78u,&stage_no_op);      // daChScene_c::OnPendingDestroy
         space.bind(0x020f19fcu,&stage_set_se_behavior);
         space.bind(0x020ec020u,&stage_tree_cleanup);
         space.bind(0x020ec0a4u,&stage_tree_render);
