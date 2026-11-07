@@ -1600,6 +1600,121 @@ uint32_t stage_player_head_model_id(uint32_t self,uint32_t id,uint32_t drawn) {
     else if (r0) r1=4;
     return (r1+id)&0xff;
 }
+int stage_player_behavior(uint32_t self) {
+    // Complete Player::Behavior (ov002 0x020e4d24; external/sm64ds-pc/
+    // src/_ZN6Player8BehaviorEv.cpp) with Player.h/dActor_c.h/dCc_c.h
+    // offsets. The state machine runs through the current State's mMain PMF.
+    auto &space=packed::Space::current();
+    const auto u8f=[self](uint32_t o) -> uint8_t & { return at<uint8_t>(self+o); };
+    const auto call=[self](uint32_t a) { return Ptr<int(uint32_t)>(a)(self); };
+    const auto isState=[self](uint32_t st) { return Ptr<int(uint32_t,uint32_t)>(0x020e308cu)(self,st)!=0; };
+    const auto changeState=[self](uint32_t st) { Ptr<int(uint32_t,uint32_t)>(0x020e30a0u)(self,st); };
+    const auto dec=[self](uint32_t o) { return Ptr<uint16_t(uint32_t)>(0x0203adbcu)(self+o); };
+    const auto voice=[self](uint32_t id) {
+        Ptr<uint32_t(uint32_t,uint32_t,uint32_t)>(0x02012154u)(at<uint8_t>(self+0x6d9),id,self+0x74);
+    };
+    if (at<uint8_t>(0x0209f2d8u)==1 && at<uint8_t>(0x0209fc5cu+u8f(0x6d8))==0) return 1;
+    int32_t scale=0x1000,r2=0x1000;
+    if (u8f(0x703)) { scale=0x3000; r2=0x4200; }
+    else if (u8f(0x6fd)) { scale=0x1400; r2=0x2000; }
+    const int32_t temp=int32_t((int64_t(r2)*0x32000+0x800)>>12);
+    Ptr<void(uint32_t,int32_t)>(0x0203568cu)(self+0x380,temp);
+    Ptr<void(uint32_t,int32_t)>(0x02035684u)(self+0x380,temp);
+    const uint32_t cc=self+0x2d4;
+    at<int32_t>(cc+4)=scale*0x28;
+    int32_t mul=0x96;
+    for (uint32_t st : {0x021104e4u,0x02110514u,0x02110334u,0x0211031cu,0x021105bcu,0x0211061cu,0x02110634u})
+        if (isState(st)) { mul=0x5a; break; }
+    at<int32_t>(cc+8)=mul*scale;
+    if (u8f(0x703)) at<uint32_t>(cc+0x18)|=0x10; else at<uint32_t>(cc+0x18)&=~0x10u;
+    if (at<int32_t>(0x0209fc68u)==0 && at<int32_t>(0x0209fc48u)==0) at<uint8_t>(0x020a0e40u)=0;
+    else at<uint8_t>(0x020a0e40u)=u8f(0x6d8);
+    if (call(0x020c4188u)) return 1;
+    for (uint32_t o : {0x6a4u,0x6a6u,0x6a0u,0x6a8u,0x6aau,0x6acu,0x6b0u,0x6b2u,0x6b4u,0x6b6u,0x6b8u,0x6bau,0x6bcu,0x6c4u,0x6c8u})
+        dec(o);
+    if (at<uint16_t>(self+0x6c8)==1) at<uint8_t>(0x0209f284u)=0;
+    if (u8f(0x6f6)==0) {
+        dec(0x6c0);
+        if (dec(0x6be)==0) call(0x020d80d0u);
+        if (dec(0x6ae)==0) { call(0x020e032cu); call(0x020bdef0u); call(0x020bdd9cu); }
+        if (dec(0x6c2)==0) call(0x020bdd2cu);
+        if (at<uint16_t>(self+0x6a2)!=uint16_t(int16_t(at<int8_t>(self+0xcc)))) {
+            at<uint16_t>(self+0x6a2)=uint16_t(int16_t(at<int8_t>(self+0xcc)));
+            at<uint16_t>(self+0x6c6)=0;
+        }
+        if (dec(0x6c6)==0 && at<int32_t>(self+0x360)!=0) call(0x020d6790u);
+    }
+    {
+        auto &desired=at<int16_t>(self+0x6d2);
+        at<int16_t>(self+0x6d4)=desired;
+        desired=at<int16_t>(0x0209f4a6u+at<uint8_t>(0x020a0e40u)*0x18);
+        const int playerArg=at<int32_t>(0x0209fc68u)==0 ? 0 : u8f(0x6d8);
+        desired=int16_t(desired+Ptr<int16_t(int)>(0x0203db24u)(playerArg));
+    }
+    call(0x020c2e78u); call(0x020ca940u); call(0x020d8158u);
+    if (const uint32_t state=at<uint32_t>(self+0x370); state && at<uint32_t>(state+8)) {
+        packed::MemberCall member{};
+        std::memcpy(&member,space.data(state+8,8),8);
+        const auto target=space.resolve_member(self,member);
+        using Callback=int (*)(uint32_t);
+        Callback callback=nullptr;
+        std::memcpy(&callback,&target.code,sizeof callback);
+        callback(target.object);
+    }
+    if (at<uint16_t>(self+0x6ce)&0x80) {
+        changeState(0x021104fcu);
+        at<uint16_t>(self+0x6ce)&=uint16_t(~0x80u);
+    }
+    int fallFlag=u8f(0x709)!=0;
+    if (at<int8_t>(0x0209f2f8u)==0x1f && isState(0x021104b4u)) fallFlag=0;
+    if (u8f(0x6de)==0 || fallFlag || at<int32_t>(self+0x684)<at<int32_t>(self+0x60))
+        at<int32_t>(self+0x684)=at<int32_t>(self+0x60);
+    if (u8f(0x6de)==0 && u8f(0x70d)) { voice(0x2e); u8f(0x70d)=0; }
+    if (u8f(0x6de) && !u8f(0x70d) && !isState(0x02110454u) &&
+        at<int32_t>(self+0x684)-at<int32_t>(self+0x60)>0x47e000) {
+        u8f(0x70d)=1; voice(0x1d);
+    }
+    if (u8f(0x707) && !u8f(0x706) && !u8f(0x6de))
+        Ptr<void(uint32_t,int32_t)>(0x020ce8bcu)(self,at<int32_t>(self+0x98));
+    at<int16_t>(self+0x6d6)=at<int16_t>(self+0x8e);
+    at<uint16_t>(self+0x6ce)&=uint16_t(~0x440u);
+    if (u8f(0x6ff)) Ptr<void(uint32_t)>(0x02015c3cu)(self+0x174+0x50); // mModelAnim4.Advance()
+    for (unsigned lane=0;lane<3;++lane) at<int32_t>(self+0x548+lane*4)=at<int32_t>(self+0x5c+lane*4);
+    Ptr<void(uint32_t,uint32_t)>(0x020bf36cu)(self,self+0x2d4);
+    call(0x020bf13cu);
+    int32_t offset[3]={0,0,0};
+    if (isState(0x0210ffecu)) offset[1]=u8f(0x703) ? -0x12c000 : -0x64000;
+    else if (isState(0x021106f4u)) offset[1]=0x64000;
+    Ptr<void(uint32_t,Ptr<int32_t>)>(0x0201489cu)(self+0x2d4,Ptr<int32_t>(offset));
+    call(0x020c2db8u);
+    if (u8f(0x707)) at<int32_t>(self+0x66c)=3;
+    if (at<int32_t>(0x0209ee90u+0x26c)) {
+        at<int32_t>(0x0209ee90u+0x26c)=0;
+        changeState(0x021101b4u);
+        u8f(0x6e3)=0;
+        changeState(0x0210ffecu);
+    }
+    call(0x020db704u); call(0x020d869cu);
+    if (const uint16_t t=at<uint16_t>(self+0x6a0)) {
+        if (t==1) at<uint32_t>(cc+0x1c)|=0x10000000u; else at<uint32_t>(cc+0x1c)&=~0x10000000u;
+    }
+    Ptr<void(uint32_t)>(0x02015024u)(cc);
+    if (u8f(0x713)) Ptr<void(uint32_t)>(0x02014ff0u)(cc);
+    at<uint8_t>(0x020a0e40u)=at<int32_t>(0x0209fc68u)==0 ? 0 : at<uint8_t>(0x0209f250u);
+    call(0x020e4bb8u);
+    if (int32_t r=at<int32_t>(self+0x654)) {
+        const uint32_t ch=u8f(0x714);
+        const uint32_t t4=at<uint32_t>(at<uint32_t>(self+((ch<<2)+3)*4+0x154)+0x14)+0x90;
+        if (r<0) r=-r;
+        at<int32_t>(t4+0x2c)=r>>3;
+    }
+    at<uint8_t>(0x0209f254u)=0;
+    if (at<uint32_t>(self+8)==3) {
+        if (const uint32_t held=at<uint32_t>(at<uint32_t>(self+0x588)))
+            at<uint8_t>(0x0209f254u)=at<uint8_t>(held+0x428);
+    }
+    return 1;
+}
 int stage_player_render(uint32_t self) {
     // Complete Player::Render (ov002 0x020e3a08; external/sm64ds-pc/src/
     // _ZN6Player6RenderEv.cpp) with Player.h offsets: mBodyModels 0xdc,
@@ -2448,6 +2563,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
         space.bind(0x020e3a08u,&stage_player_render);
+        space.bind(0x020e4d24u,&stage_player_behavior);
         space.bind(0x020becf4u,&stage_player_head_model_id);
         space.bind(0x020bea7cu,&stage_player_cap_changing);
         space.bind(0x020d225cu,&stage_player_sleep_bubble);
