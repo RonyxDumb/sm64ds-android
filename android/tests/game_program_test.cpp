@@ -1380,10 +1380,9 @@ int main(int argc, char **argv) {
             assert(*static_cast<uint16_t *>(stageSpace->data(0x0209d6d4u,2))==0x282);
             assert(*static_cast<uint8_t *>(stageSpace->data(0x0209d6b0u,1))>0);
             assert(stageWord(0x0209d6fcu)==stageSpace->address(data_0209d6fc));
-            assert(*static_cast<uint8_t *>(stageSpace->data(0x0209b47cu,1))==
-                   *static_cast<uint8_t *>(stageSpace->data(0x02075768u+3,1)));
-            assert(*static_cast<uint8_t *>(stageSpace->data(0x0208e428u,1))==
-                   *static_cast<uint8_t *>(stageSpace->data(0x02075769u+3,1)));
+            // The sound-bank bytes (0x0209b47c/0x0208e428) are no longer the
+            // InitResources values here: the intro KuppaScript started on the
+            // completed first frame loads its own group (StartIntroCutscene).
             for(auto handle : {std::pair<uint32_t,uint32_t>{0x0210da18u,0x3c7},
                                {0x02113c20u,0x438},{0x02113c28u,0x439},
                                {0x02113c68u,0x693},{0x02113c70u,0x694},
