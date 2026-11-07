@@ -1,3 +1,40 @@
+# Checkpoint — 2026-11-07 (later), castle intro renders; Player::Behavior reached
+
+Branch `ccr-f1be4bbe-fzzi8q`. Area: **graphics / castle / player / audio**.
+Evidence: private EU ROM host runs (ASan/UBSan), PPM frame dumps inspected.
+
+- **The castle grounds render from original code.** Two blockers fixed: the
+  stage never opened a new GX frame (`ntr::gx_begin_frame` per stage tick,
+  the SwapBuffers boundary title/minigames already had), and the projection
+  was all zeros because `data_0209ee90+0x44` (perspective W scale) and the
+  default light/material registers set by the tail of `func_0201a054` were
+  missing from the fresh stage image. Frames 0..1100 show the Lakitu intro
+  flyover (castle, tower, sky/clouds, grounds).
+- The intro runs ~1340 frames without input; at frame ~1138 the player is
+  rendered (native Player::Render, TextureSequence::Update, head-model
+  selector and two predicates translated from cartridge ARM code where no
+  source was recovered), and at **frame 1343 `Player::Behavior`** starts
+  (native, from the recovered body; state machine via the State mMain PMF).
+- Audio: Sound::Play2D / Play / PlayCharVoice on the native effect player.
+  KNOWN GAP: SND3D positional attenuation is not ported.
+- Test: the castle ROM test now accepts the completed first tick (spawn
+  state 0, dying trees, intro sound group, ARM9 .ctors destructor records).
+  The full ROM test was not re-run after the last batch.
+- Probe aids in game_program_test: `SM64DS_STAGE_FRAMES`, `SM64DS_STAGE_DUMP`,
+  `SM64DS_STAGE_DUMP_EVERY`, `SM64DS_DUMP_CODE=<addr>` (raw bytes for ARM
+  translation), `SM64DS_GX_DEBUG` (gx.cpp), `SM64DS_TRACE_FAULTS`.
+- Tooling: `SOURCE_MEMBERS` projects class members straight from `src/`.
+
+Frontier: frame 1343, inside Player::Behavior — `func_ov002_020bdef0`
+(Player.cpp member; its projection still fails to compile and needs field
+replacements). Then the remaining Behavior callees and the first player
+states (wait/walk) — after that, feed stick input through
+`GameProgram::tick` in the probe to verify free movement.
+Not verified: APK/NDK build of the new units, device behavior, player
+movement (no input driven yet).
+
+---
+
 # Checkpoint — 2026-11-07, castle grounds run whole original frames (intro cutscene live)
 
 Branch `ccr-f1be4bbe-fzzi8q` (session branch; ~50 commits on top of main
