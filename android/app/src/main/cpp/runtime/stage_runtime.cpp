@@ -2553,6 +2553,7 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
+        bind_stage_player_runtime(space);
         space.bind(0x020f80acu,&stage_cutscene_object_render);
         space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
         space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
