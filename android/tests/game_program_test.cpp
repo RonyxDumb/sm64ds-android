@@ -1157,8 +1157,54 @@ int main(int argc, char **argv) {
             if (stageFrames) {
                 unsigned frame=0;
                 try {
-                    for (;frame<stageFrames;++frame) game.tick();
+                    const char *everyEnv=std::getenv("SM64DS_STAGE_DUMP_EVERY");
+                    const unsigned every=everyEnv?unsigned(std::strtoul(everyEnv,nullptr,0)):0;
+                    for (;frame<stageFrames;++frame) {
+                        game.tick();
+                        if (every && frame%every==0 && std::getenv("SM64DS_STAGE_DUMP")) {
+                            const auto &fb=game.main_screen();
+                            std::string path=std::string(std::getenv("SM64DS_STAGE_DUMP"))+"_"+std::to_string(frame)+".ppm";
+                            if (FILE *out=std::fopen(path.c_str(),"wb")) {
+                                std::fprintf(out,"P6\n256 192\n255\n");
+                                const uint32_t *px=&fb.px[0][0];
+                                for (int i=0;i<256*192;++i) {
+                                    const unsigned char rgb[3]={uint8_t(px[i]>>16),uint8_t(px[i]>>8),uint8_t(px[i])};
+                                    std::fwrite(rgb,1,3,out);
+                                }
+                                std::fclose(out);
+                            }
+                        }
+                    }
                     std::cerr << "Stage frames completed: " << frame << '\n';
+                    size_t polygons=0; (void)ntr::gx_polygons(polygons);
+                    const uint32_t dispcnt=uint32_t(ntr::io_read(0x04000000u,4));
+                    std::cerr << "Last frame polygons: " << polygons << " DISPCNT " << std::hex << dispcnt << std::dec << '\n';
+                    {
+                        auto *sp=game.stage_address_space();
+                        std::cerr << "view matrix 0x0209b3ec:";
+                        for (int i=0;i<12;++i) { int32_t v; std::memcpy(&v,sp->data(0x0209b3ecu+i*4,4),4); std::cerr << ' ' << v; }
+                        std::cerr << "\ncamera 0x0209f318 = " << std::hex;
+                        uint32_t cam; std::memcpy(&cam,sp->data(0x0209f318u,4),4);
+                        std::cerr << cam << std::dec << '\n';
+                        if (cam) for (uint32_t off : {0x80u,0x8cu,0xf8u,0x178u}) {
+                            int32_t v[3]; std::memcpy(v,sp->data(cam+off,12),12);
+                            std::cerr << " cam+" << std::hex << off << std::dec << ' ' << v[0] << ' ' << v[1] << ' ' << v[2] << '\n';
+                        }
+                    }
+                    if (const auto *tris=ntr::gx_polygons(polygons)) {
+                        float minX=1e30f,maxX=-1e30f,minY=1e30f,maxY=-1e30f,minW=1e30f,maxW=-1e30f;
+                        unsigned alphaZero=0;
+                        for (size_t i=0;i<polygons;++i) {
+                            if (((tris[i].polygon_attr>>16)&31)==0) ++alphaZero;
+                            for (const auto &v:tris[i].v) {
+                                minX=std::min(minX,v.x);maxX=std::max(maxX,v.x);
+                                minY=std::min(minY,v.y);maxY=std::max(maxY,v.y);
+                                minW=std::min(minW,v.w);maxW=std::max(maxW,v.w);
+                            }
+                        }
+                        std::cerr << "x " << minX << ".." << maxX << " y " << minY << ".." << maxY
+                                  << " w " << minW << ".." << maxW << " alpha0 " << alphaZero << '\n';
+                    }
                 } catch (const std::runtime_error &e) {
                     std::cerr << "Stage frame " << frame << " dependency: " << e.what() << '\n';
                 }

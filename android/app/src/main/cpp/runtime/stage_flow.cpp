@@ -1,4 +1,6 @@
 #include "stage_flow.h"
+#include "ntr/gx.h"
+#include "ntr/mmio.h"
 #include "stage_runtime.h"
 #include "packed_fs.h"
 #include "packed_audio.h"
@@ -229,6 +231,16 @@ void StageFlow::prepare_scene() {
         }
         if (count != 23) throw std::runtime_error("Unexpected ARM9 .ctors table length.");
         install_fader_proxy(*nextSpace);
+        // The tail of the original game init (src/unnamed/arm9/0201/
+        // func_0201a054.c) that this fresh image still lacks: the perspective
+        // W scale Camera::Render reads (data_0209ee90 + 0x44) and the default
+        // 3D light vector/colour and material registers.
+        const uint32_t scaleW=0x100;
+        std::memcpy(nextSpace->data(0x0209ee90u+0x44,4),&scaleW,4);
+        ntr::io_write(0x040004c8u,0x296a5800u,4);
+        ntr::io_write(0x040004ccu,0x7fffu,4);
+        ntr::io_write(0x040004c0u,0x7fffu,4);
+        ntr::io_write(0x040004c4u,0u,4);
     }
     // Boot already loaded and parsed the actual language BMG bank. Its
     // immutable native-owned bytes remain live through gameplay; retain each
@@ -324,6 +336,9 @@ void StageFlow::update_scene() {
         if (result != 1) { sync_state(false); return; }
         sceneInitialized_ = true;
     }
+    // A new geometry frame (the DS G3_SwapBuffers boundary), as the title
+    // and minigame owners do before their original scheduler runs.
+    ntr::gx_begin_frame();
     // The scene shares the original five-phase scheduler with every actor.
     // Calling only its own Behavior/Render leaves Player and objects frozen.
     packed::Ptr<void()>(0x02044120u)();

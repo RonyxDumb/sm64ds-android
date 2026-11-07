@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstdio>
 // DS geometry engine: command decode, matrix stacks, vertex assembly, raster.
 //
 // Command encoding and parameter counts from GBATEK. Fixed-point inputs are 4.12
@@ -642,6 +644,13 @@ void gx_reset() {
 }
 
 void gx_begin_frame() {
+    if (std::getenv("SM64DS_GX_DEBUG") && !g.tris.empty()) {
+        std::fprintf(stderr,"gx frame: %zu tris proj",g.tris.size());
+        for (float f:g.proj.m) std::fprintf(stderr," %.3g",f);
+        std::fprintf(stderr," | pos");
+        for (float f:g.pos.m) std::fprintf(stderr," %.3g",f);
+        std::fprintf(stderr," | vp %d %d %d %d\n",g.vp_x,g.vp_y,g.vp_w,g.vp_h);
+    }
     g.tris.clear(); g.strip.clear(); g.prim=-1;
     g.tex_rgba=nullptr;
     g_vram_tex_cache.clear(); g_vram_snapshot=false;
