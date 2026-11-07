@@ -108,6 +108,15 @@ int player_no_control_step(uint32_t self,uint32_t kind) {
 void surface_copy_normal(uint32_t self,uint32_t out) {
     for (unsigned lane=0;lane<3;++lane) at<int32_t>(out+lane*4)=at<int32_t>(self+8+lane*4);
 }
+// dBgCh_SphCrr::SetObjAndSphere(const Vector3 &, Fix12i, dActor_c *)
+// (0x02037c00; recovered unit, checked against the cartridge code): the
+// dM3dGSph base at 0x38, owner, reset, and 0x1000 at 0x108.
+void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_t actor) {
+    Ptr<void(uint32_t,uint32_t,int32_t)>{0x0203abd4u}(self+0x38,pos,radius);
+    Ptr<void(uint32_t,uint32_t)>{0x020353b0u}(self,actor);
+    Ptr<void(uint32_t)>{0x02037b5cu}(self);
+    at<int32_t>(self+0x108)=0x1000;
+}
 // func_0203859c (recovered isolated unit): test the line query against the
 // first registered collision mesh (data_020a0c80[0]) through its vtable slot 7.
 int bg_line_first_mesh(uint32_t obj) {
@@ -166,6 +175,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x02038144u,&bgpi_destruct);
     space.bind(0x0203816cu,&bgpi_construct);
     space.bind(0x0203859cu,&bg_line_first_mesh);
+    space.bind(0x02037c00u,&sphcrr_set_obj_and_sphere);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
