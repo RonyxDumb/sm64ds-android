@@ -117,6 +117,49 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// dBgCh_SphCrr::DetectClsn (0x02038b78; recovered isolated unit): the
+// sphere against the stage mesh (data_020a0c80[0]) and every registered
+// moving mesh in range; vtable slot 8 returns the hit mask.
+int sphcrr_detect(uint32_t self) {
+    auto &space=packed::Space::current();
+    const auto meshInfo=[](uint32_t o) { return Ptr<uint32_t(uint32_t)>{0x020393b4u}(o); };
+    const auto meshId=[](uint32_t o) { return Ptr<uint32_t(uint32_t)>{0x020393acu}(o); };
+    const auto test=[self](uint32_t o) {
+        return Ptr<int(uint32_t,uint32_t)>{at<uint32_t>(at<uint32_t>(o)+8*4)}(o,self);
+    };
+    const auto record=[&](uint32_t o,int i,int mask) {
+        using Rec=void(uint32_t,int,uint32_t,uint32_t,uint32_t);
+        Ptr<Rec>{0x02037fecu}(self+0x10,i,meshId(o),meshInfo(o),o);
+        if (mask&1) Ptr<Rec>{0x020379d0u}(self,i,meshId(o),meshInfo(o),o);
+        if (mask&2) Ptr<Rec>{0x0203799cu}(self,i,meshId(o),meshInfo(o),o);
+        if (mask&4) Ptr<Rec>{0x02037968u}(self,i,meshId(o),meshInfo(o),o);
+    };
+    const auto excluded=[self](uint32_t info) { return Ptr<int(uint32_t,uint32_t)>{0x02035354u}(self,info)!=0; };
+    int result=0;
+    if (const uint32_t e=at<uint32_t>(0x020a0c80u)) {
+        if (!excluded(meshInfo(e))) {
+            if (const int mask=test(e)) { record(e,0,mask); result=1; }
+        }
+    }
+    const uint32_t centre=self+0x3c;
+    const int32_t threshold=at<int32_t>(self+0x48)+0x1000;
+    for (int i=1;i<0x18;++i) {
+        const uint32_t o=at<uint32_t>(0x020a0c80u+i*4);
+        if (!o) continue;
+        const uint32_t info=meshInfo(o);
+        if (excluded(info)) continue;
+        if (info && (at<int32_t>(info+0xb0)&2)) {
+            int32_t v[3]={at<int32_t>(info+0x5c),at<int32_t>(info+0x60),at<int32_t>(info+0x64)};
+            int mask=Ptr<int(uint32_t)>{0x0203939cu}(o);
+            if (mask==-0x1000) { v[1]+=at<int32_t>(info+0xb4); mask=at<int32_t>(info+0xb8)<<3; }
+            else v[1]+=Ptr<int(uint32_t)>{0x0203938cu}(o);
+            if (Ptr<int(uint32_t,uint32_t)>{0x0203cfdcu}(centre,space.address(v))>mask+threshold) continue;
+        }
+        if (const int mask=test(o)) { record(o,i,mask); result=1; }
+    }
+    Ptr<void(uint32_t)>{0x02037a38u}(self);
+    return result;
+}
 // func_0203859c (recovered isolated unit): test the line query against the
 // first registered collision mesh (data_020a0c80[0]) through its vtable slot 7.
 int bg_line_first_mesh(uint32_t obj) {
@@ -176,6 +219,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203816cu,&bgpi_construct);
     space.bind(0x0203859cu,&bg_line_first_mesh);
     space.bind(0x02037c00u,&sphcrr_set_obj_and_sphere);
+    space.bind(0x02038b78u,&sphcrr_detect);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
