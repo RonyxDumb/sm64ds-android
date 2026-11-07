@@ -1570,6 +1570,11 @@ void stage_render_model(uint32_t self) {
     }
     stage_virtual<void>(self+0x86c,5,0x020755d4u); // Model::Render(&data_020755d4)
 }
+void stage_oam_render_sub(uint32_t attr,int32_t x,int32_t y) {
+    // Complete static OAM::RenderSub(OamAttr *, int, int) (0x0202194c).
+    Ptr<void(int,uint32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t)>(0x02020994u)(
+        1,attr,x,y,-1,-1,0x1000,0x1000,0,-1);
+}
 int stage_render(uint32_t self) {
     // Complete Stage::Render (0x0202b8a4; external/sm64ds-pc/src/_ZN5Stage6RenderEv.cpp).
     const auto u8at=[](uint32_t a) { return at<uint8_t>(a); };
@@ -2305,6 +2310,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0202b8a4u,&stage_render);
+    space.bind(0x0202194cu,&stage_oam_render_sub);
     space.bind(0x0202bbbcu,&stage_behavior);
     space.bind(0x0202b268u,&stage_render_model);
     space.bind(0x02015d38u,&stage_shadow_render_all);
