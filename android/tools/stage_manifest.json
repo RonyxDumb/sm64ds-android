@@ -1086,6 +1086,13 @@
       "unit": "stage_hatena_init"
     },
     {
+      "path": "external/sm64ds-pc/src/_ZN5dBgCh18StopDetectingWaterEv.cpp",
+      "sha256": "f147c4a849077acbdb9bb3388480640afb53ee4396d7f5079691b9b9dace5c57",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\n//cpp\n// @symbol pk__ZN5dBgCh18StopDetectingWaterEv\n/* recovered: named members + shared header, real C++ method */\n\n\nextern \"C\" void pk__ZN5dBgCh18StopDetectingWaterEv(Ptr<void> object) {\n    *(Ptr<unsigned char>)(((Ptr<char>)(&(*(Ptr<u8>)(((Ptr<char>)(object)+0x4)))))) &= ~2;\n}\n\nextern \"C\" void abi__ZN5dBgCh18StopDetectingWaterEv(unsigned int a0) { pk__ZN5dBgCh18StopDetectingWaterEv((Ptr<void>)(a0)); }\n",
+      "unit": "stage_isolated__ZN5dBgCh18StopDetectingWaterEv"
+    },
+    {
       "path": "external/sm64ds-pc/src/_ZN5dBgCh21StopDetectingOrdinaryEv.cpp",
       "sha256": "47ca2baf22c76f5cdb814b099ea115ac75c58f24cebce7b4868b346f4de453d5",
       "header": false,
@@ -3979,6 +3986,10 @@
       "address": 34905472,
       "symbol": "abi_func_ov102_02149d80",
       "overlay": 102
+    },
+    {
+      "address": 33772680,
+      "symbol": "abi__ZN5dBgCh18StopDetectingWaterEv"
     },
     {
       "address": 33772732,

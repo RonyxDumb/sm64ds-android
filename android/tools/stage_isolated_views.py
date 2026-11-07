@@ -516,6 +516,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5dBgCh18StopDetectingWaterEv', 0, 'dBgCh'),
     ('_ZN5dBgCh21StopDetectingOrdinaryEv', 0, 'dBgCh'),
     ('_ZN5dBgCh19StartDetectingToxicEv', 0, 'dBgCh'),
     ('_ZNK10dBgCh_Actr10IsOnGroundEv', 0, 'dBgCh_Actr'),
