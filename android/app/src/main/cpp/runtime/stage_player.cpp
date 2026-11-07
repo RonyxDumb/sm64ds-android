@@ -114,9 +114,22 @@ uint32_t bgpi_destruct(uint32_t self) {
     at<uint32_t>(self)=0x02099368u; // _ZTV5dBgPi
     return self;
 }
+// dBgCh_Actr (dBgCh_Actr.h): mSphereClsn 0x20 (flags at 0x90),
+// mRaycastLine 0x134. Recovered one-line bodies.
+void bgch_actr_stop_water(uint32_t self) {
+    Ptr<void(uint32_t)>{0x02035488u}(self+0x134); // dBgCh::StopDetectingWater
+    Ptr<void(uint32_t)>{0x02035488u}(self+0x20);
+}
+int bgch_actr_wall_result(uint32_t self) { return Ptr<int(uint32_t)>{0x020378dcu}(self+0x20); }
+int bgch_actr_floor_result(uint32_t self) { return Ptr<int(uint32_t)>{0x02037938u}(self+0x20); }
+int bgch_actr_on_wall(uint32_t self) { return at<uint8_t>(self+0x90)&8; }
 }
 
 void bind_stage_player_runtime(packed::Space &space) {
+    space.bind(0x02035820u,&bgch_actr_stop_water);
+    space.bind(0x0203565cu,&bgch_actr_wall_result);
+    space.bind(0x0203566cu,&bgch_actr_floor_result);
+    space.bind(0x0203562cu,&bgch_actr_on_wall);
     space.bind(0x02038144u,&bgpi_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
