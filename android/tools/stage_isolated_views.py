@@ -542,6 +542,10 @@ FREE_UNITS = [
             'extern "C" unsigned int _ZN5Sound13PlayCharVoiceEjjRK7Vector3(unsigned int, unsigned int, const Vector3 *);',
         'Sound::PlayCharVoice(c[0x6d9], v, *(Vector3*)(c+0x74));':
             '_ZN5Sound13PlayCharVoiceEjjRK7Vector3(c[0x6d9], v, (Vector3*)(c+0x74));'}),
+    ('func_02011af8', 0, {
+        # C's unprototyped declarations, spelled with the callees' real ABI.
+        'extern int func_02011b38();': 'extern int func_02011b38(void *c, int a1, int a2, int a3, short s1);',
+        'extern int func_020123c8();': 'extern int func_020123c8(void *p, int a, int b, int pos);'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
