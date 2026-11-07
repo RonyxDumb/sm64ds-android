@@ -77,9 +77,37 @@ int player_conveyor_push(uint32_t self) {
     if (at<int32_t>(self+0x670)==0xff) return 0;
     throw std::runtime_error("Unported original path: func_ov002_020bfa74 conveyor push.");
 }
+// Player::Unk_020c9e5c(u8 kind): in the no-control state (0x0211022c) with
+// mNoCtrlKind (0x70a) == kind, is mStateStep (0x6e3) at the kind's release step?
+int player_no_control_step(uint32_t self,uint32_t kind) {
+    const uint8_t h=uint8_t(kind);
+    if (!Ptr<int(uint32_t,uint32_t)>{kIsState}(self,0x0211022cu)) return 0;
+    if (at<uint8_t>(self+0x70a)!=h) return 0;
+    const uint8_t s=at<uint8_t>(self+0x6e3);
+    const auto in=[s](uint8_t base,uint8_t span) { return uint8_t(s-base)<=span; };
+    switch (h) {
+    case 0: case 3: return s==1;
+    case 0x11: if (s==0x18) return 1; [[fallthrough]];
+    case 1: case 2: return s==2 || in(0x14,1);
+    case 4: return s==3;
+    case 5: return in(4,1);
+    case 6: return s==6;
+    case 7: return in(7,1);
+    case 8: return s==9 || in(0x14,1);
+    case 9: return in(0xb,2);
+    case 0xa: case 0xc: return in(0xe,1);
+    case 0xb: return s==0x10;
+    case 0xd: return s==0x11;
+    case 0xe: return s==0x12;
+    case 0xf: return in(0x16,1);
+    case 0x10: return in(0x18,1);
+    }
+    return 0;
+}
 }
 
 void bind_stage_player_runtime(packed::Space &space) {
+    space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
     space.bind(0x020bdef0u,&player_end_vanish);
     space.bind(0x020bdd9cu,&player_end_metal);
