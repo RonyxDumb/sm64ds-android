@@ -1571,6 +1571,27 @@ int stage_texture_sequence_update(uint32_t self,uint32_t model) {
                                                    uint16_t(uint32_t(at<int32_t>(self+8))>>12));
     return 0;
 }
+int stage_player_has_no_cap(uint32_t self);
+uint32_t stage_player_head_model_id(uint32_t self,uint32_t id,uint32_t drawn) {
+    // func_ov002_020becf4 (0xa4 bytes, no recovered source): translated
+    // instruction by instruction from the cartridge's ARM code. Selects the
+    // head-model slot: 9/8 override flags, then a +1/+4 cap variant.
+    uint32_t r0;
+    if (drawn==0) {
+        if (at<uint8_t>(self+0x6f9)) id=9;
+        if (at<uint8_t>(self+0x6fd)) id=8;
+        r0=uint32_t(stage_player_has_no_cap(self));
+    } else {
+        if (at<uint8_t>(self+0x6fa)) id=9;
+        if (at<uint8_t>(self+0x6fe)) id=8;
+        r0=at<uint8_t>(self+0x701);
+    }
+    uint32_t r1=0;
+    if (id>=4) { if (r0) r1=1; }
+    else if (id==3) { if (at<uint8_t>(self+0x714)) r1=4; }
+    else if (r0) r1=4;
+    return (r1+id)&0xff;
+}
 int stage_player_render(uint32_t self) {
     // Complete Player::Render (ov002 0x020e3a08; external/sm64ds-pc/src/
     // _ZN6Player6RenderEv.cpp) with Player.h offsets: mBodyModels 0xdc,
@@ -2407,6 +2428,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
         space.bind(0x020e3a08u,&stage_player_render);
+        space.bind(0x020becf4u,&stage_player_head_model_id);
         space.bind(0x020bea94u,&stage_player_is_collecting_cap);
     }
     if(id==102) {

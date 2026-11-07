@@ -1154,6 +1154,16 @@ int main(int argc, char **argv) {
             // (no input) and reports the first actual missing dependency.
             const char *framesEnv=std::getenv("SM64DS_STAGE_FRAMES");
             const unsigned stageFrames=framesEnv?unsigned(std::strtoul(framesEnv,nullptr,0)):0;
+            if (const char *range=std::getenv("SM64DS_DUMP_CODE")) {
+                // Host research aid: raw bytes of a resident original range.
+                const uint32_t start=uint32_t(std::strtoul(range,nullptr,0)),bytes=0x400;
+                if (FILE *out=std::fopen("/proc/self/fd/2","wb")) {
+                    const auto *data=static_cast<const uint8_t *>(stageSpace->data(start,bytes));
+                    for (uint32_t i=0;i<bytes;++i) std::fprintf(out,"%02x",data[i]);
+                    std::fprintf(out,"\n");
+                }
+                std::exit(0);
+            }
             if (stageFrames) {
                 unsigned frame=0;
                 try {
