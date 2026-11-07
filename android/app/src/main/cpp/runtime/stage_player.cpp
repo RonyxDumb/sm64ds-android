@@ -104,9 +104,14 @@ int player_no_control_step(uint32_t self,uint32_t kind) {
     }
     return 0;
 }
+// SurfaceInfo::CopyNormalTo(Vector3 &) const: the normal at 0x08..0x13.
+void surface_copy_normal(uint32_t self,uint32_t out) {
+    for (unsigned lane=0;lane<3;++lane) at<int32_t>(out+lane*4)=at<int32_t>(self+8+lane*4);
+}
 }
 
 void bind_stage_player_runtime(packed::Space &space) {
+    space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
     space.bind(0x020bdef0u,&player_end_vanish);
