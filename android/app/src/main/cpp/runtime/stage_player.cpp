@@ -117,6 +117,31 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// func_020371fc (recovered isolated unit + cartridge layout): snap a
+// grounded actor down onto a nearby floor below a steep wall contact. The
+// local dBgCh_Gnd (0x50) has its dBgPi base at +0x10 and clsnY at +0x44.
+void bgch_actr_snap_to_floor(uint32_t self) {
+    auto &space=packed::Space::current();
+    const uint8_t f=at<uint8_t>(self+0x90);
+    if (!(f&1) || !(f&8) || !(at<int32_t>(self+0x10)&0x100) || at<int32_t>(self+0x1b0)>=0xf20) return;
+    const uint32_t actor=at<uint32_t>(self+0x14);
+    if (Ptr<int(uint32_t)>{0x020c2f3cu}(actor)) return; // Player::IsInAir
+    alignas(8) uint8_t buffer[0x50];
+    const uint32_t rg=space.address(buffer),objpos=actor+0x5c;
+    int32_t pos[3]={at<int32_t>(objpos),at<int32_t>(objpos+4)+at<int32_t>(self+0x18),at<int32_t>(objpos+8)};
+    Ptr<uint32_t(uint32_t)>{0x02037570u}(rg);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>{0x0203748cu}(rg,space.address(pos),actor);
+    if (Ptr<int(uint32_t)>{0x02038f44u}(rg)) {
+        const int32_t cy=at<int32_t>(rg+0x44),diff=at<int32_t>(objpos+4)-cy;
+        if (diff>0 && diff<(at<int32_t>(self+0x18)<<1)) {
+            at<int32_t>(objpos+4)=cy;
+            at<uint8_t>(self+0x90)|=4;
+            Ptr<void(uint32_t,uint32_t)>{0x02038018u}(self+0x94,rg+0x10);
+            Ptr<void(uint32_t)>{0x02035708u}(self); // SetGroundFlag
+        }
+    }
+    Ptr<uint32_t(uint32_t)>{0x02037534u}(rg);
+}
 // Constructors/destructors of the sphere query and its bases, from the
 // cartridge code: dBgCh (vptr 0x020991d8), dBgPi (0x02099368, dBgPc at +4),
 // dM3dGSph (0x020994cc); dBgCh_SphCrr = dBgCh + dBgPi@0x10 + dM3dGSph@0x38
@@ -292,6 +317,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203ac70u,&m3dgsph_vptr);
     space.bind(0x0203ac1cu,&m3dgsph_vptr);
     space.bind(0x02037d18u,&sphcrr_construct);
+    space.bind(0x020371fcu,&bgch_actr_snap_to_floor);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
