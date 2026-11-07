@@ -1351,6 +1351,117 @@ void stage_particle_tracker_initialise(uint32_t self) {
         Ptr<uint32_t(uint32_t,uint32_t,uint32_t)>(0x0203c578u)(heap,resource,oldSize);
     }
 }
+int stage_behavior(uint32_t self) {
+    // Complete Stage::Behavior (0x0202bbbc; external/sm64ds-pc/src/
+    // _ZN5Stage8BehaviorEv.cpp, src/game/stages/d_s_stage_methods.cpp).
+    // Adaptation: the original CheckCameraInput/CheckInput bodies already ran
+    // once for this frame in StageFlow::update_input (Android input bridge),
+    // and the fader query uses GameProgram's native fader (data_0209f5bc).
+    (void)self;
+    auto u8at=[](uint32_t a) -> uint8_t & { return at<uint8_t>(a); };
+    auto call=[](uint32_t a) { Ptr<void()>(a)(); };
+    auto sound=[](int id) { Ptr<void(int)>(0x02012790u)(id); };
+    at<uint32_t>(0x0209b464u)=at<uint32_t>(0x0209b454u);
+    if (at<uint16_t>(0x0209f300u)) at<uint16_t>(0x0209f300u)-=1;
+    if (u8at(0x0209f2c4u)==2 && u8at(0x0209f22cu)==0) call(0x02026290u); // PS_Cleanup
+    call(0x0200e8d4u); // ProcessKuppaScript
+    if (!data_0209f5bc->IsAtStart()) { call(0x02015e14u); return 1; } // ShadowModel::CleanAll
+    if (u8at(0x0209f2d8u)!=1) {
+        call(0x0201cb7cu); // UpdateMessage
+    } else {
+        const uint8_t c9c=u8at(0x0209fc9cu);
+        if (c9c) {
+            call(0x02032f54u);
+            if (u8at(0x0209fcc8u)>=7u) call(0x020199a4u);
+            return 1;
+        }
+        if (at<int32_t>(0x0209fc68u)==6) {
+            call(0x02019a58u); sound(0x123); call(0x02011c24u); call(0x02030a78u);
+            Ptr<void(int)>(0x020345b0u)(0x13);
+            return 1;
+        }
+        int cnt=0;
+        for (unsigned i=0;i<4;++i)
+            if (const uint32_t p=at<uint32_t>(0x0209f394u+i*4)) cnt+=at<uint8_t>(p+0x711)!=0;
+        if (cnt>=u8at(0x0209fc50u)) {
+            auto &timer=at<uint16_t>(0x0209f304u);
+            auto &count=u8at(0x0209f2bcu);
+            if (timer==0x28 && count==3) sound(0x2b);
+            if (u8at(0x0209f2c4u)==0 && (timer!=0 || count!=0)) {
+                timer=uint16_t(timer-at<int32_t>(0x0208ee44u));
+                if (timer==0 && count!=0) {
+                    count-=1; timer=0x28;
+                    if (count) sound(0x2b);
+                    else { sound(0x2a); Ptr<void(int)>(0x0201320cu)(0x4d); }
+                }
+            }
+        }
+        if (at<uint16_t>(0x02111188u)==0 && u8at(0x0209f204u)) {
+            if (at<int32_t>(0x0209fc68u)==0) {
+                if (at<int8_t>(0x02092110u)<0 && at<int32_t>(0x0209d4b0u)==0) {
+                    if (u8at(0x0209f294u)==0 && u8at(0x0209f290u)==0) call(0x02023a80u);
+                    else call(0x0202376cu);
+                }
+            } else {
+                Ptr<void(int,int,int)>(0x0202e348u)(7,0,0);
+                u8at(0x02092778u)=1;
+                at<int32_t>(0x0209d4b0u)=0;
+            }
+            Ptr<void(int)>(0x02013050u)(0x3c);
+        }
+    }
+    const auto level=[](int sublevel) { return Ptr<int(int)>(0x02013558u)(sublevel); };
+    const int8_t next=at<int8_t>(0x02092110u),current=at<int8_t>(0x0209f2f8u);
+    if (next>=0) {
+        const int lvl=level(next),lvl2=level(current);
+        if (u8at(0x0209f2d8u)!=2 && lvl<=0xe && lvl!=lvl2 && at<int8_t>(0x02092118u)<0 &&
+            (next!=0xc || u8at(0x0209f268u)!=4))
+            Ptr<void(int,int)>(0x0202e36cu)(4,0);
+        else
+            Ptr<void(int,int)>(0x0202e36cu)(3,0);
+        const auto inside=[](int l) { return Ptr<int(int)>(0x0202ddf4u)(l); };
+        const auto island=[](int l) { return Ptr<int(int)>(0x0202ddd4u)(l); };
+        if ((!inside(current) || !inside(next)) && (!island(current) || !island(next)) &&
+            u8at(0x0209f2d8u)!=2)
+            Ptr<void(int)>(0x02013050u)(0x3c);
+    } else if (u8at(0x0209f20cu)) {
+        call(0x020242c8u); // LC_Update
+    } else if (u8at(0x0209f2c4u)) {
+        call(0x0202635cu); // PS_Update
+    } else {
+        const uint32_t pi=u8at(0x020a0e40u);
+        const uint16_t h1=at<uint16_t>(0x020a0e58u+pi*4);
+        if ((((h1&0x200)==0 && (h1&0x100)==0) || (at<uint16_t>(0x020a0e5au+pi*4)&8)==0) &&
+            u8at(0x0209d660u)==0 && at<int32_t>(0x0209d4b0u)==0 &&
+            Ptr<int()>(0x0202b818u)()!=0 && Ptr<int()>(0x0202a5c4u)()==0 &&
+            uint8_t(u8at(0x0209f294u)|u8at(0x0209f2c4u)|u8at(0x0209f20cu))==0 &&
+            at<uint32_t>(0x0209b454u)==0) {
+            const uint8_t st=u8at(0x0209f2d8u);
+            const bool vs=st==1;
+            if (((vs && at<int32_t>(0x0209fc68u)==0) || (at<int32_t>(0x0209caa0u+8)&0x80)) &&
+                st!=2 && at<int32_t>(0x0209fc48u)==0 && at<uint16_t>(0x0209f300u)==0) {
+                const uint32_t pj=u8at(0x020a0e40u);
+                const uint16_t h2=at<uint16_t>(0x020a0e5au+pj*4);
+                const int t8=h2&8;
+                if ((t8 && (at<uint16_t>(0x020a0e58u+pj*4)&4)==0) || (!vs && !t8 && (h2&4))) {
+                    u8at(0x0209f2c4u)=1;
+                    sound(2);
+                    if (at<uint8_t>(0x0209d4c8u+8)) {
+                        Ptr<void(uint32_t)>(0x020195c0u)(0x0209d4c8u);
+                        u8at(0x0209f2a0u)=1;
+                    }
+                    u8at(0x0209f218u)=(at<uint16_t>(0x020a0e58u+u8at(0x020a0e40u)*4)&4) ? 1 : 0;
+                    call(0x0202942cu); // PS_Init
+                    call(0x0202635cu); // PS_Update
+                }
+            }
+        }
+    }
+    if (uint8_t(u8at(0x0209f294u)|u8at(0x0209f2c4u)|u8at(0x0209f20cu))==0 &&
+        (at<uint32_t>(0x0209b454u)&~0x20000000u)==0)
+        call(0x02015e14u);
+    return 1;
+}
 void stage_particle_contents_update(uint32_t self) {
     // Complete Particle::SysTracker::Contents::Update (Particle__SysTracker.h):
     // 0x40 entries of 0x1c at +8; callback_c::OnUpdate is vtable slot 1.
@@ -2166,6 +2277,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02015950u,&stage_texture_transformer_ctor);
     space.bind(0x0202b0fcu,&stage_load_skybox);
     space.bind(0x0202b8a4u,&stage_render);
+    space.bind(0x0202bbbcu,&stage_behavior);
     space.bind(0x0202b268u,&stage_render_model);
     space.bind(0x02015d38u,&stage_shadow_render_all);
     space.bind(0x0202b164u,&stage_render_model_transparent);
