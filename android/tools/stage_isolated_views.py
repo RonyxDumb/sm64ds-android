@@ -127,7 +127,7 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     # Local record types the imported declarations already name must precede
     # them: hoist top-level struct definitions of the unit into the prelude.
     local_types = ''
-    records = list(re.finditer(r'^struct (\w+) \{\n.*?^\};\n', body, re.M | re.S))
+    records = list(re.finditer(r'^struct (\w+)\s*\{\n.*?^\};\n', body, re.M | re.S))
     records += list(re.finditer(r'^typedef struct\s*\w*\s*\{.*?^\}\s*(\w+);\n', body, re.M | re.S))
     for match in records:
         if re.search(r'\b'+match[1]+r'\b', declarations):
@@ -595,6 +595,18 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN10dBgCh_Actr20UpdateExtraContinousEv', 0, 'dBgCh_Actr', {
+        # The extern block's closing line carries a comment.
+        '}  /* end extern "C" -- the definition below is a member, not a C symbol */': '}',
+        # SurfaceInfo.h: CLPS (8 bytes) then the face normal.
+        'struct dBgPiLoc\n{': 'struct SurfaceInfo {\n    struct { u32 w0; u32 w1; } clps;\n    Vector3 normal;\n};\nstruct dBgPiLoc \n{',
+        'ClearAllGroundFlags();': '_ZN10dBgCh_Actr19ClearAllGroundFlagsEv(this);',
+        'ShouldUpdatePosY()': '_ZNK10dBgCh_Actr16ShouldUpdatePosYEv(this)',
+        # IsOnGround() is the recovered const accessor; GetClsnPos returns by
+        # hidden result pointer (declared above as (Vector3 *, void *)).
+        'IsOnGround()': '_ZNK10dBgCh_Actr10IsOnGroundEv(this)',
+        'v7c = ((dBgCh_Lin *)(t + 0x134))->GetClsnPos();': '_ZN9dBgCh_Lin10GetClsnPosEv(&v7c, t + 0x134);',
+        'int  func_020355dc(void *);': 'int  func_020355dc(void *);\nint _ZNK10dBgCh_Actr10IsOnGroundEv(const void *);\nvoid _ZN10dBgCh_Actr19ClearAllGroundFlagsEv(void *);\nint _ZNK10dBgCh_Actr16ShouldUpdatePosYEv(const void *);'}),
     ('_ZNK5dBgPi9GetClsnIDEv', 0, 'dBgPi'),
     ('_ZN10dBgCh_Actr19ClearAllGroundFlagsEv', 0, 'dBgCh_Actr'),
     ('_ZN10dBgCh_Actr22ClearJustHitGroundFlagEv', 0, 'dBgCh_Actr'),
