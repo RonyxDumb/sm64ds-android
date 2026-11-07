@@ -278,6 +278,13 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020d36d8', 2),
+    ('_ZN8Particle6System3NewEjj5Fix12IiES2_S2_PK11Vector3_16fPNS_8CallbackE', 0),
+    ('func_ov002_020d2f24', 2),
+    ('func_ov002_020d2da0', 2),
+    ('func_ov002_020d22ec', 2),
+    ('func_ov002_020d2fdc', 2),
+    ('func_ov002_020bcdf0', 2),
     ('GetPlayerFlagByte', 0),
     ('IsPlayerWarping', 0),
     ('func_ov002_020e4bb8', 2),
@@ -409,6 +416,10 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020cabe0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c6adc', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c5244', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0364', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c2db8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf13c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf36c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
@@ -472,6 +483,8 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZNK9Animation12WillHitFrameEi', 0, 'Animation'),
+    ('_ZN6Player12St_Wait_MainEv', 2, 'Player'),
     ('_ZN9ModelBase12ApplyOpacityEj', 0, 'ModelBase'),
     ('_ZN7Minimap6RenderEv', 2, 'Minimap', {
         # The local Player view's one method is the overlay-2 ABI symbol.
