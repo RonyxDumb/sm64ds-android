@@ -282,6 +282,15 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020d0178', 2),
+    ('func_02022d00', 0),
+    ('func_02022a4c', 0),
+    ('func_ov002_020e3078', 2),
+    ('func_02059650', 0),
+    ('func_0200d858', 0),
+    ('func_ov002_020e0478', 2),
+    ('func_ov002_020d5338', 2),
+    ('func_ov002_020dec70', 2),
     ('func_0203abcc', 0),
     ('func_0203ac00', 0),
     ('func_0203abd4', 0),
@@ -513,6 +522,16 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c031c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('Player_ScaleByCharFactor', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020be008', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020ce9c8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0cbc', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0d90', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bfec0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf40c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c5d0c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0fb4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c1234', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c25a8', 2, 'external/sm64ds-pc/src/actors/Player.cpp', {
         # The ARM body falls through with r0 == ret (0) from the last call.
@@ -591,6 +610,9 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5Timer7GetTimeEv', 0, 'Timer'),
+    ('_ZN5Timer9StopTimerEv', 0, 'Timer'),
+    ('_ZN5Timer10StartTimerEv', 0, 'Timer'),
     ('_ZN10dBgCh_Actr20UpdateExtraContinousEv', 0, 'dBgCh_Actr', {
         # The extern block's closing line carries a comment.
         '}  /* end extern "C" -- the definition below is a member, not a C symbol */': '}',
