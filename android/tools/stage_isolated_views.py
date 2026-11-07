@@ -195,6 +195,8 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
     # but take the address of its cartridge instances.
     raw = raw.replace('\nstruct State;\n', '\nstruct State { unsigned char pmf[0x18]; };\n')
+    # Empty inline destructors only pin the ROM's frame; they do nothing.
+    raw = re.sub(r'\s*~\w+\(\)\s*\{\s*\}', '', raw)
     if 'Player::State' in raw:
         # Cartridge state records passed by reference: opaque byte arrays
         # whose address is the ABI pointer.
