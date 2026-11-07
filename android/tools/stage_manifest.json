@@ -1604,6 +1604,13 @@
       "unit": "stage_isolated__ZN3OAM12GetObjHeightEii"
     },
     {
+      "path": "external/sm64ds-pc/src/func_ov002_020f2210.c",
+      "sha256": "ca6b8db5e39f556bb7b415c897317e0ab228e8c3050b87143da38b86d3abca4b",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\nstruct Vector3 { s32 x;\ns32 y;\ns32 z; };\nstruct Vector3_16 { s16 x;\ns16 y;\ns16 z; };\n\n\n#define LP(x) ((Ptr<void>)(word((x))))\n#define LI(x) ((int)((long long)(int)(x)))\nstatic int pk_RandomIntInternal(Ptr<int> a0) { return Ptr<int(Ptr<int>)>(0x0203b990u)(a0); }\n\n#define data_0209e650 (*Ptr<int>(0x0209e650u))\n\n\nstruct Obj {\n    char pad[0xd4];\n    Ptr<unsigned char> d4;\n};\n\n#define A24 ((Ptr<u16>)((thiz->d4 + 0x24)))\n#define A30 ((Ptr<u8>)((thiz->d4 + 0x30)))\n#define A0C ((Ptr<s16>)((thiz->d4 + 0xc)))\n#define A1C ((Ptr<s16>)((thiz->d4 + 0x1c)))\n#define A14 ((Ptr<u16>)((thiz->d4 + 0x14)))\n\nextern \"C\" void pk_func_ov002_020f2210(Ptr<struct Obj> thiz) {\n    int i;\n    int base;\n    u8 state;\n    state = *(Ptr<u8>)((thiz->d4 + 0x34));\n    if (state >= 3 && state > 5) return;\n    i = 0;\n    base = 0;\n    for (; i < 3; i++) {\n        Ptr<u16> p = (Ptr<u16>)((LI(thiz->d4) + LI(i) * 2));\n        if (p[0x12] != 0) {\n            *(Ptr<volatile u16>)(LP(p + 0x12)) = *(Ptr<volatile u16>)(LP(p + 0x12)) - 1;\n            if (A24[i] == 0) {\n                if (A30[i] == 0) {\n                    unsigned int r = uword(pk_RandomIntInternal(&data_0209e650));\n                    if (r & 1) {\n                        A0C[i] = -0x40;\n                        A1C[i] = 1;\n                    } else {\n                        A0C[i] = 0x140;\n                        A1C[i] = -1;\n                    }\n                    A14[i] = (u16)((r >> 16) % 48 + base);\n                    A30[i] = 1;\n                }\n            }\n        }\n        base += 0x30;\n    }\n}\n\nextern \"C\" void abi_func_ov002_020f2210(unsigned int a0) { pk_func_ov002_020f2210((Ptr<struct Obj>)(a0)); }\n",
+      "unit": "stage_isolated_func_ov002_020f2210"
+    },
+    {
       "path": "external/sm64ds-pc/src/func_ov002_020f2340.cpp",
       "sha256": "2e52dbe0e6acdc87e314fe1a3ced2a2a848d5f351ad5dfa3dc3615b4322c7c04",
       "header": false,
@@ -3751,6 +3758,11 @@
     {
       "address": 33687916,
       "symbol": "abi__ZN3OAM12GetObjHeightEii"
+    },
+    {
+      "address": 34546192,
+      "symbol": "abi_func_ov002_020f2210",
+      "overlay": 2
     },
     {
       "address": 34546496,

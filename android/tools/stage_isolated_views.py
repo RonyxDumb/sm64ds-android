@@ -293,6 +293,9 @@ FREE_UNITS = [
         'u8 OAM::GetObjHeight(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM12GetObjHeightEii(int shape, int sizeBits)',
         'return *(unsigned char *)&((int *)((char *)data_020755ac + sizeBits))[shape];':
             'return *((unsigned char *)data_020755ac + sizeBits + shape * 4);'}),
+    ('func_ov002_020f2210', 2, {
+        # The same volatile halfword read-modify-write; the packed reference has no -=.
+        '*(volatile u16 *)LP(p + 0x12) -= 1;': '*(volatile u16 *)LP(p + 0x12) = *(volatile u16 *)LP(p + 0x12) - 1;'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
