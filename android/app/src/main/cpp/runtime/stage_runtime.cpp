@@ -1483,6 +1483,21 @@ void stage_particle_tracker_update(uint32_t self) {
     Ptr<void(uint32_t)>(0x02021becu)(self+8);
     Ptr<void(uint32_t)>(0x02049f58u)(at<uint32_t>(self+4));
 }
+int stage_set_se_behavior(uint32_t self) {
+    // Complete daSetSE_c::Behavior (src/game/actors/d_a_set_se.cpp):
+    // param1 (0x08) picks the ambient effect; mSoundHandle 0xd4, mCamSpacePos 0x74.
+    if (at<uint8_t>(0x02110aecu)) return 1;
+    const uint32_t effect=at<uint32_t>(self+8);
+    if (effect>=1 && effect<=4) {
+        const int music=at<int32_t>(0x0209b4acu);
+        if (music==0x32 || music==0x33 || music==0x34 ||
+            Ptr<int(uint32_t)>(0x0200d890u)(at<uint32_t>(0x0209f318u))) // Camera::IsUnderwater
+            return 1;
+    }
+    at<uint32_t>(self+0xd4)=Ptr<uint32_t(uint32_t,uint32_t,uint32_t,uint32_t,int)>(0x02012328u)(
+        at<uint32_t>(self+0xd4),3,at<uint32_t>(0x0210b498u+effect*4),self+0x74,0);
+    return 1;
+}
 int stage_player_has_no_cap(uint32_t self) {
     // Complete Player::HasNoCap (src/game/player/Player.cpp): fBase param1
     // at 0x08, mState at PLAYER_STATE, mHasNoCap at 0x71a.
@@ -2194,6 +2209,7 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
+        space.bind(0x020f19fcu,&stage_set_se_behavior);
         space.bind(0x020ec020u,&stage_tree_cleanup);
         space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
