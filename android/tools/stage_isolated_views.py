@@ -247,6 +247,9 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020f65ec', 2),
+    ('func_ov002_020f64ac', 2),
+    ('func_ov002_020f20f4', 2),
     ('func_ov002_020f23f0', 2),
     ('Vec3_DivScalarInPlace', 0),
     ('Vec3_MulScalarInPlace', 0),
@@ -383,6 +386,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN9Animation8FinishedEv', 0, 'Animation'),
     ('_ZN14CutsceneObject8BehaviorEv', 2, 'CutsceneObject', {
         # The local dBgCh_Gnd probe through its ABI: C1, SetObjAndPos (the
         # reference is a pointer), DetectClsn, clsnY at 0x44, then D1.
