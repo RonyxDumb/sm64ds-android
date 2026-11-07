@@ -1,3 +1,65 @@
+# Checkpoint — 2026-11-07, castle grounds run whole original frames (intro cutscene live)
+
+Branch `ccr-f1be4bbe-fzzi8q` (session branch; ~50 commits on top of main
+76260a4). Area: **engine / castle / cutscene / camera / HUD / actors**.
+Evidence level: private EU ROM (SHA-256 ce5829aa…) host execution with
+ASan/UBSan; no-ROM suite (`run-game-tests.sh`) passed after the first batch.
+No APK build or device test in this session.
+
+What changed (all from recovered sources; native veneers only where the
+lift cannot express the ABI, each citing its source):
+- **crt0 static initializers**: `StageFlow::prepare_scene` now runs the
+  cartridge's ARM9 `.ctors` table (0x02086b60, 23 entries). Before this the
+  intro KuppaScript path pointers (patched by `__sinit_02073e6c`) were null.
+  All 23 `src/unnamed/arm9/0207/__sinit_*` bodies are projected
+  (`lift_stage.py: arm9_initializers`), destructors as code handles.
+- `data_0209fc48` is the running KuppaScript pointer (RunKuppaScript), not a
+  byte flag; the bridge now carries the whole word.
+- DS-side **fader proxy**: original code calling `data_0209f5bc->vt->…`
+  reaches GameProgram's native fader through a proxy vtable of native handles.
+- Native from recovered source: Stage::LoadFog/LoadTextureTransformers/
+  LoadSkybox/Render/RenderModel/RenderModelTransparent/Behavior,
+  Particle::SysTracker::Initialise/Update/Contents::Update, texture/palette
+  VRAM allocators, ShadowModel::CleanAll/RenderAll, dScene_c and dActor_c
+  Before/After Behavior/Render/Cleanup, fBase_c cleanup + destructor chain
+  (MIPS, daTree_c), Clipper ctor/TransformAndClip, cstd::sqrt/atan2 stage
+  bindings, LakituBro::Render, Door::Behavior, daTree_c::Render/Cleanup,
+  daSetSE_c::Behavior, Player HasNoCap/IsCollectingCap, OAM::RenderSub.
+- Linked isolated units (auto-frontier loop): cutscene handlers
+  (func_ov002_020f7410/7bb8/…), camera path (func_02008b4c), Camera::
+  Behavior, Minimap Behavior/Render/position transforms, OAM::Render,
+  overlay-1 coin/cap HUD (func_ov001_020aaf40/aaa54/aa960), Clipper frustum
+  test, message/BG leaves, Vec3 helpers, Timer, etc.
+- Tooling: `stage_isolated_views.py` handles nested classes, Vector3 use,
+  local record hoisting, array members, `this->`; overlay-1 symbols resolve.
+  `SM64DS_TRACE_FAULTS=1` prints the native stack for rejected handles.
+  `SM64DS_STAGE_FRAMES=N` (game_program_test) runs N castle frames and
+  reports the first missing dependency, then exits.
+
+Measured frontier (private ROM, no input): castle spawn + InitResources +
+intro cutscene start + **frames 0 and 1 complete**; frame 2 runs Stage::
+Behavior, camera, minimap, doors, trees, Lakitu and stops at
+`_ZN14CutsceneObject6RenderEv` (0x020f6cac area, ov002) — the next unit.
+MIPS is correctly destroyed on frame 1 (fresh save fails its progress check,
+as in the source), then batched trees.
+
+Adaptations to note (not fabricated behavior): Stage::Behavior skips its
+own CheckCameraInput/CheckInput calls because StageFlow::update_input runs
+those same original routines once per frame before the scene (Android
+input bridge). Actor memory is the native packed heap, so fBase_c's
+operator delete releases through it.
+
+Not verified / open: the castle test's post-tick actor assertions after the
+first tick now completes (run in progress at time of writing); APK/NDK
+compile of the new units; rendering output of the castle frames (no
+screenshot inspected); no player control yet — the intro cutscene
+(Lakitu/camera/message) must finish before free movement.
+Next: keep the frame loop going (CutsceneObject::Render, message system
+func_0201f138 / Message::Update when the letter appears), then drive input
+with SM64DS_STAGE_FRAMES once the cutscene ends to verify Player movement.
+
+---
+
 # Checkpoint — 2026-11-06, castle grounds past MIPS into the Lakitu intro
 
 Branch `claude/sm64ds-android-port-54w4q4` (local commits; push blocked by

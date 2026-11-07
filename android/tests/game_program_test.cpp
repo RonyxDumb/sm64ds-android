@@ -1165,10 +1165,12 @@ int main(int argc, char **argv) {
                 std::exit(0);
             }
             try {
+                // The first castle tick now completes: spawn, original
+                // InitResources, the intro KuppaScript and a full frame.
                 game.tick();
+                reachedStage = true;
             } catch (const std::runtime_error &e) {
-                reachedStage = std::string(e.what()) ==
-                    "Unlinked native code handle: " + std::to_string(0x0212cc2cu);
+                reachedStage = false;
                 if (std::getenv("SM64DS_TRACE_STAGE")) {
                     std::cerr << "Actual stage dependency: " << e.what() << '\n';
                 }
