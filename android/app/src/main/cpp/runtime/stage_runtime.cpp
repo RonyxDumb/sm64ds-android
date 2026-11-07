@@ -1359,7 +1359,7 @@ int stage_behavior(uint32_t self) {
     // and the fader query uses GameProgram's native fader (data_0209f5bc).
     (void)self;
     auto u8at=[](uint32_t a) -> uint8_t & { return at<uint8_t>(a); };
-    auto call=[](uint32_t a) { Ptr<void()>(a)(); };
+    auto call=[](uint32_t a) { Ptr<void()> fn(a); fn(); };
     auto sound=[](int id) { Ptr<void(int)>(0x02012790u)(id); };
     at<uint32_t>(0x0209b464u)=at<uint32_t>(0x0209b454u);
     if (at<uint16_t>(0x0209f300u)) at<uint16_t>(0x0209f300u)-=1;
