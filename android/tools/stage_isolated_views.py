@@ -249,6 +249,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_0201f138', 0),
     ('func_ov100_021452e4', 100),
     ('func_ov100_02144cf8', 100),
     ('func_ov002_020f65ec', 2),
@@ -303,6 +304,10 @@ FREE_UNITS = [
     ('func_ov002_020f2210', 2, {
         # The same volatile halfword read-modify-write; the packed reference has no -=.
         '*(volatile u16 *)LP(p + 0x12) -= 1;': '*(volatile u16 *)LP(p + 0x12) = *(volatile u16 *)LP(p + 0x12) - 1;'}),
+    ('_ZN7Message6UpdateEv', 0, {
+        # Static Message::Update: no receiver in the ARM ABI.
+        'class Message {\npublic:\n    void Update();\n};\n\nvoid Message::Update()':
+            'extern "C" void _ZN7Message6UpdateEv(void)'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':

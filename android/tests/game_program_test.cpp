@@ -1318,7 +1318,10 @@ int main(int argc, char **argv) {
                 if(id==286 && life!=1) {
                     // Original tree batching keeps one live actor per model
                     // variant; the additional colliders live in TreeNodes.
-                    assert(life==0 && *static_cast<uint8_t *>(stageSpace->data(instance+15,1))==1);
+                    // After a whole frame the scheduler has queued them for
+                    // destruction (aliveState 2), as the original reconcile does.
+                    assert((life==0 && *static_cast<uint8_t *>(stageSpace->data(instance+15,1))==1) ||
+                           life==2);
                     continue;
                 }
                 initializedTypes.insert(id);
