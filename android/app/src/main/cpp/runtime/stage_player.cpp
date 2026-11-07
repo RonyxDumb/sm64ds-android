@@ -108,6 +108,17 @@ int player_no_control_step(uint32_t self,uint32_t kind) {
 void surface_copy_normal(uint32_t self,uint32_t out) {
     for (unsigned lane=0;lane<3;++lane) at<int32_t>(out+lane*4)=at<int32_t>(self+8+lane*4);
 }
+// func_0203859c (recovered isolated unit): test the line query against the
+// first registered collision mesh (data_020a0c80[0]) through its vtable slot 7.
+int bg_line_first_mesh(uint32_t obj) {
+    const uint32_t e=at<uint32_t>(0x020a0c80u);
+    if (!e) return 0;
+    if (Ptr<int(uint32_t,uint32_t)>{0x02035354u}(obj,Ptr<uint32_t(uint32_t)>{0x020393b4u}(e))!=0) return 0;
+    if (!Ptr<int(uint32_t,uint32_t)>{at<uint32_t>(at<uint32_t>(e)+7*4)}(e,obj)) return 0;
+    const uint32_t a=Ptr<uint32_t(uint32_t)>{0x020393acu}(e),b=Ptr<uint32_t(uint32_t)>{0x020393b4u}(e);
+    Ptr<void(uint32_t,int,uint32_t,uint32_t,uint32_t)>{0x02037fecu}(obj+0x10,0,a,b,e);
+    return 1;
+}
 // dBgPi::dBgPi (0x0203816c, from the cartridge code): the dBgPc C2 body on
 // the member at +4 (0xfc0, 0xff, then three zero words), the vptr, then
 // func_020380c0 (its reset).
@@ -154,6 +165,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x0203562cu,&bgch_actr_on_wall);
     space.bind(0x02038144u,&bgpi_destruct);
     space.bind(0x0203816cu,&bgpi_construct);
+    space.bind(0x0203859cu,&bg_line_first_mesh);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
