@@ -1811,6 +1811,12 @@ uint32_t stage_mip_destruct(uint32_t actor) {
     stage_actor_destruct(actor);
     return actor;
 }
+int stage_clipper_transform_and_clip(uint32_t self,uint32_t mat,uint32_t src,int32_t scale,uint32_t dst) {
+    // Complete Clipper::TransformAndClip (0x02015560): transform into camera
+    // space, then the frustum test without a plane hint.
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02052858u)(src,mat,dst);
+    return Ptr<int(uint32_t,uint32_t,int32_t,uint32_t)>(0x020150e8u)(self,dst,scale,0);
+}
 int stage_tree_render(uint32_t self) {
     // Complete daTree_c::Render (src/game/actors/d_a_tree.cpp): each variant
     // model (0xd4 + i*0x50, mat4x3 at +0x1c) faces the camera yaw
@@ -2348,6 +2354,7 @@ void bind_stage_runtime(packed::Space &space) {
     // The same recovered __sinit_02075154 unit the minigame manifest links.
     space.bind(0x02075154u,&abi___sinit_02075154);
     space.bind(0x02015730u,&stage_clipper_ctor);
+    space.bind(0x02015560u,&stage_clipper_transform_and_clip);
     space.bind(0x0202e3d4u,&scene_before_behavior);
     space.bind(0x02010fd4u,&actor_before_behavior);
     space.bind(0x02010f78u,&actor_before_render);
