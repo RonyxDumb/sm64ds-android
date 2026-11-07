@@ -1156,7 +1156,9 @@ int main(int argc, char **argv) {
             const unsigned stageFrames=framesEnv?unsigned(std::strtoul(framesEnv,nullptr,0)):0;
             if (const char *range=std::getenv("SM64DS_DUMP_CODE")) {
                 // Host research aid: raw bytes of a resident original range.
-                const uint32_t start=uint32_t(std::strtoul(range,nullptr,0)),bytes=0x400;
+                char *colon=nullptr;
+                const uint32_t start=uint32_t(std::strtoul(range,&colon,0));
+                const uint32_t bytes=(colon && *colon==':') ? uint32_t(std::strtoul(colon+1,nullptr,0)) : 0x400;
                 if (FILE *out=std::fopen("/proc/self/fd/2","wb")) {
                     const auto *data=static_cast<const uint8_t *>(stageSpace->data(start,bytes));
                     for (uint32_t i=0;i<bytes;++i) std::fprintf(out,"%02x",data[i]);

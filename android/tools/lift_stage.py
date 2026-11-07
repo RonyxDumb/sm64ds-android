@@ -1023,6 +1023,93 @@ bool func_020397b8(int); int Vec3_Dist(Vector3 *,Vector3 *);
     return projected(rel,body,declarations,[symbol],extra=extra,auto_globals=False)
 
 
+def sphere_kcl():
+    # Complete dBgW_Kc::DetectClsn(dBgCh_SphCrr &) from the recovered ITCM
+    # source, with its macros and raw-sqrt helpers. Members become their
+    # header offsets: dBgW_Kc (kclFile 0x20, upAxis 0x28, shallowOnly 0x34,
+    # depthByDir 0x35, depthDir 0x38, depthDirMinDot 0x44, edgeToleranceShift
+    # 0x48, edgeContacts 0x4c, tolerantWallEdges 0x4d) and dBgCh_SphCrr
+    # (dBgPi base 0x10, centre 0x3c, radius 0x48, flags 0x70,
+    # mWallRejectHalfExtent 0xec, mFloorNormal 0xfc, mMaxNormalY 0x108).
+    rel='src/engine/collision/d_bg_w_kc_itcm.cpp'
+    raw=(ROOT/rel).read_text()
+    symbol='_ZN7dBgW_Kc10DetectClsnER12dBgCh_SphCrr'
+    signature='s32 dBgW_Kc::DetectClsn(dBgCh_SphCrr &sphere)'
+    start=raw.index('#define SQRT_RESULT')
+    end=raw.index('/* ---- defs in reverse ROM order ---- */')
+    helpers=raw[start:end]
+    body=function(raw,signature)
+    body=body.replace(signature,'int '+symbol+'(void *object,char *sphere)')
+    text=helpers+'\n'+body
+    reps=[
+        ('((const dBgCh_SphCrr &)sphere).flags','(*(u8 *)(sphere+0x70))'),
+        ('((dBgPi &)sphere).RecordHit(','_ZN5dBgPi9RecordHitEsP11SurfaceInfo(sphere+0x10,'),
+        ('sphere.RecordFloorHit(','func_020379f4(sphere,'),
+        ('sphere.RecordWallHit(','func_020379c0(sphere,'),
+        ('sphere.RecordUnderHit(','func_0203798c(sphere,'),
+        ('sphere.SetFloorNormal(','func_0203794c((int *)sphere,(int *)'),
+        ('sphere.ExpandPushOutBounds(','func_02037a6c(sphere,'),
+        ('sphere.flags','(*(u8 *)(sphere+0x70))'),
+        ('sphere.radius','(*(s32 *)(sphere+0x48))'),
+        ('sphere.centre','(*(Vector3 *)(sphere+0x3c))'),
+        ('sphere.pos','(*(Vector3 *)(sphere+0x3c))'),
+        ('sphere.mWallRejectHalfExtent','(*(s32 *)(sphere+0xec))'),
+        ('sphere.mFloorNormal','(*(Vector3 *)(sphere+0xfc))'),
+        ('sphere.mMaxNormalY','(*(s32 *)(sphere+0x108))'),
+        ('data_020a0cec.clps.GetFloorClass()','func_02037e58((unsigned int *)&data_020a0cec.clps)'),
+        ('data_020a0cec.CopyNormalTo(sn)','sn=data_020a0cec.normal'),
+        ('dBgCh::ShouldPassThroughImpl(this, data_020a0cec.clps, sphere,',
+         '_ZN5dBgCh21ShouldPassThroughImplEPvRK4CLPSRKS_b(object, &data_020a0cec.clps, sphere,'),
+        ('GetSurfaceInfo(triID, data_020a0cec)','_ZN7dBgW_Kc14GetSurfaceInfoEsR11SurfaceInfo(object,triID,&data_020a0cec)'),
+        ('cstd::fdiv','_ZN4cstd4fdivEii'),
+    ]
+    for old,new_ in reps: text=text.replace(old,new_)
+    members={'kclFile':'(*(KCL_File **)((char *)object+0x20))',
+             'upAxis':'(*(PlainVec *)((char *)object+0x28))',
+             'shallowOnly':'(*(u8 *)((char *)object+0x34))',
+             'depthByDir':'(*(u8 *)((char *)object+0x35))',
+             'depthDirMinDot':'(*(s32 *)((char *)object+0x44))',
+             'depthDir':'(*(PlainVec *)((char *)object+0x38))',
+             'edgeToleranceShift':'(*(s32 *)((char *)object+0x48))',
+             'edgeContacts':'(*(u8 *)((char *)object+0x4c))',
+             'tolerantWallEdges':'(*(u8 *)((char *)object+0x4d))'}
+    for name,expr in members.items():
+        text=re.sub(r'(?<![.>\w])\b'+name+r'\b',expr,text)
+    # The lift takes no function-like macros: expand the unit's own macros
+    # with the C preprocessor (comments and line markers dropped).
+    import subprocess
+    fx=re.search(r'#define FX_MUL\([^\n]*',(ROOT/'include/nitro/fx/fx.h').read_text())[0]
+    text=subprocess.run(['gcc','-E','-P','-x','c++','-'],input=fx+'\n'+text,
+                        capture_output=True,text=True,check=True).stdout
+    text=re.sub(r'\bthis\b','object',text)
+    text=re.sub(r'\bword\b','octreeWord',text)
+    # A volatile-qualified value cast only pins the ROM's register round
+    # trip; on the host it is the same value.
+    text=text.replace('(volatile s32)','(s32)')
+    header=(ROOT/'include/dBgW_Kc.h').read_text()
+    records='\n'.join(re.search(r'struct '+name+r' \{.*?\n\};',header,re.S).group() for name in ('KCL_Tri','KCL_File'))
+    extra='''#include "nitro/fx/fx.h"
+struct Vector3 { s32 x,y,z; };
+struct Vector3s { s16 x,y,z; };
+struct PlainVec { s32 x,y,z; };
+struct CLPS { u32 w0,w1; };
+struct SurfaceInfo { CLPS clps; Vector3 normal; };
+extern SurfaceInfo data_020a0cec;
+'''+records+'\n'
+    declarations='''
+int _ZN4cstd4fdivEii(int,int); bool func_020397dc(int); int func_02039794(int);
+s16 func_020396dc(void *,KCL_Tri *);
+void _ZN7dBgW_Kc14GetSurfaceInfoEsR11SurfaceInfo(void *,s16,SurfaceInfo *);
+bool _ZN5dBgCh21ShouldPassThroughImplEPvRK4CLPSRKS_b(void *,CLPS *,void *,bool);
+void _ZN5dBgPi9RecordHitEsP11SurfaceInfo(void *,s16,SurfaceInfo *);
+s32 DotVec3(const s32 *,const Vector3 *);
+void func_020379f4(char *,int,void *); void func_020379c0(char *,int,void *);
+void func_0203798c(char *,int,void *); void func_0203794c(int *,int *);
+void func_02037a6c(char *,s32,s32,s32,s32,s32,s32); int func_02037e58(unsigned int *);
+'''
+    return projected(rel,text,declarations,[symbol],extra=extra,auto_globals=False)
+
+
 def arm9_initializers():
     # crt0 runs the main module's static-initializer table (.ctors at
     # 0x02086b60) before main. The recovered bodies patch script pointers,
@@ -1276,6 +1363,7 @@ if __name__ == '__main__':
                             ('stage_ground_kcl',ground_kcl()),
                             ('stage_line_scan',line_scan()),
                             ('stage_line_kcl',ground_kcl(line=True)),
+                            ('stage_sphere_kcl',sphere_kcl()),
                             ('stage_camera_init',camera_init()),
                             ('stage_camera_render',camera_render()),
                             ('stage_view_render',view_render()),
