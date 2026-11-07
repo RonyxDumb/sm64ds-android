@@ -22,7 +22,7 @@ def main():
     flags=['g++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-Wno-unknown-pragmas',
            '-Wno-unused-parameter','-Wno-unused-variable','-Wno-sign-compare',
            '-Wno-comment','-Wno-implicit-fallthrough','-Wno-misleading-indentation',
-           '-Wno-unused-but-set-variable','-Wno-unused-value','-fwrapv','-fsigned-char',
+           '-Wno-unused-but-set-variable','-Wno-unused-local-typedefs','-Wno-unused-value','-fwrapv','-fsigned-char',
            '-fno-strict-aliasing','-ffunction-sections','-fdata-sections',
            '-fsanitize=address,undefined','-g','-Iandroid/app/src/main/cpp',
            '-Iport/ntr/include','-I'+str(args.generated/'include'),'-Iinclude']
