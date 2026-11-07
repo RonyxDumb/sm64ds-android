@@ -322,6 +322,15 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    # References are pointers in the ARM ABI.
+    ('_ZN6Camera8BehaviorEv', 0, 'Camera', {
+        'int &dst': 'int *dst', 'short &dst': 'short *dst',
+        # The state-table identity test compares a cartridge address.
+        '(u32)&data_0208733c': '0x0208733cu',
+        '_Z14ApproachLinearRiii(*(int *)(c + 0x134),': '_Z14ApproachLinearRiii((int *)(c + 0x134),',
+        '_Z15ApproachLinear2Rsss(*(short *)(c + 0x18c),': '_Z15ApproachLinear2Rsss((short *)(c + 0x18c),',
+        '_Z15ApproachLinear2Rsss(*(short *)(c + 0x18e),': '_Z15ApproachLinear2Rsss((short *)(c + 0x18e),',
+        '_Z15ApproachLinear2Rsss(*(short *)(c + 0x188),': '_Z15ApproachLinear2Rsss((short *)(c + 0x188),'}),
     # Static Stage::LC_Render: the generated receiver word is unused.
     ('_ZN5Stage9LC_RenderEv', 0, 'Stage', {
         '        RenderBouncingArrows();': '        _ZN5Stage20RenderBouncingArrowsEv();'}),
