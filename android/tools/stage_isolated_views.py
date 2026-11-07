@@ -195,6 +195,15 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
     # but take the address of its cartridge instances.
     raw = raw.replace('\nstruct State;\n', '\nstruct State { unsigned char pmf[0x18]; };\n')
+    if 'Player::State' in raw:
+        # Cartridge state records passed by reference: opaque byte arrays
+        # whose address is the ABI pointer.
+        raw = re.sub(r'Player::State\s*&\s*(\w*)', r'void *\1', raw)
+        raw = re.sub(r'extern Player::State (data_\w+);', r'extern char \1[];', raw)
+    if '->IsOnGround()' in raw:
+        raw = re.sub(r'\(\(dBgCh_Actr \*\)(\([^()]*\))\)->IsOnGround\(\)',
+                     r'_ZNK10dBgCh_Actr10IsOnGroundEv((void *)\1)', raw)
+        raw = 'extern "C" int _ZNK10dBgCh_Actr10IsOnGroundEv(void *);\n'+raw
     if raw.lstrip('/cp\n').startswith('struct State {};') or '\nstruct State {};\n' in raw:
         # The by-reference Player state ABI: references are pointers, the
         # local Player shell's methods are their mangled symbols.
