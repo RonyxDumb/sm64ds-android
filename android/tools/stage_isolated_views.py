@@ -485,6 +485,7 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZNK10dBgCh_Actr10IsOnGroundEv', 0, 'dBgCh_Actr'),
     ('_ZNK9Animation12WillHitFrameEi', 0, 'Animation'),
     ('_ZN6Player12St_Wait_MainEv', 2, 'Player'),
     ('_ZN9ModelBase12ApplyOpacityEj', 0, 'ModelBase'),

@@ -1086,6 +1086,13 @@
       "unit": "stage_hatena_init"
     },
     {
+      "path": "external/sm64ds-pc/src/_ZNK10dBgCh_Actr10IsOnGroundEv.cpp",
+      "sha256": "483976485213e80136fc5f0dd0fb4a7fb8d8bcd8ebd2ac134afb193723d24e0a",
+      "header": false,
+      "source": "\ntypedef unsigned char u8;\ntypedef signed char s8;\ntypedef unsigned short u16;\ntypedef short s16;\ntypedef unsigned int u32;\ntypedef int s32;\ntypedef unsigned long long u64;\ntypedef long long s64;\ntypedef int Fix12i;\nstruct Matrix2x2 { int m[4]; };\nstruct SharedFilePtr { u16 fileID; u8 numRefs; u8 pad; Ptr<void> filePtr; };\nstruct LVL_Overlay { u8 bytes[0x1c]; };\nstruct MeshCollider { u8 bytes[0x50]; };\nstruct SysTracker { u8 bytes[0x81c]; };\nstruct BMD_Bone;\nstruct BMD_File;\nstruct BMD_Material;\nstruct Matrix4x3 { s32 m[12]; };\nstruct ModelComponents {\n    Ptr<BMD_File> modelFile; Ptr<BMD_Material> materials; Ptr<BMD_Bone> bones;\n    Ptr<Matrix4x3> transforms; Ptr<void> unk_10;\n};\nstruct Model {\n    Ptr<void> vtable; Ptr<BMD_File> modelFile; ModelComponents data;\n    Matrix4x3 mat4x3; Ptr<void> transformsBuf;\n};\nstruct StageTexAnimSlot { Ptr<void> mTransformer; u8 mActive; u8 pad[3]; Ptr<void> mBlockList; };\nstruct Stage {\n    u8 base[0x50]; SysTracker mSysTracker; Model mModel;\n    StageTexAnimSlot mTexAnimSlots[8]; MeshCollider mMeshCollider;\n    u8 fog[0x50]; Ptr<void> skybox; u8 pad9c0[4]; s32 mWaitingForLoad;\n};\nstruct Fader { u8 bytes[0x60]; };\nstruct Heap { u8 opaque; };\nstruct SaveData { u32 magic; u32 flags1; s32 flags2; };\nstruct MinimapState { u8 bytes[0x24]; };\nstatic_assert(sizeof(Stage)==0x9c8);\nstatic_assert(offsetof(Stage,mSysTracker)==0x50);\nstatic_assert(offsetof(Stage,mModel)==0x86c);\nstatic_assert(offsetof(Stage,mTexAnimSlots)==0x8bc);\nstatic_assert(offsetof(Stage,mMeshCollider)==0x91c);\nstatic_assert(offsetof(Stage,mWaitingForLoad)==0x9c4);\nstatic_assert(sizeof(SharedFilePtr)==8);\nstatic_assert(sizeof(Model)==0x50);\nstatic_assert(sizeof(ModelComponents)==0x14);\nstatic_assert(offsetof(Model,data)==8);\nstatic_assert(offsetof(Model,mat4x3)==0x1c);\nstatic_assert(offsetof(Model,transformsBuf)==0x4c);\n\n\n//cpp\n// @symbol pk__ZNK10dBgCh_Actr10IsOnGroundEv\n/* dBgCh_Actr::IsOnGround() const at 0x020356e8.\n *\n * Returns 0 or 0x10. Named like a predicate and shaped like a mask read:\n * `ldr r0,[r0,#0x10]; and r0,r0,#0x10; bx lr`, no normalisation, so bool\n * would be the wrong return type however the name reads.\n */\n\nextern \"C\" s32 pk__ZNK10dBgCh_Actr10IsOnGroundEv(Ptr<void> object) {\n    return (*(Ptr<u32>)(((Ptr<char>)(object)+0x10))) & 0x10;\n}\n\nextern \"C\" unsigned int abi__ZNK10dBgCh_Actr10IsOnGroundEv(unsigned int a0) { return uword(pk__ZNK10dBgCh_Actr10IsOnGroundEv((Ptr<void>)(a0))); }\n",
+      "unit": "stage_isolated__ZNK10dBgCh_Actr10IsOnGroundEv"
+    },
+    {
       "path": "external/sm64ds-pc/src/_ZNK9Animation12WillHitFrameEi.cpp",
       "sha256": "862f5014e99796aec5d64fae9f8a39d549dc9f1d852e568ba91bb0172d8108fd",
       "header": false,
@@ -3776,6 +3783,10 @@
       "address": 34905472,
       "symbol": "abi_func_ov102_02149d80",
       "overlay": 102
+    },
+    {
+      "address": 33773288,
+      "symbol": "abi__ZNK10dBgCh_Actr10IsOnGroundEv"
     },
     {
       "address": 33643160,
