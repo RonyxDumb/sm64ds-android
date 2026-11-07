@@ -317,6 +317,13 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('Color_Interp', 2),
+    ('func_ov002_020d71a0', 2),
+    ('Player_ReleaseHeldActor', 2),
+    ('func_ov002_020e6a78', 2),
+    ('func_ov002_020e69c0', 2),
+    ('func_ov002_020e6b3c', 2),
+    ('func_ov002_020e6b74', 2),
     ('func_ov002_020d869c', 2),
     ('func_020105cc', 0),
     ('func_ov002_020d8d10', 2),
@@ -567,6 +574,9 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020bdc18', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bdb50', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020be3b0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c29d4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c2b08', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bd984', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
