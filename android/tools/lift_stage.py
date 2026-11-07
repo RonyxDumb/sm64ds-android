@@ -270,6 +270,9 @@ def free_c(rel):
     if rel in ('src/Matrix4x3_ApplyInPlaceToRotationX.c','src/Matrix4x3_ApplyInPlaceToScale.c',
                'src/Matrix4x3_ApplyInPlaceToRotationZ.c','src/Matrix4x3_ApplyInPlaceToTranslation.c'):
         raw=replace_once(raw,'struct Matrix4x3 { char data[0x30]; };','')
+    if rel.endswith('port/unmatched/func_ov002_020d3b9c.c'):
+        # ITCM 0x01ffabe4 is the cartridge's __aeabi_idiv symbol.
+        raw = raw.replace('func_01ffabe4', '__aeabi_idiv')
     if rel.endswith('/func_0205cb68.c'):
         raw = replace_once(raw,'extern void func_0205d2dc(void);',
                            'extern int func_0205d2dc(void *,int,int,int);')
@@ -1402,6 +1405,12 @@ if __name__ == '__main__':
         row,code=free_c('external/sm64ds-pc/src/'+name+'.c')
         for binding in code: binding['overlay']=2
         rows.append(row); bindings.extend(code)
+    # Player walk-physics core: upstream's port/unmatched C body (a near-miss
+    # of the ROM whose documented divergences are register/schedule only).
+    row,code=free_c('external/sm64ds-pc/port/unmatched/func_ov002_020d3b9c.c')
+    for binding in code: binding['overlay']=2
+    row['unit']='stage_unmatched_func_ov002_020d3b9c'
+    rows.append(row); bindings.extend(code)
     for name,overlay in [('func_ov002_020d228c',2)]:
         row,code=free_c('external/sm64ds-pc/src/'+name+'.cpp')
         for binding in code: binding['overlay']=overlay

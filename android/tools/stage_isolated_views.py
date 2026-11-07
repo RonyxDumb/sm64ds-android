@@ -132,7 +132,9 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     body = re.sub(r'\bthis->', '', body)
     body = re.sub(r'\bthis\b', 'object', body)
     if cls == 'Player':
-        body = player_self_calls(body)
+        # Player.cpp members call their func_ov002_* siblings with the
+        # implicit receiver; isolated units already pass it explicitly.
+        body = player_self_calls(body, bare_members=rel.endswith('src/game/player/Player.cpp'))
     for name, (typ, offset) in fields.items():
         if typ.startswith('[]'):
             body = re.sub(r'(?<![.>\w])'+name+r'\b',
@@ -193,12 +195,14 @@ def player_methods():
             if params and not all(re.fullmatch(scalar+r'(?:\s+\w+)?', p.strip()) for p in params.split(',')):
                 continue
             mangled = [n for n in by_name if n.startswith('_ZN6Player%d%sE' % (len(name), name))]
+            if not mangled and name.startswith('func_ov002_') and name in by_name:
+                mangled = [name]  # members still named by their cartridge symbol
             if len(mangled) == 1:
                 _PLAYER_METHODS[name] = (mangled[0], 'int' if ret == 'bool' else ret, params)
     return _PLAYER_METHODS
 
 
-def player_self_calls(body):
+def player_self_calls(body, bare_members=False):
     """Bare calls of the receiver's own member methods become their
     mangled cartridge symbols with the receiver as the first argument."""
     decls = []
@@ -211,16 +215,27 @@ def player_self_calls(body):
         if re.search(pattern, body):
             body = re.sub(pattern, mangled+r'(object, \1)', body)
             decls.append('extern "C" int %s(void *, void *);' % mangled)
+    # Sound statics taking the dActor_c mCamSpacePos (+0x74) by reference.
+    for name, mangled, scalars in (('PlayBank0', '_ZN5Sound9PlayBank0EjRK7Vector3', 1),
+                                   ('PlayBank3', '_ZN5Sound9PlayBank3EjRK7Vector3', 1),
+                                   ('PlayCharVoice', '_ZN5Sound13PlayCharVoiceEjjRK7Vector3', 2)):
+        pattern = r'Sound::'+name+r'\(([^;]*?),\s*&?mCamSpacePos\s*\)'
+        if re.search(pattern, body):
+            body = re.sub(pattern, mangled+r'(\1, (void *)((char *)object + 0x74))', body)
+            decls.append('extern "C" int %s(%s, void *);' % (mangled, ', '.join(['unsigned int']*scalars)))
+    body = re.sub(r'&\s*mCamSpacePos\b', '(void *)((char *)object + 0x74)', body)
     if 'FX_MUL(' in body and '#define FX_MUL' not in body:
         decls.append('#define FX_MUL(v1, v2) ((s32)(((s64)(v1) * (v2) + 0x800LL) >> 12))')
     for name, (mangled, ret, params) in player_methods().items():
-        if name in ('IsState', 'ChangeState'):
+        if name in ('IsState', 'ChangeState') or (mangled == name and not bare_members):
             continue
         pattern = r'(?<![.>\w:~])'+name+r'\s*\('
         if not re.search(pattern, body) or re.search(r'\b'+name+r'\s*\([^)]*\)\s*\{', body):
             continue
-        body = re.sub(pattern+r'\s*\)', mangled+'(object)', body)
-        body = re.sub(pattern, mangled+'(object, ', body)
+        if re.search(r'extern[^;{}]*\b'+name+r'\s*\(', body) or re.search(
+                r'^[ \t]*(?:extern\s+)?(?:const\s+)?(?:unsigned\s+|signed\s+)?\w+[\s\*]+'+name+r'\s*\([^;{]*\)\s*;', body, re.M):
+            continue  # declared by the unit itself as a free call with explicit receiver
+        body = re.sub(pattern+r'(\s*\))?', lambda m: mangled+('(object)' if m[1] else '(object, '), body)
         if mangled+'(' not in body.split('extern "C"', 1)[0]:
             decls.append('extern "C" %s %s(void *%s);' % (ret, mangled, ', '+params if params else ''))
     if decls:
@@ -352,6 +367,12 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
             if (ROOT/rel).exists():
                 break
         raw = (ROOT/rel).read_text()
+    if rel.endswith('.c'):
+        # C units may name a parameter `this`; the projection is C++.
+        raw = re.sub(r'\bthis\b', 'this_', raw)
+    # Player members still named func_ovNNN_<addr> carry a C++-mangled
+    # spelling in some sources; the cartridge symbol is the bare name.
+    raw = re.sub(r'\b_ZN6Player\d+(func_ov\d+_[0-9a-f]{8})E[A-Za-z0-9_]*', r'\1', raw)
     # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
     # but take the address of its cartridge instances.
     raw = re.sub(r'(^|\n)struct State;[ \t]*', r'\1struct State { unsigned char pmf[0x18]; };', raw)
@@ -411,6 +432,23 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020d413c', 2),
+    ('func_02010844', 0),
+    ('func_ov002_020d4d88', 2),
+    ('func_ov002_020d45c0', 2),
+    ('func_02022b04', 0),
+    ('_ZN8Particle20RunningSlidingDustAtE5Fix12IiES1_S1_', 0, {
+        # Particle (include/Particle.h): mRunningSlidingDustSystemID +0x750,
+        # mRunningSlidingDustCallback +0x754.
+        '#include "Particle.h"\n': '', 'extern struct Particle* data_0209ee74;': 'extern char *data_0209ee74;',
+        'data_0209ee74->mRunningSlidingDustSystemID =': '*(u32 *)(data_0209ee74 + 0x750) =',
+        '            data_0209ee74->mRunningSlidingDustSystemID,': '            *(u32 *)(data_0209ee74 + 0x750),',
+        '(void*)&data_0209ee74->mRunningSlidingDustCallback': '(void*)(data_0209ee74 + 0x754)'}),
+    ('func_ov002_020d5c6c', 2),
+    ('func_ov002_020d600c', 2),
+    ('func_ov002_020dd824', 2),
+    ('func_ov002_020bd20c', 2),
+    ('func_ov002_020bd06c', 2),
     ('func_ov002_020f63a0', 2),
     ('func_ov002_020f5f60', 2),
     ('func_ov002_020f23d0', 2),
@@ -783,6 +821,11 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c18b0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c04e0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0434', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c44c4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020caf68', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bdc18', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bdb50', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020be3b0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
@@ -826,6 +869,9 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('func_ov002_020c71e0', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c71e0()'),
+    ('func_ov002_020c2f64', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c2f64()'),
+    ('func_ov002_020c70ac', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c70ac()'),
     ('func_ov002_020c0108', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c0108(int p1)', {
         # The in-body externs are hoisted ahead of the body's local typedefs.
         'void _ZN7PathPtr6FromIDEj(void*, u32 id);': 'void _ZN7PathPtr6FromIDEj(void*, unsigned int id);',

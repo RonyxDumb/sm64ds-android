@@ -120,6 +120,169 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
 // func_ov002_020e4768 (recovered isolated unit): per-frame skeleton update
 // of the current body model, head attachment (vtable slot 4) and the two
 // carried matrices (0x58c with a held object, 0x5ec always).
+// Player::func_ov002_020c75f0 (src/game/player/Player.cpp): entrance step
+// 0 -- the landing of the level-entry jump. Line for line from the
+// recovered member; Player.h offsets, dActor_c mCamSpacePos (+0x74),
+// mHorzSpeed (+0x98), mVertSpeed (+0xa8).
+void player_level_enter_land(uint32_t self) {
+    constexpr uint32_t kCamSpacePos=0x74,kHorzSpeed=0x98,kVertSpeed=0xa8;
+    const auto set_anim=[self](uint32_t id) {
+        Ptr<void(uint32_t,uint32_t,int32_t,int32_t,uint32_t)>{0x020bef2cu}(self,id,0x40000000,0x1000,0);
+    };
+    if (Ptr<int(uint32_t,uint32_t)>{0x020beeccu}(self,0x56)) { // IsAnim
+        const uint32_t model=Ptr<uint32_t(uint32_t,uint32_t,int)>{kGetBodyModelID}(self,at<uint32_t>(self+8)&0xff,0);
+        if (Ptr<int(uint32_t,int)>{0x02015a98u}(at<uint32_t>(self+kBodyModels+model*4)+0x50,0)) // WillHitFrame
+            Ptr<void(uint32_t,uint32_t)>{0x0201264cu}(6,self+kCamSpacePos); // Sound::PlayBank0
+    }
+    if (at<uint8_t>(self+0x6de)==0) { // mIsAirborne
+        Ptr<void(uint32_t)>{0x020c2f64u}(self);
+        at<uint8_t>(self+0x70c)=0; // mStateArg
+        at<uint8_t>(self+0x6e5)=1; // mStateWork
+        const uint8_t mode=at<uint8_t>(0x0209f2fcu);
+        if (mode==1 || mode==2) Ptr<void(uint32_t,int)>{0x020bf4e4u}(self,0x880); // Heal
+        switch (at<uint8_t>(self+0x6e3)) { // mStateStep
+        case 3: case 10:
+            set_anim(0x51);
+            break;
+        case 4:
+            at<int32_t>(self+kHorzSpeed)=0;
+            set_anim(0x55);
+            break;
+        case 6: case 7:
+            at<uint8_t>(self+0x6de)=1;
+            at<uint8_t>(self+0x6df)=0; // mLandSoundPlayed
+            at<int32_t>(self+kHorzSpeed)>>=2;
+            at<int32_t>(self+kVertSpeed)=int32_t(0u-uint32_t(at<int32_t>(self+kVertSpeed)>>2));
+            at<uint8_t>(self+0x70c)=0;
+            set_anim(0x13);
+            break;
+        case 5: case 8: case 9: case 11: case 12: case 15:
+            at<int32_t>(self+kHorzSpeed)=0;
+            break;
+        case 13: case 16: case 17: case 18:
+            at<int32_t>(self+kHorzSpeed)=0;
+            set_anim(0x52);
+            break;
+        default:
+            break;
+        }
+        if (mode==2) // Sound::PlayCharVoice(mCharacter, 0x24, mCamSpacePos)
+            Ptr<void(uint32_t,uint32_t,uint32_t)>{0x02012154u}(at<uint8_t>(self+0x6d9),0x24,self+kCamSpacePos);
+    } else {
+        const uint8_t step=at<uint8_t>(self+0x6e3);
+        if ((step==0xb || step==0xc || step==0x12) && at<uint16_t>(self+0x6a6)==1) // mStateWaitTimer
+            Ptr<void(uint32_t,uint32_t)>{0x02012694u}(0x28,self+kCamSpacePos);
+    }
+}
+// dBgPi::CopyTo(dBgPi &) const (0x0203806c,
+// external/sm64ds-pc/src/_ZNK5dBgPi6CopyToERS_.cpp): every member after the
+// vptr -- the surface CLPS pair and normal (dBgPc base, +0x04..+0x17),
+// triangleID, flags, clsnID, unk_020, unk_024 (+0x18..+0x27).
+void bgpi_copy_to(uint32_t self,uint32_t dst) {
+    auto &space=packed::Space::current();
+    std::memcpy(space.data(dst+4,0x24),space.data(self+4,0x24),0x24);
+}
+// dBgCh_SphCrr::SetFloorResult(const dBgPi &) (0x020378e4,
+// external/sm64ds-pc/src/_ZN12dBgCh_SphCrr14SetFloorResultERK5dBgPi.cpp):
+// the hit record into mClsnResult1 (+0x74), every dBgPi field after its
+// leading word, exactly the members CopyTo moves.
+void sphcrr_set_floor_result(uint32_t self,uint32_t src) { bgpi_copy_to(src,self+0x74); }
+// dBgPi::operator=(const dBgPi &) (0x02038018,
+// external/sm64ds-pc/src/_ZN5dBgPiaSERKS_.cpp): the same members as CopyTo,
+// returning *this. memmove keeps the source loads ahead of the stores.
+uint32_t bgpi_assign(uint32_t self,uint32_t other) {
+    auto &space=packed::Space::current();
+    std::memmove(space.data(self+4,0x24),space.data(other+4,0x24),0x24);
+    return self;
+}
+// Player::func_ov002_020c7350 (src/game/player/Player.cpp): entrance step
+// 1 -- the post-landing pose, its voice cues and the hand-over to step 2
+// (or the key spawn of steps 0x10/0x12, step 6). Line for line.
+void player_level_enter_pose(uint32_t self) {
+    constexpr uint32_t kIsAnim=0x020beecc,kWillHitFrame=0x02015a98,kSetAnim=0x020bef2c;
+    const auto is_anim=[self](uint32_t id) { return Ptr<int(uint32_t,uint32_t)>{kIsAnim}(self,id)!=0; };
+    const auto body_hits=[self](int frame) {
+        const uint32_t id=Ptr<uint32_t(uint32_t,uint32_t,int)>{kGetBodyModelID}(self,at<uint32_t>(self+8)&0xff,0);
+        return Ptr<int(uint32_t,int)>{kWillHitFrame}(at<uint32_t>(self+kBodyModels+id*4)+0x50,frame)!=0;
+    };
+    const auto voice=[self](uint32_t id) { // Sound::PlayCharVoice(mCharacter, id, mCamSpacePos)
+        Ptr<void(uint32_t,uint32_t,uint32_t)>{0x02012154u}(at<uint8_t>(self+0x6d9),id,self+0x74);
+    };
+    if (at<uint8_t>(self+0x6de)!=0) return; // mIsAirborne
+    if (is_anim(0x10) && body_hits(0x52)) voice(0x27);
+    if (is_anim(0x85) && body_hits(0x20)) voice(0x35);
+    if (is_anim(0xa5) && body_hits(0x23)) voice(0x37);
+    if (body_hits(0x8e) && is_anim(0xa5)) at<uint8_t>(0x0209f20cu)=1;
+    if (!Ptr<int(uint32_t)>{0x020bed98u}(self)) return; // FinishedAnim
+    const uint8_t step=at<uint8_t>(self+0x6e3);
+    if (step==0x10 || step==0x12) {
+        Ptr<void(uint32_t,uint32_t,int32_t,int32_t,uint32_t)>{kSetAnim}(self,0x94,0x40000000,0x1000,0);
+        const uint32_t actor=Ptr<uint32_t(uint32_t,uint32_t,uint32_t,uint32_t,int,int)>{0x02010e2cu}(
+            0x11a,uint32_t(int32_t(at<int8_t>(self+0x719))),self+0x5c,self+0x8c,at<int8_t>(self+0xcc),-1);
+        Ptr<void(uint32_t,int)>{0x0213115cu}(actor,at<uint32_t>(self+8)==2 ? 4 : 1); // daObjKey_c (ov089)
+        at<uint8_t>(self+0x6e5)=6;
+        return;
+    }
+    if (is_anim(0x85)) at<uint8_t>(0x0209f20cu)=1;
+    const uint8_t mode=at<uint8_t>(0x0209f2d8u);
+    if (mode==1 || ((at<int32_t>(0x0209caa0u+8)&0x80) && mode!=2))
+        Ptr<void(uint32_t,uint32_t,int32_t,int32_t,uint32_t)>{kSetAnim}(self,0x47,0,0x1000,0);
+    at<uint8_t>(self+0x6e5)=2;
+}
+// Player::FinishedAnim (0x020bed98, src/game/player/Player.cpp): the
+// current body model's Animation base (+0x50) has finished.
+int player_finished_anim(uint32_t self) {
+    const uint32_t id=Ptr<uint32_t(uint32_t,uint32_t,int)>{kGetBodyModelID}(self,at<uint32_t>(self+8)&0xff,0);
+    return Ptr<int(uint32_t)>{0x02015bccu}(at<uint32_t>(self+kBodyModels+id*4)+0x50)!=0; // Animation::Finished
+}
+// func_ov002_020c179c (external/sm64ds-pc/src/actors/Player.cpp, matched):
+// the floor pitch along a heading -- two dBgCh_Gnd probes 5 x sin/cos
+// ahead and behind, 0x64000 above the actor; atan2(dy, 0xa000).
+int player_floor_pitch(uint32_t self,int angle) {
+    auto &space=packed::Space::current();
+    const auto sincos=[](unsigned i) { return at<int16_t>(0x02082214u+i*2); }; // data_02082214
+    const unsigned idx=unsigned(uint16_t(int16_t(at<int16_t>(self+0x94)+angle)))>>4;
+    const int ox=sincos(idx*2)*5,oy=sincos(idx*2+1)*5;
+    int32_t y1=at<int32_t>(self+0x60),y2=y1;
+    alignas(8) uint8_t buffer[0x50];
+    const uint32_t rg=space.address(buffer);
+    int32_t v[3];
+    const uint32_t vp=space.address(v);
+    Ptr<uint32_t(uint32_t)>{0x02037570u}(rg); // dBgCh_Gnd C1
+    v[0]=at<int32_t>(self+0x5c)+ox; v[1]=at<int32_t>(self+0x60)+0x64000; v[2]=at<int32_t>(self+0x64)+oy;
+    Ptr<void(uint32_t,uint32_t,uint32_t)>{0x0203748cu}(rg,vp,self);
+    if (Ptr<int(uint32_t)>{0x02038f44u}(rg)) y1=at<int32_t>(rg+0x44);
+    v[0]=at<int32_t>(self+0x5c)-ox; v[1]=at<int32_t>(self+0x60)+0x64000; v[2]=at<int32_t>(self+0x64)-oy;
+    Ptr<void(uint32_t,uint32_t,uint32_t)>{0x0203748cu}(rg,vp,self);
+    if (Ptr<int(uint32_t)>{0x02038f44u}(rg)) y2=at<int32_t>(rg+0x44);
+    const int r=Ptr<int(int,int)>{0x0203b4dcu}(int(uint32_t(y1)-uint32_t(y2)),0xa000); // cstd::atan2
+    Ptr<uint32_t(uint32_t)>{0x02037534u}(rg); // dBgCh_Gnd D1
+    return r;
+}
+// Player::St_LevelEnter_Main (0x020c6f3c, src/game/player/Player.cpp):
+// six mStateStep values make the player dCamera_c::mFocusActor (+0x118),
+// then (this->*data_ov002_0211075c[mStateWork])() runs the entrance step
+// -- eight-byte ARM pointer-to-member records -- and the animations
+// advance unless mStateArg holds them.
+int player_level_enter_main(uint32_t self) {
+    switch (at<uint8_t>(self+0x6e3)) { // mStateStep
+    case 8: case 9: case 11: case 12: case 16: case 18:
+        at<uint32_t>(at<uint32_t>(0x0209f318u)+0x118)=self;
+        break;
+    default:
+        break;
+    }
+    auto &space=packed::Space::current();
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(0x0211075cu+at<uint8_t>(self+0x6e5)*8u,8),8); // mStateWork
+    const auto target=space.resolve_member(self,member);
+    using Step=void (*)(uint32_t);
+    Step step=nullptr;
+    std::memcpy(&step,&target.code,sizeof step);
+    step(target.object);
+    if (at<uint8_t>(self+0x70c)==0) Ptr<void(uint32_t)>{0x020bedd4u}(self); // Player_AdvanceAnims
+    return 1;
+}
 void player_update_skeleton(uint32_t self) {
     auto &space=packed::Space::current();
     const auto body=[self]() {
@@ -398,6 +561,14 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x020371fcu,&bgch_actr_snap_to_floor);
     space.bind(0x020cef84u,&player_ceiling_probe);
     space.bind(0x020e4768u,&player_update_skeleton);
+    space.bind(0x020c6f3cu,&player_level_enter_main);
+    space.bind(0x020c75f0u,&player_level_enter_land);
+    space.bind(0x0203806cu,&bgpi_copy_to);
+    space.bind(0x020378e4u,&sphcrr_set_floor_result);
+    space.bind(0x02038018u,&bgpi_assign);
+    space.bind(0x020c7350u,&player_level_enter_pose);
+    space.bind(0x020bed98u,&player_finished_anim);
+    space.bind(0x020c179cu,&player_floor_pitch);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);

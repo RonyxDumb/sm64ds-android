@@ -131,17 +131,28 @@ def main():
         path = ROOT/'android/app/src/main/cpp/runtime/stage_tail_veneers.inc'
         path.write_text(path.read_text()+''.join('VENEER(0x%08xu, 0x%08xu) // %s\n' % (a, t, n) for n, a, t in veneers))
         print('appended %d VENEER entries' % len(veneers))
-    members, sources = [], []
+    members, sources, blocks = [], [], []
     for name, overlay, addr, src in manual:
         if src:
             continue
         # Members recovered inside multi-function class sources (Player.cpp).
-        for rel in ('src/game/player/Player.cpp',):
+        for rel in ('external/sm64ds-pc/src/actors/Player.cpp', 'src/game/player/Player.cpp'):
             text = (ROOT/rel).read_text()
-            found = re.search(r'^(\w[\w\s\*&]*?\b(\w+)::'+re.escape(name)+r'\([^)]*\))\s*$', text, re.M)
+            found = re.search(r'^(\w[\w\s\*&]*?\b(\w+)::'+re.escape(name)+r'\([^)]*\))\s*\{?\s*$', text, re.M)
             if found:
                 sources.append((name, overlay, found[2], rel, found[1].strip()))
                 break
+            if '// @symbol '+name+'\n' in text:
+                blocks.append((name, overlay, rel))
+                break
+    for entry in blocks:
+        print('BLOCK  %-48s ov%03d in %s' % entry)
+    if args.apply and blocks:
+        anchor = 'BLOCK_UNITS = [\n'
+        lines = ''.join("    ('%s', %d, '%s'),\n" % e for e in blocks)
+        path = ROOT/'android/tools/stage_isolated_views.py'
+        path.write_text(path.read_text().replace(anchor, anchor+lines, 1))
+        print('appended %d BLOCK_UNITS entries' % len(blocks))
     for entry in sources:
         print('SOURCE %-48s ov%03d %s in %s' % (entry[0], entry[1], entry[4], entry[3]))
     if args.apply and sources:

@@ -2151,6 +2151,14 @@ void stage_sound_play_3d(uint32_t archive,uint32_t entry,uint32_t) {
     // effect player without positional attenuation or pan.
     stage_sound_play_2d(archive,entry);
 }
+void stage_sound_play_bank0(uint32_t entry,uint32_t position) {
+    // Complete Sound::PlayBank0 (0x0201264c): Sound::Play(0, id, pos).
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02012590u)(0,entry,position);
+}
+void stage_sound_play_bank3(uint32_t entry,uint32_t position) {
+    // Complete Sound::PlayBank3 (0x02012664): Sound::Play(3, id, pos).
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02012590u)(3,entry,position);
+}
 uint32_t stage_sound_play_2d_archive2(uint32_t entry) {
     // Complete func_02012790 (external/sm64ds-pc/src/func_02012790.c):
     // Sound::Play2D(2, entry). Play2D's own result is not used by callers.
@@ -2886,6 +2894,90 @@ void stage_cxa_vec_cleanup(uint32_t base,uint32_t count,uint32_t size,uint32_t d
         Ptr<void(uint32_t)>(destructor)(element);
     }
 }
+// Particle::SysTracker::Contents registry (include/Particle__SysTracker.h:
+// unk_000 +0, mCurrentIndex +4, 0x40 x 0x1c-byte Entry at +8, mBuckets[16]
+// at +0x708; Entry uniqueID +0, definitionID +4, savedValue +8, active +0xa,
+// system +0xc, callback +0x10, prev +0x14, next +0x18). Each body follows
+// its recovered unit in external/sm64ds-pc/src.
+constexpr uint32_t kParticleBuckets=0x708;
+uint32_t particle_definition_data(uint32_t definition) {
+    // data_0209ee74->mManager (+4)->mDefinitions (+0x1c)[id] (0x20 bytes) .data
+    const uint32_t manager=at<uint32_t>(at<uint32_t>(0x0209ee74u)+4);
+    return at<uint32_t>(at<uint32_t>(manager+0x1c)+definition*0x20);
+}
+uint32_t stage_particle_find_data(uint32_t self,uint32_t uniqueID) {
+    // Contents::FindData (0x02021b58).
+    if (!uniqueID) return 0;
+    for (uint32_t entry=at<uint32_t>(self+kParticleBuckets+(uniqueID&0xf)*4);entry;entry=at<uint32_t>(entry+0x18))
+        if (at<uint32_t>(entry)==uniqueID) return entry;
+    return 0;
+}
+void stage_particle_entry_reset(uint32_t entry) {
+    // Contents::Entry::Reset (0x02021cd4): give the definition back its
+    // loaned callback value, flag the System (+0x1c bit 0), free the slot.
+    at<uint16_t>(particle_definition_data(at<uint32_t>(entry+4))+0x28)=at<uint16_t>(entry+8);
+    at<uint32_t>(at<uint32_t>(entry+0xc)+0x1c)|=1;
+    at<uint32_t>(entry)=0;
+}
+void stage_particle_link(uint32_t self,uint32_t entry) {
+    // Contents::Link (0x02021a48).
+    const uint32_t bucket=self+kParticleBuckets+(at<uint32_t>(entry)&0xf)*4;
+    const uint32_t head=at<uint32_t>(bucket);
+    if (!head) {
+        at<uint32_t>(bucket)=entry;
+    } else {
+        at<uint32_t>(head+0x14)=entry;
+        at<uint32_t>(entry+0x18)=at<uint32_t>(bucket);
+        at<uint32_t>(bucket)=entry;
+    }
+}
+void stage_particle_unlink(uint32_t self,uint32_t entry) {
+    // Contents::Unlink (0x02021a04).
+    const uint32_t prev=at<uint32_t>(entry+0x14),next=at<uint32_t>(entry+0x18);
+    if (!prev) at<uint32_t>(self+kParticleBuckets+(at<uint32_t>(entry)&0xf)*4)=next;
+    else at<uint32_t>(prev+0x18)=next;
+    if (next) at<uint32_t>(next+0x14)=prev;
+    stage_particle_entry_reset(entry);
+}
+int stage_particle_entry_initialise(uint32_t entry,uint32_t uniqueID,uint32_t definition,
+                                    uint32_t position,uint32_t direction,uint32_t callback) {
+    // Contents::Entry::Initialise (0x02021d1c).
+    const uint32_t data=particle_definition_data(definition);
+    at<uint32_t>(data)&=~0x4000u;
+    const uint32_t manager=at<uint32_t>(at<uint32_t>(0x0209ee74u)+4);
+    const uint32_t system=Ptr<uint32_t(uint32_t,int,uint32_t)>(0x02049e0cu)(manager,int(definition),position);
+    at<uint32_t>(entry+0xc)=system;
+    if (!system) return 0;
+    if (definition==0x52 || definition==0x50) {
+        auto &flags=at<uint32_t>(system+0x74); // System::Flags bitfield
+        if ((flags&0x3f)<=5 && ((flags>>6)&0x3f)>=5) flags=(flags&~(0x3fu<<12))|(5u<<12);
+    }
+    at<uint16_t>(entry+8)=at<uint16_t>(data+0x28);
+    at<uint16_t>(data+0x28)=0;
+    if (direction) std::memcpy(packed::Space::current().data(system+0x3c,6),packed::Space::current().data(direction,6),6);
+    if (callback) Ptr<void(uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(callback)))(callback,system); // SpawnParticles
+    at<uint32_t>(entry)=uniqueID;
+    at<uint32_t>(entry+4)=definition;
+    at<uint8_t>(entry+0xa)=1;
+    at<uint32_t>(entry+0x10)=callback;
+    at<uint32_t>(entry+0x14)=at<uint32_t>(entry+0x18)=0;
+    return 1;
+}
+uint32_t stage_particle_create(uint32_t self,uint32_t definition,uint32_t position,uint32_t direction,uint32_t callback) {
+    // Contents::Create (0x02021a74).
+    for (int i=0;i<0x40;++i) {
+        const uint32_t entry=self+8+at<uint8_t>(self+4)*0x1cu;
+        if (at<uint32_t>(entry)==0) {
+            auto &counter=at<uint32_t>(self);
+            if (++counter==0) ++counter;
+            if (!stage_particle_entry_initialise(entry,counter,definition,position,direction,callback)) return 0;
+            stage_particle_link(self,entry);
+            return counter;
+        }
+        at<uint8_t>(self+4)=uint8_t((at<uint8_t>(self+4)+1)%0x40);
+    }
+    return 0;
+}
 uint32_t stage_actor_d2(uint32_t self) {
     // dActor_c D2 (0x020112c8): leave the actor list (stage_actor_destruct).
     stage_actor_destruct(self);
@@ -2927,6 +3019,12 @@ void bind_stage_model_runtime(packed::Space &space) {
     space.bind(0x02016ca8u,&stage_model_d2);
     space.bind(0x020170b8u,&stage_ext_model_d2);
     space.bind(0x020112c8u,&stage_actor_d2);
+    space.bind(0x02021b58u,&stage_particle_find_data);
+    space.bind(0x02021cd4u,&stage_particle_entry_reset);
+    space.bind(0x02021a48u,&stage_particle_link);
+    space.bind(0x02021a04u,&stage_particle_unlink);
+    space.bind(0x02021d1cu,&stage_particle_entry_initialise);
+    space.bind(0x02021a74u,&stage_particle_create);
     space.bind(0x02014a2cu,&stage_cc_ac_pos_get_pos);
     space.bind(0x0206df84u,&stage_cstd_abs);
     space.bind(0x02016bb8u,&stage_model_virtual10);
@@ -2945,6 +3043,8 @@ void bind_stage_audio_runtime(packed::Space &space) {
     space.bind(0x0204f8ccu,&stage_snd_move_volume);
     space.bind(0x02012840u,&stage_sound_play_2d);
     space.bind(0x02012790u,&stage_sound_play_2d_archive2);
+    space.bind(0x0201264cu,&stage_sound_play_bank0);
+    space.bind(0x02012664u,&stage_sound_play_bank3);
     space.bind(0x02012590u,&stage_sound_play_3d);
     space.bind(0x02012328u,&stage_sound_play_long);
     space.bind(0x02012154u,&stage_sound_play_char_voice);
