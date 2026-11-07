@@ -283,6 +283,11 @@ FREE_UNITS = [
         'struct Matrix2x2 { int a, b, c, d; };': 'struct OamAffine2 { int a, b, c, d; };',
         'struct Matrix2x2 *m);': 'struct OamAffine2 *m);',
         '    struct Matrix2x2 m;': '    struct OamAffine2 m;'}),
+    # Static OAM size-table lookups: free functions in the ARM ABI.
+    ('_ZN3OAM11GetObjWidthEii', 0, {
+        'u8 OAM::GetObjWidth(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM11GetObjWidthEii(int shape, int sizeBits)'}),
+    ('_ZN3OAM12GetObjHeightEii', 0, {
+        'u8 OAM::GetObjHeight(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM12GetObjHeightEii(int shape, int sizeBits)'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':

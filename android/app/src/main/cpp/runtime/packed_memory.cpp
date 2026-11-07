@@ -126,6 +126,7 @@ void *Space::data(uint32_t a, size_t n) const {
         if (offset <= it->size && n <= it->size - offset)
             return it->memory + offset;
     }
+    trace_fault("data handle outside registered span");
     throw std::runtime_error("Packed data handle outside registered span: " + std::to_string(a));
 }
 bool Space::map_native_segment(const void *pointer) {
