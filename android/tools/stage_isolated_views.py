@@ -313,6 +313,9 @@ FREE_UNITS = [
         # Static Message::Update: no receiver in the ARM ABI.
         'class Message {\npublic:\n    void Update();\n};\n\nvoid Message::Update()':
             'extern "C" void _ZN7Message6UpdateEv(void)'}),
+    ('func_ov002_020e3e00', 2, {
+        # The prelude defines the real Model record; the unit only passes it.
+        'struct Model { };\n': ''}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
