@@ -195,6 +195,23 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
     # but take the address of its cartridge instances.
     raw = raw.replace('\nstruct State;\n', '\nstruct State { unsigned char pmf[0x18]; };\n')
+    if raw.lstrip('/cp\n').startswith('struct State {};') or '\nstruct State {};\n' in raw:
+        # The by-reference Player state ABI: references are pointers, the
+        # local Player shell's methods are their mangled symbols.
+        raw = raw.replace('struct State {};', 'struct State { unsigned char pmf[0x18]; };', 1)
+        raw = re.sub(r'struct Player \{[^}]*\};', 'struct Player;', raw, count=1)
+        raw = raw.replace('State &', 'State *')
+        raw = re.sub(r'(_ZN6Player\d+\w*StateE\w*\(\s*\w+\s*,\s*)(data_\w+)', r'\1&\2', raw)
+        methods = {'GetHealth': ('_ZN6Player9GetHealthEv', 'int'),
+                   'IsState': ('_ZN6Player7IsStateERNS_5StateE', 'int'),
+                   'ChangeState': ('_ZN6Player11ChangeStateERNS_5StateE', 'int')}
+        for name, (mangled, ret) in methods.items():
+            if re.search(r'->'+name+r'\(', raw):
+                raw = re.sub(r'(\w+)->'+name+r'\(\)', mangled+r'(\1)', raw)
+                raw = re.sub(r'(\w+)->'+name+r'\((data_\w+)\)', mangled+r'(\1, &\2)', raw)
+                if 'int '+mangled+'(' not in raw:
+                    decl = 'extern "C" '+ret+' '+mangled+('(void *);' if name=='GetHealth' else '(void *, State *);')
+                    raw = raw.replace('struct Player;', 'struct Player;\n'+decl, 1)
     shared = shared_declarations(raw)
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
