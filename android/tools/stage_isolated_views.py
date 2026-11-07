@@ -285,9 +285,14 @@ FREE_UNITS = [
         '    struct Matrix2x2 m;': '    struct OamAffine2 m;'}),
     # Static OAM size-table lookups: free functions in the ARM ABI.
     ('_ZN3OAM11GetObjWidthEii', 0, {
-        'u8 OAM::GetObjWidth(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM11GetObjWidthEii(int shape, int sizeBits)'}),
+        'u8 OAM::GetObjWidth(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM11GetObjWidthEii(int shape, int sizeBits)',
+        # The same byte, read without binding an int reference at a byte offset.
+        'return *(unsigned char *)&((int *)((char *)data_020755a0 + sizeBits))[shape];':
+            'return *((unsigned char *)data_020755a0 + sizeBits + shape * 4);'}),
     ('_ZN3OAM12GetObjHeightEii', 0, {
-        'u8 OAM::GetObjHeight(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM12GetObjHeightEii(int shape, int sizeBits)'}),
+        'u8 OAM::GetObjHeight(int shape, int sizeBits)': 'extern "C" u8 _ZN3OAM12GetObjHeightEii(int shape, int sizeBits)',
+        'return *(unsigned char *)&((int *)((char *)data_020755ac + sizeBits))[shape];':
+            'return *((unsigned char *)data_020755ac + sizeBits + shape * 4);'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
