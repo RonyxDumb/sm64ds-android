@@ -1100,6 +1100,32 @@ int stage_mbg_detect_ground(uint32_t self,uint32_t ray) {
     }
     return hit;
 }
+int stage_mbg_detect_line(uint32_t self,uint32_t ray) {
+    // Complete dBgW_KcMbg::DetectClsn(dBgCh_Lin &) (recovered isolated
+    // unit): the line in mesh-local space through the shared query at
+    // 0x020a0d0c (start 0x38, end 0x44, hasClsn 0x50, lineEnd 0x54,
+    // clsnDist 0x60; dBgPi base at 0x10).
+    auto &space=packed::Space::current();
+    int32_t start[3],end[3],world[3];
+    using Map=void(uint32_t,uint32_t,uint32_t);
+    Ptr<Map>(0x02039e48u)(self,ray+0x38,space.address(start));
+    Ptr<Map>(0x02039e48u)(self,ray+0x54,space.address(end));
+    const uint8_t hadClsn=at<uint8_t>(ray+0x50);
+    const uint32_t line=0x020a0d0cu;
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(line,space.address(start),space.address(end),0);
+    if (hadClsn) at<uint8_t>(line+0x50)=1;
+    Ptr<void(uint32_t,uint32_t)>(0x02035394u)(line,ray);
+    const int hit=Ptr<int(uint32_t,uint32_t)>(0x01ffb0fcu)(self,line);
+    if (hit) {
+        const int32_t distance=at<int32_t>(line+0x60);
+        Ptr<Map>(0x02039e30u)(self,0x020a0d60u,space.address(world));
+        Ptr<void(uint32_t,uint32_t)>(0x020375ecu)(ray,space.address(world));
+        at<int32_t>(ray+0x60)=distance;
+        std::memcpy(space.data(ray+0x14,0x24),space.data(0x020a0d20u,0x24),0x24);
+        at<uint8_t>(ray+0x50)=1;
+    }
+    return hit;
+}
 uint32_t stage_block_l_factory() {
     // Complete daObjBlockL_c_classInit_* (five identical ov002 factories):
     // operator new(0x330), dBgActor_c C2, then the daObjBlockL_c vtable.
@@ -2742,6 +2768,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02037764u,&stage_line_destroy);
     space.bind(0x02037670u,&stage_line_set);
     space.bind(0x02039cb8u,&stage_mbg_detect_ground);
+    space.bind(0x02039970u,&stage_mbg_detect_line);
     space.bind(0x020375d0u,&stage_line_position);
     space.bind(0x02037eecu,&stage_surface_construct);
     space.bind(0x02037ee8u,&stage_surface_destroy);
