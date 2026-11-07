@@ -104,6 +104,8 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     for old, new in (replacements or {}).items():
         body = body.replace(old, new)
     body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
+    # Explicit member access through `this` names the same receiver fields.
+    body = re.sub(r'\bthis->', '', body)
     body = re.sub(r'\bthis\b', 'object', body)
     for name, (typ, offset) in fields.items():
         if typ.startswith('[]'):
@@ -388,6 +390,10 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN7Minimap6RenderEv', 2, 'Minimap', {
+        # The local Player view's one method is the overlay-2 ABI symbol.
+        '    int HasNoCap();\n};': '};\nextern "C" int _ZN6Player8HasNoCapEv(Player *);',
+        'pl->HasNoCap()': '_ZN6Player8HasNoCapEv(pl)'}),
     ('_ZN9Animation8FinishedEv', 0, 'Animation'),
     ('_ZN14CutsceneObject8BehaviorEv', 2, 'CutsceneObject', {
         # The local dBgCh_Gnd probe through its ABI: C1, SetObjAndPos (the
