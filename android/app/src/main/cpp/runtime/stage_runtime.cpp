@@ -1572,6 +1572,14 @@ int stage_texture_sequence_update(uint32_t self,uint32_t model) {
     return 0;
 }
 int stage_player_has_no_cap(uint32_t self);
+// Translated from the cartridge's ARM code (no recovered source):
+// func_ov002_020bea7c -- mCapFlags (0x73c) != 0.
+int stage_player_cap_changing(uint32_t self) { return at<uint16_t>(self+0x73c)!=0; }
+// func_ov002_020d225c -- character 3 (Yoshi, param1) in mode 2 (0x721)
+// with the flag at 0x6e6 clear.
+int stage_player_sleep_bubble(uint32_t self) {
+    return at<uint32_t>(self+8)==3 && at<uint8_t>(self+0x721)==2 && at<uint8_t>(self+0x6e6)==0;
+}
 uint32_t stage_player_head_model_id(uint32_t self,uint32_t id,uint32_t drawn) {
     // func_ov002_020becf4 (0xa4 bytes, no recovered source): translated
     // instruction by instruction from the cartridge's ARM code. Selects the
@@ -2429,6 +2437,8 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x020bda98u,&stage_player_has_no_cap);
         space.bind(0x020e3a08u,&stage_player_render);
         space.bind(0x020becf4u,&stage_player_head_model_id);
+        space.bind(0x020bea7cu,&stage_player_cap_changing);
+        space.bind(0x020d225cu,&stage_player_sleep_bubble);
         space.bind(0x020bea94u,&stage_player_is_collecting_cap);
     }
     if(id==102) {
