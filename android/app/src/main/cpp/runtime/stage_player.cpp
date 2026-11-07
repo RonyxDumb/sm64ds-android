@@ -117,6 +117,37 @@ void sphcrr_set_obj_and_sphere(uint32_t self,uint32_t pos,int32_t radius,uint32_
     Ptr<void(uint32_t)>{0x02037b5cu}(self);
     at<int32_t>(self+0x108)=0x1000;
 }
+// func_ov002_020e4768 (recovered isolated unit): per-frame skeleton update
+// of the current body model, head attachment (vtable slot 4) and the two
+// carried matrices (0x58c with a held object, 0x5ec always).
+void player_update_skeleton(uint32_t self) {
+    auto &space=packed::Space::current();
+    const auto body=[self]() {
+        const uint32_t mid=Ptr<uint32_t(uint32_t,uint32_t,int)>{kGetBodyModelID}(self,at<uint32_t>(self+8)&0xff,0);
+        return at<uint32_t>(self+mid*4+kBodyModels);
+    };
+    const auto mul=[](uint32_t a,uint32_t b,uint32_t d) { Ptr<void(uint32_t,uint32_t,uint32_t)>{0x02052914u}(a,b,d); };
+    const auto copy=[&space](uint32_t dst,uint32_t src) { std::memmove(space.data(dst,0x30),space.data(src,0x30),0x30); };
+    Ptr<void(uint32_t)>{0x020167a4u}(body());
+    Ptr<void(uint32_t)>{0x020e640cu}(self);
+    Ptr<void(uint32_t)>{0x0204504cu}(body()+8); // ModelComponents::UpdateVertsUsingBones
+    const int idx=Ptr<int(uint32_t,uint32_t,int)>{0x020becf4u}(self,at<uint32_t>(self+8)&0xff,0);
+    if (idx==3) {
+        const uint32_t a1=at<uint32_t>(body()+0x14)+0x2d0;
+        const uint32_t head=at<uint32_t>(self+kHeadModels+idx*4);
+        Ptr<void(uint32_t,uint32_t)>{at<uint32_t>(at<uint32_t>(head)+4*4)}(head,a1);
+    }
+    constexpr uint32_t scratch=0x020a0e68u;
+    if (at<int32_t>(self+0x358)) {
+        copy(scratch,body()+0x1c);
+        mul(at<uint32_t>(body()+0x14)+0x2a0,scratch,scratch);
+        copy(self+0x58c,scratch);
+        at<uint32_t>(self+0xc8)=self+0x58c;
+    }
+    copy(scratch,body()+0x1c);
+    mul(at<uint32_t>(body()+0x14)+0x2d0,scratch,scratch);
+    copy(self+0x5ec,scratch);
+}
 // func_ov002_020cef84 (raw-offset recovered block): while rising, probe a
 // vertical line above the player's head; a hang-able ceiling (surface class
 // 3) enters state 0x0211001c, otherwise a close ceiling stops the ascent and
@@ -366,6 +397,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x02037d18u,&sphcrr_construct);
     space.bind(0x020371fcu,&bgch_actr_snap_to_floor);
     space.bind(0x020cef84u,&player_ceiling_probe);
+    space.bind(0x020e4768u,&player_update_skeleton);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
