@@ -319,6 +319,12 @@ FREE_UNITS = [
     ('func_ov002_020e3e00', 2, {
         # The prelude defines the real Model record; the unit only passes it.
         'struct Model { };\n': ''}),
+    ('func_ov002_020bd480', 2, {
+        # Sound::PlayCharVoice through its ABI symbol; the reference is a pointer.
+        'namespace Sound{ void PlayCharVoice(unsigned int, unsigned int, const Vector3 &); }':
+            'extern "C" unsigned int _ZN5Sound13PlayCharVoiceEjjRK7Vector3(unsigned int, unsigned int, const Vector3 *);',
+        'Sound::PlayCharVoice(c[0x6d9], v, *(Vector3*)(c+0x74));':
+            '_ZN5Sound13PlayCharVoiceEjjRK7Vector3(c[0x6d9], v, (Vector3*)(c+0x74));'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':

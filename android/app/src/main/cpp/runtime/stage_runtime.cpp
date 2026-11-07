@@ -1888,6 +1888,11 @@ void stage_sound_play_3d(uint32_t archive,uint32_t entry,uint32_t) {
     // effect player without positional attenuation or pan.
     stage_sound_play_2d(archive,entry);
 }
+uint32_t stage_sound_play_char_voice(uint32_t character,uint32_t voice,uint32_t position) {
+    // Complete Sound::PlayCharVoice: Sound::Play(1, voice + data_02075250[character], v).
+    stage_sound_play_3d(1,voice+at<uint8_t>(0x02075250u+character),position);
+    return 0;
+}
 void stage_snd_move_volume(uint32_t handle,int volume,int frames) {
     // NNS_SndPlayerMoveVolume (0x0204f8cc).
     GameProgram::active().native_audio({SoundOp::Fade,stage_sound_player(handle),0,volume,frames});
@@ -2519,6 +2524,7 @@ void bind_stage_audio_runtime(packed::Space &space) {
     space.bind(0x0204f8ccu,&stage_snd_move_volume);
     space.bind(0x02012840u,&stage_sound_play_2d);
     space.bind(0x02012590u,&stage_sound_play_3d);
+    space.bind(0x02012154u,&stage_sound_play_char_voice);
     space.bind(0x0201320cu,&stage_sound_load_and_set_music_layer1);
     space.bind(0x02013050u,&stage_sound_stop_loaded_music_layer1);
 }
