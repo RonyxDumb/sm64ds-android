@@ -1811,6 +1811,30 @@ uint32_t stage_mip_destruct(uint32_t actor) {
     stage_actor_destruct(actor);
     return actor;
 }
+int stage_tree_render(uint32_t self) {
+    // Complete daTree_c::Render (src/game/actors/d_a_tree.cpp): each variant
+    // model (0xd4 + i*0x50, mat4x3 at +0x1c) faces the camera yaw
+    // (dCamera_c 0x17c) and draws every shared TreeNode that the Clipper
+    // keeps within (0x11000, 0x578000), fading in below 0x2f000.
+    const uint32_t camera=at<uint32_t>(0x0209f318u);
+    for (unsigned i=0;i<5;++i) {
+        const uint32_t model=self+0xd4+i*0x50,mat=model+0x1c;
+        Ptr<void(uint32_t,int)>(0x0203bd6cu)(mat,at<int16_t>(camera+0x17c));
+        for (uint32_t node=at<uint32_t>(0x02110a48u+i*4);node;node=at<uint32_t>(node+0x48)) {
+            int32_t out[3];
+            const int dist=Ptr<int(uint32_t,uint32_t,uint32_t,int32_t,Ptr<int32_t>)>(0x02015560u)(
+                0x0209f43cu,0x0209b3ecu,node,0x1e000,Ptr<int32_t>(out));
+            if (dist<=0x11000 || dist>=0x578000) continue;
+            const int opacity=dist<0x2f000 ? ((dist-0x10000)>>12)&0xff : 0x1f;
+            Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02016a9cu)(model,opacity,0);
+            at<int32_t>(mat+0x24)=at<int32_t>(node);
+            at<int32_t>(mat+0x28)=at<int32_t>(node+4)-0x1e000;
+            at<int32_t>(mat+0x2c)=at<int32_t>(node+8);
+            Ptr<void(uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(model)+5*4))(model,0); // Render(0)
+        }
+    }
+    return 1;
+}
 int stage_tree_cleanup(uint32_t self) {
     // Complete daTree_c::CleanupResources (src/game/actors/d_a_tree.cpp):
     // for each loaded variant (transformsBuf set) free its shared TreeNode
@@ -2243,6 +2267,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
         space.bind(0x020f19fcu,&stage_set_se_behavior);
         space.bind(0x020ec020u,&stage_tree_cleanup);
+        space.bind(0x020ec0a4u,&stage_tree_render);
         space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
         space.bind(0x020bea94u,&stage_player_is_collecting_cap);
