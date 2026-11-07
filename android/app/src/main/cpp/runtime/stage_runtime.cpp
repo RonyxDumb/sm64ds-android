@@ -1564,6 +1564,79 @@ int stage_set_se_behavior(uint32_t self) {
         at<uint32_t>(self+0xd4),3,at<uint32_t>(0x0210b498u+effect*4),self+0x74,0);
     return 1;
 }
+int stage_player_render(uint32_t self) {
+    // Complete Player::Render (ov002 0x020e3a08; external/sm64ds-pc/src/
+    // _ZN6Player6RenderEv.cpp) with Player.h offsets: mBodyModels 0xdc,
+    // mModelAnim3 0xf0, mHeadModels 0x154, mModelAnim4 0x174, mSleepBubble
+    // 0x1d8, mTexSeqPlayer 0x254 (0x14 each, currFrame +8), mSleepBubbleScale
+    // 0x56c, mVsYoshiMaterialParam 0x61c, mInvincibleTimer 0x6a0, mPlayerNo
+    // 0x6d8, mBodyModelId 0x6db, mOpacity 0x6f5, mPlayerTexFrame 0x6fc,
+    // mIsBalloon 0x6fd, mDrawnHasWings 0x700; mScale 0x80; mFlags 0xb0.
+    const auto virt=[](uint32_t object,unsigned slot,uint32_t a,uint32_t b) {
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(object)+slot*4))(object,a,b);
+    };
+    const auto opacity=[](uint32_t model,uint32_t value) { Ptr<void(uint32_t,uint32_t,int)>(0x02016a9cu)(model,value,0); };
+    const auto texseq=[](uint32_t seq,uint32_t components) { Ptr<int(uint32_t,uint32_t)>(0x02015988u)(seq,components); };
+    const auto vsMaterials=[self](uint32_t model) {
+        if (at<uint8_t>(0x0209f2d8u)!=1 || at<uint32_t>(self+8)!=3) return;
+        const uint32_t hdr=at<uint32_t>(model+8);
+        uint32_t rec=at<uint32_t>(model+12);
+        for (uint32_t i=0;i<at<uint32_t>(hdr+0x24);++i,rec+=0x30) at<int32_t>(rec+0x20)=at<int32_t>(self+0x61c);
+    };
+    if (at<uint8_t>(0x0209f2d8u)==1 && at<uint8_t>(0x0209fc5cu+at<uint8_t>(self+0x6d8))==0) return 1;
+    const uint16_t invincible=at<uint16_t>(self+0x6a0);
+    if (Ptr<int(uint32_t,uint32_t)>(0x020e308cu)(self,0x021100c4u)) { if (invincible&2) return 1; }
+    else if (invincible&1) return 1;
+    const uint8_t alpha=at<uint8_t>(self+0x6f5);
+    if (!alpha) return 1;
+    if (at<uint32_t>(self+0xb0)&0x10) return 1;
+    const uint8_t bodyId=at<uint8_t>(self+0x6db);
+    const uint32_t body=at<uint32_t>(self+0xdc+4*Ptr<uint32_t(uint32_t,uint32_t,int)>(0x020becc8u)(self,bodyId,1));
+    if (at<uint8_t>(self+0x6fd)==0) {
+        opacity(body,alpha);
+        vsMaterials(body);
+        Ptr<void(uint32_t,uint32_t)>(0x02016b78u)(body,self+0x80);
+        if (at<uint32_t>(self+8)==1) {
+            texseq(self+0x254,at<uint32_t>(self+0xdc+4)+8);
+            at<int32_t>(self+0x254+8)=int32_t(at<uint8_t>(self+0x6fc))<<12;
+        }
+        Ptr<void(uint32_t,uint32_t,uint32_t)>(0x020e3e00u)(body,self+0x80,alpha);
+        if (at<uint8_t>(self+0x700)) {
+            opacity(self+0x174,alpha);
+            if (bodyId==3) {
+                Ptr<void(uint32_t,int,int,int)>(0x0203bf44u)(0x020a0e68u,-0x1b33,-0x666,0);
+                Ptr<void(uint32_t,int)>(0x0203bf90u)(0x020a0e68u,0x4000);
+                Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02052914u)(0x020a0e68u,at<uint32_t>(body+0x14)+0x180,0x020a0e68u);
+                virt(self+0x174,6,0x020a0e68u,self+0x80);
+            } else {
+                virt(self+0x174,6,at<uint32_t>(body+0x14)+0x2d0,self+0x80);
+            }
+        }
+    } else {
+        opacity(self+0xf0,alpha);
+        virt(self+0xf0,5,self+0x80,0);
+    }
+    const uint32_t i=Ptr<uint32_t(uint32_t,uint32_t,int)>(0x020becf4u)(self,bodyId,1);
+    const uint32_t head=at<uint32_t>(self+0x154+i*4);
+    if (!head || i==9 || i==8) return 1;
+    opacity(head,alpha);
+    vsMaterials(head);
+    if (i==3) {
+        Ptr<void(uint32_t,uint32_t)>(0x02016b78u)(head,self+0x80);
+    } else {
+        std::memcpy(packed::Space::current().data(at<uint32_t>(head+0x14),0x30),
+                    packed::Space::current().data(at<uint32_t>(body+0x14)+0x2d0,0x30),0x30);
+        virt(head,5,self+0x80,0);
+    }
+    if (at<uint32_t>(self+8)==1) {
+        texseq(self+0x268,at<uint32_t>(self+0x154+4)+8);
+        at<int32_t>(self+0x268+8)=int32_t(at<uint8_t>(self+0x6fc))<<12;
+    }
+    if (Ptr<int(uint32_t)>(0x020bea7cu)(self)==0) texseq(self+0x1dc+bodyId*0x14,head+8);
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x020e3e00u)(head,self+0x80,alpha);
+    if (Ptr<int(uint32_t)>(0x020d225cu)(self)) virt(at<uint32_t>(self+0x1d8),5,self+0x56c,0);
+    return 1;
+}
 int stage_player_has_no_cap(uint32_t self) {
     // Complete Player::HasNoCap (src/game/player/Player.cpp): fBase param1
     // at 0x08, mState at PLAYER_STATE, mHasNoCap at 0x71a.
@@ -2326,6 +2399,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x020ec0a4u,&stage_tree_render);
         space.bind(0x020ebf8cu,&stage_tree_destruct);
         space.bind(0x020bda98u,&stage_player_has_no_cap);
+        space.bind(0x020e3a08u,&stage_player_render);
         space.bind(0x020bea94u,&stage_player_is_collecting_cap);
     }
     if(id==102) {
