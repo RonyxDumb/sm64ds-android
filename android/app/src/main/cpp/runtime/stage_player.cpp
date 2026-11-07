@@ -108,9 +108,16 @@ int player_no_control_step(uint32_t self,uint32_t kind) {
 void surface_copy_normal(uint32_t self,uint32_t out) {
     for (unsigned lane=0;lane<3;++lane) at<int32_t>(out+lane*4)=at<int32_t>(self+8+lane*4);
 }
+// dBgPi::~dBgPi (0x02038144): its vptr, then the dBgPc member at +4
+// (dBgPc D2 is an empty 4-byte body, so nothing else happens).
+uint32_t bgpi_destruct(uint32_t self) {
+    at<uint32_t>(self)=0x02099368u; // _ZTV5dBgPi
+    return self;
+}
 }
 
 void bind_stage_player_runtime(packed::Space &space) {
+    space.bind(0x02038144u,&bgpi_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);
     space.bind(0x020bfa74u,&player_conveyor_push);
