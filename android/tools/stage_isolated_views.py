@@ -229,11 +229,20 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('IsAreaShowing', 0),
     ('func_0204302c', 0),
     ('func_0203b27c', 0),
     ('func_0203b3c0', 0),
     ('func_0203db3c', 0),
     ('func_ov001_020aa960', 1),
+    ('_ZN7Clipper13Func_020150E8ER7Vector35Fix12IiEPh', 0, {
+        # Clipper.h layout: vptr, four plane normals at 0x04, near/far 0x50/0x54.
+        '#pragma opt_propagation off\n': '',
+        'extern "C" int _ZN7Clipper13Func_020150E8ER7Vector35Fix12IiEPh(':
+            'struct ClipperPlane { s32 x; s32 y; s32 z; };\n'
+            'struct Clipper { u8 pad_000[4]; ClipperPlane mPlaneNormals[4]; s32 mAspectRatio;\n'
+            '    s32 mNearZ; s32 mFarZ; u16 mFovAngle; };\n'
+            'extern "C" int _ZN7Clipper13Func_020150E8ER7Vector35Fix12IiEPh('}),
     ('func_ov001_020aaa54', 1, {
         # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
         # only reads and writes these fields.
