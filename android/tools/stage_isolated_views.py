@@ -276,6 +276,13 @@ FREE_UNITS = [
             'struct Vec3* a, struct Vec3* b, int c, short d, struct Vec3* e',
         'Vec3_Sub(&local, &a, &data_ov002_0211116c);': 'Vec3_Sub(&local, a, &data_ov002_0211116c);',
         'Vec3_RotateYAndTranslate(&e, &b, d, &local);': 'Vec3_RotateYAndTranslate(e, b, d, &local);'}),
+    ('_ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii', 0, {
+        # The stage prelude already defines Matrix2x2 as an int[4] record.
+        '#pragma opt_common_subs off\n': '', '#pragma opt_propagation off\n': '',
+        '#pragma opt_loop_invariants off\n': '',
+        'struct Matrix2x2 { int a, b, c, d; };': 'struct OamAffine2 { int a, b, c, d; };',
+        'struct Matrix2x2 *m);': 'struct OamAffine2 *m);',
+        '    struct Matrix2x2 m;': '    struct OamAffine2 m;'}),
     ('func_ov002_020f2340', 2, {
         # OAM::RenderSub through its mangled ABI symbol.
         'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
