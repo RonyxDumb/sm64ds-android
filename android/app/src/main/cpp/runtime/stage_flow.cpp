@@ -209,6 +209,7 @@ void StageFlow::prepare_scene() {
     bind_stage_runtime(*nextSpace);
     bind_stage_arm9_math(*nextSpace);
     bind_stage_audio_runtime(*nextSpace);
+    bind_stage_model_runtime(*nextSpace);
     bind_packed_fs(*nextSpace);
     initialize_packed_fs(*nextSpace);
     bind_packed_audio(*nextSpace);

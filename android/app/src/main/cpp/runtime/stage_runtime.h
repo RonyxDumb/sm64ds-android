@@ -6,6 +6,7 @@ namespace sm64ds {
 // checked 32-bit data handles. No native C++ vptr enters a cartridge record.
 void bind_stage_runtime(packed::Space &space);
 void bind_stage_audio_runtime(packed::Space &space);
+void bind_stage_model_runtime(packed::Space &space);
 void bind_stage_arm9_math(packed::Space &space);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id);
 // Overlay-2 Player members (stage_player.cpp).

@@ -39,6 +39,11 @@ def header_fields(rel, minimum=0):
 def player_fields():
     from stage_actor_views import ACTOR_FIELDS
     fields = dict(ACTOR_FIELDS)
+    # Scalar dActor_c members the reviewed actor table does not spell yet
+    # (mCamSpacePosX/Y/Z, mPrevAngleX, ...) come from the recovered header.
+    for name, field in header_fields('external/sm64ds-pc/include/dActor_c.h').items():
+        if field[1] < 0xd0:
+            fields.setdefault(name, field)
     fields.update(header_fields('include/Player.h', 0xd0))
     return fields
 
@@ -65,6 +70,10 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
     raw = (ROOT/rel).read_text()
+    # Player::State records are 0x18 bytes of three PMFs; units that only
+    # take their cartridge addresses declare them opaquely.
+    raw = re.sub(r'(^|\n)struct State;[ \t]*', r'\1struct State { unsigned char pmf[0x18]; };', raw)
+    raw = re.sub(r'extern\s+Player::State\s+(data_\w+)\s*;', r'extern char \1[];', raw)
     if '::' in cls:
         # A nested class (Particle::SysTracker): drop the enclosing namespace
         # block so the member body is matched as Inner::method.
@@ -98,15 +107,32 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     if '*' in result:
         result = 'void *'  # object pointers are opaque four-byte handles here
     params = signature[3].strip()
+    # Reference parameters are the ARM pointer word: `T &x` becomes `T *x`,
+    # `&x` the pointer itself and every other use of x its referent.
+    references = []
+    def pointer_param(param):
+        found = re.fullmatch(r'(.*?)\s*&\s*(\w+)', param.strip())
+        if not found:
+            return param
+        references.append(found[2])
+        return found[1]+' *'+found[2]
+    params = ', '.join(pointer_param(p) for p in params.split(',')) if params else params
     params = '' if params in ('', 'void') else ', '+params
     start = signature.start()
-    body = raw[:start]+'extern "C" '+result+' '+symbol+'(void *object'+params+') {'+raw[signature.end():]
+    tail = raw[signature.end():]
+    for name in references:
+        tail = re.sub(r'&\s*'+name+r'\b', '\x00'+name, tail)
+        tail = re.sub(r'(?<![.>\w\x00])'+name+r'\b', '(*'+name+')', tail)
+        tail = tail.replace('\x00'+name, name)
+    body = raw[:start]+'extern "C" '+result+' '+symbol+'(void *object'+params+') {'+tail
     for old, new in (replacements or {}).items():
         body = body.replace(old, new)
     body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
     # Explicit member access through `this` names the same receiver fields.
     body = re.sub(r'\bthis->', '', body)
     body = re.sub(r'\bthis\b', 'object', body)
+    if cls == 'Player':
+        body = player_self_calls(body)
     for name, (typ, offset) in fields.items():
         if typ.startswith('[]'):
             body = re.sub(r'(?<![.>\w])'+name+r'\b',
@@ -149,8 +175,142 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     return row, bindings
 
 
+_PLAYER_METHODS = None
+
+
+def player_methods():
+    """Scalar-ABI Player member methods: bare name -> (mangled, ret, params)."""
+    global _PLAYER_METHODS
+    if _PLAYER_METHODS is None:
+        from frontier_batch import symbol_tables
+        by_name, _ = symbol_tables()
+        scalar = r'(?:unsigned\s+)?(?:int|short|char|bool|u8|s8|u16|s16|u32|s32|Fix12i|void\s*\*|unsigned)'
+        _PLAYER_METHODS = {}
+        text = (ROOT/'include/Player.h').read_text()
+        for match in re.finditer(r'^\s+(int|bool|void|u32|s32|u8|s8|u16|s16)\s+(\w+)\(([^()]*)\)\s*;', text, re.M):
+            ret, name, params = match[1], match[2], match[3].strip()
+            params = '' if params in ('', 'void') else params
+            if params and not all(re.fullmatch(scalar+r'(?:\s+\w+)?', p.strip()) for p in params.split(',')):
+                continue
+            mangled = [n for n in by_name if n.startswith('_ZN6Player%d%sE' % (len(name), name))]
+            if len(mangled) == 1:
+                _PLAYER_METHODS[name] = (mangled[0], 'int' if ret == 'bool' else ret, params)
+    return _PLAYER_METHODS
+
+
+def player_self_calls(body):
+    """Bare calls of the receiver's own member methods become their
+    mangled cartridge symbols with the receiver as the first argument."""
+    decls = []
+    # Cartridge Player::State records passed by reference: opaque byte
+    # arrays whose address is the ABI pointer (as free units normalise them).
+    body = re.sub(r'extern\s+Player::State\s+(data_\w+)\s*;', r'extern char \1[];', body)
+    for name, mangled in (('IsState', '_ZN6Player7IsStateERNS_5StateE'),
+                          ('ChangeState', '_ZN6Player11ChangeStateERNS_5StateE')):
+        pattern = r'(?<![.>\w:~])'+name+r'\s*\(\s*(data_\w+)\s*\)'
+        if re.search(pattern, body):
+            body = re.sub(pattern, mangled+r'(object, \1)', body)
+            decls.append('extern "C" int %s(void *, void *);' % mangled)
+    if 'FX_MUL(' in body and '#define FX_MUL' not in body:
+        decls.append('#define FX_MUL(v1, v2) ((s32)(((s64)(v1) * (v2) + 0x800LL) >> 12))')
+    for name, (mangled, ret, params) in player_methods().items():
+        if name in ('IsState', 'ChangeState'):
+            continue
+        pattern = r'(?<![.>\w:~])'+name+r'\s*\('
+        if not re.search(pattern, body) or re.search(r'\b'+name+r'\s*\([^)]*\)\s*\{', body):
+            continue
+        body = re.sub(pattern+r'\s*\)', mangled+'(object)', body)
+        body = re.sub(pattern, mangled+'(object, ', body)
+        if mangled+'(' not in body.split('extern "C"', 1)[0]:
+            decls.append('extern "C" %s %s(void *%s);' % (ret, mangled, ', '+params if params else ''))
+    if decls:
+        at = body.index('extern "C"')
+        body = body[:at]+'\n'.join(decls)+'\n'+body[at:]
+    return body
+
+
 PLAYER_STATES = [
     '_ZN6Player12St_Wait_InitEv',
+    '_ZN6Player11St_Fly_InitEv',
+    '_ZN6Player11St_Owl_InitEv',
+    '_ZN6Player11St_Owl_MainEv',
+    '_ZN6Player12St_Bonk_InitEv',
+    '_ZN6Player12St_Bonk_MainEv',
+    '_ZN6Player12St_Fall_InitEv',
+    '_ZN6Player12St_Fall_MainEv',
+    '_ZN6Player12St_Hurt_InitEv',
+    '_ZN6Player12St_Hurt_MainEv',
+    '_ZN6Player12St_Jump_InitEv',
+    '_ZN6Player12St_Jump_MainEv',
+    '_ZN6Player12St_Land_InitEv',
+    '_ZN6Player12St_Spin_InitEv',
+    '_ZN6Player12St_Spin_MainEv',
+    '_ZN6Player12St_Walk_InitEv',
+    '_ZN6Player12St_Walk_MainEv',
+    '_ZN6Player13St_Crawl_InitEv',
+    '_ZN6Player13St_Crawl_MainEv',
+    '_ZN6Player14St_Cannon_InitEv',
+    '_ZN6Player14St_Crouch_InitEv',
+    '_ZN6Player14St_Crouch_MainEv',
+    '_ZN6Player14St_Owl_CleanupEv',
+    '_ZN6Player15St_Grabbed_MainEv',
+    '_ZN6Player15St_Hurt_CleanupEv',
+    '_ZN6Player15St_Swallow_InitEv',
+    '_ZN6Player15St_Wait_CleanupEv',
+    '_ZN6Player16St_BackFlip_InitEv',
+    '_ZN6Player16St_BurnFire_InitEv',
+    '_ZN6Player16St_BurnFire_MainEv',
+    '_ZN6Player16St_BurnLava_InitEv',
+    '_ZN6Player16St_BurnLava_MainEv',
+    '_ZN6Player16St_LongJump_MainEv',
+    '_ZN6Player16St_SideFlip_InitEv',
+    '_ZN6Player16St_SideFlip_MainEv',
+    '_ZN6Player16St_WallJump_InitEv',
+    '_ZN6Player16St_WallJump_MainEv',
+    '_ZN6Player17St_ButtSlide_InitEv',
+    '_ZN6Player17St_ButtSlide_MainEv',
+    '_ZN6Player17St_HoldHeavy_InitEv',
+    '_ZN6Player17St_HoldHeavy_MainEv',
+    '_ZN6Player17St_HoldLight_InitEv',
+    '_ZN6Player17St_LedgeGrab_InitEv',
+    '_ZN6Player17St_LedgeGrab_MainEv',
+    '_ZN6Player17St_LedgeHang_InitEv',
+    '_ZN6Player17St_LedgeHang_MainEv',
+    '_ZN6Player17St_PunchKick_MainEv',
+    '_ZN6Player17St_SlopeJump_InitEv',
+    '_ZN6Player17St_SlopeJump_MainEv',
+    '_ZN6Player17St_SweepKick_InitEv',
+    '_ZN6Player17St_SweepKick_MainEv',
+    '_ZN6Player17St_WallSlide_InitEv',
+    '_ZN6Player17St_WallSlide_MainEv',
+    '_ZN6Player17St_WaterJump_InitEv',
+    '_ZN6Player17St_WindCarry_InitEv',
+    '_ZN6Player18St_Balloon_CleanupEv',
+    '_ZN6Player18St_DizzyStars_InitEv',
+    '_ZN6Player18St_DizzyStars_MainEv',
+    '_ZN6Player18St_TurnAround_InitEv',
+    '_ZN6Player18St_TurnAround_MainEv',
+    '_ZN6Player19St_Electrocute_InitEv',
+    '_ZN6Player19St_Electrocute_MainEv',
+    '_ZN6Player19St_GroundPound_InitEv',
+    '_ZN6Player19St_SwingPlayer_InitEv',
+    '_ZN6Player19St_TornadoSpin_InitEv',
+    '_ZN6Player20St_HoldLight_CleanupEv',
+    '_ZN6Player20St_LedgeHang_CleanupEv',
+    '_ZN6Player20St_StomachSlide_InitEv',
+    '_ZN6Player21St_DizzyStars_CleanupEv',
+    '_ZN6Player21St_HeadstandJump_InitEv',
+    '_ZN6Player21St_JumpQuicksand_InitEv',
+    '_ZN6Player21St_JumpQuicksand_MainEv',
+    '_ZN6Player21St_SmallLaunchUp_InitEv',
+    '_ZN6Player21St_SmallLaunchUp_MainEv',
+    '_ZN6Player21St_WaitQuicksand_InitEv',
+    '_ZN6Player21St_YoshiPower_CleanupEv',
+    '_ZN6Player22St_GrabBowserTail_InitEv',
+    '_ZN6Player22St_GrabBowserTail_MainEv',
+    '_ZN6Player22St_SwingPlayer_CleanupEv',
+    '_ZN6Player24St_SlideKickRecover_InitEv',
+    '_ZN6Player25St_GrabBowserTail_CleanupEv',
 ]
 
 
@@ -194,7 +354,7 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
         raw = (ROOT/rel).read_text()
     # Player::State is a 0x18-byte record of three PMFs; units name it opaquely
     # but take the address of its cartridge instances.
-    raw = raw.replace('\nstruct State;\n', '\nstruct State { unsigned char pmf[0x18]; };\n')
+    raw = re.sub(r'(^|\n)struct State;[ \t]*', r'\1struct State { unsigned char pmf[0x18]; };', raw)
     # Volatile-qualified pointer cells only pin the ROM's reloads.
     raw = raw.replace('* volatile *', '**')
     # Empty inline destructors only pin the ROM's frame; they do nothing.
@@ -251,6 +411,38 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f63a0', 2),
+    ('func_ov002_020f5f60', 2),
+    ('func_ov002_020f23d0', 2),
+    ('func_ov002_020f6a9c', 2),
+    ('func_ov002_020f7384', 2),
+    ('func_ov002_020f79c0', 2),
+    ('func_ov002_020f6b28', 2),
+    ('func_ov002_020f65b8', 2),
+    ('func_02048d80', 0),
+    ('func_ov002_020f6ae4', 2),
+    ('func_ov002_020f26c4', 2),
+    ('_ZN8dActor_c10FindWithIDEj', 0, {
+        # A static member (include/dActor_c.h): no receiver; the id is r0.
+        'dActor_c *dActor_c::FindWithID(u32 id)': 'extern "C" dActor_c *_ZN8dActor_c10FindWithIDEj(u32 id)',
+        'extern "C" {\nextern dActor_c *data_0209b468;': 'struct dActor_c;\nextern "C" {\nextern dActor_c *data_0209b468;'}),
+    ('func_02008200', 0),
+    ('func_02011698', 0),
+    ('func_020393bc', 0),
+    ('func_ov002_020bd4ac', 2),
+    ('func_020485f0', 0),
+    ('func_ov002_020d4540', 2),
+    ('func_ov002_020d718c', 2),
+    ('func_ov002_020d8118', 2),
+    ('func_ov002_020d853c', 2),
+    ('func_ov002_020d8944', 2),
+    ('_ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_', 0, {
+        # Particle::mManager is the word at +0x004 (include/Particle.h).
+        '#include "Particle.h"\n': '', 'extern struct Particle* data_0209ee74;': 'extern void *data_0209ee74;',
+        'data_0209ee74->mManager': '*(void **)((char *)data_0209ee74 + 4)'}),
+    ('func_02011b38', 0, {
+        # The K&R declaration stands for Player_PlaySoundEffect(handle, kind, id).
+        'extern int Player_PlaySoundEffect();': 'extern int Player_PlaySoundEffect(void *, int, int);'}),
     ('Vec3_LslInPlace', 0),
     ('Vec3_Add', 0),
     ('Vec3_MulScalar', 0),
@@ -634,6 +826,15 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('func_ov002_020c0108', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c0108(int p1)', {
+        # The in-body externs are hoisted ahead of the body's local typedefs.
+        'void _ZN7PathPtr6FromIDEj(void*, u32 id);': 'void _ZN7PathPtr6FromIDEj(void*, unsigned int id);',
+        'void _ZNK7PathPtr7GetNodeER7Vector3j(void*, void*, u32 idx);': 'void _ZNK7PathPtr7GetNodeER7Vector3j(void*, void*, unsigned int idx);',
+        'extern u32 _ZNK7PathPtr9GetUnk004Ev(void*);': 'extern unsigned int _ZNK7PathPtr9GetUnk004Ev(void*);',
+        'extern s32 data_ov002_020ff200[];': 'extern int data_ov002_020ff200[];',
+        'extern s16 data_02082214[];': 'extern short data_02082214[];',
+        'extern int Vec3_HorzAngle(const Vector3 *v0, const Vector3 *v1);': 'extern int Vec3_HorzAngle(const void *v0, const void *v1);',
+        'extern int Vec3_VertAngle(const Vector3 *v1, const Vector3 *v0);': 'extern int Vec3_VertAngle(const void *v1, const void *v0);'}),
     ('_ZN6Player7IsInAirEv', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::IsInAir()'),
     ('func_ov002_020c4188', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c4188()', {
         # dCamera_c::mFlags (0x154) and daSoundObj_c mSoundID/mCounterLimit (0xd4/0xde).
@@ -687,6 +888,23 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN14CutsceneObject16CleanupResourcesEv', 2, 'CutsceneObject', {
+        # The model members' second vtable slot (+4, the D0 destructor) is a
+        # cartridge code word: dispatch through the ROM vtable.
+        'struct Obj { virtual void v00(); virtual void m04(); };': '',
+        'Obj* a = *(Obj**)': 'void* a = *(void**)', 'Obj* b = *(Obj**)': 'void* b = *(void**)',
+        'a->m04();': '((void (*)(void *))((*(void ***)a)[1]))(a);',
+        'b->m04();': '((void (*)(void *))((*(void ***)b)[1]))(b);'}),
+    ('_ZN14CutsceneObject16OnPendingDestroyEv', 2, 'CutsceneObject'),
+    ('_ZN10dBgW_KcMbg9GetNormalEsR7Vector3', 0, 'dBgW_KcMbg', {
+        # dBgW_Kc::kclFile is +0x20; KCL_File normals +0x04 (6-byte s16
+        # vectors) and tris +0x08 (0x10-byte records, normalIdx +6), per
+        # include/dBgW_Kc.h.
+        'extern "C" void func_02039db8(dBgW_KcMbg *self,': 'extern "C" void func_02039db8(void *self,',
+        'KCL_File *p = kclFile;\n    u16 n = p->tris[triID].normalIdx;\n    s16 *v = p->normals[n];':
+            'char *p = *(char **)((char *)this + 0x20);\n    u16 n = *(u16 *)(*(char **)(p + 8) + triID * 0x10 + 6);\n'
+            '    s16 *v = (s16 *)(*(char **)(p + 4) + n * 6);'}),
+    ('_ZN7dCcAc_c10GetOwnerIDEv', 0, 'dCcAc_c'),
     ('_ZN5Timer7GetTimeEv', 0, 'Timer'),
     ('_ZN5Timer9StopTimerEv', 0, 'Timer'),
     ('_ZN5Timer10StartTimerEv', 0, 'Timer'),
@@ -762,7 +980,6 @@ MEMBER_UNITS = [
         '&func_02113c20': '&data_ov009_02113c20',
         'int CutsceneObject::InitResources()':
             'extern "C" {\nextern char data_ov009_02113c20;\n}\nint CutsceneObject::InitResources()'}),
-    ('_ZN8dActor_c10FindWithIDEj', 0, 'dActor_c'),
 ]
 
 
@@ -772,6 +989,8 @@ def class_fields(cls):
     fields = dict(ACTOR_FIELDS) if cls.startswith(('d', 'Player')) else {}
     for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
         if (ROOT/rel).exists():
+            if re.search(r'(?:struct|class)\s+'+cls+r'\s*:\s*(?:public\s+)?dActor_c\b', (ROOT/rel).read_text()):
+                fields = dict(ACTOR_FIELDS)  # an actor: the dActor_c base members
             fields.update(header_fields(rel, 0))
             break
     return fields

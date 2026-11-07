@@ -891,6 +891,19 @@ int main(int argc, char **argv) {
                 expected[slot][0x14] = 0x10 + slot;
                 expected[slot][0x23] = 0x21;
                 expected[slot][0x32] = 50 + slot;
+                // Probe aid: SM64DS_STAGE_CHARACTER=<0..3> enters the castle
+                // with that character from slot A (3 = Yoshi, the new-game one).
+                if (const char *character=std::getenv("SM64DS_STAGE_CHARACTER"); character && slot==0) {
+                    const unsigned id=unsigned(std::strtoul(character,nullptr,0));
+                    assert(id<4);
+                    expected[slot][0x41]=uint8_t(id);
+                    expected[slot][8] |= uint8_t(1u << id);
+                }
+                // SM64DS_STAGE_SKIP_INTRO: slot A has already seen the opening
+                // (SaveData flags2 bit 7, which func_ov085_0212d5dc sets at the
+                // end of the original flight), so the castle starts controllable.
+                if (std::getenv("SM64DS_STAGE_SKIP_INTRO") && slot==0)
+                    expected[slot][8] |= 0x80;
                 assert(store.save_file(slot, expected[slot]));
             }
         }
@@ -1171,8 +1184,63 @@ int main(int argc, char **argv) {
                 try {
                     const char *everyEnv=std::getenv("SM64DS_STAGE_DUMP_EVERY");
                     const unsigned every=everyEnv?unsigned(std::strtoul(everyEnv,nullptr,0)):0;
+                    // SM64DS_STAGE_INPUT="first-last:keys:x:y,..." holds DS keys
+                    // (KEYINPUT bits) and the analogue stick over frame ranges.
+                    struct Hold { unsigned first,last; uint32_t keys; float x,y; };
+                    std::vector<Hold> holds;
+                    if (const char *script=std::getenv("SM64DS_STAGE_INPUT")) {
+                        for (const char *at=script;*at;) {
+                            Hold h{};
+                            char *end=nullptr;
+                            h.first=unsigned(std::strtoul(at,&end,0));
+                            h.last=*end=='-' ? unsigned(std::strtoul(end+1,&end,0)) : h.first;
+                            assert(*end==':'); h.keys=uint32_t(std::strtoul(end+1,&end,0));
+                            assert(*end==':'); h.x=std::strtof(end+1,&end);
+                            assert(*end==':'); h.y=std::strtof(end+1,&end);
+                            holds.push_back(h);
+                            at=*end==',' ? end+1 : end;
+                        }
+                    }
+                    const char *traceEnv=std::getenv("SM64DS_STAGE_TRACE_PLAYER");
+                    const unsigned traceEvery=traceEnv?unsigned(std::strtoul(traceEnv,nullptr,0)):0;
                     for (;frame<stageFrames;++frame) {
-                        game.tick();
+                        uint32_t keys=0; float sx=0,sy=0;
+                        for (const auto &h:holds)
+                            if (frame>=h.first && frame<=h.last) { keys|=h.keys; sx=h.x; sy=h.y; }
+                        game.tick(keys,sx,sy);
+                        if (traceEvery && frame%traceEvery==0) {
+                            // Player 0 (data_0209f394[0], as dActor_c::ClosestPlayer reads it): position,
+                            // speed and current state record, read from the original layout.
+                            auto *sp=game.stage_address_space();
+                            uint32_t player=0; std::memcpy(&player,sp->data(0x0209f394u,4),4);
+                            if (player) {
+                                int32_t pos[3],speed; uint32_t state; int16_t yaw;
+                                std::memcpy(pos,sp->data(player+0x5c,12),12);
+                                std::memcpy(&speed,sp->data(player+0x98,4),4);
+                                std::memcpy(&yaw,sp->data(player+0x8e,2),2);
+                                std::memcpy(&state,sp->data(player+0x370,4),4);
+                                uint32_t param=0; std::memcpy(&param,sp->data(player+8,4),4);
+                                uint32_t chars[4]; std::memcpy(chars,sp->data(0x0209b284u,16),16);
+                                std::cerr << "player param1 0x" << std::hex << param << " chars " << chars[0] << ','
+                                          << chars[1] << ',' << chars[2] << ',' << chars[3] << std::dec << ' ';
+                                std::cerr << "player f" << frame << " pos " << pos[0] << ' ' << pos[1] << ' ' << pos[2]
+                                          << " speed " << speed << " yaw " << yaw << " state 0x" << std::hex << state
+                                          << std::dec << " keys " << keys << '\n';
+                                if (std::getenv("SM64DS_STAGE_LIST_ACTORS")) {
+                                    std::cerr << "  actors:";
+                                    uint32_t node=0; std::memcpy(&node,sp->data(0x0209b468u,4),4);
+                                    for (unsigned n=0;node && n<512;++n) {
+                                        uint32_t inst=0,uid=0; uint16_t aid=0;
+                                        std::memcpy(&inst,sp->data(node+8,4),4);
+                                        std::memcpy(&uid,sp->data(inst+4,4),4);
+                                        std::memcpy(&aid,sp->data(inst+12,2),2);
+                                        std::cerr << ' ' << uid << ':' << std::hex << aid << std::dec;
+                                        std::memcpy(&node,sp->data(node+4,4),4);
+                                    }
+                                    std::cerr << '\n';
+                                }
+                            }
+                        }
                         if (every && frame%every==0 && std::getenv("SM64DS_STAGE_DUMP")) {
                             const auto &fb=game.main_screen();
                             std::string path=std::string(std::getenv("SM64DS_STAGE_DUMP"))+"_"+std::to_string(frame)+".ppm";

@@ -7,6 +7,8 @@
 #include "ntr/mmio.h"
 #include "game_program.h"
 #include <cstring>
+#include <array>
+#include <map>
 #include <exception>
 #include <unordered_set>
 #include <stdexcept>
@@ -1341,6 +1343,13 @@ int32_t stage_cstd_sqrt(uint64_t value) {
     // (native_math.cpp) the title and collision code already use.
     return cstd::sqrt(value);
 }
+int32_t stage_aeabi_idiv(int32_t a,int32_t b) {
+    // __aeabi_idiv / _s32_div_f (ITCM 0x01ffabe4): the quotient in r0, the
+    // only result the recovered C callers read. Same semantics as the
+    // frontend's pk___aeabi_idiv (the frontend binds its own copy).
+    if (!b) throw std::runtime_error("Native integer division by zero.");
+    return a==INT32_MIN && b==-1 ? INT32_MIN : a/b;
+}
 int16_t stage_cstd_atan2(int32_t y,int32_t x) {
     // cstd::atan2 (src/cstd_atan2.cpp, linked natively as runtime/input_atan2).
     return cstd::atan2(y,x);
@@ -2007,10 +2016,108 @@ int stage_demo_bg_thunk(uint32_t c) {
 // Sound:: bodies above this boundary run unchanged; the SDK player handles
 // map onto native sequencer players: 0x0209b4a0 (music layer 1) -> 0 and
 // 0x0209b4b0 (music layer 2) -> 4. Unknown handles fail explicitly.
+// Handles the game binds dynamically (NNSSndHandle words in its effect
+// slot tables, e.g. data_0209b53c) start through NNS_SndArcPlayerStartSeqArc.
+// As in the SDK the handle word points at the bound NNSSndSeqPlayer: a
+// cartridge-visible shadow record per native effect player, holding the
+// fields recovered game code reads through the handle (seqNo +0x3a,
+// SND player number +0x3c, volume +0x41; see func_020485f0). Each record
+// owns one native effect player; a finished voice clears its handle.
+constexpr uint32_t StageSeqPlayerBytes=0x50;
+struct StageVoice { uint32_t record=0, handle=0, token=0; bool active=false, stopping=false; };
+std::array<StageVoice,16> &stage_voices() { static std::array<StageVoice,16> voices; return voices; }
+uint32_t stageNextVoice=0x400000;
+void stage_retire_voice(StageVoice &voice) {
+    if (voice.handle && at<uint32_t>(voice.handle)==voice.record) at<uint32_t>(voice.handle)=0;
+    voice.handle=0; voice.active=false; voice.stopping=false;
+}
+void stage_retire_finished_voices() {
+    auto &voices=stage_voices();
+    for (int player=0;player<16;++player)
+        if (voices[player].active &&
+            !GameProgram::active().native_audio({SoundOp::Status,player,voices[player].token}))
+            stage_retire_voice(voices[player]);
+}
+int stage_voice_for_handle(uint32_t handle) {
+    const uint32_t record=at<uint32_t>(handle);
+    if (!record) return -1;
+    auto &voices=stage_voices();
+    for (int player=0;player<16;++player)
+        if (voices[player].active && voices[player].record==record && voices[player].handle==handle)
+            return player;
+    return -1;
+}
+int stage_voice_for_record(uint32_t record) {
+    auto &voices=stage_voices();
+    for (int player=0;player<16;++player)
+        if (voices[player].active && voices[player].record==record) return player;
+    return -1;
+}
 int stage_sound_player(uint32_t handle) {
     if (handle==0x0209b4a0u) return 0;
     if (handle==0x0209b4b0u) return 4;
+    const int voice=stage_voice_for_handle(handle);
+    if (voice>=0) return voice;
     throw std::runtime_error("Unmapped original NNS sound handle: "+std::to_string(handle));
+}
+int stage_snd_start_seqarc(uint32_t handle,int archive,int entry) {
+    // NNS_SndArcPlayerStartSeqArc (0x02051f1c): the SDK boundary of the
+    // original Player_PlaySoundEffect. Players 0/4 are the music layers
+    // and 1 the shared 2D effect player; dynamic voices use the others.
+    stage_retire_finished_voices();
+    auto &voices=stage_voices();
+    const int previous=stage_voice_for_handle(handle);
+    if (previous>=0) voices[previous].handle=0; // the SDK releases the old binding
+    at<uint32_t>(handle)=0;
+    int player=-1;
+    for (int candidate=2;candidate<16 && player<0;++candidate)
+        if (candidate!=4 && !voices[candidate].active) player=candidate;
+    if (player<0) {
+        // All native effect players busy: the oldest voice yields.
+        uint32_t oldest=~0u;
+        for (int candidate=2;candidate<16;++candidate)
+            if (candidate!=4 && voices[candidate].token<oldest) { oldest=voices[candidate].token; player=candidate; }
+        GameProgram::active().native_audio({SoundOp::Stop,player,voices[player].token});
+        stage_retire_voice(voices[player]);
+    }
+    auto &voice=voices[player];
+    if (!voice.record) voice.record=packed::Space::current().allocate(StageSeqPlayerBytes,4);
+    std::memset(packed::Space::current().data(voice.record,StageSeqPlayerBytes),0,StageSeqPlayerBytes);
+    at<uint32_t>(voice.record+0x10)=handle;
+    at<uint16_t>(voice.record+0x3a)=uint16_t(entry);
+    at<uint8_t>(voice.record+0x3c)=uint8_t(player);
+    at<uint8_t>(voice.record+0x41)=0x7f;
+    voice.token=stageNextVoice++;
+    if (!GameProgram::active().native_audio({SoundOp::Effect,player,voice.token,archive,entry})) return 0;
+    voice.handle=handle; voice.active=true; voice.stopping=false;
+    at<uint32_t>(handle)=voice.record;
+    return 1;
+}
+int stage_snd_start_seqarc_ex(uint32_t handle,int playerNo,int bankNo,int playerPrio,int archive,int entry) {
+    // NNS_SndArcPlayerStartSeqArcEx (0x02051e60). The recovered callers
+    // (Player_PlaySoundEffect kind 3) keep the archive's player and bank
+    // (-1); the priority only orders SDK player eviction.
+    (void)playerPrio;
+    if (playerNo>=0 || bankNo>=0)
+        throw std::runtime_error("NNS_SndArcPlayerStartSeqArcEx player/bank override is not ported.");
+    return stage_snd_start_seqarc(handle,archive,entry);
+}
+void stage_snd_player_set_volume(uint32_t handle,int volume) {
+    // NNS_SndPlayerSetVolume (0x0204f924, src/func_0204f924.c): the byte at
+    // seqPlayer+0x41, which the SDK applies as the player volume.
+    const uint32_t record=at<uint32_t>(handle);
+    if (!record) return;
+    at<uint8_t>(record+0x41)=uint8_t(volume);
+    const int player=stage_voice_for_record(record);
+    if (player>=0) GameProgram::active().native_audio({SoundOp::PlayerParam,player,stage_voices()[player].token,4,uint8_t(volume)});
+}
+void stage_snd_player_set_track_pan(uint32_t handle,int tracks,int pan) {
+    // NNS_SndPlayerSetTrackPan (0x0204f7cc, src/func_0204f7cc.c):
+    // SND_SetTrackPan(seqPlayer->playerNo, tracks, pan).
+    const uint32_t record=at<uint32_t>(handle);
+    if (!record) return;
+    const int player=stage_voice_for_record(record);
+    if (player>=0) GameProgram::active().native_audio({SoundOp::TrackParam,player,stage_voices()[player].token,tracks,9,pan});
 }
 int stage_snd_start_seq(uint32_t handle,int sequence) {
     // NNS_SndArcPlayerStartSeq (0x02051fb4).
@@ -2018,6 +2125,15 @@ int stage_snd_start_seq(uint32_t handle,int sequence) {
 }
 int stage_snd_stop_seq(uint32_t handle,int frames) {
     // NNS_SndPlayerStopSeq (0x0204fa2c).
+    if (handle!=0x0209b4a0u && handle!=0x0209b4b0u) {
+        const int player=stage_voice_for_handle(handle);
+        if (player<0) return 1; // unbound handle: nothing to stop
+        auto &voice=stage_voices()[player];
+        if (!voice.stopping)
+            GameProgram::active().native_audio({SoundOp::Stop,player,voice.token,frames});
+        voice.stopping=true;
+        return 1;
+    }
     GameProgram::active().native_audio({SoundOp::Stop,stage_sound_player(handle),0,frames});
     return 1;
 }
@@ -2034,6 +2150,12 @@ void stage_sound_play_3d(uint32_t archive,uint32_t entry,uint32_t) {
     // func_02048a1c) is not ported yet, so the effect plays on the native
     // effect player without positional attenuation or pan.
     stage_sound_play_2d(archive,entry);
+}
+uint32_t stage_sound_play_2d_archive2(uint32_t entry) {
+    // Complete func_02012790 (external/sm64ds-pc/src/func_02012790.c):
+    // Sound::Play2D(2, entry). Play2D's own result is not used by callers.
+    stage_sound_play_2d(2,entry);
+    return 1;
 }
 uint32_t stage_sound_play_char_voice(uint32_t character,uint32_t voice,uint32_t position) {
     // Complete Sound::PlayCharVoice: Sound::Play(1, voice + data_02075250[character], v).
@@ -2594,10 +2716,14 @@ void stage_actor_frame() {
 }
 }
 
+uint32_t stage_cutscene_object_d1(uint32_t self);
+uint32_t stage_demo_anm_model_d0(uint32_t self);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
         bind_stage_player_runtime(space);
         space.bind(0x020f80acu,&stage_cutscene_object_render);
+        space.bind(0x020f1f70u,&stage_cutscene_object_d1);
+        space.bind(0x020f6778u,&stage_demo_anm_model_d0);
         space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
         space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
         space.bind(0x020b0a78u,&stage_no_op);      // daChScene_c::OnPendingDestroy
@@ -2676,13 +2802,149 @@ void bind_stage_arm9_math(packed::Space &space) {
     // Stage-only: the minigame owner binds its own cstd::sqrt veneer.
     space.bind(0x0203d744u,&stage_cstd_sqrt);
     space.bind(0x0203b4dcu,&stage_cstd_atan2);
+    space.bind(0x01ffabe4u,&stage_aeabi_idiv);
+}
+void stage_model_virtual10(uint32_t self,uint32_t matrix) {
+    // Complete Model::Virtual10(Matrix4x3 &) (0x02016bb8,
+    // external/sm64ds-pc/src/_ZN5Model9Virtual10ER9Matrix4x3.cpp): copy the
+    // 12-word root matrix into data.transforms[0], then func_02045074(&data,
+    // data.modelFile->bones). ModelComponents is at Model+8.
+    const uint32_t data=self+8;
+    std::memcpy(packed::Space::current().data(at<uint32_t>(data+0xc),0x30),
+                packed::Space::current().data(matrix,0x30),0x30);
+    Ptr<void(uint32_t,uint32_t)>(0x02045074u)(data,at<uint32_t>(at<uint32_t>(data)+8));
+}
+void stage_model_anim_virtual10(uint32_t self,uint32_t matrix) {
+    // Complete ModelAnim::Virtual10(Matrix4x3 &) (0x0201682c,
+    // external/sm64ds-pc/src/_ZN9ModelAnim9Virtual10ER9Matrix4x3.cpp):
+    // data.UpdateBones(file, (u32)(currFrame << 4) >> 16), then the Model
+    // base. Animation sits at +0x50 (currFrame +0x58), the BCA file at +0x60.
+    const int32_t frame=at<int32_t>(self+0x58);
+    Ptr<void(uint32_t,uint32_t,int)>(0x02045394u)(self+8,at<uint32_t>(self+0x60),int((uint32_t(frame)<<4)>>16));
+    stage_model_virtual10(self,matrix);
+}
+int stage_cstd_abs(int x) {
+    // Complete cstd::abs(int) (0x0206df84, src/_ZN4cstd3absEi.cpp), with the
+    // ARM's wrapping negation of INT_MIN.
+    return x<0 ? int(0u-uint32_t(x)) : x;
+}
+uint32_t stage_cc_ac_pos_get_pos(uint32_t self) {
+    // Complete dCcAcPos_c::GetPos() (0x02014a2c,
+    // external/sm64ds-pc/src/_ZN10dCcAcPos_c6GetPosEv.cpp): &pos (+0x34).
+    return self+0x34;
+}
+// Structors the recovered sources only declare (mwcc emits them from the
+// class definitions); each body below is read from the cartridge code.
+uint32_t stage_frame_ctrl_d2(uint32_t self) {
+    // dExtFrameCtrl_c D2 (0x02015cb4): restore _ZTV15dExtFrameCtrl_c.
+    at<uint32_t>(self)=0x0208e7e4u;
+    return self;
+}
+uint32_t stage_texture_sequence_d1(uint32_t self) {
+    // TextureSequence D1 (0x02015a2c): its vptr, then the frame-control D2.
+    at<uint32_t>(self)=0x0208e7d4u;
+    stage_frame_ctrl_d2(self);
+    return self;
+}
+uint32_t stage_texture_sequence_d0(uint32_t self) {
+    // TextureSequence D0 (0x02015a00): D1, then Memory::operator_delete2.
+    stage_texture_sequence_d1(self);
+    Ptr<void(uint32_t)>(0x0203cbccu)(self);
+    return self;
+}
+uint32_t stage_ext_anm_model_d2(uint32_t self) {
+    // dExtAnmModel_c D2 (0x0201689c): both vptrs (0x0208e980, Animation base
+    // 0x0208e9a4 at +0x50), the frame-control D2 on +0x50, then the model
+    // base D2 (0x02016ca8).
+    at<uint32_t>(self)=0x0208e980u;
+    at<uint32_t>(self+0x50)=0x0208e9a4u;
+    stage_frame_ctrl_d2(self+0x50);
+    Ptr<void(uint32_t)>(0x02016ca8u)(self);
+    return self;
+}
+uint32_t stage_ext_model_d2(uint32_t self) {
+    // dExtModel_c D2 (0x020170b8): vptr 0x0208e87c, then the model-file
+    // release (0x02018144) when +4 holds one.
+    at<uint32_t>(self)=0x0208e87cu;
+    if (at<uint32_t>(self+4)) Ptr<void(uint32_t)>(0x02018144u)(at<uint32_t>(self+4));
+    return self;
+}
+uint32_t stage_model_d2(uint32_t self) {
+    // Model D2 (0x02016ca8): vptr 0x0208e90c, free transformsBuf (+0x4c)
+    // through func_0203cbc0, then dExtModel_c D2.
+    at<uint32_t>(self)=0x0208e90cu;
+    if (at<uint32_t>(self+0x4c)) Ptr<void(uint32_t)>(0x0203cbc0u)(at<uint32_t>(self+0x4c));
+    return stage_ext_model_d2(self);
+}
+void stage_cxa_vec_cleanup(uint32_t base,uint32_t count,uint32_t size,uint32_t destructor) {
+    // __cxa_vec_cleanup (0x0207328c): destroy count elements in reverse
+    // order. The ROM's handler frame only matters for exceptions, which
+    // recovered game code never throws.
+    if (!destructor) return;
+    for (uint32_t element=base+count*size;count;--count) {
+        element-=size;
+        Ptr<void(uint32_t)>(destructor)(element);
+    }
+}
+uint32_t stage_actor_d2(uint32_t self) {
+    // dActor_c D2 (0x020112c8): leave the actor list (stage_actor_destruct).
+    stage_actor_destruct(self);
+    return self;
+}
+uint32_t stage_cutscene_object_d1(uint32_t self) {
+    // CutsceneObject D1 (ov002 0x020f1f70): vptr 0x0210bd60, dActor_c D2.
+    at<uint32_t>(self)=0x0210bd60u;
+    return stage_actor_d2(self);
+}
+uint32_t stage_demo_anm_model_d0(uint32_t self) {
+    // daDemo_c::anmModel_c::~anmModel_c() D0 (0x020f6778). The body is
+    // external/sm64ds-pc/src/_ZN8daDemo_c10anmModel_cD0Ev.cpp; the structor
+    // frame around it is read from the cartridge code: install the class
+    // vtables (0x0210bcc4 at +0, 0x0210bce8 at the Animation base +0x50),
+    // run the body, dExtAnmModel_c D2 (0x0201689c), __cxa_vec_cleanup of the
+    // virtual ScaleHolder base (+0x64, 1 x 0xc, Vector3 D1 0x020072c0), then
+    // Memory::operator_delete2 (0x0203cbcc).
+    at<uint32_t>(self)=0x0210bcc4u;
+    at<uint32_t>(self+0x50)=0x0210bce8u;
+    const auto release=[](uint32_t file) { if (file) Ptr<void(uint32_t)>(0x02017b64u)(file); };
+    release(at<uint32_t>(self+0x70));
+    for (unsigned i=0;i<at<uint8_t>(self+0x80);++i) release(at<uint32_t>(at<uint32_t>(self+0x74)+i*4));
+    if (const uint32_t sequence=at<uint32_t>(self+0x7c)) {
+        for (unsigned i=0;i<at<uint8_t>(self+0x81);++i) release(at<uint32_t>(at<uint32_t>(self+0x78)+i*4));
+        Ptr<void(uint32_t)>(at<uint32_t>(at<uint32_t>(sequence)+4))(sequence);
+    }
+    Ptr<void(uint32_t)>(0x0201689cu)(self);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x0207328cu)(self+0x64,1,0xc,0x020072c0u);
+    Ptr<void(uint32_t)>(0x0203cbccu)(self);
+    return self;
+}
+void bind_stage_model_runtime(packed::Space &space) {
+    space.bind(0x02015cb4u,&stage_frame_ctrl_d2);
+    space.bind(0x02015a2cu,&stage_texture_sequence_d1);
+    space.bind(0x02015a00u,&stage_texture_sequence_d0);
+    space.bind(0x0201689cu,&stage_ext_anm_model_d2);
+    space.bind(0x0207328cu,&stage_cxa_vec_cleanup);
+    space.bind(0x02016ca8u,&stage_model_d2);
+    space.bind(0x020170b8u,&stage_ext_model_d2);
+    space.bind(0x020112c8u,&stage_actor_d2);
+    space.bind(0x02014a2cu,&stage_cc_ac_pos_get_pos);
+    space.bind(0x0206df84u,&stage_cstd_abs);
+    space.bind(0x02016bb8u,&stage_model_virtual10);
+    space.bind(0x0201682cu,&stage_model_anim_virtual10);
 }
 void bind_stage_audio_runtime(packed::Space &space) {
     // Stage scenes only: the minigame runtime owns its own Sound boundary.
+    // A new stage address space starts without dynamic voice bindings.
+    stage_voices().fill(StageVoice{});
     space.bind(0x02051fb4u,&stage_snd_start_seq);
+    space.bind(0x02051f1cu,&stage_snd_start_seqarc);
+    space.bind(0x02051e60u,&stage_snd_start_seqarc_ex);
+    space.bind(0x0204f924u,&stage_snd_player_set_volume);
+    space.bind(0x0204f7ccu,&stage_snd_player_set_track_pan);
     space.bind(0x0204fa2cu,&stage_snd_stop_seq);
     space.bind(0x0204f8ccu,&stage_snd_move_volume);
     space.bind(0x02012840u,&stage_sound_play_2d);
+    space.bind(0x02012790u,&stage_sound_play_2d_archive2);
     space.bind(0x02012590u,&stage_sound_play_3d);
     space.bind(0x02012328u,&stage_sound_play_long);
     space.bind(0x02012154u,&stage_sound_play_char_voice);

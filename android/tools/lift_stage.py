@@ -268,7 +268,7 @@ def free_c(rel):
                and set(re.findall(r'\b(?:data_\w+|func_\w+|SUBLEVEL_LEVEL_TABLE)\b',m.group())) & used]
     raw = '\n'.join(imports)+'\n'+raw
     if rel in ('src/Matrix4x3_ApplyInPlaceToRotationX.c','src/Matrix4x3_ApplyInPlaceToScale.c',
-               'src/Matrix4x3_ApplyInPlaceToRotationZ.c'):
+               'src/Matrix4x3_ApplyInPlaceToRotationZ.c','src/Matrix4x3_ApplyInPlaceToTranslation.c'):
         raw=replace_once(raw,'struct Matrix4x3 { char data[0x30]; };','')
     if rel.endswith('/func_0205cb68.c'):
         raw = replace_once(raw,'extern void func_0205d2dc(void);',
@@ -1417,6 +1417,7 @@ if __name__ == '__main__':
                 'src/Matrix4x3_ApplyInPlaceToRotationY.c',
                 'src/Matrix4x3_ApplyInPlaceToRotationX.c',
                 'src/Matrix4x3_ApplyInPlaceToRotationZ.c',
+                'src/Matrix4x3_ApplyInPlaceToTranslation.c',
                 'src/Matrix4x3_FromRotationY.c','src/Matrix4x3_FromRotationX.c',
                 'src/Matrix4x3_FromRotationZ.c','src/Matrix4x3_ApplyInPlaceToRotationXYZExt.c',
                 'src/GetLevelPart.c','src/RandomIntInternal.c','src/AngleDiff.c',

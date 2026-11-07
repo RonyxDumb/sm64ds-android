@@ -7,3 +7,4 @@ VENEER(0x020383fcu, 0x020366b4u) // dBgCh_Actr_UpdateContinuous_Veneer
 VENEER(0x020383f0u, 0x02036318u) // func_020383f0
 VENEER(0x020383e4u, 0x020358acu) // func_020383e4
 VENEER(0x0201aac8u, 0x02059ba0u) // func_0201aac8
+VENEER(0x02014a20u, 0x0201493cu) // func_02014a20
