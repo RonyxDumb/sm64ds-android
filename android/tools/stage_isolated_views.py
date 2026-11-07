@@ -200,6 +200,13 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
         # whose address is the ABI pointer.
         raw = re.sub(r'Player::State\s*&\s*(\w*)', r'void *\1', raw)
         raw = re.sub(r'extern Player::State (data_\w+);', r'extern char \1[];', raw)
+    if rel and '/actors/' in rel:
+        # Record types the block only handles through pointers stay opaque.
+        used = set(re.findall(r'\b([A-Z]\w*|d[A-Z]\w*)\s*\*', raw))
+        known = {'Vector3', 'Vector3_16', 'State', 'SurfaceInfo', 'CLPS', 'Matrix4x3'}
+        opaque = sorted(n for n in used - known
+                        if not re.search(r'struct\s+'+n+r'\s*\{|\}\s*'+n+r'\s*;|typedef[^;]*\b'+n+r'\s*;', raw))
+        raw = ''.join('struct %s;\n' % n for n in opaque) + raw
     if '->IsOnGround()' in raw:
         raw = re.sub(r'\(\(dBgCh_Actr \*\)(\([^()]*\))\)->IsOnGround\(\)',
                      r'_ZNK10dBgCh_Actr10IsOnGroundEv((void *)\1)', raw)
