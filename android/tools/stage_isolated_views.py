@@ -437,6 +437,7 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c231c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c133c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c14b8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c16ec', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
