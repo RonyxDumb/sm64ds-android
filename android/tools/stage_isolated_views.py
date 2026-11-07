@@ -282,6 +282,16 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020d91e0', 2),
+    ('func_ov002_020d82f0', 2),
+    ('func_02037e58', 0),
+    ('func_02037e84', 0),
+    ('func_02037e68', 0),
+    ('func_02037e48', 0),
+    ('func_02037e38', 0),
+    ('func_02037e90', 0),
+    ('func_02037e20', 0),
+    ('SurfaceInfo_TestFlag0x20', 0),
     ('func_020375ec', 0),
     ('func_02035394', 0),
     ('func_ov002_020d36d8', 2),
@@ -422,6 +432,7 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020c16ec', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020ce798', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020cabe0', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c6adc', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
@@ -490,6 +501,8 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5dBgCh21StopDetectingOrdinaryEv', 0, 'dBgCh'),
+    ('_ZN5dBgCh19StartDetectingToxicEv', 0, 'dBgCh'),
     ('_ZNK10dBgCh_Actr10IsOnGroundEv', 0, 'dBgCh_Actr'),
     ('_ZNK9Animation12WillHitFrameEi', 0, 'Animation'),
     ('_ZN6Player12St_Wait_MainEv', 2, 'Player'),
