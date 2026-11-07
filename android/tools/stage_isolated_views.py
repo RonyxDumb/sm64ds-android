@@ -245,6 +245,8 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('Vec3_DivScalarInPlace', 0),
+    ('Vec3_MulScalarInPlace', 0),
     ('func_0203dafc', 0),
     ('IsAreaShowing', 0),
     ('func_0204302c', 0),
@@ -271,6 +273,9 @@ FREE_UNITS = [
             'struct Vec3* a, struct Vec3* b, int c, short d, struct Vec3* e',
         'Vec3_Sub(&local, &a, &data_ov002_0211116c);': 'Vec3_Sub(&local, a, &data_ov002_0211116c);',
         'Vec3_RotateYAndTranslate(&e, &b, d, &local);': 'Vec3_RotateYAndTranslate(e, b, d, &local);'}),
+    ('UpdateMinimap', 0, {
+        # The stage prelude already names a different MinimapState record.
+        'MinimapState': 'UpdateMinimapState'}),
     ('func_ov001_020aaa54', 1, {
         # CapIcon.h's record layout (vptr 0x00 .. mFlags 0x1b); the unit
         # only reads and writes these fields.
