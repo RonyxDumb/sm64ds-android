@@ -999,6 +999,34 @@ void stage_drop_shadow_rad_height(uint32_t actor,uint32_t shadow,uint32_t matrix
     if (at<uint32_t>(actor+0xb0)&0x10) return;
     stage_shadow_init_model(shadow,matrix,radius,depth,radius,opacity);
 }
+int stage_cutscene_object_render(uint32_t self) {
+    // Complete CutsceneObject::Render (ov002 0x020f80ac; recovered isolated
+    // unit): mModel 0xdc, mModelAnim 0xe0, mOpacity 0x102, mScale 0x80.
+    const auto draw=[](uint32_t model,uint32_t arg) {
+        Ptr<void(uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(model)+5*4))(model,arg);
+    };
+    if (at<uint32_t>(self+8)==0x19) {
+        const uint32_t model=at<uint32_t>(self+0xdc),mat=model+0x1c;
+        std::memcpy(packed::Space::current().data(mat,0x30),packed::Space::current().data(0x0209b41cu,0x30),0x30);
+        for (unsigned i=0;i<3;++i) {
+            for (unsigned lane=0;lane<3;++lane)
+                at<int32_t>(mat+0x24+lane*4)=at<int32_t>(0x0210bb7cu+(i*3+lane)*4);
+            draw(model,0);
+        }
+        return 1;
+    }
+    const uint8_t opacity=at<uint8_t>(self+0x102);
+    if (!opacity) return 1;
+    if (const uint32_t model=at<uint32_t>(self+0xdc)) {
+        Ptr<void(uint32_t,uint32_t,int)>(0x02016a9cu)(model,opacity,0);
+        draw(model,self+0x80);
+    } else if (const uint32_t anim=at<uint32_t>(self+0xe0)) {
+        Ptr<void(uint32_t)>(0x020f65b8u)(anim);
+        Ptr<void(uint32_t,uint32_t,int)>(0x02016a9cu)(anim,at<uint8_t>(self+0x102),0);
+        draw(anim,self+0x80);
+    }
+    return 1;
+}
 int stage_jugem_render(uint32_t self) {
     // Complete LakituBro::Render (ov085 0x0212ead0): unless hidden
     // (unk_2dc == 1), advance the texture sequence (0x1d8) over
@@ -2275,6 +2303,7 @@ void stage_actor_frame() {
 
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     if (id==2) {
+        space.bind(0x020f80acu,&stage_cutscene_object_render);
         space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
         space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
         space.bind(0x020b0a78u,&stage_no_op);      // daChScene_c::OnPendingDestroy

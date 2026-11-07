@@ -1177,7 +1177,7 @@ int main(int argc, char **argv) {
                 if (!reachedStage) std::cerr << "Stage initialization: " << e.what() << '\n';
             }
             assert(reachedStage);
-            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 4);
+            assert(*static_cast<uint8_t *>(stageSpace->data(0x020a4b4cu, 1)) == 0); // spawn completed
             auto stageWord = [&](uint32_t address) {
                 uint32_t value=0;
                 std::memcpy(&value,stageSpace->data(address,4),4);
