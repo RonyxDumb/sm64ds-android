@@ -247,6 +247,7 @@ FREE_UNITS = [
     ('SetStarMarker', 0), ('ContinueKuppaScriptIfNecessary', 0),
     ('func_0202a958', 0), ('func_0202a96c', 0), ('func_0202a980', 0),
     ('GetMinimapID', 0), ('GetMinimapScale', 0),
+    ('func_ov002_020f23f0', 2),
     ('Vec3_DivScalarInPlace', 0),
     ('Vec3_MulScalarInPlace', 0),
     ('func_0203dafc', 0),
@@ -275,6 +276,11 @@ FREE_UNITS = [
             'struct Vec3* a, struct Vec3* b, int c, short d, struct Vec3* e',
         'Vec3_Sub(&local, &a, &data_ov002_0211116c);': 'Vec3_Sub(&local, a, &data_ov002_0211116c);',
         'Vec3_RotateYAndTranslate(&e, &b, d, &local);': 'Vec3_RotateYAndTranslate(e, b, d, &local);'}),
+    ('func_ov002_020f2340', 2, {
+        # OAM::RenderSub through its mangled ABI symbol.
+        'struct OamAttr;\nstruct OAM { static void RenderSub(OamAttr *, int, int); };\nextern OamAttr data_ov002_0210bddc;':
+            'extern "C" void _ZN3OAM9RenderSubEP7OamAttrii(void *, int, int);\nextern char data_ov002_0210bddc[];',
+        'OAM::RenderSub(&data_ov002_0210bddc,': '_ZN3OAM9RenderSubEP7OamAttrii(data_ov002_0210bddc,'}),
     ('UpdateMinimap', 0, {
         # The stage prelude already names a different MinimapState record.
         'MinimapState': 'UpdateMinimapState'}),
