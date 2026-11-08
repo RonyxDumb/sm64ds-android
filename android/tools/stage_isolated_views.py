@@ -220,6 +220,21 @@ def player_methods():
     return _PLAYER_METHODS
 
 
+_PLAYER_RECORDS = None
+
+
+def player_record_members():
+    """Record-typed (non-scalar) Player members: name -> offset (include/Player.h)."""
+    global _PLAYER_RECORDS
+    if _PLAYER_RECORDS is None:
+        _PLAYER_RECORDS = {}
+        for line in (ROOT/'include/Player.h').read_text().splitlines():
+            match = re.match(r'^\s+(?:struct\s+)?(\w+)\s+(m\w+)\s*;\s*/\*\s*0x([0-9a-f]+)', line)
+            if match and match[1] not in SCALARS:
+                _PLAYER_RECORDS.setdefault(match[2], int(match[3], 16))
+    return _PLAYER_RECORDS
+
+
 def player_self_calls(body, bare_members=False):
     """Bare calls of the receiver's own member methods become their
     mangled cartridge symbols with the receiver as the first argument."""
@@ -242,6 +257,9 @@ def player_self_calls(body, bare_members=False):
             body = re.sub(pattern, mangled+r'(\1, (void *)((char *)object + 0x74))', body)
             decls.append('extern "C" int %s(%s, void *);' % (mangled, ', '.join(['unsigned int']*scalars)))
     body = re.sub(r'&\s*mCamSpacePos\b', '(void *)((char *)object + 0x74)', body)
+    # Addresses of record-typed Player members (dCcAcPos_c mAttackClsn, ...).
+    for name, offset in player_record_members().items():
+        body = re.sub(r'&\s*'+name+r'\b(?!\s*[.\[])', '((char *)object + 0x%x)' % offset, body)
     if 'FX_MUL(' in body and '#define FX_MUL' not in body:
         decls.append('#define FX_MUL(v1, v2) ((s32)(((s64)(v1) * (v2) + 0x800LL) >> 12))')
     for name, (mangled, ret, params) in player_methods().items():
@@ -263,6 +281,7 @@ def player_self_calls(body, bare_members=False):
 
 
 PLAYER_STATES = [
+    '_ZN6Player20St_StomachSlide_MainEv',
     '_ZN6Player12St_Dive_InitEv',
     '_ZN6Player12St_Wait_InitEv',
     '_ZN6Player11St_Fly_InitEv',
@@ -467,6 +486,9 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020f02c8', 2),
+    ('func_ov002_020f030c', 2),
+    ('func_ov002_020d3498', 2),
     ('func_ov002_020dd2f4', 2),
     ('func_ov002_020dc560', 2),
     ('func_0207322c', 0),

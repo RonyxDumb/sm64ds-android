@@ -43,17 +43,41 @@ Tooling (speeds every next session):
   (SaveData+8 bit 7, the ROM's own "opening seen" flag), `SM64DS_STAGE_INPUT=
   "first-last:keys:x:y,..."`, `SM64DS_STAGE_TRACE_PLAYER=N`, `SM64DS_STAGE_LIST_ACTORS=1`.
 
-Measured (Yoshi slot, no input): the opening runs past frame 1884 -- warp
-pipe, Mario/Luigi/Wario spawned by the script (IDs 84-86) and walking to
-their marks, all four Player actors in `St_Wait`, Yoshi (param1 3) on the
-castle roof (y = 13303872). Rendered PPM frames show the pipe and the grounds.
-Full castle ROM test rc=0 and no-ROM suite rc=0 (assertions that pinned the
-old FindWithID-failed first frame now check invariants).
+Measured (private EU ROM, host, Yoshi slot, no input): the original opening
+now runs to **frame 1994**. Frames 0-1300: Lakitu flyover; ~1300-1450: the
+warp pipe; the script spawns Mario/Luigi/Wario (IDs 84-86) through
+func_0200e5fc and drives them (level-entry jump out of the pipe, landing,
+St_Wait, then walking/landing/dive/slide physics from ~1880 on), while Yoshi
+(param1 3, data_0209f394[0]) waits in St_Wait on the castle roof
+(y = 13303872). The KuppaScript (data_0209fc48 = 0x02089af8) is still
+running at the frontier, so input is not yet given to Yoshi.
+Full castle ROM test (all four save/character paths) and the no-ROM suite:
+rc=0 on the final commit of this session (host ASan/UBSan, leaks off).
 
-NOT verified: Yoshi under player control (the opening is still running at
-the frontier; input is ignored while the KuppaScript holds the players),
-walking/jumping from input, camera following, door entry, APK build, device.
-Frontier: see the latest entry of the auto loop below.
+Frontier: frame 1995, `Player::Hurt(const Vector3&, u32, Fix12i, u32, u32, u32)`
+(external/sm64ds-pc/src/_ZN6Player4HurtERK7Vector3j5Fix12IiEjjj.cpp, a member
+with a reference parameter -- add it as a MEMBER_UNITS entry; the views now
+translate reference parameters) plus func_ov002_020bd250 and
+func_ov002_020d5cec. Verify visually (SM64DS_STAGE_DUMP) that a character
+really gets hurt in the original opening at this point; if not, the cause is
+upstream (physics or script input) and must be found first.
+
+Iteration loop used this session (about 4-5 min per frontier step):
+`frontier_batch.py <addr> --apply`, regenerate (lift_stage.py,
+native_sources.py, packed_sources.py), incremental compile, then
+`SM64DS_STAGE_CHARACTER=3 SM64DS_STAGE_FRAMES=4000 game_program_test <rom>`.
+Most time is the 1300-frame opening replay under ASan; a stage snapshot
+or a non-ASan probe build would cut it substantially.
+
+Known approximations (documented in code): the stage voice table plays
+handle-based effects on native players 2-15 without SND3D pan/volume
+beyond SetVolume/SetTrackPan; func_02048c30 initialises a register the ROM
+leaves unset on its stopped-voice path; func_ov002_020d3b9c is upstream's
+port/unmatched near-miss body.
+
+NOT verified: Yoshi under player control, walking/jumping from input,
+camera following the player, door entry, HUD (only on saves that saw the
+opening: HUD::InitResources next), APK/NDK build of the new units, device.
 
 ---
 
