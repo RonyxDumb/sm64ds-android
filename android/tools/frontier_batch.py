@@ -60,7 +60,8 @@ def linked_addresses():
     for path in (ROOT/'android/app/src/main/cpp').rglob('*'):
         if path.suffix in ('.cpp', '.h', '.inc'):
             # Only addresses the runtime actually binds (space.bind / VENEER).
-            for hexval in re.findall(r'(?:bind\(|VENEER\()\s*0x(0[12][0-9a-fA-F]{6})', path.read_text(errors='ignore')):
+            for hexval in re.findall(r'(?:bind\(|VENEER\(|PMF_STATE_(?:CALL|SET)\(-?\d+,)\s*0x(0[12][0-9a-fA-F]{6})',
+                                     path.read_text(errors='ignore')):
                 native.add(int(hexval, 16))
     return linked, native
 
@@ -81,6 +82,22 @@ def callees(path, by_name, own):
             found.append(word)
     # Calls through cartridge addresses (Ptr<...>(0x0201....u)).
     return found
+
+
+PMF_SHELL = re.compile(r'struct C \{ char pad\[(0x[0-9a-fA-F]+)\]; int idx; \};')
+PMF_CALL = re.compile(r'(c->idx = i; )?int j = c->idx; \(c->\*(data_(?:ov\d+_)?([0-9a-f]{8}))\[j\]\.pmf\[([01])\]\)\(\); \}')
+
+
+def pmf_state_row(name, text, overlay, addr):
+    """A recovered state-table helper: `(c->*TABLE[c->idx].pmf[K])()`,
+    optionally storing the index argument first. A stage_pmf_state_calls.inc
+    row for the native template, or None."""
+    shell, call = PMF_SHELL.search(text), PMF_CALL.search(text)
+    if not shell or not call or not re.search(r'\b'+re.escape(name)+r'\s*\(', text):
+        return None
+    module = -1 if addr < 0x020aa420 else overlay
+    kind = 'PMF_STATE_SET' if call[1] else 'PMF_STATE_CALL'
+    return '%s(%d, 0x%08xu, 0x%su, %su, %s) // %s\n' % (kind, module, addr, call[3], shell[1], call[4], name)
 
 
 _SYMBOL_INDEX = None
@@ -128,7 +145,7 @@ def main():
     linked, native = linked_addresses()
     views = (ROOT/'android/tools/stage_isolated_views.py').read_text()
     listed = set(re.findall(r"\('([\w]+)',\s*\d+", views))
-    propose, manual, veneers, seen = [], [], [], set()
+    propose, manual, veneers, seen, pmf_rows = [], [], [], set(), []
 
     def visit(name, depth):
         if name in seen:
@@ -146,9 +163,17 @@ def main():
             if veneer[1] in by_name:
                 visit(veneer[1], depth)
             return
+        if not is_linked and src:
+            row = pmf_state_row(name, src.read_text(), overlay, addr)
+            if row:
+                pmf_rows.append(row)
+                return
         if not is_linked:
+            defines = src and re.search(r'^[^;\n]*\b'+re.escape(name)+r'\s*\([^;]*$', src.read_text(), re.M)
             if is_structor(name):
                 manual.append((name, overlay, addr, src))  # cartridge structor frame
+            elif defines:
+                propose.append((name, overlay, addr, src))  # defines its own mangled name as C
             elif src and not (name.startswith('_ZN') and '::' in src.read_text()) and not re.search(r'^\w[^;\n]*\b\w+::~?\w+\s*\([^;]*$', src.read_text(), re.M):
                 propose.append((name, overlay, addr, src))
             else:
@@ -164,6 +189,12 @@ def main():
         print('MANUAL %-48s ov%03d 0x%08x %s' % (name, overlay, addr, src.relative_to(ROOT) if src else '(no recovered unit)'))
     for name, addr, target in veneers:
         print('VENEER %-48s 0x%08x -> 0x%08x' % (name, addr, target))
+    for row in pmf_rows:
+        print('PMFTAB '+row.strip())
+    if args.apply and pmf_rows:
+        path = ROOT/'android/app/src/main/cpp/runtime/stage_pmf_state_calls.inc'
+        path.write_text(path.read_text()+''.join(pmf_rows))
+        print('appended %d PMF_STATE rows' % len(pmf_rows))
     if args.apply and veneers:
         path = ROOT/'android/app/src/main/cpp/runtime/stage_tail_veneers.inc'
         path.write_text(path.read_text()+''.join('VENEER(0x%08xu, 0x%08xu) // %s\n' % (a, t, n) for n, a, t in veneers))
@@ -212,6 +243,12 @@ def main():
                 blocks.append((name, overlay, rel))
                 break
             marker = text.find('// @symbol '+name+'\n')
+            following = text.find('\n// @symbol ', marker+1) if marker >= 0 else -1
+            segment = text[marker:following if following > 0 else len(text)] if marker >= 0 else ''
+            if marker >= 0 and re.search(r'^[^\n;]*\b'+re.escape(name)+r'\s*\([^;]*$', segment, re.M):
+                # The block defines the mangled name itself as a C function.
+                blocks.append((name, overlay, rel))
+                break
             if marker >= 0 and name.startswith('_ZN'):
                 head = re.compile(r'^(\w[^\n;{()]*\b(\w+)::~?\w+\([^)]*\)(?:\s*const)?)\s*\{?\s*$', re.M).search(text, marker)
                 if head:

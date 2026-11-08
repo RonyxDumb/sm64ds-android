@@ -33,6 +33,8 @@ extern "C" void pk_func_02052800(sm64ds::packed::Ptr<int>,int,int);
 extern "C" void pk_func_0205283c(sm64ds::packed::Ptr<int>,int,int);
 extern "C" void pk_mg_DecompressLZ16(sm64ds::packed::Ptr<void>,sm64ds::packed::Ptr<void>);
 namespace cstd { int sqrt(unsigned long long); int16_t atan2(int32_t,int32_t); }
+// src/DecIfAbove0_Byte.c, linked once through the minigame manifest.
+extern "C" unsigned int abi_DecIfAbove0_Byte(unsigned int);
 
 namespace sm64ds {
 namespace {
@@ -1242,6 +1244,80 @@ int32_t stage_event_get_bit(uint32_t bit) {
 int stage_player_is_state(uint32_t player,uint32_t state) {
     // Complete Player::IsState (0x020e308c): pointer identity of mState.
     return at<uint32_t>(player+0x370)==state;
+}
+int stage_bg_actor_update_kill_by_mega_char(uint32_t self,int32_t a,int32_t b,int32_t c,int32_t d) {
+    // Complete dBgActor_c::UpdateKillByMegaChar(s16, s16, s16, Fix12i)
+    // (external/sm64ds-pc/src/actors/dBgActor_c.cpp, frame ov002 0x020ee674):
+    // while being thrown (+0x31c), cast a line 0xc8000 ahead along
+    // mPrevAngleY and turn around on a hit, spin by (a, b, c), move, count
+    // the +0x31d timer down to Kill() (vtable slot 31), then func_ov002_020ee5d0.
+    if (!at<uint8_t>(self+0x31c)) return 0;
+    auto &space=packed::Space::current();
+    const uint32_t work=space.allocate(0x9c),vin=work,vmid=work+0xc,vout=work+0x18,ray=work+0x24;
+    at<int32_t>(vin)=0; at<int32_t>(vin+4)=0; at<int32_t>(vin+8)=0xc8000;
+    at<int32_t>(vmid)=0; at<int32_t>(vmid+4)=0; at<int32_t>(vmid+8)=0;
+    Ptr<void(uint32_t,int)>(0x0203bd6cu)(0x020a0e68u,at<int16_t>(self+0x94)); // Matrix4x3_FromRotationY
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x02052858u)(vin,0x020a0e68u,vmid);  // MulVec3Mat4x3
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203d340u)(vout,self+0x5c,vmid);  // Vec3_Add
+    std::memcpy(space.data(vmid,12),space.data(vout,12),12);
+    Ptr<void(uint32_t)>(0x020377b0u)(ray);                                     // dBgCh_Lin C1
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(ray,self+0x5c,vmid,self);
+    if (Ptr<int(uint32_t)>(0x02038638u)(ray)) at<int16_t>(self+0x94)=int16_t(at<int16_t>(self+0x94)+0x8000);
+    at<int16_t>(self+0x8c)=int16_t(at<int16_t>(self+0x8c)+a);
+    at<int16_t>(self+0x8e)=int16_t(at<int16_t>(self+0x8e)+b);
+    at<int16_t>(self+0x90)=int16_t(at<int16_t>(self+0x90)+c);
+    Ptr<void(uint32_t,uint32_t)>(0x02010c30u)(self,0);                          // UpdatePos(0)
+    if (Ptr<int(uint32_t)>(0x0203add4u)(self+0x31d)==0)                         // DecIfAbove0_Byte
+        Ptr<void(uint32_t)>(at<uint32_t>(at<uint32_t>(self)+0x7c))(self);       // Kill()
+    Ptr<void(uint32_t,int32_t)>(0x020ee5d0u)(self,d);
+    Ptr<void(uint32_t)>(0x02037764u)(ray);                                     // dBgCh_Lin D1
+    space.release(work);
+    return 1;
+}
+int stage_ground_height_below(uint32_t actor) {
+    // Complete func_ov102_02149610 (external/sm64ds-pc/src/func_ov102_02149610.cpp,
+    // frame ov102 0x02149610): a dBgCh_Gnd from 0x28000 above the actor with
+    // probe height 0x3e8000; the hit floor height, else the actor's own y.
+    auto &space=packed::Space::current();
+    const uint32_t work=space.allocate(0x60),pos=work,ground=work+0xc;
+    at<int32_t>(pos)=at<int32_t>(actor+0x5c);
+    at<int32_t>(pos+4)=at<int32_t>(actor+0x60)+0x28000;
+    at<int32_t>(pos+8)=at<int32_t>(actor+0x64);
+    Ptr<void(uint32_t)>(0x02037570u)(ground);                                // dBgCh_Gnd C1
+    Ptr<void(uint32_t,uint32_t,uint32_t)>(0x0203748cu)(ground,pos,0);       // SetObjAndPos
+    at<int32_t>(ground+0x4c)=0x3e8000;                                        // mProbeHeight
+    int32_t height=at<int32_t>(actor+0x60);
+    if (Ptr<int(uint32_t)>(0x02038f44u)(ground)) height=at<int32_t>(ground+0x44); // clsnY
+    Ptr<void(uint32_t)>(0x02037534u)(ground);                                // dBgCh_Gnd D1
+    space.release(work);
+    return height;
+}
+int stage_camera_run_behavior(uint32_t self) {
+    // Complete func_0200ca50 (external/sm64ds-pc/src/func_0200ca50.cpp):
+    // approach the view's target roll (+0x17a towards view(+0x13c)+0x24, step
+    // 0x80); unless flag 3 is set, either the 0x8000 path (func_0200cbe0) or
+    // the current camera behavior's PMF (+0x138 record, +8) on this camera.
+    auto &space=packed::Space::current();
+    const uint32_t view=at<uint32_t>(self+0x13c);
+    Ptr<int(uint32_t,int,int)>(0x0203aed8u)(self+0x17a,at<int16_t>(view+0x24),0x80);
+    int result=1;
+    const uint32_t flags=at<uint32_t>(self+0x154);
+    if (flags&8) {
+    } else if (flags&0x8000) {
+        Ptr<int(uint32_t)>(0x0200cbe0u)(self);
+    } else {
+        const uint32_t behavior=at<uint32_t>(self+0x138);
+        if (at<uint32_t>(behavior+8)) {
+            packed::MemberCall member{};
+            std::memcpy(&member,space.data(behavior+8,8),8);
+            const auto target=space.resolve_member(self,member);
+            using Callback=int (*)(uint32_t);
+            Callback callback=nullptr;
+            std::memcpy(&callback,&target.code,sizeof callback);
+            result=callback(target.object);
+        }
+    }
+    return result;
 }
 int stage_actor_forward_line_hit(uint32_t,uint32_t actor) {
     // Complete func_ov002_020ef070 (external/sm64ds-pc/src/func_ov002_020ef070.cpp,
@@ -3002,12 +3078,48 @@ void stage_actor_frame() {
 
 #include "stage_structor_frames.inc"
 
+namespace pmf_state_calls {
+// The recovered state-table helpers (external/sm64ds-pc/src: `struct Entry
+// { PMF pmf[2]; }; (c->*TABLE[c->idx].pmf[K])()`, optionally storing the new
+// index first): the PMF of entry idx, slot K, called on the object through
+// the checked member-call resolver. Rows: stage_pmf_state_calls.inc.
+template<uint32_t Table,uint32_t IndexOffset,unsigned Slot>
+void call(uint32_t self) {
+    auto &space=packed::Space::current();
+    packed::MemberCall member{};
+    std::memcpy(&member,space.data(Table+at<uint32_t>(self+IndexOffset)*16+Slot*8,8),8);
+    const auto target=space.resolve_member(self,member);
+    using Callback=void (*)(uint32_t);
+    Callback callback=nullptr;
+    std::memcpy(&callback,&target.code,sizeof callback);
+    callback(target.object);
+}
+template<uint32_t Table,uint32_t IndexOffset,unsigned Slot>
+void set_and_call(uint32_t self,int index) {
+    at<int32_t>(self+IndexOffset)=index;
+    call<Table,IndexOffset,Slot>(self);
+}
+inline void bind(packed::Space &space,int module) {
+#define PMF_STATE_CALL(mod,address,table,offset,slot) \
+    if (module==(mod)) space.bind(address,&call<table,offset,slot>);
+#define PMF_STATE_SET(mod,address,table,offset,slot) \
+    if (module==(mod)) space.bind(address,&set_and_call<table,offset,slot>);
+#include "stage_pmf_state_calls.inc"
+#undef PMF_STATE_CALL
+#undef PMF_STATE_SET
+}
+} // namespace pmf_state_calls
+
 uint32_t stage_cutscene_object_d1(uint32_t self);
 uint32_t stage_demo_anm_model_d0(uint32_t self);
 uint32_t stage_demo_simple_model_d1(uint32_t self);
 uint32_t stage_demo_simple_model_d0(uint32_t self);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
     structor_frames::bind_structor_frames(space,int(id));
+    pmf_state_calls::bind(space,int(id));
+    if (id==102) {
+        space.bind(0x02149610u,&stage_ground_height_below);
+    }
     if (id==2) {
         bind_stage_player_runtime(space);
         space.bind(0x020f80acu,&stage_cutscene_object_render);
@@ -3016,6 +3128,7 @@ void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
         space.bind(0x020f69a8u,&stage_demo_simple_model_d0);
         space.bind(0x020f6a00u,&stage_demo_simple_model_d1);
         space.bind(0x020c607cu,&stage_player_vertical_line_probe);
+        space.bind(0x020ee674u,&stage_bg_actor_update_kill_by_mega_char);
         space.bind(0x020ef070u,&stage_actor_forward_line_hit);
         space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
         space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
@@ -3397,6 +3510,7 @@ uint32_t stage_ext_shadow_model_d1(uint32_t self) {
 void bind_stage_model_runtime(packed::Space &space) {
     // Stage-only scene/message/OAM boundary (the minigame runtime binds its own).
     space.bind(0x0202e1b4u,&scene_set_and_stop_color_fader);
+    space.bind(0x0203add4u,&abi_DecIfAbove0_Byte); // DecIfAbove0_Byte
     space.bind(0x0202e1e0u,&scene_set_faders);
     space.bind(0x020440e8u,&stage_list_node_d1);
     space.bind(0x02044104u,&stage_list_node_d1);
@@ -3422,6 +3536,7 @@ void bind_stage_model_runtime(packed::Space &space) {
     space.bind(0x02016d20u,&stage_model_d2);
     space.bind(0x02016ce0u,&stage_deleting_d0<stage_model_d2>);
     structor_frames::bind_structor_frames(space,-1);
+    pmf_state_calls::bind(space,-1);
     space.bind(0x020170b8u,&stage_ext_model_d2);
     space.bind(0x020112c8u,&stage_actor_d2);
     space.bind(0x02022640u,&stage_simple_callback_spawn);
@@ -3509,6 +3624,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x02010ad8u,&stage_closest_player);
     space.bind(0x0203ae58u,&stage_approach_linear_int);
     space.bind(0x0203aed8u,&stage_approach_linear2_short);
+    space.bind(0x0200ca50u,&stage_camera_run_behavior);
     space.bind(0x0203adecu,&stage_approach_linear_short);
     space.bind(0x0200e768u,&stage_read_unaligned_short);
     space.bind(0x0200e748u,&stage_read_unaligned_int);

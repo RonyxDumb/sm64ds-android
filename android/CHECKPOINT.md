@@ -1,3 +1,74 @@
+# Checkpoint — 2026-11-08 (session 4b), reloaded level runs to frame 2539
+
+Branch: `main`. Area: **castle-grounds level after the opening's reload (HUD,
+faders, castle actors' Behavior), tooling**. Evidence: private EU ROM host runs
+(fast probe + ASan/UBSan). No APK built locally; no Android device.
+
+Comparison with other NDS ports (studied, read-only clones):
+- dguillot-gh/phantom-hourglass-recomp (fork of the FFCCEOT-Recomp engine):
+  *static recompilation* of every ARM9 function (24,621, boundaries from the
+  zeldaret/ph decomp symbols) to C, run with a CPU-register context on host
+  fibers; the ARM7, timers, DMA, IRQs, 2D/3D GPU and sound come from a
+  pinned, configure-time-patched **melonDS core**. Hooks by address
+  (`replace|before|instead`). Built locally from the user's ROM; nothing
+  generated is committed.
+- aabrole/HuntersRecomp: Android wrapper of mstan/ndsrecomp +
+  MetroidPrimeHuntersRecomp: ARM9/ARM7 recompiled to native "banks" plus an
+  interpreter fallback promoted by measured coverage; melonDS-derived
+  rendering (compute renderer ported to GLES 3.2).
+- What applies here: function boundaries from the symbol maps (we have
+  config/arm9), address-keyed hook/bind tables (our space.bind), a
+  coverage/frontier-driven loop (run-frontier-loop.sh), and "generate from the
+  user's ROM, commit only non-proprietary data" (structor_frames.json holds
+  addresses/offsets only). Not adopted: melonDS hardware emulation and
+  whole-program machine-code translation -- this project is a native port of
+  the recovered source (CLAUDE.md), and recompiled ROM code could not be
+  committed or built in CI.
+
+What is new since dd537b5:
+- Reloaded stage: `HUD::InitResources` and `HUD::Behavior` (unit-local shells:
+  record fields by natural alignment, sibling member this-calls),
+  `FaderColor::AdvanceFade`, `Fader::AdvanceInterp`, `FaderBrightness`
+  members, castle actors' Behavior: BigBrickBlock, QuestionBlock, SignPost,
+  `dBgActor_c::IsClsnInRange(OnScreen)`, `dActor_c::DistToCPlayer`,
+  `DropShadowScaleXYZ`, camera `func_0200ca50` (behavior PMF), Player
+  `func_ov002_020c607c`, `func_ov002_020ef070`, ov102 ground probe,
+  `dBgActor_c::UpdateKillByMegaChar` (native from source + cartridge frame).
+- Real bug fixed: a `(Animation *)&mModelAnim` upcast must add the 0x50 base
+  offset (cartridge `add r0, r4, #0x370`); the view dropped it and
+  Animation::Advance divided by an unset frame count (SIGFPE).
+- PMF state tables: `(c->*TABLE[c->idx].pmf[K])()` helpers are detected by
+  frontier_batch.py and become rows of stage_pmf_state_calls.inc (native
+  template over the checked member-call resolver).
+- Views: inline-cast virtual calls `((Shell *)(x))->m()`, dBgW casts with
+  arguments (`Enable(actor)`), `struct CLS *p` fields for every actor class,
+  opaque pointer-only records, upcasts of record members.
+
+Measured (private EU ROM, Yoshi slot, no input, 4000 frames requested):
+opening -> LoadLevel (level 1) at ~2500 -> teardown 2505 -> reload 2506 ->
+the castle-grounds stage runs its HUD and actors to **frame 2539**.
+First remaining blocker: `daMip_c::Behavior` (ov085 0x0212c230,
+src/game/actors/d_a_mip.cpp, 0x5c0 bytes): ~25 C++ member/static calls
+(ClosestPlayer, Particle::System::New, Message::PrepareTalk, Sound::PlaySub,
+SaveData::NumGlowingRabbitsFound, Player::ShowMessage/GetTalkState/DropActor,
+UpdateYoshiEat, SetState, UpdatePos, UpdateWMClsn, UpdateGrab, ...) that the
+packed view cannot spell yet. Yoshi is still not under input control.
+
+Tests: ASan/UBSan no-ROM suite rc=0; private-ROM full castle test rc=0;
+4000-frame Yoshi opening under ASan/UBSan: no sanitizer report, stops at the
+daMip_c::Behavior frontier (0x0212c230, same as the fast probe);
+ndk_warning_check 2378/2378 clean.
+
+Next step (most promising): a mangled-name resolver in the views that maps
+`A::B(...)`, `obj->Method(...)` and bare member calls to their unique symbol
+in config/arm9 + overlay symbol maps (with the parameter types from the
+recovered headers), so large actor members like daMip_c::Behavior project
+without hand replacements; then continue the frontier until the opening
+script ends and Player input is enabled; verify walk/jump/camera with
+SM64DS_STAGE_INPUT under ASan.
+
+---
+
 # Checkpoint — 2026-11-08 (session 4), opening level change: teardown + reload run
 
 Branch: `main`. Area: **engine (scene lifecycle, address space) / castle actors /

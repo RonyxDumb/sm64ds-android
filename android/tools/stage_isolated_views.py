@@ -97,6 +97,23 @@ def record_method_calls(body, cls):
                   call, body)
     body = re.sub(r'\(\((?:dBgW|dBgW_Kc|dCc_c|dCcAc_c) \*\)\s*\(\(char \*\)&\(\*\(u8 \*\)&(m\w+)\)\)\)->(%s)\(\)'
                   % '|'.join(RECORD_METHODS), call, body)
+    # Upcasts of a record member to a base sub-object: the base's offset
+    # inside the member (ModelAnim/ModelAnim2/dExtAnmModel_c: the Animation /
+    # dExtFrameCtrl_c base follows the 0x50-byte Model, cartridge 'add #0x50').
+    bases = {('Animation', t): 0x50 for t in ('ModelAnim', 'ModelAnim2', 'dExtAnmModel_c', 'dExtAnm2Model_c')}
+    bases.update({('dExtFrameCtrl_c', t): 0x50 for t in ('ModelAnim', 'ModelAnim2', 'dExtAnmModel_c', 'dExtAnm2Model_c')})
+    def upcast(match):
+        typ, offset = members.get(match[2], (None, None))
+        if (match[1], typ) not in bases:
+            return match[0]
+        return '((char *)this + 0x%x)' % (offset+bases[(match[1], typ)])
+    body = re.sub(r'\(\s*(\w+)\s*\*\s*\)\s*&\s*(m\w+)\b(?!\s*[.\[(]|->)', upcast, body)
+    # The address of a record member: its offset inside the object.
+    def address(match):
+        if match[1] not in members:
+            return match[0]
+        return '((char *)this + 0x%x)' % members[match[1]][1]
+    body = re.sub(r'(?<![&\w])&\s*(m\w+)\b(?!\s*[.\[(]|->)', address, body)
     return body, sorted(needed)
 
 
@@ -150,6 +167,64 @@ def vector_reference_abi(raw):
 SHARED_FILE_RELEASE = re.compile(r'^(\s*)\(\(SharedFilePtr \*\)(.*)\)->Release\(\);[ \t]*$', re.M)
 
 
+COLLISION_METHODS = {'IsEnabled': ('int', '_ZN4dBgW9IsEnabledEv', ''),
+                     'Disable': ('void', '_ZN4dBgW7DisableEv', ''),
+                     'Enable': ('void', '_ZN4dBgW6EnableEP8dActor_c', ', void *actor')}
+
+
+def collision_casts(raw):
+    """`((dBgW *)(expr))->IsEnabled()/Disable()/Enable(actor)`: the dBgW
+    methods by their mangled symbols on the cast address."""
+    out, pos, used = [], 0, set()
+    marker = '((dBgW *)'
+    while True:
+        start = raw.find(marker, pos)
+        if start < 0:
+            break
+        depth, i = 0, start
+        while i < len(raw):  # the end of the whole cast expression
+            depth += raw[i] == '('
+            depth -= raw[i] == ')'
+            i += 1
+            if depth == 0:
+                break
+        call = re.match(r'->(\w+)\(', raw[i:])
+        if not call or call[1] not in COLLISION_METHODS:
+            out.append(raw[pos:i]); pos = i
+            continue
+        ret, mangled, extra = COLLISION_METHODS[call[1]]
+        used.add(call[1])
+        inner = raw[start+len(marker):i-1]
+        rest = raw[i+len(call[0]):]
+        out.append(raw[pos:start]+mangled+'((void *)'+inner+(', ' if not rest.lstrip().startswith(')') else ''))
+        pos = i+len(call[0])
+    out.append(raw[pos:])
+    raw = ''.join(out)
+    for name in sorted(used):
+        ret, mangled, extra = COLLISION_METHODS[name]
+        if not re.search(r'\b'+mangled+r'\s*\([^)]*\)\s*;', raw):
+            raw = 'extern "C" %s %s(void *self%s);\n' % (ret, mangled, extra)+raw
+    return raw
+
+
+PRELUDE_TYPES = {'Vector3', 'Vector3_16', 'State', 'SurfaceInfo', 'CLPS', 'Matrix4x3', 'Fix12i', 'Model',
+                 'SharedFilePtr', 'ModelComponents', 'BMD_File', 'BMD_Material', 'BMD_Bone', 'Stage',
+                 'StageTexAnimSlot', 'LVL_Overlay', 'MeshCollider', 'SysTracker', 'Fader', 'Heap', 'SaveData',
+                 'MinimapState', 'Matrix2x2', 'Player'}
+
+
+def opaque_records(text):
+    """Recovered classes a unit only handles through pointer casts
+    (`(Animation *)`, `(ShadowModel *)`): opaque declarations."""
+    used = set(re.findall(r'\(\s*(?:struct\s+)?([A-Z]\w*|d[A-Z]\w*)\s*\*\s*\)', text))
+    used |= set(re.findall(r'\b([A-Z]\w*|d[A-Z]\w*)\s*\*\s*\w+\s*[,)]', text))
+    typedefs = ' '.join(re.findall(r'typedef[^;]*;', text))
+    missing = sorted(n for n in used - PRELUDE_TYPES
+                     if not re.search(r'(?:struct|class|union|enum)\s+'+n+r'\b|\}\s*'+n+r'\s*;', text)
+                     and not re.search(r'\b'+n+r'\b', typedefs))
+    return ''.join('struct %s;\n' % n for n in missing)+text
+
+
 def virtual_deletes(raw):
     """`delete m;` of a model object is its virtual deleting destructor:
     vtable slot 1 (D0), as the cartridge's ldr/ldr [#4]/blx sequence."""
@@ -174,6 +249,34 @@ def virtual_shells(raw):
             continue
         variables = set(re.findall(r'\b'+name+r'\s*\*\s*(\w+)', raw))
         out = raw[:shell.start()]+'typedef void '+name+';'+raw[shell.end():]
+        # Calls through an inline cast: ((Shell *)(expr))->method(args).
+        slots = {method: (slot, ret, params) for slot, (ret, method, params) in enumerate(methods)}
+        marker, pieces, pos = '(('+name+' *)', [], 0
+        while True:
+            start = out.find(marker, pos)
+            if start < 0:
+                break
+            depth, i = 0, start
+            while i < len(out):
+                depth += out[i] == '('
+                depth -= out[i] == ')'
+                i += 1
+                if depth == 0:
+                    break
+            call = re.match(r'->(\w+)\(', out[i:])
+            if not call or call[1] not in slots:
+                pieces.append(out[pos:i]); pos = i
+                continue
+            slot, ret, params = slots[call[1]]
+            types = [re.sub(r'\s*\b\w+$', '', p.strip()) or p.strip() for p in params.split(',')] \
+                if params.strip() not in ('', 'void') else []
+            receiver = '((void *)'+out[start+len(marker):i-1]+')'
+            more = not out[i+len(call[0]):].lstrip().startswith(')')
+            pieces.append(out[pos:start]+'((%s (*)(%s))((*(void ***)%s)[%d]))(%s%s' % (
+                ret.strip(), ', '.join(['void *']+types), receiver, slot, receiver, ', ' if more else ''))
+            pos = i+len(call[0])
+        pieces.append(out[pos:])
+        out = ''.join(pieces)
         for slot, (ret, method, params) in enumerate(methods):
             types = [re.sub(r'\s*\b\w+$', '', p.strip()) or p.strip() for p in params.split(',')] \
                 if params.strip() not in ('', 'void') else []
@@ -229,15 +332,91 @@ def player_pointer_fields(raw):
     return raw
 
 
+def class_pointer_fields(raw):
+    """Free units taking `struct CLS *p` for a recovered actor class other
+    than Player (dBgActor_c, ...): p->mField becomes the class header's
+    offset; record members (mMeshCollider) become their address."""
+    classes = set(re.findall(r'\bstruct\s+(\w+)\s*\*\s*\w+', raw)) | set(re.findall(r'\b(d\w+_c)\s*\*\s*\w+', raw))
+    for cls in sorted(classes - {'Player'}):
+        names = set(re.findall(r'\b(?:struct\s+)?'+cls+r'\s*\*\s*(\w+)', raw))
+        fields = class_fields(cls)
+        records = {n: off for n, (typ, off) in record_members(cls).items()}
+        if not fields and not records:
+            continue
+        for var in names:
+            def member(match):
+                name = match[2]
+                if name in records:
+                    return '(*(char (*)[1])((char *)%s + 0x%x))' % (match[1], records[name])
+                if name not in fields:
+                    return match[0]
+                typ, offset = fields[name]
+                if typ.startswith('[]'):
+                    return '((%s *)((char *)%s + 0x%x))' % (typ[2:], match[1], offset)
+                return '(*(%s *)((char *)%s + 0x%x))' % (typ, match[1], offset)
+            raw = re.sub(r'\b('+re.escape(var)+r')->(m\w+|unk_\w+|param1|uniqueID|actorID)\b', member, raw)
+    return raw
+
+
+LOCAL_SIZES = {'char': 1, 'u8': 1, 's8': 1, 'bool': 1, 'unsigned char': 1, 'signed char': 1,
+               'short': 2, 's16': 2, 'u16': 2, 'unsigned short': 2,
+               'int': 4, 's32': 4, 'u32': 4, 'Fix12i': 4, 'unsigned int': 4, 'unsigned': 4}
+
+
+def local_struct_fields(raw, cls):
+    """A recovered unit's own `struct CLS { char padN[...]; s16 unkNN; ... };`
+    shell: its data members with natural-alignment offsets, and the source
+    without the shell (the member body is projected on the object handle)."""
+    shell = re.search(r'^struct '+cls+r'\s*\{(.*?)^\};\s*$', raw, re.M | re.S)
+    if not shell:
+        return {}, raw
+    fields, offset = {}, 0
+    for line in shell[1].splitlines():
+        line = re.sub(r'/\*.*?\*/|//.*', '', line).strip()
+        member = re.fullmatch(r'((?:unsigned |signed )?\w+)\s*(\*?)\s*(\w+)\s*(?:\[(\w+)\])?\s*;', line)
+        if not member:
+            if line and '(' not in line:
+                return {}, raw  # an unknown member type: keep the header view
+            continue
+        typ, pointer, name, count = member[1], member[2], member[3], member[4]
+        size = 4 if pointer else LOCAL_SIZES.get(typ)
+        if size is None:
+            return {}, raw
+        offset = (offset + size - 1) // size * size
+        if count:
+            fields[name] = ('[]'+('u32' if pointer else SCALARS.get(typ, 'u8')), offset)
+        else:
+            fields[name] = ('u32' if pointer else SCALARS.get(typ, {1: 'u8', 2: 's16', 4: 's32'}[size]), offset)
+        offset += size * (int(count, 0) if count else 1)
+    return fields, raw[:shell.start()]+raw[shell.end():]
+
+
 def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None,
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
     raw = (ROOT/rel).read_text()
+    sibling_calls = []
+    if not name:
+        shell = re.search(r'^struct '+cls+r'\s*\{(.*?)^\};\s*$', raw, re.M | re.S)
+        if shell:
+            # No-argument sibling members the shell declares: bare calls in the
+            # body are this-calls of their mangled symbols.
+            for ret, method in re.findall(r'^\s*((?:unsigned )?\w+\s*\*?)\s*(\w+)\(\s*(?:void)?\s*\);', shell[1], re.M):
+                mangled = '_ZN%d%s%d%sEv' % (len(cls), cls, len(method), method)
+                if mangled != symbol:
+                    sibling_calls.append((ret.strip(), method, mangled))
+        local, raw = local_struct_fields(raw, cls)
+        if local:
+            fields = dict(fields)
+            fields.update({k: v for k, v in local.items() if not k.startswith('pad')})
+        if sibling_calls and not local:
+            raw = re.sub(r'^struct '+cls+r'\s*\{(.*?)^\};\s*$', '', raw, count=1, flags=re.M | re.S)
     # Player::State records are 0x18 bytes of three PMFs; units that only
     # take their cartridge addresses declare them opaquely.
     raw = re.sub(r'(^|\n)struct State;[ \t]*', r'\1struct State { unsigned char pmf[0x18]; };', raw)
     raw = re.sub(r'extern\s+Player::State\s+(data_\w+)\s*;', r'extern char \1[];', raw)
     raw = vector_reference_abi(raw)
+    raw = virtual_shells(raw)
     if '::' in cls:
         # A nested class (Particle::SysTracker): drop the enclosing namespace
         # block so the member body is matched as Inner::method.
@@ -320,9 +499,15 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     for old, new in (replacements or {}).items():
         body = body.replace(old, new)
     body = virtual_self_calls(body, cls)
+    for ret, method, mangled in sibling_calls:
+        if re.search(r'(?<![.>:\w])'+method+r'\(\)', body):
+            body = re.sub(r'(?<![.>:\w])'+method+r'\(\)', mangled+'(this)', body)
+            body = 'extern "C" %s %s(void *self);\n' % (ret, mangled)+body
     body, record_decls = record_method_calls(body, cls)
     if record_decls:
         body = '\n'.join(record_decls)+'\n'+body
+    body = collision_casts(body)
+    body = opaque_records(body)
     body = shared_file_release(body)
     body = virtual_deletes(body)
     body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
@@ -611,6 +796,7 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
         raw = re.sub(r'^enum\s*\{\s*false\s*,\s*true\s*\}\s*;\s*$', '', raw, flags=re.M)
     raw = vector_reference_abi(raw)
     raw = player_pointer_fields(raw)
+    raw = class_pointer_fields(raw)
     # These two recovered Player blocks declare Pair2i but never use it.
     # Remove only that dead local type; preserve the code and used layouts.
     if symbol in ('func_ov002_020c14b8', 'func_ov002_020c25a8'):
@@ -674,6 +860,9 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     raw = shared_file_release(raw)
     raw = virtual_deletes(raw)
     raw = virtual_shells(raw)
+    raw = collision_casts(raw)
+    if not (rel and '/actors/' in rel):
+        raw = opaque_records(raw)
     if shared:
         raw = shared+'\n'+raw
     extra = ''
@@ -689,6 +878,11 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('_ZN8Particle6System17NewUnkCallback818Ejj5Fix12IiES2_S2_PK11Vector3_16f', 0),
+    ('func_ov102_02149ccc', 102),
+    ('_ZN8dActor_c18DropShadowScaleXYZER11ShadowModelR9Matrix4x35Fix12IiES5_S5_j', 0),
+    ('func_020393a4', 0),
+    ('func_02039394', 0),
     ('func_02038324', 0),
     ('_ZN5Sound6Player19SetPlayableSeqCountEii', 0, {
         # A static member of the nested Sound::Player: its mangled C symbol.
@@ -1223,6 +1417,8 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('_ZN10dBgActor_c13IsClsnInRangeE5Fix12IiES1_', 2, 'external/sm64ds-pc/src/actors/dBgActor_c.cpp'),
+    ('_ZN10dBgActor_c21IsClsnInRangeOnScreenE5Fix12IiES1_', 2, 'external/sm64ds-pc/src/actors/dBgActor_c.cpp'),
     ('func_ov002_020bebd4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf90c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c0688', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
@@ -1288,6 +1484,13 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('_ZN15FaderBrightness9IsAtStartEv', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness9IsAtStartEv.cpp', 'int FaderBrightness::IsAtStart()'),
+    ('_ZN15FaderBrightness15SetBackwardTimeEj', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness15SetBackwardTimeEj.cpp', 'int FaderBrightness::SetBackwardTime(u32 frames)'),
+    ('_ZN5Fader13AdvanceInterpEv', 0, 'Fader', 'external/sm64ds-pc/src/engine/fader/_ZN5Fader13AdvanceInterpEv.cpp', 'void Fader::AdvanceInterp()'),
+    ('_ZN10FaderColor11AdvanceFadeEv', 0, 'FaderColor', 'external/sm64ds-pc/src/engine/fader/_ZN10FaderColor11AdvanceFadeEv.cpp', 'void FaderColor::AdvanceFade()', {
+        # The local copy shares the member's name; keep it distinct.
+        'unsigned short color = this->color;': 'unsigned short tint = this->color;',
+        'int m = color ? 0x10 : -0x10;': 'int m = tint ? 0x10 : -0x10;'}),
     ('_ZN15FaderBrightness7IsAtEndEv', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness7IsAtEndEv.cpp', 'int FaderBrightness::IsAtEnd()'),
     ('_ZN15FaderBrightness14SetForwardTimeEj', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness14SetForwardTimeEj.cpp', 'int FaderBrightness::SetForwardTime(u32 frames)'),
     ('_ZN15FaderBrightness8SetToEndEv', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness8SetToEndEv.cpp', 'void FaderBrightness::SetToEnd()'),
@@ -1362,6 +1565,36 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN8SignPost8BehaviorEv', 2, 'SignPost', {
+        # LD() only marked the legacy read-modify-write; the address is the pointer.
+        '#define LD(p) ((int)(p))': '#define LD(p) (p)'}),
+    ('_ZN8dActor_c13DistToCPlayerEv', 0, 'dActor_c', {
+        # ClosestPlayer() is a this-call that leaves the distance in data_0208e380.
+        'extern struct dActor_c *_ZN8dActor_c13ClosestPlayerEv(void);':
+            'extern "C" void *_ZN8dActor_c13ClosestPlayerEv(void *self);',
+        '    ClosestPlayer();': '    _ZN8dActor_c13ClosestPlayerEv(this);'}),
+    ('_ZN13QuestionBlock8BehaviorEv', 102, 'QuestionBlock'),
+    ('_ZN13BigBrickBlock8BehaviorEv', 2, 'BigBrickBlock', {
+        # Static dActor_c::FindWithActorID(u32, dActor_c *) by its symbol;
+        # StarSwitch::mEventBit is the byte at +0x34e (include/StarSwitch.h).
+        'mSwitch = (StarSwitch *)FindWithActorID(id, mSwitch);':
+            'mSwitch = (u32)_ZN8dActor_c15FindWithActorIDEjPS_(id, mSwitch);',
+        'mEventID != mSwitch->mEventBit': 'mEventID != *((u8 *)mSwitch + 0x34e)',
+        'int BigBrickBlock::Behavior()':
+            'extern "C" void *_ZN8dActor_c15FindWithActorIDEjPS_(u32 id, void *previous);\nint BigBrickBlock::Behavior()'}),
+    ('_ZN3HUD8BehaviorEv', 2, 'HUD'),
+    ('_ZN3HUD13InitResourcesEv', 2, 'HUD', {
+        # The unit's local shells: Player::GetHealth and the GX/GXS palette
+        # loaders are their mangled C symbols.
+        'struct Player { u8 GetHealth(); };\n'
+        'namespace GX { void LoadOBJPltt(const void*, u32, u32); }\n'
+        'namespace GXS { void LoadOBJPltt(const void*, u32, u32); }\n':
+            'extern "C" u8 _ZN6Player9GetHealthEv(void *self);\n'
+            'extern "C" void _ZN2GX11LoadOBJPlttEPKvjj(const void *, u32, u32);\n'
+            'extern "C" void _ZN3GXS11LoadOBJPlttEPKvjj(const void *, u32, u32);\n',
+        'GX::LoadOBJPltt(': '_ZN2GX11LoadOBJPlttEPKvjj(', 'GXS::LoadOBJPltt(': '_ZN3GXS11LoadOBJPlttEPKvjj(',
+        'data_ov002_0211117c = ((Player*)((idx ? (void* volatile*)data_0209f394 : (void* volatile*)data_0209f394)[idx]))->GetHealth();':
+            'data_ov002_0211117c = _ZN6Player9GetHealthEv((idx ? (void* volatile*)data_0209f394 : (void* volatile*)data_0209f394)[idx]);'}),
     ('_ZN5Stage16CleanupResourcesEv', 0, 'Stage', {
         # Stage.h record members (offsets as the stage prelude's static
         # asserts): mTexAnimSlots 0x8bc, mMeshCollider 0x91c (a dBgW_KcMbg).
