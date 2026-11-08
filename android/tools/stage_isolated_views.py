@@ -392,6 +392,14 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
         # C units spelling their own boolean enum: C++ already has them.
         raw = re.sub(r'^enum\s*\{\s*false\s*,\s*true\s*\}\s*;\s*$', '', raw, flags=re.M)
     raw = vector_reference_abi(raw)
+    # These two recovered Player blocks declare Pair2i but never use it.
+    # Remove only that dead local type; preserve the code and used layouts.
+    if symbol in ('func_ov002_020c14b8', 'func_ov002_020c25a8'):
+        raw, removed = re.subn(
+            r'^[ \t]*typedef struct\s*\{[^{}]*\}\s*Pair2i\s*;\n',
+            '', raw, count=1, flags=re.M)
+        if removed != 1:
+            raise ValueError('missing unused Pair2i typedef in '+symbol)
     # Player members still named func_ovNNN_<addr> carry a C++-mangled
     # spelling in some sources; the cartridge symbol is the bare name.
     raw = re.sub(r'\b_ZN6Player\d+(func_ov\d+_[0-9a-f]{8})E[A-Za-z0-9_]*', r'\1', raw)
