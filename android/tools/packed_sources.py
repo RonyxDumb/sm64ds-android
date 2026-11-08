@@ -48,9 +48,9 @@ def generate(out, manifest=None):
                     'stage_isolated_func_ov002_020c14b8',
                     'stage_isolated_func_ov002_020c25a8'):
                 projected_source, removed = re.subn(
-                    r'^[ \\t]*typedef struct\\s*\\{[^{}]*\\}\\s*Pair2i\\s*;[ \\t]*\\n',
+                    r'^[ \t]*typedef struct\s*\{[^{}]*\}\s*Pair2i\s*;[ \t]*\n',
                     '', projected_source, count=1, flags=re.M)
-                if removed != 1 or re.search(r'\\bPair2i\\b', projected_source):
+                if removed != 1 or re.search(r'\bPair2i\b', projected_source):
                     raise ValueError('unexpected Pair2i layout in '+unit)
             text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n'
                     'namespace sm64ds::' + namespace + '::unit_' + unit + ' {\n'
