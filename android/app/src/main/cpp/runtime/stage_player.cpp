@@ -297,6 +297,41 @@ int player_notify_mesh_owner(uint32_t self,int arg) {
     Ptr<void(uint32_t,int)>{at<uint32_t>(at<uint32_t>(actor)+0x70)}(actor,arg);
     return 1;
 }
+// dActor_c::JumpedOnByPlayer(dCc_c &, Player &) (0x0201054c,
+// external/sm64ds-pc/src/_ZN8dActor_c16JumpedOnByPlayerER5dCc_cR6Player.cpp):
+// dCc_c flags +0x18, pushback.y +0x10; Player mVertSpeed +0xa8,
+// mIsAirborne +0x6de; dActor_c mPosY +0x60.
+int actor_jumped_on_by_player(uint32_t self,uint32_t clsn,uint32_t player) {
+    const int32_t vel=at<int32_t>(player+0xa8);
+    if (at<uint32_t>(clsn+0x18)&6)
+        return vel<0 && at<uint8_t>(player+0x6de)!=0 &&
+               at<int32_t>(self+0x60)<int32_t(uint32_t(at<int32_t>(player+0x60))-0xa000u);
+    const int32_t pushbackY=at<int32_t>(clsn+0x10);
+    return vel<0 && pushbackY<0 && pushbackY>vel;
+}
+// func_ov002_020e2ea0 (external/sm64ds-pc/src/func_ov002_020e2ea0.cpp): on
+// a long drop (floor more than 0x3e8000 below +0x684, timer +0x558 >=
+// 0xddb) in levels 0x13/0xa/0x10/0x22 over static ground, enter the fall
+// state 0x0211040c with mStateStep from the current state.
+int player_long_drop(uint32_t self) {
+    const int8_t level=at<int8_t>(0x0209f2f8u);
+    if (!(level==0x13 || level==0xa || level==0x10 || level==0x22)) return 0;
+    const int32_t val=at<int32_t>(self+0x664);
+    if (val==1 || val==0xe) return 0;
+    if (!Ptr<int(uint32_t)>{0x020356e8u}(self+0x380)) return 0; // dBgCh_Actr::IsOnGround
+    const uint32_t floor=Ptr<uint32_t(uint32_t)>{0x0203566cu}(self+0x380); // GetFloorResult
+    const uint32_t id=Ptr<uint32_t(uint32_t)>{0x02037f4cu}(floor);
+    if (id!=0xffffffffu && Ptr<uint32_t(uint32_t)>{0x02010f3cu}(id)) return 0;
+    if (int32_t(uint32_t(at<int32_t>(self+0x684))-uint32_t(at<int32_t>(self+0x60)))<=0x3e8000) return 0;
+    if (at<int32_t>(self+0x558)<0xddb) return 0;
+    at<uint8_t>(self+0x6e3)=0;
+    if (Ptr<int(uint32_t,uint32_t)>{kIsState}(self,0x021105bcu)) at<uint8_t>(self+0x6e3)=1;
+    else if (Ptr<int(uint32_t,uint32_t)>{kIsState}(self,0x021105a4u)) at<uint8_t>(self+0x6e3)=2;
+    else if (Ptr<int(uint32_t,uint32_t)>{0x020e3078u}(self,0x021101e4u)) at<int16_t>(self+0x8e)=at<int16_t>(self+0x94);
+    at<uint8_t>(self+0x70c)=level==0x10 ? 1 : level==0x22 ? 2 : 0;
+    Ptr<int(uint32_t,uint32_t)>{0x020e30a0u}(self,0x0211040cu); // ChangeState
+    return 1;
+}
 // Player::St_LevelEnter_Main (0x020c6f3c, src/game/player/Player.cpp):
 // six mStateStep values make the player dCamera_c::mFocusActor (+0x118),
 // then (this->*data_ov002_0211075c[mStateWork])() runs the entrance step
@@ -609,6 +644,8 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x020c179cu,&player_floor_pitch);
     space.bind(0x020c19d0u,&player_wall_ahead);
     space.bind(0x020eeca8u,&player_notify_mesh_owner);
+    space.bind(0x0201054cu,&actor_jumped_on_by_player);
+    space.bind(0x020e2ea0u,&player_long_drop);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);

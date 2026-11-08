@@ -9,4 +9,5 @@ void pc_archive_load_image(std::vector<sd_u8> source);
 int pc_start_sequence(int player, int sequence);
 int pc_start_effect(int player, int archive, int entry, int bankOverride = -1);
 bool pc_effect_exists(int archive, int entry);
+bool pc_seqarc_param(int archive, int entry, sd_u8 out[8]);
 bool pc_group_ready(unsigned group);

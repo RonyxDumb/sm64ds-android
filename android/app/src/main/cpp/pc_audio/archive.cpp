@@ -321,6 +321,15 @@ int pc_start_sequence(int player, int sequence) {
     sd_seq_set_volume(player, e[6]);
     return 1;
 }
+bool pc_seqarc_param(int archive, int entry, sd_u8 out[8]) {
+    // The SSAR sequence record's SNDSeqParam (+4: bank u16, volume, channel
+    // priority, player priority, player number, reserved u16) -- the bytes
+    // NNS keeps in its SeqArc info table for func_02050cdc.
+    if (!pc_effect_exists(archive, entry)) return false;
+    const auto *file=sdat_file(rd32(sdat_info_entry(SDAT_REC_SEQARC,archive)));
+    std::memcpy(out,file+0x20+size_t(entry)*12+4,8);
+    return true;
+}
 bool pc_effect_exists(int archive, int entry) {
     auto *e=sdat_info_entry(SDAT_REC_SEQARC,archive);
     if (!e || entry<0) return false;

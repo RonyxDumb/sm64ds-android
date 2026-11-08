@@ -66,6 +66,23 @@ def shared_declarations(raw):
     return '\n'.join(dict.fromkeys(found))
 
 
+def vector_reference_abi(raw):
+    """`const Vector3 &` parameters of extern C declarations are the ARM
+    pointer word; `*(Vector3*)(base + off)` arguments of those calls pass
+    the address itself."""
+    if not re.search(r'extern "C"[^;\n]*Vector3\s*&', raw):
+        return raw
+    names = set()
+    def decl(match):
+        names.add(re.search(r'(\w+)\s*\(', match[0])[1])
+        return re.sub(r'(?:const\s+)?(?:struct\s+)?Vector3\s*&\s*(\w*)', r'const void *\1', match[0])
+    raw = re.sub(r'extern "C"[^;\n]*Vector3\s*&[^;\n]*;', decl, raw)
+    for name in names:
+        raw = re.sub(r'(\b'+name+r'\([^;]*?)\*\s*\(\s*(?:const\s+)?Vector3\s*\*\s*\)\s*\(([^()]*)\)', r'\1(\2)', raw)
+        raw = re.sub(r'(\b'+name+r'\([^;]*?)\*\s*\(\s*(?:const\s+)?Vector3\s*\*\s*\)\s*\(([^()]*)\)', r'\1(\2)', raw)
+    return raw
+
+
 def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None,
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
@@ -74,6 +91,7 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     # take their cartridge addresses declare them opaquely.
     raw = re.sub(r'(^|\n)struct State;[ \t]*', r'\1struct State { unsigned char pmf[0x18]; };', raw)
     raw = re.sub(r'extern\s+Player::State\s+(data_\w+)\s*;', r'extern char \1[];', raw)
+    raw = vector_reference_abi(raw)
     if '::' in cls:
         # A nested class (Particle::SysTracker): drop the enclosing namespace
         # block so the member body is matched as Inner::method.
@@ -245,6 +263,7 @@ def player_self_calls(body, bare_members=False):
 
 
 PLAYER_STATES = [
+    '_ZN6Player12St_Dive_InitEv',
     '_ZN6Player12St_Wait_InitEv',
     '_ZN6Player11St_Fly_InitEv',
     '_ZN6Player11St_Owl_InitEv',
@@ -370,6 +389,9 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     if rel.endswith('.c'):
         # C units may name a parameter `this`; the projection is C++.
         raw = re.sub(r'\bthis\b', 'this_', raw)
+        # C units spelling their own boolean enum: C++ already has them.
+        raw = re.sub(r'^enum\s*\{\s*false\s*,\s*true\s*\}\s*;\s*$', '', raw, flags=re.M)
+    raw = vector_reference_abi(raw)
     # Player members still named func_ovNNN_<addr> carry a C++-mangled
     # spelling in some sources; the cartridge symbol is the bare name.
     raw = re.sub(r'\b_ZN6Player\d+(func_ov\d+_[0-9a-f]{8})E[A-Za-z0-9_]*', r'\1', raw)
@@ -388,10 +410,15 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     if rel and '/actors/' in rel:
         # Record types the block only handles through pointers stay opaque.
         used = set(re.findall(r'\b([A-Z]\w*|d[A-Z]\w*)\s*\*', raw))
-        known = {'Vector3', 'Vector3_16', 'State', 'SurfaceInfo', 'CLPS', 'Matrix4x3'}
+        known = {'Vector3', 'Vector3_16', 'State', 'SurfaceInfo', 'CLPS', 'Matrix4x3', 'Fix12i'}
         opaque = sorted(n for n in used - known
                         if not re.search(r'struct\s+'+n+r'\s*\{|\}\s*'+n+r'\s*;|typedef[^;]*\b'+n+r'\s*;', raw))
         raw = ''.join('struct %s;\n' % n for n in opaque) + raw
+    if re.search(r'(?<!::)\bState\s*&', raw) and 'struct State {};' not in raw:
+        # Player::State records by reference in plain declarations: the
+        # ABI pointer, and the cartridge records passed by address.
+        raw = re.sub(r'(?:struct\s+)?(?<!::)\bState\s*&\s*(\w*)', r'void *\1', raw)
+        raw = re.sub(r'(_ZN6Player\d+(?:Change|Is)StateERNS_5StateE\(\s*[^,()]+,\s*)(data_\w+)', r'\1&\2', raw)
     if '->IsOnGround()' in raw:
         raw = re.sub(r'\(\(dBgCh_Actr \*\)(\([^()]*\))\)->IsOnGround\(\)',
                      r'_ZNK10dBgCh_Actr10IsOnGroundEv((void *)\1)', raw)
@@ -432,6 +459,44 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_ov002_020dd2f4', 2),
+    ('func_ov002_020dc560', 2),
+    ('func_0207322c', 0),
+    ('func_ov002_020e0ccc', 2),
+    ('func_ov002_020dba0c', 2),
+    ('func_ov002_020dc174', 2),
+    ('func_0201226c', 0),
+    ('func_02048c30', 0, {
+        # Out of range the ROM stops the voice and then sets its volume from
+        # an unassigned register; the stopped voice makes the value moot,
+        # zero keeps the host deterministic.
+        '    int t;\n': '    int t = 0;\n'}),
+    ('func_020116c4', 0),
+    ('func_02011ac4', 0, {
+        # K&R declarations of the slot initialiser and the SND3D update.
+        'extern int func_02011b38();': 'extern int func_02011b38(void *, int, int, int, short);',
+        'extern int func_02048c30();': 'extern int func_02048c30(void *, int, int);'}),
+    ('func_ov002_020e04a4', 2),
+    ('func_0200fccc', 0),
+    ('func_0200fc44', 0),
+    ('func_ov002_020e2c84', 2),
+    ('func_ov002_020da9d4', 2),
+    ('func_ov002_020db54c', 2),
+    ('func_0200d8c8', 0, {
+        # cstd::fdiv (0x02053258), named in the unit's header comment.
+        'extern Fix12i Vec3_Dist(': 'extern int _ZN4cstd4fdivEii(int, int);\nextern Fix12i Vec3_Dist('}),
+    ('func_ov002_020e301c', 2),
+    ('func_ov002_020e0a64', 2),
+    ('func_ov002_020bd45c', 2, {
+        # Sound::PlayBank0's reference parameter is the ARM pointer word.
+        'namespace Sound{ void PlayBank0(unsigned int, const Vector3 &); }':
+            'extern "C" void _ZN5Sound9PlayBank0EjRK7Vector3(unsigned int, const void *);',
+        'Sound::PlayBank0(v, *(Vector3*)(c+0x74));': '_ZN5Sound9PlayBank0EjRK7Vector3(v, c+0x74);'}),
+    ('func_ov002_020e1e70', 2),
+    ('func_02012120', 0),
+    ('func_ov002_020e2664', 2),
+    ('func_ov002_020d674c', 2),
+    ('func_ov002_020dde74', 2),
     ('func_ov002_020e28d4', 2),
     ('func_ov002_020e25f0', 2),
     ('func_ov002_020e2ad0', 2),
@@ -854,6 +919,14 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020bf90c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c0688', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf56c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c06fc', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf88c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf9d4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020c5dec', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
+    ('func_ov002_020bf27c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf2d8', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c04ac', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf224', 2, 'external/sm64ds-pc/src/actors/Player.cpp', {
@@ -910,6 +983,7 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('_ZN6Player4HealEi', 2, 'Player', 'external/sm64ds-pc/src/actors/Player.cpp', 'int Player::Heal(int amt)'),
     ('func_ov002_020c71e0', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c71e0()'),
     ('func_ov002_020c2f64', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c2f64()'),
     ('func_ov002_020c70ac', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c70ac()'),
@@ -975,6 +1049,10 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN9Animation8GetFlagsEv', 0, 'Animation'),
+    ('_ZN6Player12St_Land_MainEv', 2, 'Player', {
+        # 0x760 is mSpineRot[2] (s16 mSpineRot[3] at 0x75c, include/Player.h).
+        'unk_760 = 0x4000;': 'mSpineRot[2] = 0x4000;'}),
     ('_ZN14CutsceneObject16CleanupResourcesEv', 2, 'CutsceneObject', {
         # The model members' second vtable slot (+4, the D0 destructor) is a
         # cartridge code word: dispatch through the ROM vtable.

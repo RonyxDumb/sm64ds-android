@@ -6,6 +6,7 @@
 #include "platform/arm9_services.h"
 #include "ntr/mmio.h"
 #include "game_program.h"
+#include "pc_audio/archive.h"
 #include <cstring>
 #include <array>
 #include <map>
@@ -1359,6 +1360,37 @@ int32_t stage_aeabi_idiv(int32_t a,int32_t b) {
     if (!b) throw std::runtime_error("Native integer division by zero.");
     return a==INT32_MIN && b==-1 ? INT32_MIN : a/b;
 }
+// ITCM soft-float runtime (hand-assembly primitives, read from the cartridge
+// code). Floats travel as their IEEE-754 bit patterns in core registers.
+float stage_float_bits(uint32_t bits) { float f; std::memcpy(&f,&bits,4); return f; }
+int32_t stage_float_order(uint32_t bits) {
+    // The ROM's ordering trick: clear the sign and negate negatives, so
+    // -0 == +0 and the integers compare like the floats.
+    return int32_t(bits)<0 ? int32_t(0u-(bits&0x7fffffffu)) : int32_t(bits);
+}
+bool stage_float_nan(uint32_t a,uint32_t b) { return (a<<1)>0xff000000u || (b<<1)>0xff000000u; }
+int stage_float_less(uint32_t a,uint32_t b) {
+    // func_01ff98f4: a < b; unordered operands answer 0.
+    return !stage_float_nan(a,b) && stage_float_order(a)<stage_float_order(b);
+}
+int stage_float_greater(uint32_t a,uint32_t b) {
+    // func_01ff99a4: a > b; unordered operands answer 0.
+    return !stage_float_nan(a,b) && stage_float_order(a)>stage_float_order(b);
+}
+int32_t stage_float_to_int(uint32_t bits) {
+    // func_01ffa344: truncate toward zero; NaN 0, out of range saturates.
+    const float f=stage_float_bits(bits);
+    if (f!=f) return 0;
+    if (f>=2147483648.0f) return INT32_MAX;
+    if (f<-2147483648.0f) return INT32_MIN;
+    return int32_t(f);
+}
+uint32_t stage_int_to_float(int32_t value) {
+    // func_01ffa4bc: round-to-nearest-even, the runtime's default mode.
+    const float f=float(value);
+    uint32_t bits; std::memcpy(&bits,&f,4);
+    return bits;
+}
 int16_t stage_cstd_atan2(int32_t y,int32_t x) {
     // cstd::atan2 (src/cstd_atan2.cpp, linked natively as runtime/input_atan2).
     return cstd::atan2(y,x);
@@ -2061,6 +2093,22 @@ int stage_voice_for_record(uint32_t record) {
     for (int player=0;player<16;++player)
         if (voices[player].active && voices[player].record==record) return player;
     return -1;
+}
+// func_02050cdc: &NNSSndArcSeqArcSeqInfo::param for (archive, index), or 0.
+// The SDK reads its INFO block; here the same 8 SSAR record bytes come from
+// the native SDAT owner into one stable cartridge record per entry.
+std::map<uint32_t,uint32_t> &stage_seqarc_params() { static std::map<uint32_t,uint32_t> params; return params; }
+uint32_t stage_seqarc_param(int archive,int entry) {
+    if (archive<0 || entry<0) return 0;
+    const uint32_t key=(uint32_t(archive)<<16)|uint32_t(entry&0xffff);
+    auto &params=stage_seqarc_params();
+    if (auto found=params.find(key); found!=params.end()) return found->second;
+    sd_u8 bytes[8];
+    if (!pc_seqarc_param(archive,entry,bytes)) return 0;
+    const uint32_t record=packed::Space::current().allocate(8,4);
+    std::memcpy(packed::Space::current().data(record,8),bytes,8);
+    params.emplace(key,record);
+    return record;
 }
 int stage_sound_player(uint32_t handle) {
     if (handle==0x0209b4a0u) return 0;
@@ -2821,6 +2869,10 @@ void bind_stage_arm9_math(packed::Space &space) {
     space.bind(0x0203d744u,&stage_cstd_sqrt);
     space.bind(0x0203b4dcu,&stage_cstd_atan2);
     space.bind(0x01ffabe4u,&stage_aeabi_idiv);
+    space.bind(0x01ff98f4u,&stage_float_less);
+    space.bind(0x01ff99a4u,&stage_float_greater);
+    space.bind(0x01ffa344u,&stage_float_to_int);
+    space.bind(0x01ffa4bcu,&stage_int_to_float);
 }
 void stage_model_virtual10(uint32_t self,uint32_t matrix) {
     // Complete Model::Virtual10(Matrix4x3 &) (0x02016bb8,
@@ -3060,6 +3112,8 @@ void bind_stage_audio_runtime(packed::Space &space) {
     // Stage scenes only: the minigame runtime owns its own Sound boundary.
     // A new stage address space starts without dynamic voice bindings.
     stage_voices().fill(StageVoice{});
+    stage_seqarc_params().clear();
+    space.bind(0x02050cdcu,&stage_seqarc_param);
     space.bind(0x02051fb4u,&stage_snd_start_seq);
     space.bind(0x02051f1cu,&stage_snd_start_seqarc);
     space.bind(0x02051e60u,&stage_snd_start_seqarc_ex);

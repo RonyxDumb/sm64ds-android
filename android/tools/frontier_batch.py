@@ -20,6 +20,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 UP = ROOT/'external/sm64ds-pc'
+# NNS sound SDK internals: the runtime serves this boundary natively
+# (stage_runtime.cpp sound section); never link their bodies.
+SDK_BOUNDARY = {0x02050c14, 0x020509b0, 0x020523e0, 0x02051a98, 0x02051f1c, 0x02051e60,
+                0x0205acac, 0x0205a8f0, 0x02050cdc}
 SYM = re.compile(r'^(\S+) kind:function\([^)]*\) addr:0x([0-9a-fA-F]+)')
 
 
@@ -102,6 +106,8 @@ def main():
             return
         seen.add(name)
         addr, overlay = by_name[name]
+        if addr in SDK_BOUNDARY:
+            return
         is_linked = addr in linked or addr in native or name in listed
         src = unit_source(name)
         veneer = src and re.search(r'tail-call veneer to (\w+) \((0x[0-9a-fA-F]+)\)', src.read_text())
@@ -142,7 +148,7 @@ def main():
             if found:
                 sources.append((name, overlay, found[2], rel, found[1].strip()))
                 break
-            if '// @symbol '+name+'\n' in text:
+            if '// @symbol '+name+'\n' in text and not name.startswith('_ZN'):
                 blocks.append((name, overlay, rel))
                 break
     for entry in blocks:
