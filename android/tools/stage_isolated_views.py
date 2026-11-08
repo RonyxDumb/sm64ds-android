@@ -1018,7 +1018,9 @@ SOURCE_MEMBERS = [
     ('func_ov002_020c2f64', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c2f64()'),
     ('func_ov002_020c70ac', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c70ac()'),
     ('func_ov002_020c0108', 2, 'Player', 'src/game/player/Player.cpp', 'int Player::func_ov002_020c0108(int p1)', {
-        # The in-body externs are hoisted ahead of the body's local typedefs.
+        # The in-body externs are hoisted ahead of the body's local typedefs;
+        # the unused local s16 typedef trips the NDK's -Wunused-local-typedef.
+        '    typedef short s16;\n': '',
         'void _ZN7PathPtr6FromIDEj(void*, u32 id);': 'void _ZN7PathPtr6FromIDEj(void*, unsigned int id);',
         'void _ZNK7PathPtr7GetNodeER7Vector3j(void*, void*, u32 idx);': 'void _ZNK7PathPtr7GetNodeER7Vector3j(void*, void*, unsigned int idx);',
         'extern u32 _ZNK7PathPtr9GetUnk004Ev(void*);': 'extern unsigned int _ZNK7PathPtr9GetUnk004Ev(void*);',
