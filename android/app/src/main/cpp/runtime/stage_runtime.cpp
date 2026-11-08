@@ -13,6 +13,8 @@
 #include <exception>
 #include <unordered_set>
 #include <stdexcept>
+#include <memory>
+#include <type_traits>
 
 extern "C" uint8_t GetControllerMode(int);
 extern "C" uint8_t NumStars();
@@ -97,18 +99,18 @@ void insert_process(uint32_t list,uint32_t node) {
     else at<uint32_t>(list+4)=node;
 }
 
-bool stage_before_init(uint32_t actor) {
+int stage_before_init(uint32_t actor) {
     // The complete dScStage_c::BeforeInitResources body. The real scene
     // method must be bound separately; an unknown method never succeeds.
     return Ptr<bool(uint32_t)>(0x0202e66cu)(actor);
 }
 
-bool fbase_before_init(uint32_t actor) {
+int fbase_before_init(uint32_t actor) {
     (void)packed::Space::current().data(actor,0x50);
     return true;
 }
 
-bool scene_reset_faders_and_sound(uint32_t actor) {
+int scene_reset_faders_and_sound(uint32_t actor) {
     // Complete dScene_c::ResetFadersAndSound. The shared color fader is
     // native-owned by GameProgram, so its actual C++ methods use the host
     // object. The current scene remains a checked cartridge actor handle.
@@ -120,6 +122,92 @@ bool scene_reset_faders_and_sound(uint32_t actor) {
     return true;
 }
 
+void stage_update_message(uint32_t) {
+    // Complete Stage::UpdateMessage (0x0201cb7c,
+    // external/sm64ds-pc/src/_ZN5Stage13UpdateMessageEv.cpp; the unit's
+    // local Message/SaveData bodies only stand in for the real members,
+    // called here at their cartridge addresses). Every global is re-read
+    // from the cartridge image, as the ROM reloads it after each call.
+    auto &active=at<uint8_t>(0x0209d660u), &saving=at<uint8_t>(0x0209d654u);
+    auto &countdown=at<uint8_t>(0x0209d67cu);
+    const auto tick=[&countdown]() {
+        if (countdown) {
+            countdown=uint8_t(countdown-uint8_t(at<int32_t>(0x0208ee44u)));
+            if (!countdown) at<uint8_t>(0x0209d670u)=1;
+        }
+    };
+    if (!active) return;
+    if (Ptr<int(void)>(0x0201bbc8u)()&0xff) { // Message::UpdateWindow
+        if (!saving) { Ptr<void(void)>(0x0201c0b8u)(); return; } // Message::Update
+        if (at<int16_t>(0x0209d6d4u)==0x295 && countdown==0x3c)
+            Ptr<void(void)>(0x02013b9cu)(); // SaveData::SaveCurrentFile
+        tick();
+        return;
+    }
+    if (saving) {
+        if (active) return;
+        if (at<int16_t>(0x0209d6d4u)!=0x295) { saving=0; return; }
+        Ptr<void(uint16_t)>(0x0201eb94u)(0x296); // Message::DisplaySaving
+    }
+}
+void stage_oam_render_sub_palette(uint32_t data,int32_t x,int32_t y,int32_t palette,int32_t priority) {
+    // Complete OAM::RenderSub (static, 0x0202199c,
+    // external/sm64ds-pc/src/_ZN3OAM9RenderSubEP7OamAttriiii.cpp): the sub
+    // engine's OAM::Render at unit scale, no rotation, default mode.
+    Ptr<void(int,uint32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t)>(0x02020994u)(
+        1,data,x,y,palette,priority,0x1000,0x1000,0,-1);
+}
+int stage_oam_load_affine_params(uint32_t oam,uint32_t count,uint32_t matrix) {
+    // Complete OAM::LoadAffineParams (static, 0x02020884, recovered unit):
+    // reuse a matching group of four attr3 coefficients (OamAttr is 8
+    // bytes, attr3 at +6) or append one; -1 once 0x80 entries are used.
+    uint32_t key[4];
+    for (int i=0;i<4;++i) key[i]=uint16_t(at<uint32_t>(matrix+i*4)>>4);
+    const int n=at<int32_t>(count);
+    for (int i=0;i<n;i+=4) {
+        const uint32_t e=oam+uint32_t(i)*8;
+        if (key[0]==at<uint16_t>(e+6) && key[1]==at<uint16_t>(e+8+6) &&
+            key[2]==at<uint16_t>(e+16+6) && key[3]==at<uint16_t>(e+24+6))
+            return i>>2;
+    }
+    if (n>=0x80) return -1;
+    const uint32_t e=oam+uint32_t(n)*8;
+    for (int i=0;i<4;++i) at<uint16_t>(e+i*8+6)=uint16_t(at<int32_t>(matrix+i*4)>>4);
+    at<int32_t>(count)=n+4;
+    return n>>2;
+}
+int stage_scene_before_cleanup(uint32_t actor) {
+    // Complete dScene_c::BeforeCleanupResources (0x0202e5f0,
+    // src/game/stages/d_scene.cpp): fBase_c's check, then release the
+    // looping-sound slot table (func_02011974(data_0209b53c)).
+    if (!Ptr<int(uint32_t)>(0x02043bacu)(actor)) return 0;
+    Ptr<void(uint32_t)>(0x02011974u)(0x0209b53cu);
+    return 1;
+}
+void stage_scene_after_cleanup(uint32_t actor,uint32_t result) {
+    // Complete dScene_c::AfterCleanupResources (0x0202e5d0): the native
+    // scene-alive flag clears once the scene really went away, so
+    // SpawnIfNecessary may spawn the requested next scene.
+    if (result==2) data_02092660=0;
+    Ptr<void(uint32_t,uint32_t)>(0x02043b2cu)(actor,result);
+}
+int scene_set_scene_to_spawn(uint32_t sceneID,uint32_t param) {
+    // dScene_c::SetSceneToSpawn (static, 0x0202e36c): the pending scene
+    // request is native-owned by GameProgram (data_02092664/data_0209f5b8),
+    // so the stage calls the recovered member compiled into the runtime.
+    return dScene_c::SetSceneToSpawn(sceneID,param);
+}
+void scene_start_scene_fade(uint32_t sceneID,uint32_t param,uint32_t color) {
+    // dScene_c::StartSceneFade (static, 0x0202e348), same ownership.
+    dScene_c::StartSceneFade(sceneID,param,uint16_t(color));
+}
+void scene_set_and_stop_color_fader() {
+    // Complete dScene_c::SetAndStopColorFader (0x0202e1b4,
+    // external/sm64ds-pc/src/_ZN8dScene_c20SetAndStopColorFaderEv.cpp) over
+    // the native-owned shared color fader, as ResetFadersAndSound above.
+    dScene_c::SetFaders(&data_0209f5e8);
+    data_0209f5e8.speed = 0;
+}
 void stage_flush_fifo(uint32_t port) {
     // The original hand-unrolled func_020553c0 writes 32 groups of four
     // zero words to a fixed destination. Reuse its verified native primitive.
@@ -592,7 +680,7 @@ void stage_ground_set_owner_position(uint32_t query,uint32_t position,uint32_t o
     at<uint32_t>(query+12)=owner;
     at<int32_t>(query+8)=owner ? at<int32_t>(owner+4) : -1;
 }
-bool stage_query_owned(uint32_t query,uint32_t owner) {
+int stage_query_owned(uint32_t query,uint32_t owner) {
     return owner && at<uint32_t>(query+12) &&
         at<uint32_t>(query+12)==owner && at<uint32_t>(query+8)==at<uint32_t>(owner+4);
 }
@@ -647,7 +735,7 @@ void stage_line_position(uint32_t output,uint32_t query) {
     auto &space=packed::Space::current();
     std::memcpy(space.data(output,12),space.data(query+0x54,12),12);
 }
-bool stage_wall_facing(int normal) { return normal<0x600 && normal>-0xccc; }
+int stage_wall_facing(int normal) { return normal<0x600 && normal>-0xccc; }
 void stage_result_set_collider(uint32_t result,int index,int id,uint32_t owner,uint32_t collider) {
     at<uint16_t>(result+0x1a)=static_cast<uint16_t>(index);
     at<int32_t>(result+0x1c)=id;
@@ -663,7 +751,7 @@ uint32_t stage_collider_owner(uint32_t collider) { return at<uint32_t>(collider+
 int stage_collider_id(uint32_t collider) { return at<int32_t>(collider+8); }
 int stage_collider_radius(uint32_t collider) { return at<int32_t>(collider+12); }
 int stage_collider_offset(uint32_t collider) { return at<int32_t>(collider+16); }
-bool stage_near_zero(int value) { return value>=-8 && value<=8; }
+int stage_near_zero(int value) { return value>=-8 && value<=8; }
 int stage_vector_distance(uint32_t a,uint32_t b) {
     uint64_t sum=0;
     for (unsigned off : {0u,4u,8u}) {
@@ -680,16 +768,16 @@ int stage_vector_horizontal_distance(uint32_t a,uint32_t b) {
     }
     return cstd::sqrt(sum);
 }
-int16_t stage_vector_horizontal_angle(uint32_t a,uint32_t b) {
+int32_t stage_vector_horizontal_angle(uint32_t a,uint32_t b) {
     const int32_t x=static_cast<int32_t>(at<uint32_t>(b)-at<uint32_t>(a));
     const int32_t z=static_cast<int32_t>(at<uint32_t>(b+8)-at<uint32_t>(a+8));
     return cstd::atan2(x,z);
 }
-int16_t stage_vector_vertical_angle(uint32_t a,uint32_t b) {
+int32_t stage_vector_vertical_angle(uint32_t a,uint32_t b) {
     const int32_t y=static_cast<int32_t>(at<uint32_t>(a+4)-at<uint32_t>(b+4));
     return cstd::atan2(y,stage_vector_horizontal_distance(a,b));
 }
-int16_t stage_triangle_index(uint32_t collider,uint32_t triangle) {
+int32_t stage_triangle_index(uint32_t collider,uint32_t triangle) {
     const uint32_t file=at<uint32_t>(collider+0x20);
     return static_cast<int16_t>((triangle-at<uint32_t>(file+8))>>4);
 }
@@ -714,7 +802,7 @@ void stage_kcl_surface(uint32_t collider,int16_t triangle,uint32_t output) {
     at<uint32_t>(output)=at<uint32_t>(entry);
     at<uint32_t>(output+4)=at<uint32_t>(entry+4);
 }
-bool stage_surface_pass(uint32_t,uint32_t surface,uint32_t query,bool check14) {
+int stage_surface_pass(uint32_t,uint32_t surface,uint32_t query,bool check14) {
     const uint32_t properties=at<uint32_t>(surface);
     const uint8_t flags=at<uint8_t>(query+4);
     bool special=false;
@@ -1143,7 +1231,7 @@ uint32_t stage_block_l_factory() {
     at<uint32_t>(actor)=0x02108adcu;
     return actor;
 }
-bool stage_block_l_has_angle_x(uint32_t actor) {
+int stage_block_l_has_angle_x(uint32_t actor) {
     // Complete daObjBlockL_c::HasNonzeroAngleX (0x020b36a0).
     return at<int16_t>(actor+0x8c)!=0;
 }
@@ -1151,9 +1239,80 @@ int32_t stage_event_get_bit(uint32_t bit) {
     // Complete Event::GetBit (0x02029ee0).
     return at<int32_t>(0x0209f34cu)&int32_t(1u<<bit);
 }
-bool stage_player_is_state(uint32_t player,uint32_t state) {
+int stage_player_is_state(uint32_t player,uint32_t state) {
     // Complete Player::IsState (0x020e308c): pointer identity of mState.
     return at<uint32_t>(player+0x370)==state;
+}
+int stage_actor_forward_line_hit(uint32_t,uint32_t actor) {
+    // Complete func_ov002_020ef070 (external/sm64ds-pc/src/func_ov002_020ef070.cpp,
+    // frame read from ov002 0x020ef070): a dBgCh_Lin from 0x3c000 above the
+    // actor along its yaw (0x64 units, 0x82 for param1 2). On a hit, actor
+    // 0xbf runs func_ov002_020d8838; the hit dBgPi is copied (vtable
+    // data_02099368) and the owner's vtable slot 23 is called with the actor.
+    auto &space=packed::Space::current();
+    const uint32_t line=space.allocate(0x78),work=space.allocate(0x40);
+    const uint32_t v1=work,v2=work+0xc,hit=work+0x18;
+    Ptr<void(uint32_t)>(0x020377b0u)(line); // dBgCh_Lin C1
+    const int32_t x=at<int32_t>(actor+0x5c),y=at<int32_t>(actor+0x60)+0x3c000,z=at<int32_t>(actor+0x64);
+    const int32_t scale=at<int32_t>(actor+8)==2 ? 0x82 : 0x64;
+    const uint32_t angle=uint32_t(at<uint16_t>(actor+0x8e))>>4;
+    at<int32_t>(v1)=x; at<int32_t>(v1+4)=y; at<int32_t>(v1+8)=z;
+    at<int32_t>(v2)=scale*at<int16_t>(0x02082214u+angle*4)+x;
+    at<int32_t>(v2+4)=y;
+    at<int32_t>(v2+8)=scale*at<int16_t>(0x02082214u+angle*4+2)+z;
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(line,v1,v2,actor); // SetObjAndLine
+    int result=0;
+    if (Ptr<int(uint32_t)>(0x02038638u)(line)) {                                   // DetectClsn
+        if (at<uint16_t>(actor+0xc)==0xbf) Ptr<void(uint32_t)>(0x020d8838u)(actor);
+        std::memcpy(space.data(hit+4,0x24),space.data(line+0x14,0x24),0x24);         // the dBgPi fields
+        at<uint32_t>(hit)=0x02099368u;                                               // dBgPi vtable
+        const auto clsnID=[hit] { return Ptr<uint32_t(uint32_t)>(0x02037f4cu)(hit); };
+        if (clsnID()!=0xffffffffu) {
+            if (const uint32_t owner=Ptr<uint32_t(uint32_t)>(0x02010f3cu)(clsnID())) {
+                Ptr<void(uint32_t,uint32_t)>(at<uint32_t>(at<uint32_t>(owner)+0x5c))(owner,actor);
+                result=1;
+            }
+        }
+        Ptr<void(uint32_t)>(0x02038144u)(hit); // dBgPi D1
+    }
+    Ptr<void(uint32_t)>(0x02037764u)(line); // dBgCh_Lin D1
+    space.release(work);
+    space.release(line);
+    return result;
+}
+int stage_player_vertical_line_probe(uint32_t self,int32_t y0,int32_t y1,uint32_t outY) {
+    // Complete func_ov002_020c607c (external/sm64ds-pc/src/actors/Player.cpp,
+    // frame read from ov002 0x020c607c): a dBgCh_Lin from (x, y0, z) to
+    // (x, y1, z); the hit height goes to *outY (0x80000000 when nothing is
+    // hit), the hit owner to Player+0x36c; 1/2 for owners with mFlags bit 24/25.
+    auto &space=packed::Space::current();
+    at<uint32_t>(self+0x36c)=0;
+    at<uint32_t>(outY)=0x80000000u;
+    const uint32_t rc=space.allocate(0x78),line=space.allocate(0x24);
+    int result=0;
+    Ptr<void(uint32_t)>(0x020377b0u)(rc); // dBgCh_Lin C1
+    const uint32_t a=line,b=line+0xc,pos=line+0x18;
+    at<int32_t>(a)=at<int32_t>(self+0x5c); at<int32_t>(a+4)=y0; at<int32_t>(a+8)=at<int32_t>(self+0x64);
+    at<int32_t>(b)=at<int32_t>(self+0x5c); at<int32_t>(b+4)=y1; at<int32_t>(b+8)=at<int32_t>(self+0x64);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x02037670u)(rc,a,b,self); // SetObjAndLine
+    if (Ptr<int(uint32_t)>(0x02038638u)(rc)) {                                 // DetectClsn
+        Ptr<void(uint32_t,uint32_t)>(0x020375d0u)(pos,rc);                     // GetClsnPos
+        at<int32_t>(outY)=at<int32_t>(pos+4);
+        const auto clsnID=[rc] { return Ptr<int(uint32_t)>(0x02037f4cu)(rc+0x10); }; // dBgPi::GetClsnID
+        if (clsnID()!=-1) {
+            const uint32_t found=Ptr<uint32_t(uint32_t)>(0x02010f3cu)(uint32_t(clsnID()));
+            at<uint32_t>(self+0x36c)=found;
+            if (found) {
+                const uint32_t flags=at<uint32_t>(found+0xb0);
+                if (flags&0x1000000u) result=1;
+                else if (flags&0x2000000u) result=2;
+            }
+        }
+    }
+    Ptr<void(uint32_t)>(0x02037764u)(rc); // dBgCh_Lin D1
+    space.release(line);
+    space.release(rc);
+    return result;
 }
 int stage_player_is_state_entering_level(uint32_t player) {
     // Complete Player::IsStateEnteringLevel (0x020c7ed4).
@@ -1188,7 +1347,7 @@ uint32_t stage_meter_factory() {
     at<uint32_t>(meter)=0x0210c2c8u;
     return meter;
 }
-int16_t stage_read_unaligned_short(uint32_t p) {
+int32_t stage_read_unaligned_short(uint32_t p) {
     return int16_t(at<uint8_t>(p)|(at<uint8_t>(p+1)<<8));
 }
 uint32_t stage_read_unaligned_int(uint32_t p) {
@@ -1197,6 +1356,55 @@ uint32_t stage_read_unaligned_int(uint32_t p) {
 // Original virtual dispatch: the DS vtable word at slot*4, receiver in r0.
 template<class R,class... A> R stage_virtual(uint32_t object,unsigned slot,A... args) {
     return Ptr<R(uint32_t,A...)>(at<uint32_t>(at<uint32_t>(object)+slot*4))(object,args...);
+}
+// A DS-resident fader (the Kuppa script's dFdColor_c at data_0209b294)
+// handed to the scene fader slot. dScene_c::SetFaders keeps native fader
+// objects (the DS word data_0209f5bc is a proxy forwarding to them), so the
+// DS object is driven through its own cartridge vtable, and its interpolator
+// fields are mirrored after every call for native readers.
+struct StageDsFader final : dFdBrightness_c {
+    packed::Space *space;
+    uint32_t object;
+    StageDsFader(packed::Space &s,uint32_t o) : space(&s), object(o) { sync(); }
+    void sync() {
+        packed::Space::Scope scope(*space);
+        currInterp=at<int32_t>(object+4);
+        speed=at<int32_t>(object+8);
+    }
+    template<class R,class... A> R call(unsigned slot,A... args) {
+        packed::Space::Scope scope(*space);
+        if constexpr (std::is_void_v<R>) {
+            stage_virtual<void,A...>(object,slot,args...);
+            sync();
+        } else {
+            const R result=stage_virtual<R,A...>(object,slot,args...);
+            sync();
+            return result;
+        }
+    }
+    void AdvanceFade() override { call<void>(2); }
+    int SetBackwardTime(u32 frames) override { return call<int,uint32_t>(3,frames); }
+    int SetForwardTime(u32 frames) override { return call<int,uint32_t>(4,frames); }
+    int IsAtStart() override { return call<int>(5); }
+    int IsAtEnd() override { return call<int>(6); }
+    int IsBetweenStartAndEnd() override { return call<int>(7); }
+    void SetToEnd() override { call<void>(8); }
+    void SetToStart() override { call<void>(9); }
+};
+void scene_set_faders(uint32_t fader) {
+    // Complete dScene_c::SetFaders(FaderBrightness *) (0x0202e1e0,
+    // external/sm64ds-pc/src/_ZN8dScene_c9SetFadersEP15FaderBrightness.cpp)
+    // for a DS fader object, through the native scene fader slot. Adapters
+    // stay alive for the session: the native slot may still name one.
+    static std::vector<std::unique_ptr<StageDsFader>> adapters;
+    auto &space=packed::Space::current();
+    StageDsFader *adapter=nullptr;
+    for (auto &a : adapters) if (a->object==fader && a->space==&space) adapter=a.get();
+    if (!adapter) {
+        adapters.push_back(std::make_unique<StageDsFader>(space,fader));
+        adapter=adapters.back().get();
+    }
+    dScene_c::SetFaders(adapter);
 }
 void stage_process_kuppa_script() {
     // Complete ProcessKuppaScript (0x0200e8d4, recovered isolated unit).
@@ -1391,7 +1599,7 @@ uint32_t stage_int_to_float(int32_t value) {
     uint32_t bits; std::memcpy(&bits,&f,4);
     return bits;
 }
-int16_t stage_cstd_atan2(int32_t y,int32_t x) {
+int32_t stage_cstd_atan2(int32_t y,int32_t x) {
     // cstd::atan2 (src/cstd_atan2.cpp, linked natively as runtime/input_atan2).
     return cstd::atan2(y,x);
 }
@@ -2307,10 +2515,21 @@ void stage_model_destruct(uint32_t model) {
     if (const uint32_t transforms=at<uint32_t>(model+0x4c)) packed::Space::current().release(transforms);
     if (const uint32_t file=at<uint32_t>(model+0x04)) packed::Space::current().release(file);
 }
+uint32_t stage_list_node_d1(uint32_t node) {
+    // fLiNdBa_c / fLiNdBaPr_c D1 (0x02044104 / 0x020440e8): a node being
+    // destroyed stops being the process walk's cursor (data_020a4b68).
+    if (at<uint32_t>(0x020a4b68u)==node) at<uint32_t>(0x020a4b68u)=0;
+    return node;
+}
 void stage_actor_destruct(uint32_t actor) {
-    // dActor_c::~dActor_c: leave the actor list (data_0209b468) via
-    // mActorListNode (0x50); fBase_c::~fBase_c is empty.
+    // dActor_c D2 (0x020112c8, cartridge frame): vptr 0x0208e3a4, leave the
+    // actor list (data_0209b468) via mActorListNode (+0x50), fLiNdBa_c D1 of
+    // that node, then the dBase_c vptr 0x0208e4b8 and fBase_c D2.
+    at<uint32_t>(actor)=0x0208e3a4u;
     Ptr<void(uint32_t,uint32_t)>(0x0203b27cu)(0x0209b468u,actor+0x50);
+    Ptr<uint32_t(uint32_t)>(0x02044104u)(actor+0x50);
+    at<uint32_t>(actor)=0x0208e4b8u;
+    Ptr<uint32_t(uint32_t)>(0x02043d48u)(actor);
 }
 uint32_t stage_mip_destruct(uint32_t actor) {
     // daMip_c::~daMip_c (ov085 0x0212a6d4): members in reverse order --
@@ -2608,7 +2827,7 @@ void stage_mark_for_destruction(uint32_t actor) {
     const uint32_t callback=at<uint32_t>(at<uint32_t>(actor)+0x30);
     Ptr<void(uint32_t)>{callback}(actor);
 }
-bool stage_actor_before_init(uint32_t actor) {
+int stage_actor_before_init(uint32_t actor) {
     // dActor_c::BeforeInitResources and GetBitInDeathTable, retaining the
     // original negative-ID guard inside DeathTable_GetBit itself.
     if (!(at<uint32_t>(actor+0xb0)&0x08000000u) &&
@@ -2781,14 +3000,23 @@ void stage_actor_frame() {
 }
 }
 
+#include "stage_structor_frames.inc"
+
 uint32_t stage_cutscene_object_d1(uint32_t self);
 uint32_t stage_demo_anm_model_d0(uint32_t self);
+uint32_t stage_demo_simple_model_d1(uint32_t self);
+uint32_t stage_demo_simple_model_d0(uint32_t self);
 void bind_stage_overlay_runtime(packed::Space &space,unsigned id) {
+    structor_frames::bind_structor_frames(space,int(id));
     if (id==2) {
         bind_stage_player_runtime(space);
         space.bind(0x020f80acu,&stage_cutscene_object_render);
         space.bind(0x020f1f70u,&stage_cutscene_object_d1);
         space.bind(0x020f6778u,&stage_demo_anm_model_d0);
+        space.bind(0x020f69a8u,&stage_demo_simple_model_d0);
+        space.bind(0x020f6a00u,&stage_demo_simple_model_d1);
+        space.bind(0x020c607cu,&stage_player_vertical_line_probe);
+        space.bind(0x020ef070u,&stage_actor_forward_line_hit);
         space.bind(0x020b0a7cu,&stage_return_one); // daChScene_c::Render
         space.bind(0x020b0a70u,&stage_return_one); // daChScene_c::CleanupResources
         space.bind(0x020b0a78u,&stage_no_op);      // daChScene_c::OnPendingDestroy
@@ -2946,6 +3174,14 @@ uint32_t stage_model_d2(uint32_t self) {
     if (at<uint32_t>(self+0x4c)) Ptr<void(uint32_t)>(0x0203cbc0u)(at<uint32_t>(self+0x4c));
     return stage_ext_model_d2(self);
 }
+template<uint32_t (*Body)(uint32_t)>
+uint32_t stage_deleting_d0(uint32_t self) {
+    // A deleting destructor (D0) as the cartridge emits it: the complete
+    // destructor body, then Memory::operator_delete2 (0x0203cbcc).
+    Body(self);
+    Ptr<void(uint32_t)>(0x0203cbccu)(self);
+    return self;
+}
 void stage_cxa_vec_cleanup(uint32_t base,uint32_t count,uint32_t size,uint32_t destructor) {
     // __cxa_vec_cleanup (0x0207328c): destroy count elements in reverse
     // order. The ROM's handler frame only matters for exceptions, which
@@ -2953,7 +3189,7 @@ void stage_cxa_vec_cleanup(uint32_t base,uint32_t count,uint32_t size,uint32_t d
     if (!destructor) return;
     for (uint32_t element=base+count*size;count;--count) {
         element-=size;
-        Ptr<void(uint32_t)>(destructor)(element);
+        (Ptr<void(uint32_t)>(destructor))(element);
     }
 }
 // Particle::SysTracker::Contents registry (include/Particle__SysTracker.h:
@@ -3000,6 +3236,19 @@ void stage_particle_unlink(uint32_t self,uint32_t entry) {
     else at<uint32_t>(prev+0x18)=next;
     if (next) at<uint32_t>(next+0x14)=prev;
     stage_particle_entry_reset(entry);
+}
+void stage_particle_contents_clear(uint32_t self) {
+    // Complete Particle::SysTracker::Contents::Clear (0x02021b98,
+    // external/sm64ds-pc/src/_ZN8Particle10SysTracker8Contents5ClearEv.cpp):
+    // deactivate and unlink every live entry (0x40 x 0x1c at +8), recording
+    // the last index in mCurrentIndex (+4).
+    for (uint32_t i=0;i<0x40;++i) {
+        const uint32_t entry=self+8+i*0x1c;
+        if (!at<uint32_t>(entry)) continue;
+        at<uint8_t>(entry+0xa)=0;
+        Ptr<void(uint32_t,uint32_t)>(0x02021a04u)(self,entry); // Contents::Unlink
+        at<uint8_t>(self+4)=uint8_t(i);
+    }
 }
 int stage_particle_entry_initialise(uint32_t entry,uint32_t uniqueID,uint32_t definition,
                                     uint32_t position,uint32_t direction,uint32_t callback) {
@@ -3064,6 +3313,22 @@ uint32_t stage_cutscene_object_d1(uint32_t self) {
     at<uint32_t>(self)=0x0210bd60u;
     return stage_actor_d2(self);
 }
+uint32_t stage_demo_simple_model_d1(uint32_t self) {
+    // daDemo_c::simpleModel_c D1 (ov002 0x020f6a00, cartridge code): its
+    // vptr 0x0210bae4, release the model file (+0x5c), Model D2, then the
+    // virtual ScaleHolder base (+0x50, 1 x 0xc, Vector3 D1).
+    at<uint32_t>(self)=0x0210bae4u;
+    if (const uint32_t file=at<uint32_t>(self+0x5c)) Ptr<void(uint32_t)>(0x02017b64u)(file);
+    Ptr<void(uint32_t)>(0x02016ca8u)(self);
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>(0x0207328cu)(self+0x50,1,0xc,0x020072c0u);
+    return self;
+}
+uint32_t stage_demo_simple_model_d0(uint32_t self) {
+    // daDemo_c::simpleModel_c D0 (ov002 0x020f69a8): D1, then operator delete.
+    stage_demo_simple_model_d1(self);
+    Ptr<void(uint32_t)>(0x0203cbccu)(self);
+    return self;
+}
 uint32_t stage_demo_anm_model_d0(uint32_t self) {
     // daDemo_c::anmModel_c::~anmModel_c() D0 (0x020f6778). The body is
     // external/sm64ds-pc/src/_ZN8daDemo_c10anmModel_cD0Ev.cpp; the structor
@@ -3086,13 +3351,77 @@ uint32_t stage_demo_anm_model_d0(uint32_t self) {
     Ptr<void(uint32_t)>(0x0203cbccu)(self);
     return self;
 }
+// Structor frames: the recovered units only hold the empty bodies; mwccarm
+// emits the vtable stores, the member and base structors in reverse
+// declaration order and operator delete. Straight-line frames are generated
+// from the cartridge code (structor_frames.py -> stage_structor_frames.inc);
+// the ones with a condition are written here.
+int stage_sdk_region_table_remove(int type,uint32_t,uint32_t) {
+    // func_0206cf98 (SDK, external/sm64ds-pc/src/func_0206cf98.c), reached
+    // from FS_EndOverlay: remove an unloaded overlay's range from the SDK
+    // region table data_020a9ec0[type]. The native platform never creates
+    // that table, so the original's null-table path (return 0) is the only
+    // reachable one; a populated table is reported instead of ignored.
+    const uint32_t table=unsigned(type)<2 ? at<uint32_t>(0x020a9ec0u+uint32_t(type)*4) : 0;
+    if (table) throw std::runtime_error("SDK region table func_0206cf98 is populated: not supported natively.");
+    return 0;
+}
+uint32_t stage_particle_sys_tracker_d1(uint32_t self) {
+    // Particle::SysTracker D1 (0x02023194; body external/sm64ds-pc/src/
+    // _ZN8Particle10SysTrackerD1Ev.cpp, literals from the cartridge code):
+    // clear the contents (+8) and free the shared buffer data_0209ee80, free
+    // mResourceFile (+0) unless it is the built-in data_02075f14, then
+    // forget the tracker (data_0209ee74).
+    if (const uint32_t buffer=at<uint32_t>(0x0209ee80u)) {
+        Ptr<void(uint32_t)>(0x02021b98u)(self+8); // SysTracker::Contents::Clear
+        Ptr<void(uint32_t)>(0x0203cbc0u)(buffer);
+        at<uint32_t>(0x0209ee80u)=0;
+    }
+    if (at<uint32_t>(self)!=0x02075f14u) Ptr<void(uint32_t)>(0x0203c1b4u)(at<uint32_t>(self));
+    at<uint32_t>(0x0209ee74u)=0;
+    return self;
+}
+uint32_t stage_bgw_kc_kcl_file(uint32_t self) {
+    // func_01ffb0c8 (ITCM, external/sm64ds-pc/src/func_01ffb0c8.cpp):
+    // dBgW_Kc::kclFile (+0x20).
+    return at<uint32_t>(self+0x20);
+}
+uint32_t stage_ext_shadow_model_d1(uint32_t self) {
+    // dExtShadowModel_c D1 (0x02015ff8): vptr 0x0208e868, leave the shadow
+    // list (data_0209cef4), then ModelBase D2 (0x020170b8).
+    at<uint32_t>(self)=0x0208e868u;
+    stage_shadow_destruct(self);
+    Ptr<uint32_t(uint32_t)>(0x020170b8u)(self);
+    return self;
+}
 void bind_stage_model_runtime(packed::Space &space) {
+    // Stage-only scene/message/OAM boundary (the minigame runtime binds its own).
+    space.bind(0x0202e1b4u,&scene_set_and_stop_color_fader);
+    space.bind(0x0202e1e0u,&scene_set_faders);
+    space.bind(0x020440e8u,&stage_list_node_d1);
+    space.bind(0x02044104u,&stage_list_node_d1);
+    space.bind(0x02015ff8u,&stage_ext_shadow_model_d1);
+    space.bind(0x01ffb0c8u,&stage_bgw_kc_kcl_file);
+    space.bind(0x02023194u,&stage_particle_sys_tracker_d1);
+    space.bind(0x0206cf98u,&stage_sdk_region_table_remove);
+    space.bind(0x0201cb7cu,&stage_update_message);
+    space.bind(0x0202199cu,&stage_oam_render_sub_palette);
+    space.bind(0x02020884u,&stage_oam_load_affine_params);
+    space.bind(0x0202e36cu,&scene_set_scene_to_spawn);
+    space.bind(0x0202e348u,&scene_start_scene_fade);
+    space.bind(0x0202e5f0u,&stage_scene_before_cleanup);
+    space.bind(0x0202e5d0u,&stage_scene_after_cleanup);
     space.bind(0x02015cb4u,&stage_frame_ctrl_d2);
     space.bind(0x02015a2cu,&stage_texture_sequence_d1);
     space.bind(0x02015a00u,&stage_texture_sequence_d0);
     space.bind(0x0201689cu,&stage_ext_anm_model_d2);
     space.bind(0x0207328cu,&stage_cxa_vec_cleanup);
     space.bind(0x02016ca8u,&stage_model_d2);
+    // Model D1/D0 (0x02016d20/0x02016ce0, cartridge code): D1 repeats the
+    // D2 body (which tests transformsBuf), D0 adds operator delete.
+    space.bind(0x02016d20u,&stage_model_d2);
+    space.bind(0x02016ce0u,&stage_deleting_d0<stage_model_d2>);
+    structor_frames::bind_structor_frames(space,-1);
     space.bind(0x020170b8u,&stage_ext_model_d2);
     space.bind(0x020112c8u,&stage_actor_d2);
     space.bind(0x02022640u,&stage_simple_callback_spawn);
@@ -3101,6 +3430,7 @@ void bind_stage_model_runtime(packed::Space &space) {
     space.bind(0x02021cd4u,&stage_particle_entry_reset);
     space.bind(0x02021a48u,&stage_particle_link);
     space.bind(0x02021a04u,&stage_particle_unlink);
+    space.bind(0x02021b98u,&stage_particle_contents_clear);
     space.bind(0x02021d1cu,&stage_particle_entry_initialise);
     space.bind(0x02021a74u,&stage_particle_create);
     space.bind(0x02014a2cu,&stage_cc_ac_pos_get_pos);
@@ -3192,6 +3522,7 @@ void bind_stage_runtime(packed::Space &space) {
     space.bind(0x0203cbe4u,&stage_allocate);
     space.bind(0x0203cbc0u,&stage_deallocate);
     space.bind(0x0203cbccu,&stage_deallocate);
+    space.bind(0x0203cbf0u,&stage_deallocate); // operator delete(void *): the default heap
     space.bind(0x02016958u,&stage_anim_model_ctor);
     space.bind(0x02015a50u,&stage_texture_sequence_ctor);
     space.bind(0x020163a0u,&stage_anim2_model_construct);

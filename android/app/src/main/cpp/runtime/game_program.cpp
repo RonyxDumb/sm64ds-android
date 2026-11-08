@@ -484,6 +484,12 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
     }
     if (activeScene_ == 3 && data_02092664 == NoScene) {
         stage_.update_scene();
+        // The scene fader advances once per frame in every scene, as the
+        // title and minigame paths below do. Without it the stage's color
+        // fader stayed at its end (currInterp 0x1000), so Stage::Behavior
+        // took its "fader not at start" early return every frame: no
+        // UpdateMessage, no level change after the opening's LoadLevel.
+        data_0209f5bc->AdvanceFade();
         finish_tick(); return;
     }
     if (MinigameCatalog::is_game_scene(static_cast<uint32_t>(activeScene_)) &&
@@ -506,6 +512,16 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
         const int result=frontend_->update(input_.raw_buttons(),tx,ty);
         frontend_->render();
         accept_title_result(result);
+        finish_tick(); return;
+    }
+    if (activeScene_ == 3 && data_02092664 != NoScene && data_02092660 != 0) {
+        // A scene change requested from inside the stage (LoadLevel, the
+        // opening's level reload, a door or painting): the current stage
+        // keeps running, as the DS main loop does, until its own
+        // dScene_c::BeforeBehavior marks it for destruction at the end of
+        // the fade and AfterCleanupResources clears data_02092660.
+        stage_.update_scene();
+        data_0209f5bc->AdvanceFade();
         finish_tick(); return;
     }
     if (data_02092664 != NoScene) {
@@ -582,7 +598,14 @@ void GameProgram::tick(uint32_t keys, float x, float y, int tx, int ty) {
                 finish_tick(); return;
             }
             if (data_02092664 == 3) {
+                if (activeScene_ == 3 && !stageReloaded_) {
+                    // The previous stage scene is gone: mount the requested
+                    // level (data_02092110) in the same DS RAM, then spawn.
+                    stage_.prepare_scene();
+                    stageReloaded_ = true;
+                }
                 if (dScene_c::SpawnIfNecessary()) {
+                    stageReloaded_ = false;
                     activeScene_ = 3;
                     stage_.update_scene();
                 }

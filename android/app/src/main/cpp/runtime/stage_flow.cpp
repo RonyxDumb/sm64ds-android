@@ -15,6 +15,8 @@
 #include <cstring>
 #include <stdexcept>
 
+namespace sm64ds::stage_sources { void bind_overlay_sources(packed::Space &,unsigned int); }
+
 extern "C" void Vec3_MulScalarInPlace(int *v, int scale);
 
 namespace cstd {
@@ -157,7 +159,27 @@ void StageFlow::prepare_scene() {
         {nextCommon->base,nextAssets->overlay().base,nextAssets->object_overlay().base});
     auto nextArm9 = std::make_unique<Cartridge::DataImage>(
         cartridge_.arm9_data(overlayBoundary));
+    // A level change (LoadLevel -> scene 3 again) happens in one DS RAM: the
+    // ARM9 data/BSS and the resident common modules (ov001, ov002) keep
+    // their state -- save data, script continuation (data_0209fc4c), player
+    // and camera globals -- and only the level overlay is reloaded. Carry
+    // the previous image bytes over instead of starting from the cartridge.
+    const bool carryRam = addressSpace_ != nullptr;
+    if (carryRam) {
+        const auto carry=[](std::vector<uint8_t> &to,const std::vector<uint8_t> &from) {
+            std::copy_n(from.begin(),std::min(to.size(),from.size()),to.begin());
+        };
+        carry(nextArm9->bytes,arm9Image_->bytes);
+        for (auto &segment:nextArm9->relocated)
+            for (const auto &old:arm9Image_->relocated)
+                if (old.base==segment.base) carry(segment.bytes,old.bytes);
+        carry(nextCommon->bytes,commonOverlay_->bytes);
+        if (assets_ && assets_->object_overlay().base==nextAssets->object_overlay().base)
+            carry(const_cast<std::vector<uint8_t> &>(nextAssets->object_overlay().bytes),
+                  assets_->object_overlay().bytes);
+    }
     auto nextSpace = std::make_unique<packed::Space>(Resources::active().heap());
+    if (carryRam) nextSpace->carry_from(*addressSpace_);
     nextSpace->map(nextArm9->base, nextArm9->bytes.data(), nextArm9->bytes.size());
     for(auto &segment:nextArm9->relocated)
         nextSpace->map(segment.base,segment.bytes.data(),segment.bytes.size());
@@ -211,9 +233,18 @@ void StageFlow::prepare_scene() {
     bind_stage_audio_runtime(*nextSpace);
     bind_stage_model_runtime(*nextSpace);
     bind_packed_fs(*nextSpace);
-    initialize_packed_fs(*nextSpace);
+    initialize_packed_fs(*nextSpace,!carryRam);
     bind_packed_audio(*nextSpace);
-    initialize_packed_audio(*nextSpace);
+    if (!carryRam) initialize_packed_audio(*nextSpace); // the sound cache owner and groups are carried
+    if (carryRam) {
+        // The resident common modules (overlays 1 and 2) are not loaded again
+        // on a level change; their code is linked into the new space exactly
+        // as FS_LoadOverlay links it (packed_fs.cpp overlay_load_image).
+        for (unsigned id : {1u,2u}) {
+            stage_sources::bind_overlay_sources(*nextSpace,id);
+            bind_stage_overlay_runtime(*nextSpace,id);
+        }
+    }
     {
         // crt0: the main module's static initializers run before main. The
         // fresh ARM9 image must receive them too (script path pointers,
@@ -221,8 +252,9 @@ void StageFlow::prepare_scene() {
         // The table is the cartridge's own .ctors list, zero-terminated.
         packed::Space::Scope scope(*nextSpace);
         constexpr uint32_t ctors = 0x02086b60u; // .p__sinit_02073a24, EU symbol map
-        unsigned count = 0;
-        for (uint32_t entry = ctors;; entry += 4) {
+        unsigned count = carryRam ? 23u : 0u;
+        // crt0 ran once at power-on; a level change keeps its results.
+        for (uint32_t entry = ctors; !carryRam; entry += 4) {
             uint32_t initializer = 0;
             std::memcpy(&initializer, nextSpace->data(entry, 4), 4);
             if (!initializer) break;
@@ -268,7 +300,9 @@ void StageFlow::prepare_scene() {
     sync_state(true);
     sceneActor_ = 0;
     sceneInitialized_ = false;
-    overlaysInitialized_ = false;
+    // Overlays 1 and 2 stay resident across a level change (LoadOverlay
+    // already ran their static construction in this RAM).
+    overlaysInitialized_ = carryRam;
 }
 
 uint32_t StageFlow::spawn_scene(uint32_t sceneID, uint32_t parameter, uint8_t kind) {

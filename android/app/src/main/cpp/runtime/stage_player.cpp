@@ -332,6 +332,43 @@ int player_long_drop(uint32_t self) {
     Ptr<int(uint32_t,uint32_t)>{0x020e30a0u}(self,0x0211040cu); // ChangeState
     return 1;
 }
+// func_ov002_020d5cec (external/sm64ds-pc/src/func_ov002_020d5cec.cpp): in
+// state 0x02110064, dismount from the carrier actor (+0xd0): take its
+// angles, step 5 units ahead unless a dBgCh_Lin (0x78 bytes) finds a wall
+// between, then leave the carrier.
+int player_dismount(uint32_t self) {
+    auto &space=packed::Space::current();
+    if (!Ptr<int(uint32_t,uint32_t)>{kIsState}(self,0x02110064u)) return 0;
+    Ptr<void(uint32_t,uint32_t,int32_t,int32_t,uint32_t)>{0x020bef2cu}(self,0x56,0x40000000,0x1000,0);
+    const uint32_t carrier=at<uint32_t>(self+0xd0);
+    at<int16_t>(self+0x92)=at<int16_t>(carrier+0x8c);
+    at<int16_t>(self+0x94)=at<int16_t>(carrier+0x8e);
+    at<int16_t>(self+0x96)=at<int16_t>(carrier+0x90);
+    at<int16_t>(self+0x8e)=at<int16_t>(self+0x94);
+    at<int32_t>(self+0x98)=0x18000;
+    at<int32_t>(self+0xa8)=0x18000;
+    int32_t v1[3]={at<int32_t>(carrier+0x5c),int32_t(uint32_t(at<int32_t>(carrier+0x60))+0x32000u),at<int32_t>(carrier+0x64)};
+    const unsigned k=unsigned(at<uint16_t>(self+0x8e))>>4;
+    const auto fx=[](int16_t t) { return int32_t((int64_t(t)*0x50000+0x800)>>12); };
+    int32_t v2[3]={int32_t(uint32_t(v1[0])+uint32_t(fx(at<int16_t>(0x02082214u+k*4)))),v1[1],
+                   int32_t(uint32_t(v1[2])+uint32_t(fx(at<int16_t>(0x02082214u+k*4+2))))};
+    alignas(8) uint8_t buffer[0x78];
+    const uint32_t line=space.address(buffer);
+    Ptr<uint32_t(uint32_t)>{0x020377b0u}(line); // dBgCh_Lin C1
+    Ptr<void(uint32_t,uint32_t,uint32_t,uint32_t)>{0x02037670u}(line,space.address(v1),space.address(v2),self);
+    const int32_t *dest=v2;
+    if (Ptr<int(uint32_t)>{0x02038638u}(line)) { dest=v1; }
+    at<int32_t>(self+0x5c)=dest[0]; at<int32_t>(self+0x60)=dest[1]; at<int32_t>(self+0x64)=dest[2];
+    if (dest==v1) at<int32_t>(self+0x98)=0x8000;
+    at<uint8_t>(self+0x6f5)=0x1f;
+    at<int32_t>(self+0x2ec)&=~2;
+    at<uint8_t>(self+0x6e3)=2;
+    at<uint16_t>(self+0x6a4)=4;
+    at<uint8_t>(self+0x708)=1;
+    at<uint32_t>(self+0xd0)=0;
+    Ptr<uint32_t(uint32_t)>{0x02037764u}(line); // dBgCh_Lin D1 (scope end)
+    return 1;
+}
 // Player::St_LevelEnter_Main (0x020c6f3c, src/game/player/Player.cpp):
 // six mStateStep values make the player dCamera_c::mFocusActor (+0x118),
 // then (this->*data_ov002_0211075c[mStateWork])() runs the entrance step
@@ -646,6 +683,7 @@ void bind_stage_player_runtime(packed::Space &space) {
     space.bind(0x020eeca8u,&player_notify_mesh_owner);
     space.bind(0x0201054cu,&actor_jumped_on_by_player);
     space.bind(0x020e2ea0u,&player_long_drop);
+    space.bind(0x020d5cecu,&player_dismount);
     space.bind(0x02037cb0u,&sphcrr_destruct);
     space.bind(0x02037dccu,&surface_copy_normal);
     space.bind(0x020c9e5cu,&player_no_control_step);

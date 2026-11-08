@@ -107,6 +107,7 @@ private:
     void (*job_)(int) = nullptr;
     int argument_ = 0;
     bool complete_ = false;
+    bool stageReloaded_ = false; // level mounted for a pending stage->stage change
     uint64_t ticks_ = 0;
     double accumulated_ = 0;
     bool batchFrame_ = false; // ordinary presentation is deferred, captures are not

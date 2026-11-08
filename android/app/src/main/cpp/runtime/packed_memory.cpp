@@ -71,6 +71,20 @@ void Space::map_thread_stack() {
 }
 Space::~Space() { for (const auto &a : allocations_) heap_.deallocate(a.second); }
 size_t Space::largest_free_span() const { return heap_.largest_free_span(); }
+void Space::carry_from(Space &previous) {
+    if (&previous.heap_!=&heap_)
+        throw std::runtime_error("A carried address space must share the game heap.");
+    if (!allocations_.empty() || nextCode_!=0x60000000u || external_!=0x30000000u)
+        throw std::runtime_error("Address space carry must precede every allocation and binding.");
+    allocations_.swap(previous.allocations_); // the previous space no longer frees them
+    for (const auto &entry : previous.code_)
+        if (entry.first>=0x60000000u && entry.first<0x70000000u) bind_code(entry.first,entry.second);
+    nextCode_=previous.nextCode_;
+    for (const auto &region : previous.regions_)
+        if (region.address>=0x30000000u && region.address<0x60000000u)
+            map(region.address,region.memory,region.size);
+    external_=previous.external_;
+}
 void Space::map(uint32_t a, void *p, size_t n) {
     if (!a || !p || !n || uint64_t(a)+n > UINT32_MAX)
         throw std::runtime_error("Invalid packed data span.");

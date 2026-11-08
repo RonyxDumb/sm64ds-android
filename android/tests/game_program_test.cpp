@@ -1228,7 +1228,34 @@ int main(int argc, char **argv) {
                                           << std::dec << " keys " << keys;
                                 {
                                     uint32_t script=0; std::memcpy(&script,sp->data(0x0209fc48u,4),4);
-                                    std::cerr << " script 0x" << std::hex << script << std::dec << '\n';
+                                    int8_t level=0; std::memcpy(&level,sp->data(0x02092110u,1),1);
+                                    std::cerr << " script 0x" << std::hex << script << std::dec
+                                              << " request " << game.requested_scene() << " level " << int(level)
+                                              << " fader " << (data_0209f5bc==&data_0209f5e8 ? "color" : "other")
+                                              << " interp " << (data_0209f5bc ? int(data_0209f5bc->currInterp) : -1)
+                                              << " speed " << (data_0209f5bc ? int(data_0209f5bc->speed) : -1) << '\n';
+                                }
+                                if (const char *ramPath=std::getenv("SM64DS_STAGE_DUMP_RAM")) {
+                                    // Research aid: DS main RAM 0x02080000..0x02150000 and the first 16 MiB of the
+                                    // packed heap (0x10000000) (unmapped
+                                    // pages as zero) after this frame, to diff two builds.
+                                    if (FILE *out=std::fopen((std::string(ramPath)+"."+std::to_string(frame)).c_str(),"wb")) {
+                                        const std::pair<uint32_t,uint32_t> spans[]={{0x02080000u,0x02150000u},{0x10000000u,0x11000000u}};
+                                        for (const auto &span:spans)
+                                        for (uint32_t page=span.first;page<span.second;page+=0x1000) {
+                                            uint8_t buf[0x1000]{};
+                                            try { std::memcpy(buf,sp->data(page,0x1000),0x1000); } catch (...) {}
+                                            std::fwrite(buf,1,sizeof buf,out);
+                                        }
+                                        std::fclose(out);
+                                    }
+                                }
+                                if (std::getenv("SM64DS_STAGE_DUMP_PLAYER")) {
+                                    // Research aid: the whole Player record (0x768 bytes) as hex.
+                                    const auto *bytes=static_cast<const uint8_t *>(sp->data(player,0x768));
+                                    std::cerr << "  player bytes f" << frame << ':';
+                                    for (unsigned i=0;i<0x768;++i) std::fprintf(stderr,"%02x",bytes[i]);
+                                    std::cerr << '\n';
                                 }
                                 if (std::getenv("SM64DS_STAGE_LIST_ACTORS")) {
                                     std::cerr << "  actors:";

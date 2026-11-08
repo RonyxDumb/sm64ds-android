@@ -37,6 +37,69 @@ def header_fields(rel, minimum=0):
     return fields
 
 
+# Methods of record members (collision records) as their mangled symbols;
+# the receiver is the member's address inside the object.
+RECORD_METHODS = {
+    'IsEnabled': ('int', '_ZN4dBgW9IsEnabledEv', ('dBgW', 'dBgW_Kc', 'dBgW_KcMbg')),
+    'Disable': ('void', '_ZN4dBgW7DisableEv', ('dBgW', 'dBgW_Kc', 'dBgW_KcMbg')),
+    'Unlink': ('void', '_ZN5dCc_c6UnlinkEv', ('dCc_c', 'dCcAc_c', 'dCcAcPos_c', 'dCcPos_c')),
+}
+
+
+def virtual_self_calls(body, cls):
+    """A bare no-argument call of the class's own virtual (`IsAtEnd()`, the
+    header marking `/* slot N */`) dispatches through this object's DS
+    vtable, as the cartridge's ldr/ldr [#N*4]/blx sequence."""
+    for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
+        if (ROOT/rel).exists():
+            text = (ROOT/rel).read_text()
+            break
+    else:
+        return body
+    for ret, name, slot in re.findall(r'virtual\s+(\w+)\s+(\w+)\(\s*(?:void)?\s*\);\s*/\*\s*slot\s+(\d+)\s*\*/', text):
+        body = re.sub(r'(?<![.>:\w])'+name+r'\(\)',
+                      '((%s (*)(void *))((*(void ***)this)[%s]))(this)' % (ret, slot), body)
+    return body
+
+
+def record_members(cls):
+    """Record-typed members of a class header: name -> (type, offset)."""
+    for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
+        if (ROOT/rel).exists():
+            text = (ROOT/rel).read_text()
+            members = {}
+            base = re.search(r'struct\s+'+cls+r'\s*:\s*(?:public\s+)?(dBgActor_c)\b', text)
+            if base:
+                members.update(record_members(base[1]))  # e.g. dBgActor_c::mMeshCollider
+            for line in text.splitlines():
+                match = FIELD.match(line)
+                if match and not match[2] and not match[4] and match[1] not in SCALARS:
+                    members.setdefault(match[3], (match[1], int(match[5], 16)))
+            return members
+    return {}
+
+
+def record_method_calls(body, cls):
+    """`mMember.Method()` on a collision record member: the mangled call
+    with the member's address (and its extern declaration)."""
+    members = record_members(cls)
+    needed = set()
+    def call(match):
+        typ, offset = members.get(match[1], (None, None))
+        ret, mangled, types = RECORD_METHODS[match[2]]
+        if typ not in types:
+            return match[0]
+        needed.add('extern "C" %s %s(void *self);' % (ret, mangled))
+        return '%s((char *)this + 0x%x)' % (mangled, offset)
+    body = re.sub(r'\b(m\w+)\.(%s)\(\)' % '|'.join(RECORD_METHODS), call, body)
+    # The same call through an explicit base cast: ((dBgW *)&mMember)->Method().
+    body = re.sub(r'\(\((?:dBgW|dBgW_Kc|dCc_c|dCcAc_c) \*\)\s*&\s*(m\w+)\)->(%s)\(\)' % '|'.join(RECORD_METHODS),
+                  call, body)
+    body = re.sub(r'\(\((?:dBgW|dBgW_Kc|dCc_c|dCcAc_c) \*\)\s*\(\(char \*\)&\(\*\(u8 \*\)&(m\w+)\)\)\)->(%s)\(\)'
+                  % '|'.join(RECORD_METHODS), call, body)
+    return body, sorted(needed)
+
+
 def player_fields():
     from stage_actor_views import ACTOR_FIELDS
     fields = dict(ACTOR_FIELDS)
@@ -84,6 +147,88 @@ def vector_reference_abi(raw):
     return raw
 
 
+SHARED_FILE_RELEASE = re.compile(r'^(\s*)\(\(SharedFilePtr \*\)(.*)\)->Release\(\);[ \t]*$', re.M)
+
+
+def virtual_deletes(raw):
+    """`delete m;` of a model object is its virtual deleting destructor:
+    vtable slot 1 (D0), as the cartridge's ldr/ldr [#4]/blx sequence."""
+    def delete(match):
+        var = match[1]
+        typ = re.search(r'\b(\w*Model\w*)\s*\*\s*'+var+r'\b', raw)
+        if not typ:
+            return match[0]
+        return '((void (*)(void *))((*(void ***)%s)[1]))(%s);' % (var, var)
+    return re.sub(r'\bdelete\s+(\w+)\s*;', delete, raw)
+
+
+def virtual_shells(raw):
+    """Local polymorphic shells (`struct Obj { virtual void m0(); ... };`)
+    only name cartridge vtable slots: each `p->mN(args)` on a `Shell *p`
+    dispatches through the object's DS vtable word N, and the shell becomes
+    an opaque type."""
+    for shell in re.finditer(r'struct (\w+) \{\s*((?:virtual [^;{}]+;\s*)+)\};', raw):
+        name, body = shell[1], shell[2]
+        methods = re.findall(r'virtual\s+([\w\s\*]+?)\s*\b(\w+)\s*\(([^)]*)\)', body)
+        if not methods:
+            continue
+        variables = set(re.findall(r'\b'+name+r'\s*\*\s*(\w+)', raw))
+        out = raw[:shell.start()]+'typedef void '+name+';'+raw[shell.end():]
+        for slot, (ret, method, params) in enumerate(methods):
+            types = [re.sub(r'\s*\b\w+$', '', p.strip()) or p.strip() for p in params.split(',')] \
+                if params.strip() not in ('', 'void') else []
+            signature = ', '.join(['void *']+types)
+            for var in variables:
+                out = re.sub(r'\b'+var+r'->'+method+r'\(',
+                             '((%s (*)(%s))((*(void ***)%s)[%d]))(%s%s' % (ret.strip(), signature, var, slot, var,
+                                                                          ', ' if types else ''), out)
+        raw = out
+    return raw
+
+
+def shared_file_release(raw):
+    """`((SharedFilePtr *)(x))->Release();` is SharedFilePtr::Release at
+    0x02017b64 (include/SharedFilePtr.h): call its mangled symbol with the
+    record address; the stage SharedFilePtr record carries no methods."""
+    raw, count = SHARED_FILE_RELEASE.subn(r'\1_ZN13SharedFilePtr7ReleaseEv((void *)\2);', raw)
+    # A SharedFilePtr record by name, or a table entry pointing at one.
+    raw, more = re.subn(r'\b(data_\w+)\.Release\(\);',
+                        r'_ZN13SharedFilePtr7ReleaseEv((void *)&\1);', raw)
+    count += more
+    raw, more = re.subn(r'^(\s*)(data_\w+\[[^\];]+\](?:\.\w+)?)->Release\(\);[ \t]*$',
+                        r'\1_ZN13SharedFilePtr7ReleaseEv((void *)\2);', raw, flags=re.M)
+    count += more
+    if count and not re.search(r'\b_ZN13SharedFilePtr7ReleaseEv\s*\([^)]', raw.split('_ZN13SharedFilePtr7ReleaseEv((void *)')[0]):
+        raw = 'extern "C" void _ZN13SharedFilePtr7ReleaseEv(void *self);\n'+raw
+    return raw
+
+
+def player_pointer_fields(raw):
+    """Free units that take `struct Player *p` and read p->mField: the
+    named members become their include/Player.h offsets (scalars as typed
+    lvalues, record members by address, arrays as element pointers)."""
+    names = set(re.findall(r'\bstruct\s+Player\s*\*\s*(\w+)', raw))
+    if not names:
+        return raw
+    fields = player_fields()
+    records = player_record_members()
+    for var in names:
+        def member(match):
+            name = match[2]
+            if name in records:
+                if match.string[match.end():].lstrip().startswith('.'):
+                    return match[0]  # a method of the record: left to the unit's replacements
+                return '(*(char (*)[1])((char *)%s + 0x%x))' % (match[1], records[name])
+            if name not in fields:
+                return match[0]
+            typ, offset = fields[name]
+            if typ.startswith('[]'):
+                return '((%s *)((char *)%s + 0x%x))' % (typ[2:], match[1], offset)
+            return '(*(%s *)((char *)%s + 0x%x))' % (typ, match[1], offset)
+        raw = re.sub(r'\b('+re.escape(var)+r')->(m\w+|unk_\w+|param1|uniqueID)\b', member, raw)
+    return raw
+
+
 def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=None, rel=None, name=None,
              types=None, prelude=''):
     rel = rel or 'external/sm64ds-pc/src/'+symbol+'.cpp'
@@ -104,7 +249,30 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
             raw = raw[:close]+raw[close+1:]
     if name:
         from native_sources import function
+        whole = raw
         raw = function(raw, name)
+        if not rel.endswith('Player.cpp'):
+            # The class source's file-scope extern "C" regions declare the
+            # external functions its member bodies call.
+            used = set(re.findall(r'\b\w+\b', raw))
+            regions = re.findall(r'^extern "C" \{\n(.*?)^\}', whole, re.M | re.S)
+            prototype = re.compile(r'(?:extern\s+)?(?:const\s+)?(?:(?:unsigned|signed|struct)\s+)?\w+[\s\*]+(\w+)\s*\([^;{}]*\)\s*;\s*$')
+            decls = [line.strip() for region in regions for line in region.splitlines()
+                     if prototype.match(line) and prototype.match(line)[1] in used
+                     and not line.startswith(('return', 'if', 'else'))]
+            # File-scope data the bodies name (extern records and tables).
+            # Single-line file-scope C declarations of called functions.
+            decls += [line[len('extern "C" '):].strip() for line in whole.splitlines()
+                      if line.startswith('extern "C" ') and '{' not in line
+                      and prototype.match(line[len('extern "C" '):])
+                      and prototype.match(line[len('extern "C" '):])[1] in used]
+            bare = [re.sub(r'\s*(?:/\*.*?\*/|//.*)\s*$', '', line) for line in whole.splitlines()]
+            bare = [line.replace('extern "C" ', 'extern ', 1) for line in bare]
+            decls += [line.strip() for line in bare
+                      if re.match(r'(?:extern\s+)?(?:\w+\s+)+\**(data_\w+)\s*(?:\[\w*\])?\s*;\s*$', line)
+                      and re.match(r'(?:extern\s+)?(?:\w+\s+)+\**(data_\w+)', line)[1] in used]
+            if decls:
+                raw = 'extern "C" {\n'+'\n'.join(dict.fromkeys(decls))+'\n}\n'+raw
         # In-body file-scope externs become ordinary declarations.
         hoisted = re.findall(r'^\s*(extern [^;\n(]+;)\s*$', raw, re.M)
         raw = re.sub(r'^\s*extern [^;\n(]+;\s*$\n', '', raw, flags=re.M)
@@ -115,6 +283,11 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
         raw = raw.replace(old, new)
+    if replacements and shared:
+        # Imports a replacement made unused would become unused statics.
+        used = set(re.findall(r'\b\w+\b', raw))
+        shared = '\n'.join(line for line in shared.split('\n')
+                           if (re.search(r'(\w+)\s*(?:\(|\[|;)', line) or [None, None])[1] in used)
     declarations = [shared] if shared else []
     for block in re.findall(r'extern "C" \{\n(.*?)\n\}\n', raw, re.S):
         declarations.append(block)
@@ -146,6 +319,12 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     body = raw[:start]+'extern "C" '+result+' '+symbol+'(void *object'+params+') {'+tail
     for old, new in (replacements or {}).items():
         body = body.replace(old, new)
+    body = virtual_self_calls(body, cls)
+    body, record_decls = record_method_calls(body, cls)
+    if record_decls:
+        body = '\n'.join(record_decls)+'\n'+body
+    body = shared_file_release(body)
+    body = virtual_deletes(body)
     body = body.replace('((char*)this)', '((char *)object)').replace('(char*)this', '(char *)object')
     # Explicit member access through `this` names the same receiver fields.
     body = re.sub(r'\bthis->', '', body)
@@ -164,11 +343,20 @@ def isolated(projected, symbol, overlay, cls, fields, extra='', replacements=Non
     # Older isolated units spell unnamed members unk_<offset>; take the type
     # the reviewed header records at that same offset.
     by_offset = {offset: typ for typ, offset in fields.values() if not typ.startswith('[]')}
+    arrays = {offset: typ[2:] for typ, offset in fields.values() if typ.startswith('[]')}
     def unknown(match):
         offset = int(match[1], 16)
-        if offset not in by_offset:
-            raise ValueError('untyped member unk_%x in %s' % (offset, rel))
-        return '(*('+by_offset[offset]+' *)((char *)object+0x%x))' % offset
+        after = match.string[match.end():].lstrip()
+        before = match.string[:match.start()].rstrip()
+        if offset in arrays:
+            return '(('+arrays[offset]+' *)((char *)object+0x%x))' % offset
+        if before.endswith('&') and not before.endswith('&&'):
+            return '(*(char *)((char *)object+0x%x))' % offset  # the member's address
+        if offset in by_offset:
+            return '(*('+by_offset[offset]+' *)((char *)object+0x%x))' % offset
+        if after.startswith('['):
+            return '((u32 *)((char *)object+0x%x))' % offset  # word table at a record offset
+        raise ValueError('untyped member unk_%x in %s' % (offset, rel))
     body = re.sub(r'(?<![.>\w])unk_([0-9a-f]+)\b', unknown, body)
     declarations = '\n'.join(declarations)
     # Local record types the imported declarations already name must precede
@@ -282,6 +470,7 @@ def player_self_calls(body, bare_members=False):
 
 
 PLAYER_STATES = [
+    '_ZN6Player16OnPendingDestroyEv',
     '_ZN6Player20St_StomachSlide_MainEv',
     '_ZN6Player12St_Dive_InitEv',
     '_ZN6Player12St_Wait_InitEv',
@@ -406,12 +595,22 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
             if (ROOT/rel).exists():
                 break
         raw = (ROOT/rel).read_text()
+        head = re.search(r'^[\w \t\*]*?\b(\w+)::(\w+)[ \t]*\(([^;&)]*)\)[^;\n]*$', raw, re.M) \
+            if symbol.startswith('_ZN') and not replacements else None  # hand views spell their own head
+        header = head and next((ROOT/r for r in ('include/'+head[1]+'.h', 'external/sm64ds-pc/include/'+head[1]+'.h')
+                                if (ROOT/r).exists()), None)
+        if header and re.search(r'\bstatic\b[^;\n]*\b'+head[2]+r'\s*\(', header.read_text()):
+            # A static member: no receiver, so its free view is the mangled
+            # C symbol with the declared parameters.
+            raw = re.sub(r'^([\w \t\*]*?)\b(?:\w+::)+~?\w+[ \t]*\(([^)]*)\)',
+                         lambda m: 'extern "C" '+m[1]+symbol+'('+m[2]+')', raw, count=1, flags=re.M)
     if rel.endswith('.c'):
         # C units may name a parameter `this`; the projection is C++.
         raw = re.sub(r'\bthis\b', 'this_', raw)
         # C units spelling their own boolean enum: C++ already has them.
         raw = re.sub(r'^enum\s*\{\s*false\s*,\s*true\s*\}\s*;\s*$', '', raw, flags=re.M)
     raw = vector_reference_abi(raw)
+    raw = player_pointer_fields(raw)
     # These two recovered Player blocks declare Pair2i but never use it.
     # Remove only that dead local type; preserve the code and used layouts.
     if symbol in ('func_ov002_020c14b8', 'func_ov002_020c25a8'):
@@ -472,6 +671,9 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
     raw = re.sub(r'^\s*#(?:include|pragma)[^\n]*\n', '', raw, flags=re.M)
     for old, new in (replacements or {}).items():
         raw = raw.replace(old, new)
+    raw = shared_file_release(raw)
+    raw = virtual_deletes(raw)
+    raw = virtual_shells(raw)
     if shared:
         raw = shared+'\n'+raw
     extra = ''
@@ -487,6 +689,77 @@ def free_unit(projected, symbol, overlay, replacements=None, rel=None):
 
 
 FREE_UNITS = [
+    ('func_02038324', 0),
+    ('_ZN5Sound6Player19SetPlayableSeqCountEii', 0, {
+        # A static member of the nested Sound::Player: its mangled C symbol.
+        'void Sound::Player::SetPlayableSeqCount(int index, int count)':
+            'extern "C" void _ZN5Sound6Player19SetPlayableSeqCountEii(int index, int count)'}),
+    ('_ZN7Message15ResetAllGlobalsEv', 0),
+    ('func_0205dc60', 0),
+    ('func_0205dc7c', 0, {
+        # FS_EndOverlay: the destructor is an ARM code handle (the packed
+        # view's function pointer type).
+        '            void (*cb)(u32);\n            cb = (void(*)(u32))collected->lo;\n'
+        '            nx = collected->next;\n            if (cb) cb(collected->hi);':
+            '            nx = collected->next;\n'
+            '            if (collected->lo) ((void(*)(u32))collected->lo)(collected->hi);'}),
+    ('func_0205df40', 0),
+    ('func_0205dffc', 0),
+    ('_ZN5Stage18ResetMeshCollidersEv', 0),
+    ('_ZN5Sound21ResetPlayerVoiceGroupEv', 0, {
+        # The namespace member is its mangled C symbol here.
+        'namespace Sound {\n\nvoid ResetPlayerVoiceGroup(void)\n': 'extern "C" void _ZN5Sound21ResetPlayerVoiceGroupEv(void)\n',
+        '    data_0209b478 = 0;\n}\n\n}': '    data_0209b478 = 0;\n}'}),
+    ('EndKuppaScript', 0, {
+        # The local class shells' members are their mangled C symbols (static
+        # dActor_c::FindWithID, fBase_c::MarkForDestruction on the result,
+        # Sound::UnsetPlayerVoiceGroup).
+        'struct fBase_c { void MarkForDestruction(); };\n'
+        'struct dActor_c : fBase_c { static dActor_c *FindWithID(unsigned int); };\n'
+        'namespace Sound { void UnsetPlayerVoiceGroup(); }\n':
+            'extern "C" void *_ZN8dActor_c10FindWithIDEj(unsigned int id);\n'
+            'extern "C" void _ZN7fBase_c18MarkForDestructionEv(void *self);\n'
+            'extern "C" void _ZN5Sound21UnsetPlayerVoiceGroupEv(void);\n',
+        'Sound::UnsetPlayerVoiceGroup();': '_ZN5Sound21UnsetPlayerVoiceGroupEv();',
+        'dActor_c *a = dActor_c::FindWithID(*p);': 'void *a = _ZN8dActor_c10FindWithIDEj(*p);',
+        'a->MarkForDestruction();': '_ZN7fBase_c18MarkForDestructionEv(a);'}),
+    ('CleanCommonModelDataArr', 0),
+    ('UnloadOverlay', 0),
+    ('func_0205dc0c', 0),
+    ('func_02017fd0', 0),
+    ('func_02011aa0', 0, {
+        # NNS_SndPlayerStopSeq(handle, fadeFrames) (0x0204fa2c; decl_common.h
+        # spells it func_0204fa2c(int *, int)).
+        'extern int func_0204fa2c();': 'extern int func_0204fa2c(void *handle, int frames);'}),
+    ('UnloadSilverStarAndNumber', 2, {
+        # SharedFilePtr::Release takes the record (this); the two records
+        # are 8-byte SharedFilePtr cells.
+        'extern void _ZN13SharedFilePtr7ReleaseEv();': 'extern void _ZN13SharedFilePtr7ReleaseEv(void *self);',
+        'extern int data_ov002_0210da28[];': 'extern char data_ov002_0210da28[];',
+        'extern int data_ov002_02110954[];': 'extern char data_ov002_02110954[];'}),
+    ('UnloadKeyModels', 89),
+    ('func_02073244', 0),
+    ('func_02073300', 0),
+    ('func_020731fc', 0),
+    ('IsLevelTinyHugeIslandOutside', 0),
+    ('IsLevelInsideCastle', 0),
+    ('func_ov002_020f1fcc', 2),
+    ('func_ov002_020f237c', 2),
+    ('_ZN6Player4HurtERK7Vector3j5Fix12IiEjjj', 2, {
+        # dCc_c::Unlink on the dCcAcPos_c mAttackClsn record (+0x314).
+        '    self->mAttackClsn.Unlink();': '    _ZN5dCc_c6UnlinkEv((char *)self + 0x314);',
+        'extern "C" int _ZN6Player4HurtERK7Vector3j5Fix12IiEjjj(': 'extern "C" void _ZN5dCc_c6UnlinkEv(void *);\nextern "C" int _ZN6Player4HurtERK7Vector3j5Fix12IiEjjj('}),
+    ('func_ov002_020bd250', 2, {
+        # The local declarations only pin mwccarm's call shapes: the Hurt
+        # reference is the ARM pointer word; NewSimple is the free symbol.
+        'struct Player {\n    void Hurt(const Vector3&, unsigned int, int, unsigned int, unsigned int, unsigned int);\n};\n': 'struct Player;\n',
+        'extern "C" void _ZN6Player4HurtERK7Vector3j5Fix12IiEjjj(void *, const Vector3&,':
+            'extern "C" void _ZN6Player4HurtERK7Vector3j5Fix12IiEjjj(void *, const Vector3 *,',
+        '((Player*)self, v, 0, 0xc000, 1, 0, 1);': '((Player*)self, &v, 0, 0xc000, 1, 0, 1);',
+        'namespace Particle { struct System { static void NewSimple(unsigned int, int, int, int); };': '',
+        'extern "C" void _ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_(unsigned int, int, int, int);\n }':
+            'extern "C" void _ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_(unsigned int, int, int, int);',
+        'Particle::_ZN8Particle6System9NewSimple': '_ZN8Particle6System9NewSimple'}),
     ('func_ov002_020f02c8', 2),
     ('func_ov002_020f030c', 2),
     ('func_ov002_020d3498', 2),
@@ -950,6 +1223,7 @@ FREE_UNITS = [
 # Free functions taken from one `// @symbol` block of a multi-function
 # recovered file (raw-offset C): (symbol, overlay, file, optional replacements).
 BLOCK_UNITS = [
+    ('func_ov002_020bebd4', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf90c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020c0688', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
     ('func_ov002_020bf56c', 2, 'external/sm64ds-pc/src/actors/Player.cpp'),
@@ -1014,6 +1288,12 @@ BLOCK_UNITS = [
 # Members projected from the recovered class sources in src/ (symbol,
 # overlay, class, source file, exact definition head, optional replacements).
 SOURCE_MEMBERS = [
+    ('_ZN15FaderBrightness7IsAtEndEv', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness7IsAtEndEv.cpp', 'int FaderBrightness::IsAtEnd()'),
+    ('_ZN15FaderBrightness14SetForwardTimeEj', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness14SetForwardTimeEj.cpp', 'int FaderBrightness::SetForwardTime(u32 frames)'),
+    ('_ZN15FaderBrightness8SetToEndEv', 0, 'FaderBrightness', 'external/sm64ds-pc/src/engine/fader/_ZN15FaderBrightness8SetToEndEv.cpp', 'void FaderBrightness::SetToEnd()'),
+    ('_ZN10daMcFlag_c16CleanupResourcesEv', 9, 'daMcFlag_c', 'external/sm64ds-pc/src/game/actors/d_a_mc_flag.cpp', 's32 daMcFlag_c::CleanupResources()'),
+    ('_ZN18daObjMc_Metalnet_c16CleanupResourcesEv', 9, 'daObjMc_Metalnet_c', 'external/sm64ds-pc/src/game/actors/d_a_obj_mc_metalnet.cpp', 's32 daObjMc_Metalnet_c::CleanupResources()'),
+    ('_ZN7da1up_c16CleanupResourcesEv', 2, 'da1up_c', 'external/sm64ds-pc/src/actors/da1up_c.cpp', 'int da1up_c::CleanupResources()'),
     ('_ZN6Player4HealEi', 2, 'Player', 'external/sm64ds-pc/src/actors/Player.cpp', 'int Player::Heal(int amt)'),
     ('func_ov002_020c71e0', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c71e0()'),
     ('func_ov002_020c2f64', 2, 'Player', 'src/game/player/Player.cpp', 'void Player::func_ov002_020c2f64()'),
@@ -1082,6 +1362,39 @@ MINIMAP_UNITS = [
 
 
 MEMBER_UNITS = [
+    ('_ZN5Stage16CleanupResourcesEv', 0, 'Stage', {
+        # Stage.h record members (offsets as the stage prelude's static
+        # asserts): mTexAnimSlots 0x8bc, mMeshCollider 0x91c (a dBgW_KcMbg).
+        'StageTexAnimSlot *e = mTexAnimSlots;': 'StageTexAnimSlot *e = (StageTexAnimSlot *)((char *)this + 0x8bc);',
+        '((dBgW *)((char *)&mMeshCollider))->Disable();': '_ZN4dBgW7DisableEv((char *)this + 0x91c);',
+        # Cartridge code 0x0202caf0..0x0202cafc: func_01ffb0c8's result (the
+        # collider's KCL file) is Deallocate's argument; the C spelling
+        # passes it implicitly in r0.
+        'func_01ffb0c8((char *)&mMeshCollider);\n    Deallocate();':
+            'Deallocate(func_01ffb0c8((char *)this + 0x91c));',
+        'extern void func_01ffb0c8(void *);': 'extern void *func_01ffb0c8(void *);',
+        'extern void Deallocate(void);': 'extern void Deallocate(void *);',
+        'extern void _ZN5Sound6Player19SetPlayableSeqCountEii(int, int);':
+            'extern void _ZN5Sound6Player19SetPlayableSeqCountEii(int, int);\nextern void _ZN4dBgW7DisableEv(void *);'}),
+    ('_ZN4Door16CleanupResourcesEv', 100, 'Door'),
+    ('_ZN4Bird16CleanupResourcesEv', 9, 'Bird'),
+    ('_ZN6Cannon16CleanupResourcesEv', 98, 'Cannon'),
+    ('_ZN13QuestionBlock16CleanupResourcesEv', 102, 'QuestionBlock'),
+    ('_ZN8SignPost16CleanupResourcesEv', 2, 'SignPost'),
+    ('_ZN13BigBrickBlock16CleanupResourcesEv', 2, 'BigBrickBlock'),
+    ('_ZN4Fish16CleanupResourcesEv', 100, 'Fish', {
+        # Cartridge code (ov100 0x02146ad4): the static dActor_c::FindWithID
+        # result is the receiver of func_ov100_02146280(char *) (its unit
+        # src/func_ov100_02146280.c; decl_common.h spells it (void)).
+        'if (mHidden == 0 && dActor_c::FindWithID(mUniqueID_13c))\n        func_ov100_02146280();':
+            'if (mHidden == 0) {\n        void *found = _ZN8dActor_c10FindWithIDEj(mUniqueID_13c);\n'
+            '        if (found)\n            ((void (*)(void *))0x02146280u)(found);\n    }',
+        'int Fish::CleanupResources()': 'extern "C" void *_ZN8dActor_c10FindWithIDEj(u32 id);\nint Fish::CleanupResources()'}),
+    ('_ZN7fBase_c16OnPendingDestroyEv', 0, 'fBase_c'),
+    ('_ZN4Door16OnPendingDestroyEv', 100, 'Door'),
+    ('_ZN5Stage16OnPendingDestroyEv', 0, 'Stage'),
+    ('_ZN5Stage15IsPauseDisabledEv', 0, 'Stage'),
+    ('_ZN5Stage8CanPauseEv', 0, 'Stage'),
     ('_ZN9Animation8GetFlagsEv', 0, 'Animation'),
     ('_ZN6Player12St_Land_MainEv', 2, 'Player', {
         # 0x760 is mSpineRot[2] (s16 mSpineRot[3] at 0x75c, include/Player.h).
@@ -1094,6 +1407,18 @@ MEMBER_UNITS = [
         'a->m04();': '((void (*)(void *))((*(void ***)a)[1]))(a);',
         'b->m04();': '((void (*)(void *))((*(void ***)b)[1]))(b);'}),
     ('_ZN14CutsceneObject16OnPendingDestroyEv', 2, 'CutsceneObject'),
+    ('_ZN6Player16CleanupResourcesEv', 2, 'Player', {
+        # VB::v1 is the models' second vtable slot (+4, the D0 destructor), a
+        # cartridge code word: dispatch through the ROM vtable.
+        'struct VB { virtual void v0(); virtual void v1(); };': 'typedef void VB;',
+        # decl_common.h already declares these two.
+        'void UnloadSilverStarAndNumber(void);\nvoid UnloadKeyModels(int n);\n': '',
+        'VB *p = (VB *)': 'void *p = (void *)', 'p = (VB *)': 'p = (void *)',
+        'p->v1();': '((void (*)(void *))((*(void ***)p)[1]))(p);',
+        # The array destructor receives Vector3::~Vector3's cartridge address.
+        'func_02073244((void *)q, 0xc, 8, _ZN7Vector3D1Ev);':
+            'func_02073244((void *)q, 0xc, 8, (void (*)(void *))0x020072c0u);',
+        'void _ZN7Vector3D1Ev(void *self);\n': ''}),
     ('_ZN10dBgW_KcMbg9GetNormalEsR7Vector3', 0, 'dBgW_KcMbg', {
         # dBgW_Kc::kclFile is +0x20; KCL_File normals +0x04 (6-byte s16
         # vectors) and tris +0x08 (0x10-byte records, normalIdx +6), per
@@ -1187,10 +1512,18 @@ def class_fields(cls):
     fields = dict(ACTOR_FIELDS) if cls.startswith(('d', 'Player')) else {}
     for rel in ('include/'+cls+'.h', 'external/sm64ds-pc/include/'+cls+'.h'):
         if (ROOT/rel).exists():
-            if re.search(r'(?:struct|class)\s+'+cls+r'\s*:\s*(?:public\s+)?dActor_c\b', (ROOT/rel).read_text()):
+            if re.search(r'(?:struct|class)\s+'+cls+r'\s*:\s*(?:public\s+)?(?:dActor_c|dBgActor_c|dEnemyBase_c|dEnemy_c|dCapEnemy_c)\b',
+                         (ROOT/rel).read_text()):
                 fields = dict(ACTOR_FIELDS)  # an actor: the dActor_c base members
             fields.update(header_fields(rel, 0))
             break
+    if fields and 'mPosX' in fields:
+        # Base members the reviewed actor table does not spell (fBase_c
+        # actorID 0x0c, the remaining scalar dActor_c members below 0xd0).
+        for rel, limit in (('include/fBase_c.h', 0x50), ('external/sm64ds-pc/include/dActor_c.h', 0xd0)):
+            for name, field in header_fields(rel).items():
+                if field[1] < limit:
+                    fields.setdefault(name, field)
     return fields
 
 

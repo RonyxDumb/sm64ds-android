@@ -78,6 +78,11 @@ uint32_t heap_resize(uint32_t heap,uint32_t allocation,uint32_t bytes) {
     return packed::Space::current().resize(allocation,bytes);
 }
 void free_allocation(uint32_t allocation) { packed::Space::current().release(allocation); }
+void memory_deallocate_from(uint32_t allocation,uint32_t heap) {
+    // Memory::Deallocate(void *, mHeap::Heap_t *) (0x0203c1e8): a null heap
+    // selects the current one (0x020a0ea0), then Heap_t::Deallocate.
+    heap_deallocate(heap ? heap : at<uint32_t>(0x020a0ea0u),allocation);
+}
 void cache_flush(uint32_t address,uint32_t bytes) {
     if (bytes) (void)packed::Space::current().data(address,bytes);
     std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -343,6 +348,7 @@ void bind_packed_fs(packed::Space &space) {
     space.bind(0x0203c274u,&heap_size);
     space.bind(0x0203c578u,&heap_resize);
     space.bind(0x0203c1b4u,&free_allocation);
+    space.bind(0x0203c1e8u,&memory_deallocate_from);
     space.bind(0x02018144u,&free_allocation);
     space.bind(0x02017c54u,&shared_load);
     space.bind(0x0201816cu,&load_resource);
@@ -359,7 +365,7 @@ void bind_packed_fs(packed::Space &space) {
     space.bind(0x0205a61cu,&copy_bytes);
 }
 
-void initialize_packed_fs(packed::Space &space) {
+void initialize_packed_fs(packed::Space &space,bool fresh) {
     packed::Space::Scope scope(space);
     ntr::RomView rom{};
     if (!ntr::fs_rom_view(rom) || rom.size<0x160)
@@ -369,6 +375,10 @@ void initialize_packed_fs(packed::Space &space) {
     // copied by the NTR boot environment. Normal DS mode has console type 0.
     space.map(0x027ffe00u,const_cast<uint8_t *>(rom.bytes),0x160);
     space.map_owned(0x027ffc40u,2);
+    // A level change keeps the DS RAM (Space::carry_from): the heap
+    // descriptor, handle catalog, registered ROM archive and overlay-region
+    // state are already there and must not be registered twice.
+    if (!fresh) return;
     const uint32_t heap=space.allocate(16);
     at<uint32_t>(heap)=NativeHeapTag;
     at<uint32_t>(heap+4)=0x10000000u;

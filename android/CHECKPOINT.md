@@ -1,3 +1,103 @@
+# Checkpoint — 2026-11-08 (session 4), opening level change: teardown + reload run
+
+Branch: `main`. Area: **engine (scene lifecycle, address space) / castle actors /
+fader / tooling / CI**. Evidence: private EU ROM (SHA-256 ce5829aa…) host runs;
+no APK build in this session beyond the NDK clang syntax check, no device.
+
+Architecture decision (PC port reuse): the upstream PC port builds the same
+recovered `src/` with 32-bit MSVC, so its binaries cannot run on ARM64. What is
+reused: its gate slices (unit selection, `pc_slice_import.py`, 678 units),
+its recovered class sources (`external/sm64ds-pc/src/actors|game|engine/**`,
+now searched by `frontier_batch.py` through `// @symbol` markers) and its
+port/unmatched C bodies. Android-specific: the packed 32-bit DS address space,
+projections, native SDK/platform boundaries and the structor frames below.
+
+What is new:
+- **Root cause of the intro stall** (fixed): the stage path never advanced the
+  scene fader, so `Stage::Behavior` returned early forever. GameProgram now
+  advances it every stage frame, and keeps running the current stage while a
+  stage-requested scene change (the opening's `LoadLevel`) fades out, until the
+  original `dScene_c::BeforeBehavior`/`AfterCleanupResources` destroy it.
+- **Stage teardown chain linked** (frame 2505): `Stage::CleanupResources`
+  (archives, sound voice group, `EndKuppaScript`, skybox/texture-animation
+  destructors, colour fader, `CleanCommonModelDataArr`, mesh colliders, KCL
+  free, `UnloadLevelOverlays` -> `UnloadOverlay` -> `FS_UnloadOverlay` ->
+  `FS_EndOverlay` static-destructor chain, `Message::ResetAllGlobals`),
+  `Player::CleanupResources`, CleanupResources of Fish, Bird, Butterfly, Door,
+  Cannon, SignPost, BigBrickBlock, QuestionBlock, da1up_c, daMcFlag_c,
+  daObjMc_Metalnet_c, and every structor of those classes.
+- **Structor frames from the cartridge code**: `android/tools/structor_frames.py`
+  reads a destructor from the user's ROM, accepts it only if it is straight-line
+  frame code (vtable stores, member/base structors, `__cxa_vec_cleanup`,
+  operator delete; no compare, no condition, no load through `this`) and
+  records addresses/offsets/vtable words in `structor_frames.json` (no code
+  bytes). `stage_structor_frames.inc` is generated from the JSON (no ROM
+  needed in CI). 40+ frames; it caught a hand-written error (Player D1 had the
+  two array element destructors swapped). Conditional frames stay hand-written
+  (ShadowModel, fLiNdBa(Pr)_c, Particle::SysTracker, Model D1/D0).
+- **One DS RAM across a level change**: `Space::carry_from` moves the heap
+  allocations, dynamic native code handles and native data segments into the
+  next stage space; `prepare_scene` carries ARM9 data/BSS, ov001 and ov002,
+  skips crt0 `.ctors`, the ROM archive registration and the sound-cache init
+  (already in RAM), and links the resident overlays 1/2 code again.
+  Before this, the FS archive list was re-registered and cycled.
+- **DS faders in the native fader slot**: `dScene_c::SetFaders` on a DS fader
+  object (the KuppaScript's `data_0209b294`) wraps it in `StageDsFader`, which
+  drives the DS object through its cartridge vtable and mirrors
+  `currInterp/speed` for native readers.
+- Views: `SharedFilePtr::Release` spellings, record-member collision calls
+  (`mMeshCollider.IsEnabled/Disable`), virtual deletes of models, class-source
+  file-scope declarations, virtual self calls by header slot, static members
+  as free views, dBgActor_c-derived actors, fBase_c `actorID`.
+- **Real ABI bug fixed**: natively bound functions returning `bool`/`int16_t`/
+  `uint8_t` (e.g. `Player::IsState` 0x020e308c) were called by projected code
+  as `int`-returning; the upper register bits are undefined on x86-64 and
+  AArch64. The sanitizer-free probe build read garbage (IsState "true"), so
+  its castle run diverged from ASan at frame 2. All 19 bound narrow-return
+  natives now return 32-bit values (sign/zero-extended as the ARM callee
+  does). ASan and the fast probe now agree frame by frame (RAM+heap diff).
+- `LoadExitObjects` (ov002 0x020fe420) leaves `rot.z` unset on the cartridge
+  (stack slot sp+0xc); the projection defines it as 0 so exit actors are
+  deterministic. Player `func_ov002_020c607c` (vertical line probe) and
+  `func_ov002_020ef070` (forward line hit) written from their sources with
+  the cartridge frames (dBgCh_Lin/dBgPi temporaries).
+- **CI fix**: run 42438572159 failed in `stage_runtime.cpp:2956` with clang
+  `-Wvexing-parse` (APK only). Fixed; `ndk_warning_check.py --native` now also
+  checks the hand-written runtime sources with the target's flags.
+
+Measured (private EU ROM, host, Yoshi slot, no input, `SM64DS_STAGE_FRAMES=4000`):
+the opening reaches `LoadLevel` at frame ~2473, fades out, the castle stage is
+destroyed at frame 2505 (all actors' CleanupResources/destructors, overlays
+unloaded), the next stage is constructed in the carried RAM at frame 2506:
+`dScStage_c::InitResources` loads its archives and level, and
+`ContinueKuppaScriptIfNecessary` resumes the opening script (white fade on
+the script fader). Frontier: `HUD::InitResources` (ov002 0x020fda04,
+external/sm64ds-pc/src/_ZN3HUD13InitResourcesEv.cpp: VRAM/palette loads, HUD
+record fields `unk60..unk68` that the HUD view does not type yet).
+
+Not verified / open:
+- Yoshi is not yet controllable: the reloaded stage stops at the HUD frontier.
+  Walking/jumping/camera/collision under control are not measured yet.
+- No APK built or run in this session; Android device behaviour unverified.
+- The carried space keeps the old space's native segment mappings; ASan fake
+  stack segments could be stale in ASan builds (not observed).
+
+Tests:
+- ASan/UBSan no-ROM suite (`run-stage-probe.sh`, fast=0): rc=0.
+- ASan/UBSan private-ROM full castle test (all save/character paths): rc=0.
+- ASan/UBSan private-ROM opening, Yoshi slot, 4000 frames requested: no
+  sanitizer report; LoadLevel to level 1 at frame ~2500, reload at 2506,
+  stops at the HUD::InitResources frontier (expected, unlinked).
+- `ndk_warning_check.py` (stage+packed+minigame generated units and native
+  runtime sources, clang 18, APK flags): 2361/2361 clean.
+
+Next step: HUD::InitResources (add `unk60..unk68` and `GX/GXS::LoadOBJPltt`
+to the HUD view), then follow the frontier until the opening hands control to
+Yoshi; verify walk/run/jump/land/camera with `SM64DS_STAGE_INPUT` traces for
+3600+ frames under ASan.
+
+---
+
 # Checkpoint — 2026-11-07 (session 3), Yoshi castle opening runs; Player states linked
 
 Branch: `main` (pushed). Area: **player / castle / camera / collision / audio / particles / tooling**.

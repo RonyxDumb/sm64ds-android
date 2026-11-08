@@ -83,6 +83,35 @@ def callees(path, by_name, own):
     return found
 
 
+_SYMBOL_INDEX = None
+
+
+def symbol_source_index():
+    """// @symbol markers of the upstream multi-function sources -> file."""
+    global _SYMBOL_INDEX
+    if _SYMBOL_INDEX is None:
+        _SYMBOL_INDEX = {}
+        for path in sorted((UP/'src').rglob('*.cpp')):
+            if path.parent == UP/'src':
+                continue  # single-function units are found by name
+            for name in re.findall(r'^// @symbol (\S+)$', path.read_text(errors='ignore'), re.M):
+                _SYMBOL_INDEX.setdefault(name, str(path.relative_to(ROOT)))
+    return _SYMBOL_INDEX
+
+
+def is_structor(name):
+    """_ZN<len><Class>{C1,C2,C3,D0,D1,D2}E...: a constructor or destructor."""
+    if not name.startswith('_ZN'):
+        return False
+    rest = name[3:]
+    while True:  # nested names: _ZN8Particle10SysTrackerD1Ev
+        match = re.match(r'(\d+)', rest)
+        if not match:
+            break
+        rest = rest[len(match[0])+int(match[1]):]
+    return re.match(r'(?:C[123]|D[012])E', rest) is not None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('target')
@@ -118,7 +147,9 @@ def main():
                 visit(veneer[1], depth)
             return
         if not is_linked:
-            if src and not (name.startswith('_ZN') and '::' in src.read_text()) and not re.search(r'^\w[^;\n]*\b\w+::~?\w+\s*\([^;]*$', src.read_text(), re.M):
+            if is_structor(name):
+                manual.append((name, overlay, addr, src))  # cartridge structor frame
+            elif src and not (name.startswith('_ZN') and '::' in src.read_text()) and not re.search(r'^\w[^;\n]*\b\w+::~?\w+\s*\([^;]*$', src.read_text(), re.M):
                 propose.append((name, overlay, addr, src))
             else:
                 manual.append((name, overlay, addr, src))
@@ -137,12 +168,41 @@ def main():
         path = ROOT/'android/app/src/main/cpp/runtime/stage_tail_veneers.inc'
         path.write_text(path.read_text()+''.join('VENEER(0x%08xu, 0x%08xu) // %s\n' % (a, t, n) for n, a, t in veneers))
         print('appended %d VENEER entries' % len(veneers))
-    members, sources, blocks = [], [], []
+    members, sources, blocks, player = [], [], [], []
+    structors = [m for m in manual if re.match(r'_ZNK?\d+\w+?(?:C[123]|D[012])E', m[0])
+                 and re.fullmatch(r'_ZN(\d+)(\w+)', m[0]) and is_structor(m[0])]
+    for name, overlay, addr, src in structors:
+        # Compiler-emitted structor frames (vtable stores, base and member
+        # structors, operator delete) are read from the cartridge code by
+        # hand; the recovered unit only holds the body.
+        print('STRUCT %-48s ov%03d 0x%08x structor: read the cartridge frame' % (name, overlay, addr))
+    manual = [m for m in manual if m not in structors]
+    for name, overlay, addr, src in manual:
+        # Player members with their own recovered unit: PLAYER_STATES views.
+        if src and src.suffix == '.cpp' and name.startswith('_ZN6Player') and 'Player::' in src.read_text():
+            player.append(name)
+    for name in player:
+        print('PLAYER %-48s (PLAYER_STATES view)' % name)
+    if args.apply and player:
+        anchor = 'PLAYER_STATES = [\n'
+        path = ROOT/'android/tools/stage_isolated_views.py'
+        path.write_text(path.read_text().replace(anchor, anchor+''.join("    '%s',\n" % n for n in player), 1))
+        print('appended %d PLAYER_STATES entries' % len(player))
     for name, overlay, addr, src in manual:
         if src:
             continue
         # Members recovered inside multi-function class sources (Player.cpp).
-        for rel in ('external/sm64ds-pc/src/actors/Player.cpp', 'src/game/player/Player.cpp'):
+        rels = ['external/sm64ds-pc/src/actors/Player.cpp', 'src/game/player/Player.cpp']
+        owner = re.match(r'_ZNK?(\d+)', name)
+        if owner:
+            # A class's multi-member source (external/sm64ds-pc/src/actors/<Class>.cpp).
+            cls = name[len(owner[0]):len(owner[0])+int(owner[1])]
+            if (ROOT/'external/sm64ds-pc/src/actors'/(cls+'.cpp')).exists():
+                rels.insert(0, 'external/sm64ds-pc/src/actors/'+cls+'.cpp')
+        indexed = symbol_source_index().get(name)
+        if indexed and indexed not in rels:
+            rels.append(indexed)
+        for rel in rels:
             text = (ROOT/rel).read_text()
             found = re.search(r'^(\w[\w\s\*&]*?\b(\w+)::'+re.escape(name)+r'\([^)]*\))\s*\{?\s*$', text, re.M)
             if found:
@@ -151,6 +211,12 @@ def main():
             if '// @symbol '+name+'\n' in text and not name.startswith('_ZN'):
                 blocks.append((name, overlay, rel))
                 break
+            marker = text.find('// @symbol '+name+'\n')
+            if marker >= 0 and name.startswith('_ZN'):
+                head = re.compile(r'^(\w[^\n;{()]*\b(\w+)::~?\w+\([^)]*\)(?:\s*const)?)\s*\{?\s*$', re.M).search(text, marker)
+                if head:
+                    sources.append((name, overlay, head[2], rel, head[1].strip()))
+                    break
     for entry in blocks:
         print('BLOCK  %-48s ov%03d in %s' % entry)
     if args.apply and blocks:
@@ -171,7 +237,15 @@ def main():
         cls = re.match(r'_ZNK?(\d+)', name)
         if src and cls:
             cls = name[len(cls[0]):len(cls[0])+int(cls[1])]
+
             if cls != 'Player' and (ROOT/'external/sm64ds-pc/include'/(cls+'.h')).exists():
+                method = re.search(r'(?:::|^)\s*(~?\w+)\s*\(', src.read_text().split(cls+'::', 1)[-1])
+                header = (ROOT/'external/sm64ds-pc/include'/(cls+'.h')).read_text()
+                if method and re.search(r'\bstatic\b[^;\n]*\b'+re.escape(method[1])+r'\s*\(', header):
+                    # Static members project as free views of their mangled symbol.
+                    print('STATIC %-48s ov%03d free view (no receiver)' % (name, overlay))
+                    propose.append((name, overlay, addr, src))
+                    continue
                 members.append((name, overlay, cls))
     if args.apply and members:
         anchor = 'MEMBER_UNITS = [\n'

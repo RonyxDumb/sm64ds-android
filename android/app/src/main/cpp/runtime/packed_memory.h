@@ -35,6 +35,11 @@ public:
     void release(uint32_t address);
     size_t allocations() const { return allocations_.size(); }
     size_t largest_free_span() const;
+    // A level change keeps one DS RAM: take over the previous space's heap
+    // allocations, dynamic native code handles and native data segments, so
+    // pointers stored in the carried RAM keep meaning the same objects.
+    // Must run on a freshly constructed space sharing the same heap.
+    void carry_from(Space &previous);
     void bind_code(uint32_t address, uintptr_t native);
     template<class T> void bind(uint32_t address, T *function) {
         uintptr_t bits = 0;

@@ -13,7 +13,7 @@ void abi_GX_DispOn();
 uint32_t abi_func_ov007_020b7090(uint32_t,uint32_t,uint32_t,uint32_t,uint32_t);
 void abi_func_ov007_020b7040();
 void abi_func_ov007_020b6eb4();
-uint8_t pk_frontend_command(int);
+uint32_t pk_frontend_command(int);
 void abi_func_ov007_020b697c();
 void abi_func_ov007_020b69c4();
 void abi_func_ov007_020b693c();

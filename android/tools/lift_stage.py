@@ -616,6 +616,13 @@ def level_objects():
         'void '+method+'(LVL_Overlay *overlayRef,u32 entranceIndex,MeshCollider *meshColliderRef)')
     raw=raw.replace('&overlayRef','overlayRef').replace('&meshColliderRef','meshColliderRef')
     raw=raw.replace('LVL_Overlay::','')
+    # LoadExitObjects (ov002 0x020fe48c/0x020fe49c) stores only rot.x/rot.y;
+    # the cartridge passes whatever its stack slot sp+0xc held as rot.z. A
+    # native stack has no such reproducible value: define it as 0, so exit
+    # actors are deterministic across builds instead of reading host garbage.
+    exit_rot='        rot.y = -entry->rotY;\n'
+    if raw.count(exit_rot)!=1: raise ValueError('LoadExitObjects rotation changed')
+    raw=raw.replace(exit_rot,exit_rot+'        rot.z = 0;\n')
     raw=raw.replace('&table','*table').replace('table.','table->')
     raw=re.sub(r'\bdBgW_Kc\b','MeshCollider',raw).replace('dBgW *','MeshCollider *')
     raw=raw.replace('MeshCollider::UpdateFileOffsets(*collisionFile)',

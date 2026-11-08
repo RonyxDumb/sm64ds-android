@@ -40,7 +40,7 @@ void fill32(unsigned value, Ptr<int> dst, int bytes) {
 }
 }
 extern "C" {
-uint8_t pk_frontend_command(int value) { return sm64ds::FrontendCore::current().command(value); }
+uint32_t pk_frontend_command(int value) { return sm64ds::FrontendCore::current().command(value); }
 int pk_func_02051f1c(Ptr<void> handle,unsigned archive,int entry) {
     return sm64ds::FrontendCore::current().start_sound(handle.address(),archive,entry);
 }

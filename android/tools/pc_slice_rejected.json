@@ -1056,7 +1056,7 @@
  },
  "_ZN6Player4HurtERK7Vector3j5Fix12IiEjjj": {
   "gate": 10,
-  "reason": "compile (gcc host or clang NDK flags)",
+  "reason": "hand-listed in FREE_UNITS with replacements",
   "source": ""
  },
  "_ZN6Player7CanWarpEv": {
@@ -1921,7 +1921,7 @@
  },
  "func_ov002_020d5cec": {
   "gate": 10,
-  "reason": "compile (gcc host or clang NDK flags)",
+  "reason": "hand-listed in FREE_UNITS with replacements",
   "source": ""
  },
  "func_ov002_020d6790": {
