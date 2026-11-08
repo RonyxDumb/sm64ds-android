@@ -40,10 +40,22 @@ def generate(out, manifest=None):
                 raise ValueError('invalid or duplicate projected source unit: '+unit)
             outputs.add(unit)
             dest = out/(unit + '.cpp')
+            projected_source = row['source']
+            # The checked-in stage manifest predates removal of two unused
+            # local typedefs in stage_isolated_views.py. Normalize these
+            # exact units when materializing until the manifest is refreshed.
+            if namespace == 'stage_sources' and unit in (
+                    'stage_isolated_func_ov002_020c14b8',
+                    'stage_isolated_func_ov002_020c25a8'):
+                projected_source, removed = re.subn(
+                    r'^[ \\t]*typedef struct\\s*\\{[^{}]*\\}\\s*Pair2i\\s*;[ \\t]*\\n',
+                    '', projected_source, count=1, flags=re.M)
+                if removed != 1 or re.search(r'\\bPair2i\\b', projected_source):
+                    raise ValueError('unexpected Pair2i layout in '+unit)
             text = ('#include "runtime/packed_ptr.h"\n#include "ntr/mmio.h"\n#include <cstddef>\n'
                     'namespace sm64ds::' + namespace + '::unit_' + unit + ' {\n'
                     'using namespace sm64ds::packed;\n#pragma pack(push, 4)\n' +
-                    ('#define bool int\n' if source.suffix == '.c' else '') + row['source'] +
+                    ('#define bool int\n' if source.suffix == '.c' else '') + projected_source +
                     '\n#undef bool\n#pragma pack(pop)\n}\n')
             sources.append(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
