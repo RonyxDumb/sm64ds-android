@@ -35,6 +35,14 @@ for line in (ROOT/'external/sm64ds-pc/config/arm9/overlays/ov002/symbols.txt').r
     if match:
         if match[2]=='function': SYMBOLS[match[1]]=int(match[3],16)
         else: DATA_SYMBOLS[match[1]]=int(match[3],16)
+# Castle-grounds overlays the stage loads (level ov009 and the actor
+# modules of overlay_initializers below): their function names resolve to
+# their cartridge addresses; bindings stay owned by their overlay.
+for module in (9, 62, 69, 85, 89, 94, 98, 100, 102):
+    for line in (ROOT/('external/sm64ds-pc/config/arm9/overlays/ov%03d/symbols.txt' % module)).read_text().splitlines():
+        match=re.match(r'(\S+) kind:function.*?addr:0x([0-9a-f]+)',line)
+        if match:
+            SYMBOLS.setdefault(match[1],int(match[2],16))
 # EU ov001: literal pool 0x020ab35c..0x020ab370 in the original reset.
 STAGE_DATA = {'gCapIconFlashTimer':0x020ad620, 'gCapIconDispatchLocked':0x020ad624,
               'gCapIconRequestFlags':0x020ad628, 'gCapIconDispatchFlags':0x020ad62c,

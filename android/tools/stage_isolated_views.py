@@ -5,6 +5,7 @@ mangled ABI symbols. Only the receiver changes: `this` becomes the cartridge
 object address and named fields become their header-recorded offsets. The
 body, branches and constants stay the recovered function's own.
 """
+import json
 import re
 from pathlib import Path
 
@@ -1228,3 +1229,36 @@ def slices(projected):
     for symbol, name in PLAYER_SOURCE:
         yield isolated(projected, symbol, 2, 'Player', fields,
                        rel='src/game/player/Player.cpp', name=name)
+    yield from pc_slice_units(projected)
+
+
+def pc_slice_unit(projected, entry):
+    """One unit imported from the upstream PC port's gate slices
+    (android/tools/pc_slice_import.py): the same recovered source the PC
+    host build compiles, projected like the hand-listed units above."""
+    kind, symbol, overlay = entry['kind'], entry['symbol'], entry['overlay']
+    if kind == 'free':
+        row, bindings = free_unit(projected, symbol, overlay)
+    elif kind == 'block':
+        row, bindings = free_unit(projected, symbol, overlay, rel=entry['rel'])
+    elif kind == 'member':
+        cls = entry['cls']
+        fields = player_fields() if cls == 'Player' else class_fields(cls)
+        row, bindings = isolated(projected, symbol, overlay, cls, fields)
+    elif kind == 'source_member':
+        cls = entry['cls']
+        fields = player_fields() if cls == 'Player' else class_fields(cls)
+        row, bindings = isolated(projected, symbol, overlay, cls, fields, rel=entry['rel'], name=entry['name'])
+    else:
+        raise ValueError('unknown PC slice unit kind '+kind)
+    row['unit'] = 'stage_pcslice_'+symbol
+    if not overlay:
+        for binding in bindings: binding.pop('overlay', None)
+    return row, bindings
+
+
+def pc_slice_units(projected):
+    path = ROOT/'android/tools/pc_slice_units.json'
+    if path.exists():
+        for entry in json.loads(path.read_text())['units']:
+            yield pc_slice_unit(projected, entry)

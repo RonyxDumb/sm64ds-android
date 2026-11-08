@@ -1,0 +1,4399 @@
+{
+ "units": [
+  {
+   "kind": "free",
+   "symbol": "CollectStar",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "CollectStarInCurLevel",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "CollectStarInLevel",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "DeathTable_SetBit",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "DisableSoundPlayersForCredits",
+   "overlay": 0,
+   "gate": 14
+  },
+  {
+   "kind": "free",
+   "symbol": "EnterBigBoosHaunt",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "ExitLevel",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "FUN_02029ab0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "FUN_0202a130",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "GetActorDebugName",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "GetStarCameraSetting",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "GetTeleportDestObj",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "GiveCoins",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "GiveHealth",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "GiveLives",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "GiveVsStars",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "HitDeathPlane",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "IsButtonInputValid",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "KillPlayer",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "LinkSilverStarAndStarMarker",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "LoadLevel",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "LoadLevelNoReturn",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "Math_Function_0203b14c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "Matrix4x3_ApplyInPlaceToRotationZXYExt",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "NormalizeVec3IfNonZero",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "OS_SleepThread",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "OS_WakeupThread",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "ObjectMessageIDToActualMessageID",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "ResetCrashScreen",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "SetNextLevel",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "SetNextStar",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "SetTouchScreenDelay",
+   "overlay": 0,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "Snd_SendCommand",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "StartExitCharacterWipe",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "StartMinigameMenu",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "Vec3_ApproachHorz",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "Vec3_Lsl",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "_Z23LoadMinimapChangeObjecti5Fix12IiEh",
+   "overlay": 0,
+   "gate": 14
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN10dBgW_KcMbg9Virtual08Ev",
+   "overlay": 0,
+   "cls": "dBgW_KcMbg",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18NestedHeapIterator4NextEP13HeapAllocator",
+   "overlay": 0,
+   "cls": "NestedHeapIterator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18NestedHeapIterator6RemoveEP13HeapAllocator",
+   "overlay": 0,
+   "cls": "NestedHeapIterator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18NestedHeapIterator8PreviousEP13HeapAllocator",
+   "overlay": 0,
+   "cls": "NestedHeapIterator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator10MemoryLeftEi",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator10ReallocateEPvj",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator10ResetStartEv",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator14TryResizeToFitEv",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator8ResetEndEv",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN18SolidHeapAllocator9LoadStateEj",
+   "overlay": 0,
+   "cls": "SolidHeapAllocator",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN22ExpandingHeapAllocator18MaxAllocatableSizeEi",
+   "overlay": 0,
+   "cls": "ExpandingHeapAllocator",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD15CalculateDigitsEt",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD16CleanupResourcesEv",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD16OnPendingDestroyEv",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD17RenderSilverStarsEv",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD17UpdateHealthMeterEv",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN3HUD6RenderEv",
+   "overlay": 2,
+   "cls": "HUD",
+   "gate": 27
+  },
+  {
+   "kind": "free",
+   "symbol": "_ZN4cstd10fdiv_asyncE5Fix12IiE5Fix12IiE",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4dBgW11GetVelocityER7Vector3",
+   "overlay": 0,
+   "cls": "dBgW",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4dBgW12TransformPosERK7Vector3RS0_",
+   "overlay": 0,
+   "cls": "dBgW",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4dBgW14GetAngularVelYEv",
+   "overlay": 0,
+   "cls": "dBgW",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4dBgW9Virtual08Ev",
+   "overlay": 0,
+   "cls": "dBgW",
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "_ZN5Sound17ChangeMusicVolumeEj5Fix12IiE",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Camera14GoBehindPlayerEj",
+   "overlay": 0,
+   "cls": "Camera",
+   "gate": 22
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Camera16CleanupResourcesEv",
+   "overlay": 0,
+   "cls": "Camera",
+   "gate": 13
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Camera16OnPendingDestroyEv",
+   "overlay": 0,
+   "cls": "Camera",
+   "gate": 13
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player11OpenBigDoorEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "void Player::OpenBigDoor()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12St_Null_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Null_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12St_Null_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "s32 Player::St_Null_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12St_Swim_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Swim_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12St_Swim_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Swim_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12St_Talk_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Talk_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12Unk_020ca150Eh",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::Unk_020ca150(unsigned char a)",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12Unk_020ca488Ev",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "void Player::Unk_020ca488()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player12Unk_020ca8f8Ev",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::Unk_020ca8f8()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player13OnYoshiTryEatEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 16
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player13St_Shell_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Shell_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player14EnterWhirlpoolEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "void Player::EnterWhirlpool()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player14IsFrontSlidingEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 16
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player14St_OnWall_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_OnWall_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player14St_Squish_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Squish_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15InitVanishLuigiEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "void Player::InitVanishLuigi()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_DeadHit_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_DeadHit_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_DeadPit_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_DeadPit_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_Null_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "s32 Player::St_Null_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_Respawn_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Respawn_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_Swim_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Swim_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player15St_Talk_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Talk_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16IncMegaKillCountEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "void Player::IncMegaKillCount()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player16InitWingFeathersEb",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player16IsInsideOfCannonEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 27
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16St_Climb_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Climb_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16St_DebugFly_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_DebugFly_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16St_DebugFly_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_DebugFly_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16St_Shell_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Shell_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16St_Teleport_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Teleport_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player16TryEnterStarDoorER7Vector3s",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::TryEnterStarDoor(Vector3 & pos_, short kind)",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player17LostGrabbedObjectEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 16
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_EndingFly_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_EndingFly_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_EndingFly_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_EndingFly_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_Headstand_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_Headstand_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_HurtWater_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_HurtWater_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_HurtWater_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_HurtWater_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player17St_NoControl_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_NoControl_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player17St_PunchKick_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player17St_SlideKick_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player17St_SlideKick_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player18St_CameraZoom_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_CameraZoom_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player18St_YoshiPower_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player20St_CeilingGrate_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_CeilingGrate_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player20St_NoControl_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_NoControl_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player21IsOpeningDoorWithStarEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::IsOpeningDoorWithStar()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player21St_CameraZoom_CleanupEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_CameraZoom_Cleanup()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player21St_OpeningWakeUp_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_OpeningWakeUp_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player21St_StuckInGround_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_StuckInGround_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player22IsBeingShotOutOfCannonEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player23St_MetalWaterWater_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_MetalWaterWater_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player24St_BowserEarthquake_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_BowserEarthquake_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player24St_BowserEarthquake_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_BowserEarthquake_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player24St_MetalWaterGround_InitEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_MetalWaterGround_Init()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player24St_MetalWaterGround_MainEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::St_MetalWaterGround_Main()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player24TryExitWhiteDoorWithStarEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::TryExitWhiteDoorWithStar()",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN6Player9DropActorEv",
+   "overlay": 2,
+   "cls": "Player",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player9IsOnShellEv",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::IsOnShell()",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN6Player9StartTalkER7fBase_cb",
+   "overlay": 2,
+   "cls": "Player",
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "name": "int Player::StartTalk(fBase_c & actor_, bool b_)",
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN7da1up_c13OnYoshiTryEatEv",
+   "overlay": 2,
+   "cls": "da1up_c",
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "name": "s32 da1up_c::OnYoshiTryEat()",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN7fBase_c16CleanupResourcesEv",
+   "overlay": 0,
+   "cls": "fBase_c",
+   "gate": 20
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8SignPostD0Ev",
+   "overlay": 2,
+   "cls": "SignPost",
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "_ZN8dActor_c10EarthquakeERK7Vector35Fix12IiE",
+   "overlay": 0,
+   "gate": 19
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8dActor_c11UntrackStarERa",
+   "overlay": 0,
+   "cls": "dActor_c",
+   "gate": 10
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8dActor_c13OnYoshiTryEatEv",
+   "overlay": 0,
+   "cls": "dActor_c",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8dActor_c16TriplePoofDustAtERK7Vector3",
+   "overlay": 0,
+   "cls": "dActor_c",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8dActor_c19DisappearPoofDustAtERK7Vector3",
+   "overlay": 0,
+   "cls": "dActor_c",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN8dActor_c9TrackStarEjj",
+   "overlay": 0,
+   "cls": "dActor_c",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9PowerStar13AddStarMarkerEv",
+   "overlay": 2,
+   "cls": "PowerStar",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap10VGetNodeIDEv",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap10VSetNodeIDEj",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap11VDeallocateEPv",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap7VIntactEv",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap7VRescueEv",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9SolidHeap7VSizeofEPv",
+   "overlay": 0,
+   "cls": "SolidHeap",
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02005060",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02005098",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020050dc",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02005110",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02005324",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020089d8",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02008a70",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02008abc",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02008b08",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02008cb4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009138",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020091f8",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020092c4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020094c0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020094e4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009540",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020095c4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020095e4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020097ec",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200985c",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200987c",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020098b8",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020098e0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009a8c",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009aa8",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009d30",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009d70",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009db0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009dd0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009df0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009e10",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009e30",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02009e50",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200af20",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200b0fc",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200b590",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200b798",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200b990",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200bb28",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200bec4",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200c394",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200c9e0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200ca14",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200cbe0",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d064",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d10c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d148",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d1e4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d3f8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d438",
+   "overlay": 0,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d474",
+   "overlay": 0,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d4b0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d508",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d544",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d580",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d5c0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d5fc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d63c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d678",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d6b4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d6f0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d72c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d768",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d7a4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200d89c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0200ee68",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02010e78",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02011654",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201186c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02011974",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020119c8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02011a28",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02011c8c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02011d5c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02012194",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201267c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201277c",
+   "overlay": 0,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02012d64",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201361c",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02013868",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02013890",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020138dc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02013944",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02013f28",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02013f4c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201473c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020147bc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02014f44",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02014f5c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02016acc",
+   "overlay": 0,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02018ac4",
+   "overlay": 0,
+   "gate": 25
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201a03c",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201a8b4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201a96c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201a9ec",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201a9fc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201aa50",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201aaa4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201ab6c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201aca4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201adac",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201f32c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0201fb4c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02020388",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020229f0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02022c80",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02022cbc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02022d44",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0202e118",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203b358",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203b394",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203ce80",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203cf00",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203cf94",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203d73c",
+   "overlay": 0,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203d7d4",
+   "overlay": 0,
+   "gate": 14
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203da80",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0203e0ac",
+   "overlay": 0,
+   "gate": 13
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020427c4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02042ffc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02043060",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02043098",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02043180",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02043f4c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020441bc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048528",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048720",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048908",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048e54",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048e74",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048e94",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048f34",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02048fd4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204921c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02049c48",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204ebb8",
+   "overlay": 0,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f1e8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f214",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f364",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f3e0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f400",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f460",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f4bc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f504",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f5a0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f600",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f630",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f6f8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f720",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f82c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f86c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f89c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204f914",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204fafc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0204fc40",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050950",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050994",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020509d8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050d2c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050d3c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050fb0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02050fd4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051064",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020511d4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051244",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020513a8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020513e4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051420",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051454",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020514b4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051514",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051574",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020515d4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051634",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020516d4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205179c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020518a0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020518dc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051918",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051a28",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051a48",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051a68",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051a88",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02051bd0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02052420",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02052438",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02052494",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020524c4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02056e4c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02057f54",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205801c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020587dc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02059834",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02059950",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02059a60",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02059bb0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02059c18",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205a8c4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205a924",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205a98c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205a9b8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205a9e4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205aaf4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205acd4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205acfc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ad24",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ad3c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ad98",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205adc4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205adf8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ae30",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205af00",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205af20",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205af4c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205af78",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205afb4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205afe0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b070",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b1a4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b1d8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b274",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b5d4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b608",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b6b0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b6f4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205b78c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205c5e4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205c788",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205cdf4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205cf5c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205cfa4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205d044",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205d368",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205d3f4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205d8d8",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205d920",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205f8b0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205f958",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205f994",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205fbd0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ff00",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ff08",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0205ff20",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e184",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e218",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e2cc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e310",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e3dc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206e450",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206f338",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_0206fd6c",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020706b0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020707cc",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020707f4",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02070b98",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02070c68",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02070ec0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020712a0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02071364",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02071510",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_020715e0",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02071698",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_02071708",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020aeee4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020aefa4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af0c0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af1dc",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af218",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af474",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af684",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af724",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af838",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020af950",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afa98",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afbb4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afc44",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afc68",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afd10",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afde4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020afe4c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/da1up_c.cpp",
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020b18f0",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bae9c",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bafc0",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bb060",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bb42c",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bb520",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bb9f0",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bb9fc",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bba24",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bbac8",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bbc78",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020bbd50",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bd8ac",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bd8c0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bd928",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bd9ec",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bda48",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bdf8c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020beb38",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bec84",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bec9c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020bf340",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c1ad8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c1c84",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c1e44",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c200c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3148",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c37a4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3a48",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3cf0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3dbc",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3e8c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3ea0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3f18",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c3f2c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c43c4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c5444",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c56f0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c5cd8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c6908",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c6e14",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c6fe4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c7194",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c7f10",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c7ff8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8540",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8714",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c897c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8a4c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8b54",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8cb0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8d14",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c8f0c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c91bc",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c924c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9288",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c92fc",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c94a4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c965c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9718",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c97e0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c97f8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9840",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c98a4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9a04",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9ac0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9b10",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9b5c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9c00",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9cc0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9d1c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9d68",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9de4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c9e18",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ca0f4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ca108",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ca270",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cac60",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cb400",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cb474",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cbea8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cc01c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cc05c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cc16c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cc1f4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cc660",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd190",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd218",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd28c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd2c4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd308",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd364",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd39c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd3e0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cd71c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ce5f8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ceaf4",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020ceb54",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cec2c",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cedb0",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cf2f8",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cf384",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020cf700",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020cfea4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d0948",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d0d2c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d1204",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d12b0",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d1f78",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d454c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d5ab4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d5ed0",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d5f34",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d6334",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d6368",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d6dac",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d7030",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d71ec",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d8838",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d8854",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d8a50",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d98b4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d99a4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d9a4c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d9aac",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d9c70",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020d9dcc",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020da95c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020daa74",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dacb4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020db8d8",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbaec",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbbc0",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbc94",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbd94",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbe70",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dbf4c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dc020",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dc09c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dcafc",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dd5ec",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dd8f4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020dd908",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020de3d0",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020de428",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020de968",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020df300",
+   "overlay": 2,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020df8f0",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e0f38",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e1c20",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e200c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e25d4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e2ba8",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e496c",
+   "overlay": 2,
+   "gate": 16
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e6fbc",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e7090",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e7218",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e7554",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020e9464",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ea3a4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ec610",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ec628",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ec640",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ec728",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020ec80c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020edca4",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020f0918",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020fea4c",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov002_020fea68",
+   "overlay": 2,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "nds_print",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "nds_printt",
+   "overlay": 0,
+   "gate": 10
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN12daStarGate_c16OnPendingDestroyEv",
+   "overlay": 100,
+   "cls": "daStarGate_c",
+   "rel": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp",
+   "name": "void daStarGate_c::OnPendingDestroy()",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN14UnchainedChomp16OnAimedAtWithEggEv",
+   "overlay": 100,
+   "cls": "UnchainedChomp",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN14UnchainedChomp16OnPendingDestroyEv",
+   "overlay": 100,
+   "cls": "UnchainedChomp",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4Bird16OnPendingDestroyEv",
+   "overlay": 9,
+   "cls": "Bird",
+   "gate": 17
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN4Fish16OnPendingDestroyEv",
+   "overlay": 100,
+   "cls": "Fish",
+   "gate": 21
+  },
+  {
+   "kind": "source_member",
+   "symbol": "_ZN7daBmb_c16OnAimedAtWithEggEv",
+   "overlay": 102,
+   "cls": "daBmb_c",
+   "rel": "external/sm64ds-pc/src/actors/daBmb_c.cpp",
+   "name": "s32 daBmb_c::OnAimedAtWithEgg()",
+   "gate": 19
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly16CleanupResourcesEv",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly16OnPendingDestroyEv",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State0Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State1Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State2Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State3Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State4Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State5Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State6Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9Butterfly6State7Ev",
+   "overlay": 100,
+   "cls": "Butterfly",
+   "gate": 21
+  },
+  {
+   "kind": "member",
+   "symbol": "_ZN9RabbitKey16OnPendingDestroyEv",
+   "overlay": 85,
+   "cls": "RabbitKey",
+   "gate": 18
+  },
+  {
+   "kind": "block",
+   "symbol": "daObj_Mip_Key_c_classInit",
+   "overlay": 85,
+   "rel": "external/sm64ds-pc/src/d_a_obj_mip_key.c",
+   "gate": 18
+  },
+  {
+   "kind": "block",
+   "symbol": "func_ov002_020c7cbc",
+   "overlay": 2,
+   "rel": "external/sm64ds-pc/src/actors/Player.cpp",
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov009_02111224",
+   "overlay": 9,
+   "gate": 17
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov009_02111234",
+   "overlay": 9,
+   "gate": 17
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov009_021115d8",
+   "overlay": 9,
+   "gate": 17
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov009_021116ec",
+   "overlay": 9,
+   "gate": 17
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212cd0c",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212cd80",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d038",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d24c",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d2b8",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d724",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d73c",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d8ec",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212d9b8",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212db04",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212dbdc",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212dcfc",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212ddc4",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e078",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e180",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e19c",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e2ec",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e310",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e480",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e4a4",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e5ac",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e720",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e778",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov085_0212e858",
+   "overlay": 85,
+   "gate": 18
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov089_0213115c",
+   "overlay": 89,
+   "gate": 14
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov098_0213a984",
+   "overlay": 98,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov098_0213aa28",
+   "overlay": 98,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov098_0213ad08",
+   "overlay": 98,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov098_0213ade8",
+   "overlay": 98,
+   "gate": 19
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_0214344c",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021435e8",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021437d4",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02143aa4",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02143ae0",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02143b68",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144468",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021444e8",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021446f8",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144730",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144950",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021449c8",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144a38",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144bf4",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144c6c",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144ccc",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144f84",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02144fcc",
+   "overlay": 100,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02145014",
+   "overlay": 100,
+   "gate": 10
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02145070",
+   "overlay": 100,
+   "gate": 14
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02145080",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02145170",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021451c4",
+   "overlay": 100,
+   "gate": 22
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02146280",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_0214629c",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_0214639c",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02146468",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021464f4",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02146640",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021467d4",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_021467e8",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov100_02146828",
+   "overlay": 100,
+   "gate": 21
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov102_02149878",
+   "overlay": 102,
+   "gate": 23
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov102_021498c4",
+   "overlay": 102,
+   "gate": 23
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov102_02149c78",
+   "overlay": 102,
+   "gate": 23
+  },
+  {
+   "kind": "free",
+   "symbol": "func_ov102_02149ea4",
+   "overlay": 102,
+   "gate": 23
+  }
+ ]
+}

@@ -17,6 +17,8 @@ def main():
     parser.add_argument('--jobs',type=int,default=min(4,os.cpu_count() or 1))
     parser.add_argument('--incremental',action='store_true',
                         help='Reuse objects only when source, headers and compiler options match.')
+    parser.add_argument('--no-sanitize',action='store_true',
+                        help='Fast probe build for frontier discovery; verification keeps ASan/UBSan.')
     args=parser.parse_args()
     args.out.mkdir(parents=True,exist_ok=True)
     flags=['g++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-Wno-unknown-pragmas',
@@ -26,6 +28,12 @@ def main():
            '-fno-strict-aliasing','-ffunction-sections','-fdata-sections',
            '-fsanitize=address,undefined','-g','-Iandroid/app/src/main/cpp',
            '-Iport/ntr/include','-I'+str(args.generated/'include'),'-Iinclude']
+    if args.no_sanitize:
+        # Probe build only: gcc's flow analysis without sanitizers reports
+        # maybe-uninitialized through packed Ptr<> loads in units the
+        # verification (ASan) build and clang accept unchanged.
+        flags.remove('-fsanitize=address,undefined')
+        flags.append('-Wno-maybe-uninitialized')
     # Content checks also catch generated files rewritten with older timestamps.
     # Any project/generated header edit invalidates the cache, including inline
     # functions in the packed-pointer and hardware-register implementations.

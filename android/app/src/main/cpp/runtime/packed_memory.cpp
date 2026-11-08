@@ -248,6 +248,12 @@ uint32_t Space::resize(uint32_t a,uint32_t bytes) {
     return heap_.resize(at->second,bytes);
 }
 void Space::bind_code(uint32_t a, uintptr_t p) {
+    if (a && p && code_.count(a) && code_.at(a)!=p && std::getenv("SM64DS_REPORT_BIND_CONFLICTS")) {
+        // Diagnostics only (tooling): list every conflict in one run and keep
+        // the first binding. Normal runs still reject conflicts below.
+        std::fprintf(stderr,"bind conflict 0x%08x\n",a);
+        return;
+    }
     if (!a || !p || (code_.count(a) && code_.at(a)!=p))
         throw std::runtime_error("Invalid/conflicting native code binding: "+std::to_string(a));
     code_[a]=p;

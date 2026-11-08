@@ -1,0 +1,2472 @@
+{
+ "DMASyncHalfTransfer": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "DecIfAbove0_Byte": {
+  "gate": 10,
+  "reason": "already defined natively/frontend/minigame",
+  "source": ""
+ },
+ "EndKuppaScript": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "FUN_02029934": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/FUN_02029934.cpp"
+ },
+ "FUN_02029980": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/FUN_02029980.cpp"
+ },
+ "FUN_020299f4": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/FUN_020299f4.cpp"
+ },
+ "LoadSilverStarAndNumber": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "SetBg1Offset": {
+  "gate": 10,
+  "reason": "already defined natively/frontend/minigame",
+  "source": ""
+ },
+ "ShowCrashScreen": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "SubVec3": {
+  "gate": 10,
+  "reason": "already defined natively/frontend/minigame",
+  "source": ""
+ },
+ "UnloadKeyModels": {
+  "gate": 22,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_Z14ApproachLinearR7Vector3RKS_5Fix12IiE": {
+  "gate": 13,
+  "reason": "ValueError: unsupported declarator reference_declarator: & dst",
+  "source": "src/_Z14ApproachLinearR7Vector3RKS_5Fix12IiE.cpp"
+ },
+ "_ZN10ModelAnim24CopyERKS_Pcj": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgActor_c13IsClsnInRangeE5Fix12IiES1_": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_c14KillByMegaCharER6Player": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_c20UpdateKillByMegaCharEsss5Fix12IiE": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_c21IsClsnInRangeOnScreenE5Fix12IiES1_": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_c4KillEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_cC2Ev": {
+  "gate": 16,
+  "reason": "structor or static member in a class source",
+  "source": "src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_cD0Ev": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN10dBgActor_cD0Ev",
+  "source": "src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgActor_cD1Ev": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN10dBgActor_cD1Ev",
+  "source": "src/actors/dBgActor_c.cpp"
+ },
+ "_ZN10dBgCh_Actr16UpdateContinuousEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgCh_Actr20UpdateDiscreteNoLavaEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgCh_Actr22UpdateContinuousNoLavaEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgCh_Actr22UpdateDiscreteNoLava_2Ev": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgCh_ActrC1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN10dBgCh_ActrC1Ev.cpp"
+ },
+ "_ZN10dBgCh_ActrD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN10dBgCh_ActrD1Ev.cpp"
+ },
+ "_ZN10dBgW_KcMbg17GetTriangleOriginEsR7Vector3": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN10dBgW_KcMbgD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN10dBgW_KcMbgD1Ev.cpp"
+ },
+ "_ZN10dCcAcPos_cC1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN10dCcAcPos_cC1Ev.cpp"
+ },
+ "_ZN10dCcAcPos_cD1Ev": {
+  "gate": 21,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN10dCcAcPos_cD1Ev.cpp"
+ },
+ "_ZN10daMcFlag_c16CleanupResourcesEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_mc_flag.cpp"
+ },
+ "_ZN10daMcFlag_c6RenderEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_mc_flag.cpp"
+ },
+ "_ZN10daMcFlag_c8BehaviorEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_mc_flag.cpp"
+ },
+ "_ZN10daMcFlag_cD0Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN10daMcFlag_cD0Ev",
+  "source": "src/game/actors/d_a_mc_flag.cpp"
+ },
+ "_ZN10daMcFlag_cD1Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN10daMcFlag_cD1Ev",
+  "source": "src/game/actors/d_a_mc_flag.cpp"
+ },
+ "_ZN11ShadowModelD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN11ShadowModelD1Ev.cpp"
+ },
+ "_ZN11daChScene_c8BehaviorEv": {
+  "gate": 20,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_ch_scene.cpp"
+ },
+ "_ZN11fLiNdBaPr_cD1Ev": {
+  "gate": 13,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN11fLiNdBaPr_cD1Ev.cpp"
+ },
+ "_ZN12dEnemyBase_c12UpdateWMClsnER10dBgCh_Actrj": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN12dEnemyBase_cC2Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN12dEnemyBase_cC2Ev.cpp"
+ },
+ "_ZN12daStarGate_c11ChangeStateEPNS_5StateEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c11TryOpenDoorEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c12St_Wait_MainEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c13InitResourcesEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c16CleanupResourcesEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c17IsInFrontOfPlayerEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c17St_OpenClose_InitEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c17St_OpenClose_MainEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c17St_Unlocking_InitEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c17St_Unlocking_MainEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c18St_StayClosed_MainEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c23St_TalkingToPlayer_InitEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c23St_TalkingToPlayer_MainEP6Player": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c26CalculateRelativePlayerPosEv": {
+  "gate": 21,
+  "reason": "binding without a generated entry point: abi__ZN12daStarGate_c26CalculateRelativePlayerPosEv",
+  "source": "src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c6RenderEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN12daStarGate_c8BehaviorEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_star_gate.cpp"
+ },
+ "_ZN13BigBrickBlock15OnGroundPoundedER8dActor_c": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlock16CleanupResourcesEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlock17NotifyLinkedActorEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlock4KillEv": {
+  "gate": 16,
+  "reason": "ValueError: unsupported declarator reference_declarator: &pos",
+  "source": "src/_ZN13BigBrickBlock4KillEv.cpp"
+ },
+ "_ZN13BigBrickBlock6RenderEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlock8BehaviorEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlock8OnKickedER8dActor_c": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13BigBrickBlockD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN13BigBrickBlockD1Ev.cpp"
+ },
+ "_ZN13CLPS_BlockRefD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN13CLPS_BlockRefD1Ev.cpp"
+ },
+ "_ZN13ExpandingHeap11VMemoryLeftEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13ExpandingHeap14VDeallocateAllEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13ExpandingHeap19VMaxAllocatableSizeEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13ExpandingHeap22VMaxAllocationUnitSizeEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13ExpandingHeap8VDestroyEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13ExpandingHeapD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN13ExpandingHeapD1Ev.cpp"
+ },
+ "_ZN13HeapAllocator6RemoveEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13HeapAllocator7DestroyEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN13QuestionBlock16CleanupResourcesEv": {
+  "gate": 23,
+  "reason": "ValueError: unresolved frontend datum: gPFlowerOpenModelFile",
+  "source": "src/_ZN13QuestionBlock16CleanupResourcesEv.cpp"
+ },
+ "_ZN13QuestionBlock8BehaviorEv": {
+  "gate": 23,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN14UnchainedChomp16CleanupResourcesEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN14daObjMcWater_cD0Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN14daObjMcWater_cD0Ev",
+  "source": "src/game/actors/d_a_obj_mc_water.cpp"
+ },
+ "_ZN14daObjMcWater_cD1Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN14daObjMcWater_cD1Ev",
+  "source": "src/game/actors/d_a_obj_mc_water.cpp"
+ },
+ "_ZN15MaterialChangerC1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN15MaterialChangerC1Ev.cpp"
+ },
+ "_ZN15MaterialChangerD1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN15MaterialChangerD1Ev.cpp"
+ },
+ "_ZN16daObjWaterfall_c8BehaviorEv": {
+  "gate": 20,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_obj_waterfall.cpp"
+ },
+ "_ZN18SolidHeapAllocator16AllocateForwardsEPvjj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN18SolidHeapAllocator16AllocateForwardsEPvjj",
+  "source": "src/_ZN18SolidHeapAllocator16AllocateForwardsEPvjj.cpp"
+ },
+ "_ZN18SolidHeapAllocator17AllocateBackwardsEPvjj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN18SolidHeapAllocator17AllocateBackwardsEPvjj",
+  "source": "src/_ZN18SolidHeapAllocator17AllocateBackwardsEPvjj.cpp"
+ },
+ "_ZN18SolidHeapAllocator5ResetEj": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN18SolidHeapAllocator8AllocateEji": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN18SolidHeapAllocator8AllocateEji",
+  "source": "src/_ZN18SolidHeapAllocator8AllocateEji.cpp"
+ },
+ "_ZN18SolidHeapAllocator9SaveStateEj": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN18SolidHeapAllocatorC1EPvj": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN18SolidHeapAllocatorC1EPvj.cpp"
+ },
+ "_ZN18daObjMc_Metalnet_c16CleanupResourcesEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_obj_mc_metalnet.cpp"
+ },
+ "_ZN18daObjMc_Metalnet_c8BehaviorEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_obj_mc_metalnet.cpp"
+ },
+ "_ZN18daObjMc_Metalnet_cD0Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN18daObjMc_Metalnet_cD0Ev",
+  "source": "src/game/actors/d_a_obj_mc_metalnet.cpp"
+ },
+ "_ZN18daObjMc_Metalnet_cD1Ev": {
+  "gate": 17,
+  "reason": "binding without a generated entry point: abi__ZN18daObjMc_Metalnet_cD1Ev",
+  "source": "src/game/actors/d_a_obj_mc_metalnet.cpp"
+ },
+ "_ZN22ExpandingHeapAllocator13DeallocateAllEPFvPvPS_jEj": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN22ExpandingHeapAllocator16InvokeDeallocateEPvPS_j": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN22ExpandingHeapAllocator16InvokeDeallocateEPvPS_j.cpp"
+ },
+ "_ZN3HUD13RenderVsTimerEv": {
+  "gate": 27,
+  "reason": "ValueError: unresolved frontend datum: _ZN3OAM7VS_TIMEE",
+  "source": "src/_ZN3HUD13RenderVsTimerEv.cpp"
+ },
+ "_ZN3HUD13UpdateVsTimerEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD14RenderRedCoinsEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD15RenderCoinCountEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD15RenderLifeCountEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD15RenderStarCountEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD15RenderTimeTimerEv": {
+  "gate": 27,
+  "reason": "ValueError: unresolved frontend datum: _ZN3OAM4TIMEE",
+  "source": "src/_ZN3HUD15RenderTimeTimerEv.cpp"
+ },
+ "_ZN3HUD17RenderHealthMeterEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD19RenderCameraButtonsEv": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3HUD8BehaviorEv": {
+  "gate": 27,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/_ZN3HUD8BehaviorEv.cpp"
+ },
+ "_ZN3HUDD1Ev": {
+  "gate": 27,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN3HUDD1Ev.cpp"
+ },
+ "_ZN3OAM12EnableSubOAMEv": {
+  "gate": 25,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN3OAM12EnableSubOAMEv.cpp"
+ },
+ "_ZN3OAM16LoadAffineParamsEP7OamAttrPiP9Matrix2x2": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN3OAM16LoadAffineParamsEP7OamAttrPiP9Matrix2x2.cpp"
+ },
+ "_ZN3OAM5ResetEv": {
+  "gate": 25,
+  "reason": "binding without a generated entry point: abi__ZN3OAM5ResetEv",
+  "source": "src/_ZN3OAM5ResetEv.cpp"
+ },
+ "_ZN3OAM6RenderEbP7OamAttriiii5Fix12IiEi": {
+  "gate": 27,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN3OAM6RenderEbP7OamAttriiiiP9Matrix2x2": {
+  "gate": 27,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN3OAM6RenderEbP7OamAttriiiiP9Matrix2x2.cpp"
+ },
+ "_ZN3OAM9RenderSubEP7OamAttriiii": {
+  "gate": 25,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN3OAM9RenderSubEP7OamAttriiii.cpp"
+ },
+ "_ZN4Bird16CleanupResourcesEv": {
+  "gate": 17,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Fish16CleanupResourcesEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap15CreateSolidHeapEjPS_i": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN4Heap15CreateSolidHeapEjPS_i.cpp"
+ },
+ "_ZN4Heap20RestoreFromTemporaryEv": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN4Heap20RestoreFromTemporaryEv.cpp"
+ },
+ "_ZN4Heap21MaxAllocationUnitSizeEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap23SetupSolidHeapAsDefaultEjPS_i": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN4Heap23SetupSolidHeapAsDefaultEjPS_i.cpp"
+ },
+ "_ZN4Heap24CreateSolidHeapAllocatorEPvjj": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN4Heap24CreateSolidHeapAllocatorEPvjj.cpp"
+ },
+ "_ZN4Heap28InitializeSolidHeapAsDefaultEjPS_i": {
+  "gate": 16,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN4Heap28InitializeSolidHeapAsDefaultEjPS_i.cpp"
+ },
+ "_ZN4Heap6IntactEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap6RescueEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap6SizeofEPv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap7DestroyEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4Heap8_DestroyEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4ViewD0Ev": {
+  "gate": 13,
+  "reason": "binding without a generated entry point: abi__ZN4ViewD0Ev",
+  "source": "src/_ZN4ViewD0Ev.cpp"
+ },
+ "_ZN4ViewD1Ev": {
+  "gate": 13,
+  "reason": "binding without a generated entry point: abi__ZN4ViewD1Ev",
+  "source": "src/_ZN4ViewD1Ev.cpp"
+ },
+ "_ZN4cstd6strchrEPKcc": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN4cstd6strchrEPKcc",
+  "source": "src/_ZN4cstd6strchrEPKcc.cpp"
+ },
+ "_ZN4cstd6strcmpEPKcS1_": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4cstd7strncpyEPcPKcj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN4cstd7strncpyEPcPKcj",
+  "source": "src/_ZN4cstd7strncpyEPcPKcj.cpp"
+ },
+ "_ZN4dBgW10BeforeClsnER5dBgPiP8dActor_cR7Vector3P10Vector3_16S7_": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4dBgW10DetectClsnER12dBgCh_SphCrr": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4dBgW10DetectClsnER9dBgCh_Gnd": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4dBgW10DetectClsnER9dBgCh_Lin": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN4dBgWD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN4dBgWD1Ev.cpp"
+ },
+ "_ZN5Event6SetBitEj": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN5Event6SetBitEj",
+  "source": "src/_ZN5Event6SetBitEj.cpp"
+ },
+ "_ZN5Model14SetPolygonModeEi": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN5ModelD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN5ModelD1Ev.cpp"
+ },
+ "_ZN5Sound17InfoSequenceEntry9GetWithIDEj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN5Sound17InfoSequenceEntry9GetWithIDEj",
+  "source": "src/_ZN5Sound17InfoSequenceEntry9GetWithIDEj.cpp"
+ },
+ "_ZN5Sound23InfoInstrumentBankEntry9GetWithIDEj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN5Sound23InfoInstrumentBankEntry9GetWithIDEj",
+  "source": "src/_ZN5Sound23InfoInstrumentBankEntry9GetWithIDEj.cpp"
+ },
+ "_ZN5Sound6Player19SetPlayableSeqCountEii": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN5Sound6Player19SetPlayableSeqCountEii",
+  "source": "src/_ZN5Sound6Player19SetPlayableSeqCountEii.cpp"
+ },
+ "_ZN5Sound8EndMusicEjj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN5Sound8EndMusicEjj",
+  "source": "src/_ZN5Sound8EndMusicEjj.cpp"
+ },
+ "_ZN5Sound8SetMusicEjj": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN5Sound8SetMusicEjj",
+  "source": "src/_ZN5Sound8SetMusicEjj.cpp"
+ },
+ "_ZN5Stage10CheckInputEv": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN5Stage10CheckInputEv.cpp"
+ },
+ "_ZN5Stage16CheckCameraInputEv": {
+  "gate": 25,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN5Stage21RenderVsModeCountdownEv": {
+  "gate": 27,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN5Stage21RenderVsModeCountdownEv.cpp"
+ },
+ "_ZN5dCc_cC2Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN5dCc_cC2Ev.cpp"
+ },
+ "_ZN6Camera10LookAtExitER8dActor_c": {
+  "gate": 20,
+  "reason": "ValueError: unsupported declarator reference_declarator: &actor",
+  "source": "src/_ZN6Camera10LookAtExitER8dActor_c.cpp"
+ },
+ "_ZN6Camera25SaveCameraStateBeforeTalkEv": {
+  "gate": 13,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6CameraD1Ev": {
+  "gate": 13,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN6CameraD1Ev.cpp"
+ },
+ "_ZN6Cannon16CleanupResourcesEv": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player11ShowMessageER7fBase_cjPK7Vector3hh": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player11St_Fly_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/_ZN6Player11St_Fly_MainEv.cpp"
+ },
+ "_ZN6Player12CanEnterDoorEh": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player12GetTalkStateEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player12ShowMessage2ER7fBase_cjPK7Vector3hh": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player12St_Talk_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: untyped member unk_762 in external/sm64ds-pc/src/actors/Player.cpp",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player12Unk_020c4f40Et": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player12Unk_020c6a10Ej": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player13St_Climb_InitEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player13St_Climb_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player13St_Shell_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: untyped member unk_766 in external/sm64ds-pc/src/actors/Player.cpp",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player13St_Throw_InitEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/_ZN6Player13St_Throw_InitEv.cpp"
+ },
+ "_ZN6Player13St_Throw_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/_ZN6Player13St_Throw_MainEv.cpp"
+ },
+ "_ZN6Player13TryTalkToDoorEh": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player14InitMetalWarioEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player14St_Cannon_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player14St_OnWall_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player14St_Squish_InitEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player14St_Thrown_InitEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/_ZN6Player14St_Thrown_InitEv.cpp"
+ },
+ "_ZN6Player14St_Thrown_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/_ZN6Player14St_Thrown_MainEv.cpp"
+ },
+ "_ZN6Player15JumpIntoBooCageER7Vector3": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player15St_Balloon_InitEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player15St_Balloon_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/_ZN6Player15St_Balloon_MainEv.cpp"
+ },
+ "_ZN6Player15St_DeadHit_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player15St_DeadPit_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player15St_Grabbed_InitEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player15St_Respawn_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player15St_Spin_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player15St_Swallow_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v01",
+  "source": "src/_ZN6Player15St_Swallow_MainEv.cpp"
+ },
+ "_ZN6Player16SetRealCharacterEj": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: &f",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player16St_LongJump_InitEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/_ZN6Player16St_LongJump_InitEv.cpp"
+ },
+ "_ZN6Player16St_Teleport_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player16TryTalkToKeyDoorEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17PlayMammaMiaSoundEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17SetNoControlStateEhih": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17St_Cannon_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player17St_Headstand_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17St_HoldLight_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player17St_NoControl_InitEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17St_Squish_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player17St_Thrown_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player17St_WindCarry_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & st",
+  "source": "src/_ZN6Player17St_WindCarry_MainEv.cpp"
+ },
+ "_ZN6Player18HasFinishedTalkingEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player18SetNewHatCharacterEjjb": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & s",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player18St_CameraZoom_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player18St_Grabbed_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player18St_YoshiPower_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: no member body in external/sm64ds-pc/src/_ZN6Player18St_YoshiPower_MainEv.cpp",
+  "source": "src/_ZN6Player18St_YoshiPower_MainEv.cpp"
+ },
+ "_ZN6Player18TurnOffToonShadingEj": {
+  "gate": 10,
+  "reason": "ValueError: untyped member unk_27c in external/sm64ds-pc/src/actors/Player.cpp",
+  "source": "src/actors/Player.cpp"
+ },
+ "_ZN6Player19St_CrazedCrate_InitEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player19St_CrazedCrate_MainEv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/_ZN6Player19St_CrazedCrate_MainEv.cpp"
+ },
+ "_ZN6Player19St_GroundPound_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player19St_TornadoSpin_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player20St_CeilingGrate_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player20St_InYoshiMouth_InitEv": {
+  "gate": 10,
+  "reason": "ValueError: no member body in external/sm64ds-pc/src/_ZN6Player20St_InYoshiMouth_InitEv.cpp",
+  "source": "src/_ZN6Player20St_InYoshiMouth_InitEv.cpp"
+ },
+ "_ZN6Player20St_InYoshiMouth_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player21St_OpeningWakeUp_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player21St_StuckInGround_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player21St_WaitQuicksand_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player22St_CrazedCrate_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player22St_GroundPound_CleanupEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player23St_MetalWaterWater_MainEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player4HurtERK7Vector3j5Fix12IiEjjj": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player7CanWarpEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN6Player7TryGrabER8dActor_c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN6Player8CanPauseEv": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "_ZN7Message11PrepareTalkEv": {
+  "gate": 18,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN7Message11PrepareTalkEv.cpp"
+ },
+ "_ZN7Message12UpdateWindowEv": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN7Message12UpdateWindowEv.cpp"
+ },
+ "_ZN7Message13DisplaySavingEt": {
+  "gate": 18,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN7Message13DisplaySavingEt.cpp"
+ },
+ "_ZN7Message7EndTalkEv": {
+  "gate": 18,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN7Message7EndTalkEv.cpp"
+ },
+ "_ZN7MinimapD1Ev": {
+  "gate": 28,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN7MinimapD1Ev.cpp"
+ },
+ "_ZN7dBgW_KcD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN7dBgW_KcD1Ev.cpp"
+ },
+ "_ZN7dCcAc_c6GetPosEv": {
+  "gate": 16,
+  "reason": "ValueError: no member body in external/sm64ds-pc/src/_ZN7dCcAc_c6GetPosEv.cpp",
+  "source": "src/_ZN7dCcAc_c6GetPosEv.cpp"
+ },
+ "_ZN7dCcAc_cC1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN7dCcAc_cC1Ev.cpp"
+ },
+ "_ZN7dCcAc_cD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN7dCcAc_cD1Ev.cpp"
+ },
+ "_ZN7da1up_c13OnTurnIntoEggER6Player": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "_ZN7da1up_c16CleanupResourcesEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "_ZN7da1up_c6RenderEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "_ZN7da1up_c8BehaviorEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "_ZN7da1up_cD0Ev": {
+  "gate": 16,
+  "reason": "structor or static member in a class source",
+  "source": "src/actors/da1up_c.cpp"
+ },
+ "_ZN7da1up_cD1Ev": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN7da1up_cD1Ev",
+  "source": "src/actors/da1up_c.cpp"
+ },
+ "_ZN7daBmb_c13InitResourcesEv": {
+  "gate": 19,
+  "reason": "ValueError: untyped member unk_108 in external/sm64ds-pc/src/actors/daBmb_c.cpp",
+  "source": "src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c13OnTurnIntoEggER6Player": {
+  "gate": 19,
+  "reason": "ValueError: untyped member unk_108 in external/sm64ds-pc/src/actors/daBmb_c.cpp",
+  "source": "src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c13OnYoshiTryEatEv": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c16CleanupResourcesEv": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c6RenderEv": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c6State1Ev": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c6State3Ev": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c6State4Ev": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c6State5Ev": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7daBmb_c8BehaviorEv": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "_ZN7fBase_c7ProcessEMS_FivEMS_FbvEMS_FvjE": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (fBase_c::*PMF1)",
+  "source": "src/_ZN7fBase_c7ProcessEMS_FivEMS_FbvEMS_FvjE.cpp"
+ },
+ "_ZN7fBase_c9Virtual34Ejj": {
+  "gate": 16,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/_ZN7fBase_c9Virtual34Ejj.cpp"
+ },
+ "_ZN7fBase_c9Virtual38Ejj": {
+  "gate": 16,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/_ZN7fBase_c9Virtual38Ejj.cpp"
+ },
+ "_ZN7fBase_cD1Ev": {
+  "gate": 13,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN7fBase_cD1Ev.cpp"
+ },
+ "_ZN8Particle6System10NewWeatherEjj5Fix12IiES2_S2_PK11Vector3_16fj": {
+  "gate": 13,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8Particle6System17NewUnkCallback818Ejj5Fix12IiES2_S2_PK11Vector3_16f": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8SaveData17SetCharacterIntroEi": {
+  "gate": 22,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8SaveData17SetCharacterIntroEi.cpp"
+ },
+ "_ZN8SaveData26CountStarsCollectedInLevelEj": {
+  "gate": 14,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8SaveData26CountStarsCollectedInLevelEj.cpp"
+ },
+ "_ZN8SignPost16CleanupResourcesEv": {
+  "gate": 16,
+  "reason": "ValueError: unresolved frontend datum: SignPost_ClsnFile",
+  "source": "src/_ZN8SignPost16CleanupResourcesEv.cpp"
+ },
+ "_ZN8SignPost6RenderEv": {
+  "gate": 16,
+  "reason": "ValueError: no member body in external/sm64ds-pc/src/_ZN8SignPost6RenderEv.cpp",
+  "source": "src/_ZN8SignPost6RenderEv.cpp"
+ },
+ "_ZN8SignPost8BehaviorEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8SignPostD1Ev": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN8SignPostD1Ev",
+  "source": "src/_ZN8SignPostD1Ev.cpp"
+ },
+ "_ZN8Vector3sD1Ev": {
+  "gate": 21,
+  "reason": "nested or namespaced member Vector3s_ForceDestructor::~Vector3s_ForceDestructor",
+  "source": "src/_ZN8Vector3sD1Ev.cpp"
+ },
+ "_ZN8dActor_c10SpawnCoinsERK7Vector3j5Fix12IiEs": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c11LandingDustEb": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c11SpawnNumberERK7Vector3jbtPS_": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: &pos",
+  "source": "src/_ZN8dActor_c11SpawnNumberERK7Vector3jbtPS_.cpp"
+ },
+ "_ZN8dActor_c11UpdateCarryER6PlayerRK7Vector3": {
+  "gate": 18,
+  "reason": "ValueError: unsupported declarator reference_declarator: &player",
+  "source": "src/_ZN8dActor_c11UpdateCarryER6PlayerRK7Vector3.cpp"
+ },
+ "_ZN8dActor_c12ReflectAngleE5Fix12IiES1_s": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c13SpawnSoundObjEj": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_parenthesized_declarator: (*(u16 *)((char *)object+0xc)",
+  "source": "src/_ZN8dActor_c13SpawnSoundObjEj.cpp"
+ },
+ "_ZN8dActor_c14TriplePoofDustEv": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c15FindWithActorIDEjPS_": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: FindWithActorID",
+  "source": "src/_ZN8dActor_c15FindWithActorIDEjPS_.cpp"
+ },
+ "_ZN8dActor_c17HugeLandingDustAtER7Vector3b": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c17TrackInDeathTableEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c18GetBitInDeathTableEv": {
+  "gate": 14,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c24KillAndTrackInDeathTableEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dActor_c4NextEPKS_": {
+  "gate": 10,
+  "reason": "binding without a generated entry point: abi__ZN8dActor_c4NextEPKS_",
+  "source": "src/_ZN8dActor_c4NextEPKS_.cpp"
+ },
+ "_ZN8dCcPos_cD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN8dCcPos_cD1Ev.cpp"
+ },
+ "_ZN8dM3dGLin3SetERK7Vector3S2_": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN8dM3dGLinD2Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN8dM3dGLinD2Ev.cpp"
+ },
+ "_ZN8dM3dGSphC1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN8dM3dGSphC1Ev.cpp"
+ },
+ "_ZN8dM3dGSphD1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN8dM3dGSphD1Ev.cpp"
+ },
+ "_ZN8dScene_c14StartSceneFadeEjjt": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8dScene_c14StartSceneFadeEjjt.cpp"
+ },
+ "_ZN8dScene_c15SetSceneToSpawnEjj": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8dScene_c15SetSceneToSpawnEjj.cpp"
+ },
+ "_ZN8dScene_c20SetAndStopColorFaderEv": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8dScene_c20SetAndStopColorFaderEv.cpp"
+ },
+ "_ZN8dScene_c9SetFadersEP15FaderBrightness": {
+  "gate": 10,
+  "reason": "static member (needs a free view)",
+  "source": "src/_ZN8dScene_c9SetFadersEP15FaderBrightness.cpp"
+ },
+ "_ZN9Animation4CopyERKS_": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9Butterfly8BehaviorEv": {
+  "gate": 21,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (Butterfly::*ButterflyState)",
+  "source": "src/_ZN9Butterfly8BehaviorEv.cpp"
+ },
+ "_ZN9LakituBroD1Ev": {
+  "gate": 18,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9LakituBroD1Ev.cpp"
+ },
+ "_ZN9ModelAnim4CopyERKS_Pc": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9ModelAnimD1Ev": {
+  "gate": 10,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9ModelAnimD1Ev.cpp"
+ },
+ "_ZN9RabbitKey13InitResourcesEv": {
+  "gate": 18,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9RabbitKey16CleanupResourcesEv": {
+  "gate": 18,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9RabbitKey8BehaviorEv": {
+  "gate": 18,
+  "reason": "ValueError: untyped member unk_ac in external/sm64ds-pc/src/_ZN9RabbitKey8BehaviorEv.cpp",
+  "source": "src/_ZN9RabbitKey8BehaviorEv.cpp"
+ },
+ "_ZN9RabbitKeyD1Ev": {
+  "gate": 18,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9RabbitKeyD1Ev.cpp"
+ },
+ "_ZN9SolidHeap11VMemoryLeftEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap11VReallocateEPvj": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap12VResizeToFitEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap14VDeallocateAllEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap19VMaxAllocatableSizeEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap22VMaxAllocationUnitSizeEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap8VDestroyEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeap9VAllocateEji": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZN9SolidHeapC1EPvjP4HeapP18SolidHeapAllocator": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9SolidHeapC1EPvjP4HeapP18SolidHeapAllocator.cpp"
+ },
+ "_ZN9SolidHeapD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9SolidHeapD1Ev.cpp"
+ },
+ "_ZN9daSetSE_cD1Ev": {
+  "gate": 16,
+  "reason": "binding without a generated entry point: abi__ZN9daSetSE_cD1Ev",
+  "source": "src/game/actors/d_a_set_se.cpp"
+ },
+ "_ZN9fLiNdBa_cD1Ev": {
+  "gate": 16,
+  "reason": "structor (read from cartridge code by hand)",
+  "source": "src/_ZN9fLiNdBa_cD1Ev.cpp"
+ },
+ "_ZNK10dBgCh_Actr12TouchesWaterEv": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "_ZdlPv": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator operator_name: operator delete",
+  "source": "src/_ZdlPv.cpp"
+ },
+ "daBmb_c_classInit": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "daObjBlockL_c_classInit_BLOCK_LL": {
+  "gate": 16,
+  "reason": "ValueError: unresolved frontend datum: _ZTV13BigBrickBlock",
+  "source": "src/d_a_obj_block_l_block_ll.c"
+ },
+ "daObjHatenaBlock_c_classInit_HATENA_BLOCK": {
+  "gate": 23,
+  "reason": "native binding already owns the address (stage_hatena_factory)",
+  "source": ""
+ },
+ "daStarGate_c_classInit": {
+  "gate": 21,
+  "reason": "binding without a generated entry point: abi_daStarGate_c_classInit",
+  "source": "src/game/actors/d_a_star_gate.cpp"
+ },
+ "func_02005000": {
+  "gate": 13,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02009374": {
+  "gate": 13,
+  "reason": "ValueError: unresolved stage import: Vec3_DistSq",
+  "source": "src/func_02009374.c"
+ },
+ "func_02009e70": {
+  "gate": 13,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0200c66c": {
+  "gate": 13,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0200d7e0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02011aa0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02013a00": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0201adfc": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02038324": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: m1",
+  "source": "src/func_02038324.cpp"
+ },
+ "func_02038a38": {
+  "gate": 16,
+  "reason": "ValueError: unresolved stage import: f1",
+  "source": "src/func_02038a38.cpp"
+ },
+ "func_0204f2d4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0204f63c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0204f7fc": {
+  "gate": 10,
+  "reason": "already defined natively/frontend/minigame",
+  "source": ""
+ },
+ "func_0204f934": {
+  "gate": 10,
+  "reason": "already defined natively/frontend/minigame",
+  "source": ""
+ },
+ "func_02050a5c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02050a84": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02050b4c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_02052458": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_020599e8": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: Restore",
+  "source": "src/func_020599e8.cpp"
+ },
+ "func_0206e4a4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0206ece0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0206f46c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0206f820": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_0206fb08": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_020707a4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_020708b4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020aefb8": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af248": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af3a8": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af4ec": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af7cc": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af908": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020af924": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020afa50": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020afa6c": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020aff10": {
+  "gate": 16,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (C::*PMF)",
+  "source": "src/actors/da1up_c.cpp"
+ },
+ "func_ov002_020b0a0c": {
+  "gate": 20,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/game/actors/d_a_ch_scene.cpp"
+ },
+ "func_ov002_020bba28": {
+  "gate": 16,
+  "reason": "ValueError: unresolved stage import: v01",
+  "source": "src/func_ov002_020bba28.cpp"
+ },
+ "func_ov002_020bbb14": {
+  "gate": 16,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/func_ov002_020bbb14.cpp"
+ },
+ "func_ov002_020bbcb8": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020beabc": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020bebd4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020bf800": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: a",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020c1eb4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c2138": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c2270": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c2fec": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c3160": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c38a0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c3bdc": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c47f4": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & dst",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020c51d0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c607c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c647c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c6538": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c72a4": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c7cbc": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: LoadKeyModels",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020c84b0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c8b78": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020c8f80": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c904c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c9128": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020c990c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c9998": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c9b7c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020c9c4c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020ca78c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cae10": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020caf98": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cb354": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020cd448": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/actors/Player.cpp"
+ },
+ "func_ov002_020cd550": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020ce324": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020ceb7c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cede0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cf20c": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cfaf0": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cfbdc": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020cfd84": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/Player.cpp"
+ },
+ "func_ov002_020d0580": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020d1164": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020d2e74": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020d5cec": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov002_020d6790": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/func_ov002_020d6790.cpp"
+ },
+ "func_ov002_020d6998": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: f01",
+  "source": "src/func_ov002_020d6998.cpp"
+ },
+ "func_ov002_020d7430": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/func_ov002_020d7430.cpp"
+ },
+ "func_ov002_020d93ac": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: &pos",
+  "source": "src/func_ov002_020d93ac.cpp"
+ },
+ "func_ov002_020d94cc": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator reference_declarator: &pos",
+  "source": "src/func_ov002_020d94cc.cpp"
+ },
+ "func_ov002_020df34c": {
+  "gate": 19,
+  "reason": "ValueError: unsupported declarator reference_declarator: & s",
+  "source": "src/func_ov002_020df34c.cpp"
+ },
+ "func_ov002_020ee5d0": {
+  "gate": 16,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/dBgActor_c.cpp"
+ },
+ "func_ov002_020eed24": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v01",
+  "source": "src/func_ov002_020eed24.cpp"
+ },
+ "func_ov002_020eedc0": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v04",
+  "source": "src/func_ov002_020eedc0.cpp"
+ },
+ "func_ov002_020eee3c": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v04",
+  "source": "src/func_ov002_020eee3c.cpp"
+ },
+ "func_ov002_020ef228": {
+  "gate": 19,
+  "reason": "ValueError: unresolved stage import: v04",
+  "source": "src/func_ov002_020ef228.cpp"
+ },
+ "func_ov002_020ef2a4": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: v04",
+  "source": "src/func_ov002_020ef2a4.cpp"
+ },
+ "func_ov006_020d5eb8": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d5eb8'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d5f28": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d5f28'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d5f2c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d5f2c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d5fd8": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d5fd8'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d5fec": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (C_5fec::*PMF_5fec)",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d604c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d604c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6084": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6084'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6098": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6098'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6100": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6100'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6170": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6170'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d61dc": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d61dc'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6264": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6264'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6278": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (C_6278::*PMF_6278)",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d62e0": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d62e0'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d634c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d634c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d63ac": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d63ac'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d63d4": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d63d4'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6454": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6454'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d64c4": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d64c4'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d64c8": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d64c8'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d65b4": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d65b4'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d65c8": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (C_65c8::*PMF_65c8)",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6630": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6630'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d669c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d669c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d66c4": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d66c4'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d672c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d672c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6784": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6784'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d68a8": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d68a8'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d69b8": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d69b8'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6b88": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6b88'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6c90": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6c90'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6d7c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6d7c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d6e8c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d6e8c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7524": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d7524'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7604": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d7604'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7778": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d7778'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d777c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d777c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7958": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d7958'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d795c": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d795c'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7a84": {
+  "gate": 10,
+  "reason": "KeyError: 'func_ov006_020d7a84'",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov006_020d7c00": {
+  "gate": 10,
+  "reason": "ValueError: unsupported declarator parenthesized_declarator: (C_7c00::*PMF_7c00)",
+  "source": "src/actors/dScMgBomroom_c.cpp"
+ },
+ "func_ov009_021116ec": {
+  "gate": 17,
+  "reason": "ValueError: unresolved stage import: func_ov009_02111224",
+  "source": "src/func_ov009_021116ec.cpp"
+ },
+ "func_ov085_0212cd80": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212cd0c",
+  "source": "src/func_ov085_0212cd80.c"
+ },
+ "func_ov085_0212d108": {
+  "gate": 18,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov085_0212d73c": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212d73c.c"
+ },
+ "func_ov085_0212d9b8": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212d9b8.c"
+ },
+ "func_ov085_0212dbdc": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212dbdc.c"
+ },
+ "func_ov085_0212dd10": {
+  "gate": 18,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/func_ov085_0212dd10.cpp"
+ },
+ "func_ov085_0212de5c": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: HorzAngleToCPlayer",
+  "source": "src/func_ov085_0212de5c.cpp"
+ },
+ "func_ov085_0212e19c": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212e19c.c"
+ },
+ "func_ov085_0212e310": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212e310.cpp"
+ },
+ "func_ov085_0212e4a4": {
+  "gate": 18,
+  "reason": "ValueError: unresolved stage import: func_ov085_0212e728",
+  "source": "src/func_ov085_0212e4a4.c"
+ },
+ "func_ov098_0213ad08": {
+  "gate": 19,
+  "reason": "ValueError: unresolved stage import: func_ov102_0214ae1c",
+  "source": "src/func_ov098_0213ad08.c"
+ },
+ "func_ov098_0213ade8": {
+  "gate": 19,
+  "reason": "ValueError: unresolved stage import: func_ov098_0213b15c",
+  "source": "src/func_ov098_0213ade8.c"
+ },
+ "func_ov098_0213b0a4": {
+  "gate": 19,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/func_ov098_0213b0a4.cpp"
+ },
+ "func_ov100_02143370": {
+  "gate": 21,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov100_02143aa4": {
+  "gate": 21,
+  "reason": "ValueError: unresolved stage import: func_ov100_0214344c",
+  "source": "src/func_ov100_02143aa4.c"
+ },
+ "func_ov100_02144468": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145080",
+  "source": "src/func_ov100_02144468.c"
+ },
+ "func_ov100_021444e8": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02144fcc",
+  "source": "src/func_ov100_021444e8.c"
+ },
+ "func_ov100_02144528": {
+  "gate": 22,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ },
+ "func_ov100_021446f8": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02144950",
+  "source": "src/func_ov100_021446f8.c"
+ },
+ "func_ov100_02144730": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145080",
+  "source": "src/func_ov100_02144730.cpp"
+ },
+ "func_ov100_021449c8": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_021453d8",
+  "source": "src/func_ov100_021449c8.cpp"
+ },
+ "func_ov100_02144a38": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov089_0213115c",
+  "source": "src/func_ov100_02144a38.c"
+ },
+ "func_ov100_02144bf4": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_021451c4",
+  "source": "src/func_ov100_02144bf4.cpp"
+ },
+ "func_ov100_02144c6c": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145014",
+  "source": "src/func_ov100_02144c6c.c"
+ },
+ "func_ov100_02144ccc": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145070",
+  "source": "src/func_ov100_02144ccc.c"
+ },
+ "func_ov100_02144fcc": {
+  "gate": 10,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145014",
+  "source": "src/func_ov100_02144fcc.cpp"
+ },
+ "func_ov100_021451c4": {
+  "gate": 22,
+  "reason": "ValueError: unresolved stage import: func_ov100_02145170",
+  "source": "src/func_ov100_021451c4.cpp"
+ },
+ "func_ov100_021463b0": {
+  "gate": 21,
+  "reason": "ValueError: unsupported declarator abstract_reference_declarator: &",
+  "source": "src/func_ov100_021463b0.cpp"
+ },
+ "func_ov100_02146828": {
+  "gate": 21,
+  "reason": "ValueError: unresolved stage import: func_ov100_0214629c",
+  "source": "src/func_ov100_02146828.c"
+ },
+ "func_ov102_02149610": {
+  "gate": 23,
+  "reason": "ValueError: missing declaration type: V3(int a, int b, int d) { x = a; y = b; z = d; }",
+  "source": "src/func_ov102_02149610.cpp"
+ },
+ "func_ov102_02149878": {
+  "gate": 23,
+  "reason": "ValueError: unresolved stage import: func_ov102_02149da8",
+  "source": "src/func_ov102_02149878.c"
+ },
+ "func_ov102_02149ccc": {
+  "gate": 23,
+  "reason": "ValueError: unresolved stage import: v1",
+  "source": "src/func_ov102_02149ccc.cpp"
+ },
+ "func_ov102_02149ea4": {
+  "gate": 23,
+  "reason": "ValueError: unresolved stage import: func_ov102_02149610",
+  "source": "src/func_ov102_02149ea4.c"
+ },
+ "func_ov102_0214aa18": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214ab1c": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214ad14": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214ad40": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214ae1c": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b03c": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b128": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b248": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b384": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b3b8": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b3f0": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b444": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b53c": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214b988": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214baa0": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214bc20": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214bd20": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214bd90": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214beb4": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214bf64": {
+  "gate": 19,
+  "reason": "ValueError: unsupported declarator reference_declarator: & v",
+  "source": "src/actors/daBmb_c.cpp"
+ },
+ "func_ov102_0214c0b8": {
+  "gate": 19,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": "external/sm64ds-pc/src/actors/daBmb_c.cpp"
+ },
+ "nds_printf": {
+  "gate": 10,
+  "reason": "compile (gcc host or clang NDK flags)",
+  "source": ""
+ }
+}
