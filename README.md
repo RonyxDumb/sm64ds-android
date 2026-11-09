@@ -2,8 +2,6 @@
 
 This repository focuses on building a native **ARM64 Android** port of *Super Mario 64 DS* using recovered game source. It is not an emulator. **The port is still in development and is not yet a complete, verified playable game.**
 
-The Android runtime executes recovered boot and title/menu logic, save-file selection and scene construction. On the castle grounds the original opening cutscene runs from original code (host, private ROM): Lakitu flyover, the warp pipe and the script-driven Mario, Luigi and Wario with the recovered Player state machine, physics, collision probes, particles and sound boundary, while Yoshi waits on the castle roof. The opening is not finished yet (current frontier about frame 1995), so **Yoshi is not yet under player control and playable castle gameplay has not been verified.** See the current checkpoint for the exact runtime frontier and validation.
-
 ## Build an APK
 
 Requires Python 3, JDK 17, Android SDK platform 35, NDK `27.2.12479018`, CMake `3.22.1` and Gradle. Initialize the pinned audio dependency:
