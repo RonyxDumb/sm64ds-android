@@ -1,0 +1,11 @@
+--- a/include/nitro/os/spinLock.h
++++ b/include/nitro/os/spinLock.h
+@@ -18,7 +18,7 @@
+ #include "types.h"
+ #include "nitro/hw/mmap_shared.h" /* HW_LOCK_ID_FLAG_MAIN, HW_*_LOCK_BUF */
+ 
+-typedef volatile struct OSLockWord {
++typedef volatile struct OSLockWord_ {
+     u32 lockFlag;
+     u16 ownerID;
+     u16 extension;

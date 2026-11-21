@@ -1,0 +1,14 @@
+--- a/include/types.h
++++ b/include/types.h
+@@ -75,6 +75,11 @@
+     ~Vector3();
+     Vector3();
+     Vector3(fx32, fx32, fx32);
++#elif defined(SM64DS_NATIVE_PORT)
++    /* PORT: trivial default constructor and destructor: the same code, and the type stays usable in unions and
++       across gotos as mwcc allows. */
++    Vector3() = default;
++    Vector3(fx32 x_, fx32 y_, fx32 z_) : x(x_), y(y_), z(z_) {}
+ #else
+     ~Vector3() {}
+ 

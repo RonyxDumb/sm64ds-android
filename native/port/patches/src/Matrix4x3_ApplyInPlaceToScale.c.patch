@@ -1,0 +1,11 @@
+--- a/src/Matrix4x3_ApplyInPlaceToScale.c
++++ b/src/Matrix4x3_ApplyInPlaceToScale.c
+@@ -6,7 +6,7 @@
+ #include "math/MtxStack.h"
+ 
+ extern void MTX_Scale43_(union Matrix4x3 *mF, fx32 x, fx32 y, fx32 z)
+-    __attribute__((long_call, target("thumb")));
++    ; /* PORT: no Thumb interworking attributes */
+ 
+ void Matrix4x3_ApplyInPlaceToScale(union Matrix4x3 *mF, fx32 x, fx32 y, fx32 z) {
+     union Matrix4x3 scale;

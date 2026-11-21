@@ -1,0 +1,22 @@
+--- a/src/minigames/d_s_mg_base.cpp
++++ b/src/minigames/d_s_mg_base.cpp
+@@ -1190,7 +1190,8 @@
+ namespace s20add88 {
+ extern "C" {
+ /* Draws one record through its state's handler. */
+-extern "C" void Mg_DrawFx(MgFx *c) {
++extern "C" void Mg_DrawFx(void *c_) { /* PORT: decl_common.h types it void * (C linkage: one type) */
++    MgFx *c = (MgFx *)c_;
+     (c->*sMgFxDrawTable[c->mState])();
+ }
+ }
+@@ -1789,7 +1790,8 @@
+ /* Draws one sprite-list entry at (x, y) through Mg_RenderSpriteOnMtx.
+    When the scene's GetDisplayMode (slot 26) returns 2, the copy
+    drawn has 0x200 subtracted from its charNo (attr2 bits 0..9). */
+-extern "C" void Mg_DrawSpriteListEntry(GXOamAttr *entry, int x, int y, Matrix2x2 *mtx) {
++extern "C" void Mg_DrawSpriteListEntry(void *entry_, int x, int y, Matrix2x2 *mtx) { /* PORT: as decl_common.h */
++    GXOamAttr *entry = (GXOamAttr *)entry_;
+     GXOamAttr attr = *entry;
+     if (gMgScene->GetDisplayMode() == 2) {
+         attr.charNo = (entry->charNo - 0x200) & 0x3ff;

@@ -1,0 +1,11 @@
+--- a/src/game/stages/d_s_entry_entry.cpp
++++ b/src/game/stages/d_s_entry_entry.cpp
+@@ -53,7 +53,7 @@
+     ~EntryMeshTexture();
+ };
+ extern EntryMeshTexture EntryMeshTextureFile;
+-extern EntryMeshHandler EntryMeshHandlers[3];
++extern "C" EntryMeshHandler EntryMeshHandlers[3];
+ 
+ /* Push the cached material to the geometry engine: diffuse/ambient,
+  * specular/emission, the texture image param and the palette base, then a

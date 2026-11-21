@@ -1,0 +1,29 @@
+--- a/src/game/actors/d_a_demo.cpp
++++ b/src/game/actors/d_a_demo.cpp
+@@ -779,7 +779,7 @@
+     this->credit[i].step++;
+ }
+ 
+-extern StaffRollStep data_ov002_02110ebc[];
++extern "C" StaffRollStep data_ov002_02110ebc[];
+ void StaffRoll::func_ov002_020f2dd4() {
+     if (this->credit[0].active == 0)
+         return;
+@@ -1031,7 +1031,7 @@
+     this->window[idx].step = 0;
+ }
+ 
+-extern StaffRollStep data_ov002_02110e4c[];
++extern "C" StaffRollStep data_ov002_02110e4c[];
+ void StaffRoll::func_ov002_020f37a0() {
+     if (this->window[0].active == 0)
+         return;
+@@ -2223,7 +2223,7 @@
+     this->func_ov002_020f2958();
+ }
+ 
+-extern StaffRollCue data_ov002_02110f34[];
++extern "C" StaffRollCue data_ov002_02110f34[];
+ void StaffRoll::func_ov002_020f5dd8(int idx) {
+     (this->*data_ov002_02110f34[idx])();
+ }

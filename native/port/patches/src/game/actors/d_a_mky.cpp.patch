@@ -1,0 +1,12 @@
+--- a/src/game/actors/d_a_mky.cpp
++++ b/src/game/actors/d_a_mky.cpp
+@@ -1294,8 +1294,8 @@
+ void daMky_c::CallStateEnter() {
+     (this->*mStateDesc->enter)();
+ }
++extern "C" daMky_c::StateFunctions data_ov030_02115e0c[]; /* PORT: at file scope, for its C linkage */
+ void daMky_c::ChangeState(int idx) {
+-    extern StateFunctions data_ov030_02115e0c[];
+ 
+     this->mStateDesc = &data_ov030_02115e0c[idx];
+     CallStateEnter();

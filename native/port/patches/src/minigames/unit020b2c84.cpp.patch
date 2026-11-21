@@ -1,0 +1,19 @@
+--- a/src/minigames/unit020b2c84.cpp
++++ b/src/minigames/unit020b2c84.cpp
+@@ -1032,11 +1032,11 @@
+     MG_BANNER_SLOT1_CHARS = 0x6000,
+     MG_BANNER_SLOT2_CHARS = 0x6800
+ };
+-extern ElemFn sBannerUpdateTable[];
+-extern ElemFn sBannerSetupTable[];
+-extern ElemFn sBannerDrawTable[];
+-extern void *sMgBannerFiles[];
+-extern OamAttr *sMgBannerSprites[];
++extern "C" ElemFn sBannerUpdateTable[];
++extern "C" ElemFn sBannerSetupTable[];
++extern "C" ElemFn sBannerDrawTable[];
++extern "C" void *sMgBannerFiles[];
++extern "C" OamAttr *sMgBannerSprites[];
+ 
+ OamAttr **sMgMsgWhereSpritesByLanguage[] = {&sMgMsgWhereSpritesEnglish, &data_ov004_020b9f68,
+                                             &data_ov004_020b9f28, &data_ov004_020b9ec8,

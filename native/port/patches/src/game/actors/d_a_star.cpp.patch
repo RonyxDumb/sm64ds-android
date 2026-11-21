@@ -1,0 +1,29 @@
+--- a/src/game/actors/d_a_star.cpp
++++ b/src/game/actors/d_a_star.cpp
+@@ -1853,22 +1853,22 @@
+     int t;
+     if (g1 == 5) {
+         if (mStarID == 5) {
+-            return;
++            return {}; /* PORT: mwcc returns whatever r0 holds */
+         }
+     }
+     if (g1 == 0x16) {
+         if (mStarID == 4) {
+             if (gCurrentEntranceId != 4) {
+-                return;
++                return {}; /* PORT: mwcc returns whatever r0 holds */
+             }
+             AddStarMarker();
+-            return;
++            return {}; /* PORT: mwcc returns whatever r0 holds */
+         }
+     }
+     if (mMarkerType == 0) {
+         t = mKind;
+         if ((t != 2) && (t != 4)) {
+-            return;
++            return {}; /* PORT: mwcc returns whatever r0 holds */
+         }
+     }
+     AddStarMarker();

@@ -1,0 +1,16 @@
+--- a/src/Vec3_VertAngle.cpp
++++ b/src/Vec3_VertAngle.cpp
+@@ -3,8 +3,6 @@
+ #include "cstd.h"
+ #include "math/CalcLib.h"
+ 
+-extern "C" {
+-
+ s16 Vec3_VertAngle(const Vector3 *v1, const Vector3 *v0)
+ {
+     Vector3 diff;
+@@ -12,4 +10,3 @@
+     fx32 horzLen = Vec3_HorzLen(&diff);
+     return cstd::atan2(diff.y, horzLen);
+ }
+-}

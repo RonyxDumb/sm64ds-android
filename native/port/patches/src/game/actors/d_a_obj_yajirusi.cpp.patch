@@ -1,0 +1,11 @@
+--- a/src/game/actors/d_a_obj_yajirusi.cpp
++++ b/src/game/actors/d_a_obj_yajirusi.cpp
+@@ -161,7 +161,7 @@
+ int daObjYajirusi_c::OnAttacked1(dActor_c &other) {
+     unsigned r = (other.actorID == 0xce) ? 1u : 0u;
+     if (r == 0)
+-        return;
++        return {}; /* PORT: mwcc returns whatever r0 holds */
+     Kill();
+ }
+ 

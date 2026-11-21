@@ -1,0 +1,22 @@
+--- a/include/decl_common.h
++++ b/include/decl_common.h
+@@ -60,7 +60,9 @@
+ extern struct DemoModelFile data_ov002_02110c18;
+ extern char sMgMenuBgPltt[];
+ extern char sMgMenuSubBgPltt[];
++#ifdef __cplusplus /* PORT: an array of an incomplete type is only accepted in C++ */
+ extern struct MgBanner gMgBanners[];
++#endif
+ extern char sCurlingMgDirPath;
+ extern char sCurlingBgCurling2NcgPath;
+ extern char sCurling2BgJokyuNcgPath;
+@@ -187,7 +189,9 @@
+ extern int sCardDrawsLeft;
+ extern int sCardNcgByLanguage[];
+ extern int sCardHandPayouts[];
++#ifdef __cplusplus
+ extern struct OamAttr sCurlingAimMarkerSprites[];
++#endif
+ extern int data_ov006_0213c954;
+ extern int sHanaFieldWigglerCount;
+ extern struct VecFx32 sJumpRenderScale;

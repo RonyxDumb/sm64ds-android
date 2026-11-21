@@ -1,0 +1,25 @@
+--- a/src/minigames/d_s_mg_m_carlo.cpp
++++ b/src/minigames/d_s_mg_m_carlo.cpp
+@@ -88,18 +88,18 @@
+ extern int sMgCoinsBetPlaced;
+ 
+ extern "C" {
+-void MgCoins_Draw(void);
++extern "C++" void MgCoins_Draw(void);
+ }
+ extern "C" void Dealer_Draw(void *self);
+ int Dealer_IsIdle(Dealer *dealer);
+ extern "C" {
+-void MgCoins_Update(void);
++extern "C++" void MgCoins_Update(void);
+ }
+ void Dealer_StartShuffle(Dealer *dealer, int unused, short count, s16 *counter);
+ extern "C" {
+-void MgCoins_Reset(void);
++extern "C++" void MgCoins_Reset(void);
+ 
+-void MgCoins_StartPayout(int count);
++extern "C++" void MgCoins_StartPayout(int count);
+ }
+ 
+ extern unsigned short gMgCoinsStatus;

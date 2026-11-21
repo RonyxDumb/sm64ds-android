@@ -1,0 +1,23 @@
+--- a/include/nitro/os/systemWork.h
++++ b/include/nitro/os/systemWork.h
+@@ -42,13 +42,13 @@
+     u16 autoloadSync;                   /* 0x3ae */
+     u32 lockIDFlag_mainp[2];            /* 0x3b0 */
+     u32 lockIDFlag_subp[2];             /* 0x3b8 */
+-    struct OSLockWord lock_VRAM_C;      /* 0x3c0 */
+-    struct OSLockWord lock_VRAM_D;      /* 0x3c8 */
+-    struct OSLockWord lock_WRAM_BLOCK0; /* 0x3d0 */
+-    struct OSLockWord lock_WRAM_BLOCK1; /* 0x3d8 */
+-    struct OSLockWord lock_CARD;        /* 0x3e0 */
+-    struct OSLockWord lock_CARTRIDGE;   /* 0x3e8 */
+-    struct OSLockWord lock_INIT;        /* 0x3f0 */
++    struct OSLockWord_ lock_VRAM_C;      /* 0x3c0 */
++    struct OSLockWord_ lock_VRAM_D;      /* 0x3c8 */
++    struct OSLockWord_ lock_WRAM_BLOCK0; /* 0x3d0 */
++    struct OSLockWord_ lock_WRAM_BLOCK1; /* 0x3d8 */
++    struct OSLockWord_ lock_CARD;        /* 0x3e0 */
++    struct OSLockWord_ lock_CARTRIDGE;   /* 0x3e8 */
++    struct OSLockWord_ lock_INIT;        /* 0x3f0 */
+     u16 mmem_checker_mainp;             /* 0x3f8 */
+     u16 mmem_checker_subp;              /* 0x3fa */
+     u8 padding4[2];                     /* 0x3fc */

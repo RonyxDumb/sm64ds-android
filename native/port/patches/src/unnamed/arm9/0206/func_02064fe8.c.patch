@@ -1,0 +1,9 @@
+--- a/src/unnamed/arm9/0206/func_02064fe8.c
++++ b/src/unnamed/arm9/0206/func_02064fe8.c
+@@ -14,5 +14,5 @@
+     MI_CpuCopy8(&s, p, 2);
+     q = p + 2;
+     MI_CpuCopy8(&c, q, 1);
+-    return q + 1 - dst;
++    return q + 1 - (char *)dst;
+ }

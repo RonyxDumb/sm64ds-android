@@ -1,0 +1,11 @@
+--- a/src/minigames/d_s_mg_hanachan_methods.cpp
++++ b/src/minigames/d_s_mg_hanachan_methods.cpp
+@@ -1885,7 +1885,7 @@
+ }
+ 
+ extern "C" {
+-void Hana_LoadBackground(void) {
++extern "C++" void Hana_LoadBackground(void) {
+     void *ncg = LoadFile(ASSET_D_2D_MG_BG_HANA_SAGASE1_NCG_BIN);
+     void *nsc = LoadFile(ASSET_D_2D_MG_BG_HANA_SAGASE1_NSC_BIN);
+     void *ncl = LoadFile(ASSET_D_2D_MG_BG_HANA_SAGASE1_NCL_BIN);

@@ -1,0 +1,22 @@
+--- a/src/game/actors/d_a_btn.cpp
++++ b/src/game/actors/d_a_btn.cpp
+@@ -207,7 +207,7 @@
+ /* OnAimedAtWithEggReturnVec's view of func_ov079_02123d4c: the (out, this)
+    pair of the definition is exactly the hidden-return-pointer shape of a
+    Vector3-by-value call, so this view lets the virtual forward to it. */
+-namespace vecret { extern "C" Vector3 func_ov079_02123d4c(void *thiz); }
++/* PORT: the hidden-return-pointer view only holds on 32-bit ARM; call the definition directly. */
+ 
+ daBtn_c *daBtn_c_classInit_BATAN() {
+     return new daBtn_c();
+@@ -1554,7 +1554,9 @@
+ 
+ Vector3 daBtn_c::OnAimedAtWithEggReturnVec()
+ {
+-    return vecret::func_ov079_02123d4c(this);
++    Vector3 v;
++    func_ov079_02123d4c(&v, this);
++    return v;
+ }
+ 
+ /* The mesh collider also stays on while the nearest actor of ID 9 is within

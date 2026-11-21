@@ -1,0 +1,12 @@
+--- a/src/game/player/d_a_ply_methods.cpp
++++ b/src/game/player/d_a_ply_methods.cpp
+@@ -4094,7 +4094,8 @@
+             return;
+         }
+ 
+-        int limit2 = ScaleByCharFactor(0x28000);
++        int limit2; /* PORT: no initializer, the gotos above jump over it */
++        limit2 = ScaleByCharFactor(0x28000);
+ 
+         if (mHorzSpeed < limit2) {
+             if (mWaterRunTimer >= 30)

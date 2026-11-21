@@ -1,0 +1,11 @@
+--- a/src/runtime/actor/d_cap_enemy_arm9.cpp
++++ b/src/runtime/actor/d_cap_enemy_arm9.cpp
+@@ -90,7 +90,7 @@
+         mCapId = 6;
+         /* Release is void. The value it leaves in r0 is AddCap's result. */
+         data_ov002_020ff028[mCapId]->Release();
+-        return;
++        return {}; /* PORT: mwcc returns whatever r0 holds */
+     }
+ 
+     mFlags &= ~1;

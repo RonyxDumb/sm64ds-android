@@ -1,0 +1,74 @@
+--- a/src/minigames/d_s_mg_trampoline2.cpp
++++ b/src/minigames/d_s_mg_trampoline2.cpp
+@@ -116,7 +116,7 @@
+ dScMgTrampoline2_c *dScMgTrampoline2_c_classInit(void);
+ 
+ extern "C" {
+-extern void Trmp2Spinner_UpdateMatrix(char *c);
++extern "C++" void Trmp2Spinner_UpdateMatrix(char *c);
+ extern Trampoline2ModelFilePtr sTrmp2StarModelFile;
+ extern int sTrmp2SpinnerCount;
+ extern char *sTrmp2Spinners;
+@@ -124,7 +124,7 @@
+ extern const u16 sTrmp2BrushPltt[];
+ extern dFdBrightness_c *gSceneFader;
+ extern int sTrmp2TouchBlocked;
+-void Jump2Popup_UpdateAll(void);
++extern "C++" void Jump2Popup_UpdateAll(void);
+ extern const VecFx32 sTrmp2RandomSpawnPositions[];
+ extern int sTrmpItemsHit;
+ extern int sTrmp2Lives;
+@@ -991,7 +991,7 @@
+ }
+ 
+ extern "C" {
+-void Trmp2Spinner_LoadAll(int x, int count) {
++extern "C++" void Trmp2Spinner_LoadAll(int x, int count) {
+     int i;
+     sTrmp2Spinners = (char *)x;
+     sTrmp2SpinnerCount = count;
+@@ -1002,7 +1002,7 @@
+ }
+ 
+ extern "C" {
+-void Trmp2Spinner_InitAll(int hitCount) {
++extern "C++" void Trmp2Spinner_InitAll(int hitCount) {
+     int i = 0;
+     int n = sTrmp2SpinnerCount;
+     char *base;
+@@ -1024,7 +1024,7 @@
+ }
+ 
+ extern "C" {
+-void Trmp2Spinner_HideAll(void) {
++extern "C++" void Trmp2Spinner_HideAll(void) {
+     int i = 0;
+     if (sTrmp2SpinnerCount > 0) {
+         int off = 0;
+@@ -1038,7 +1038,7 @@
+ }
+ 
+ extern "C" {
+-void Trmp2Spinner_UpdateAll(void) {
++extern "C++" void Trmp2Spinner_UpdateAll(void) {
+     int i;
+     for (i = 0; i < sTrmp2SpinnerCount; i++) {
+         char *obj = sTrmp2Spinners + i * 0x78;
+@@ -1050,7 +1050,7 @@
+ }
+ 
+ extern "C" {
+-void Trmp2Spinner_UpdateMatricesAll(void) {
++extern "C++" void Trmp2Spinner_UpdateMatricesAll(void) {
+     int i;
+     for (i = 0; i < sTrmp2SpinnerCount; i++) {
+         char *obj = sTrmp2Spinners + i * 0x78;
+@@ -1115,7 +1115,7 @@
+     VEC_Add(&SPINNER(raw)->mPos, &SPINNER(raw)->mVel, &SPINNER(raw)->mPos);
+ }
+ 
+-extern "C" void Trmp2Spinner_UpdateMatrix(char *raw) {
++extern "C++" void Trmp2Spinner_UpdateMatrix(char *raw) {
+     Matrix4x3_FromTranslation(&gScratchMtx, SPINNER(raw)->mPos.x, SPINNER(raw)->mPos.y,
+                               SPINNER(raw)->mPos.z);
+     Matrix4x3_ApplyInPlaceToRotationZ(&gScratchMtx, SPINNER(raw)->mAngleZ);
