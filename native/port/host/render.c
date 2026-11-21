@@ -166,6 +166,29 @@ void host_write_frame(const FrameSnapshot *f, const char *path) {
 #endif
     static uint32_t screens[2][256 * 192];
     static uint32_t layer3d[256 * 192];
+    if (getenv("SM64DS_DEBUG3D")) { // tests: the 3D list
+        const Gx3dFrame *g = &f->frame3d;
+        int shown = 0;
+        for (uint32_t i = 0; i < g->polygon_count; i++) if (!g->polygons[i].hidden) shown++;
+        port_log("3d: %u polygons (%d shown), disp3dcnt %04x clear %08x", g->polygon_count, shown, g->disp3dcnt, g->clear_color);
+        int32_t minx = 1 << 30, maxx = -(1 << 30), miny = 1 << 30, maxy = -(1 << 30);
+        for (uint32_t i = 0; i < g->vertex_count; i++) {
+            const GxVertex *v = &g->vertices[i];
+            if (v->x < minx) minx = v->x;
+            if (v->x > maxx) maxx = v->x;
+            if (v->y < miny) miny = v->y;
+            if (v->y > maxy) maxy = v->y;
+        }
+        port_log("3d: %u vertices, x %d..%d y %d..%d", g->vertex_count, minx, maxx, miny, maxy);
+        for (uint32_t i = 0; i < g->polygon_count && i < 4; i++) {
+            const GxPolygon *p = &g->polygons[i];
+            const GxVertex *v = &g->vertices[p->first];
+            port_log(" poly %u hidden %d attr %08x vp %d,%d-%d,%d v0 %d %d %d %d rgb %d %d %d", i, p->hidden, p->attr,
+                     p->viewport[0], p->viewport[1], p->viewport[2], p->viewport[3], v->x, v->y, v->z, v->w, v->r, v->g, v->b);
+        }
+        port_log("io: MASTER_BRIGHT A %04x B %04x BLDCNT %04x BLDY %04x BG0CNT %04x", *(const uint16_t *) (f->io + 0x6c),
+                 *(const uint16_t *) (f->io + 0x106c), *(const uint16_t *) (f->io + 0x50), *(const uint16_t *) (f->io + 0x54), *(const uint16_t *) (f->io + 0x8));
+    }
     soft3d_render(&f->frame3d, f, layer3d);
     gpu2d_render(f, layer3d, screens[0], screens[1], 0);
     static uint32_t out[256 * 384];

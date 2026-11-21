@@ -24,10 +24,21 @@ from pathlib import Path
 PORT = Path(__file__).resolve().parent.parent / "port"
 
 # Registers whose writes have side effects. A statement `REG_X op= expr;` is rewritten to PORT_IO_WRITE.
-SIDE_EFFECT = r"REG_(?:GXFIFO|VRAMCNT_[A-I]\w*|IF|MTX_\w+|VTX_\w+|COLOR|NORMAL|TEXCOORD|BEGIN_VTXS|" \
+SIDE_EFFECT = r"(?:REG_(?:GXFIFO|VRAMCNT_[A-I]\w*|IF|MTX_\w+|VTX_\w+|COLOR|NORMAL|TEXCOORD|BEGIN_VTXS|" \
               r"END_VTXS|SWAP_BUFFERS|VIEWPORT|BOX_TEST|POS_TEST|VEC_TEST|POLYGON_ATTR|TEXIMAGE_PARAM|PLTT_BASE|" \
-              r"DIF_AMB|SPE_EMI|LIGHT_VECTOR|LIGHT_COLOR|SHININESS)"
+              r"DIF_AMB|SPE_EMI|LIGHT_VECTOR|LIGHT_COLOR|SHININESS)|reg_G3X?_\w+)"
 REG_WRITE = re.compile(r"(?<![\w.>])(" + SIDE_EFFECT + r")\s*([|&^]?)=(?!=)\s*([^;]+);")
+
+
+# A pointer to a command port, written through: `port = &reg_G3_MTX_LOAD_4x3; *port = x;`.
+PORT_POINTER = re.compile(r"\b(\w+)\s*=\s*&\s*(" + SIDE_EFFECT + r")\s*;")
+
+
+def rewrite_port_pointer_writes(text):
+    for name in set(m.group(1) for m in PORT_POINTER.finditer(text)):
+        text = re.sub(r"(?<![\w.>])\*\s*%s\s*=(?!=)\s*([^;]+);" % re.escape(name),
+                      lambda m: f"port_io_write({name}, 4, (unsigned) ({m.group(1)}));", text)
+    return text
 
 
 def rewrite_reg_writes(text):
@@ -36,7 +47,7 @@ def rewrite_reg_writes(text):
         if op:
             value = f"{reg} {op} ({value})"
         return f"PORT_IO_WRITE({reg}, {value});"
-    return REG_WRITE.sub(sub, text)
+    return rewrite_port_pointer_writes(REG_WRITE.sub(sub, text))
 
 
 # A variable declared `extern` inside a function. mwcc lets two such declarations of one symbol disagree on its type
@@ -202,11 +213,11 @@ def main():
         write_if_changed(inc / rel, text)
 
     write_if_changed(out / "sources.txt", "\n".join(sources) + "\n")
-    write_if_changed(out / "units.txt", "".join(f"{module_of[r]} {r}\n" for r in sorted(module_of)
-                                                if (out / "src" / r).exists()))
+    compiled = {Path(p).relative_to(out / "src").as_posix() for p in sources}
+    write_if_changed(out / "units.txt", "".join(f"{module_of[r]} {r}\n" for r in sorted(module_of) if r in compiled))
     write_if_changed(out / "overlay_units.txt",
                      "".join(f"{module_of[r]} {r}\n" for r in sorted(module_of)
-                             if module_of[r].startswith("ov") and (out / "src" / r).exists()))
+                             if module_of[r].startswith("ov") and r in compiled))
 
 
 if __name__ == "__main__":

@@ -14,10 +14,10 @@ void port_os_poll(void);
 #define G3_PORTS_START 0x04000440u
 #define G3_PORTS_END 0x04000600u
 
-static inline bool is_gxfifo(const volatile void *p) { return (uintptr_t) p == GXFIFO_ADDR; }
+static inline bool is_gxfifo(const volatile void *p) { return (uintptr_t) p >= GXFIFO_ADDR && (uintptr_t) p < G3_PORTS_START; }
 
 static void send_words(const u32 *src, uintptr_t dst, u32 bytes) {
-    if (dst == GXFIFO_ADDR) {
+    if (dst >= GXFIFO_ADDR && dst < G3_PORTS_START) { // 0x04000400..0x0400043f all reach the FIFO
         for (u32 i = 0; i < bytes / 4; i++) {
             gx3d_fifo_write(src[i]);
         }
@@ -42,7 +42,7 @@ void MIi_CpuClear32(u32 data, void *destp, u32 size) {
 }
 
 void MIi_CpuCopy32(const void *srcp, void *destp, u32 size) {
-    if (is_gxfifo(destp)) {
+    if ((uintptr_t) destp >= GXFIFO_ADDR && (uintptr_t) destp < G3_PORTS_END) {
         send_words(srcp, GXFIFO_ADDR, size);
         return;
     }
@@ -53,9 +53,22 @@ void MIi_CpuSend32(const void *srcp, vu32 *destp, u32 size) { send_words(srcp, (
 
 void MIi_CpuClearFast(u32 data, void *destp, u32 size) { MIi_CpuClear32(data, destp, size); }
 void MIi_CpuCopyFast(const void *srcp, void *destp, u32 size) { MIi_CpuCopy32(srcp, destp, size); }
-void MI_Copy32B(const void *pSrc, void *pDest) { memcpy(pDest, pSrc, 32); }
-void MI_Copy36B(const void *pSrc, void *pDest) { memcpy(pDest, pSrc, 36); }
-void MI_Copy48B(const void *pSrc, void *pDest) { memcpy(pDest, pSrc, 48); }
+// Block copies: to the geometry engine when the destination is its FIFO or a command port.
+static bool is_geometry(const void *p) { return (uintptr_t) p >= GXFIFO_ADDR && (uintptr_t) p < G3_PORTS_END; }
+static void block_copy(const void *src, void *dst, u32 n) {
+    if (is_geometry(dst)) {
+        if ((uintptr_t) dst < G3_PORTS_START) {
+            send_words(src, GXFIFO_ADDR, n);
+        } else {
+            for (u32 i = 0; i < n / 4; i++) gx3d_port_write((u32) (uintptr_t) dst + 4 * i, ((const u32 *) src)[i]);
+        }
+    } else {
+        memcpy(dst, src, n);
+    }
+}
+void MI_Copy32B(const void *pSrc, void *pDest) { block_copy(pSrc, pDest, 32); }
+void MI_Copy36B(const void *pSrc, void *pDest) { block_copy(pSrc, pDest, 36); }
+void MI_Copy48B(const void *pSrc, void *pDest) { block_copy(pSrc, pDest, 48); }
 void MI_Copy64B(const void *pSrc, void *pDest) { memcpy(pDest, pSrc, 64); }
 void MI_Zero36B(void *pDest) { memset(pDest, 0, 36); }
 void MI_CpuFill8(void *dstp, u8 data, u32 size) { memset(dstp, data, size); }

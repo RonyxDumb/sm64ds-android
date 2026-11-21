@@ -124,3 +124,8 @@ src/engine/wm/
 # The C++ runtime's array construction/destruction helpers (exception landing pads): native in the platform layer.
 src/unnamed/arm9/0207/func_02073300.cpp
 src/unnamed/arm9/0207/func_02073534.cpp
+
+# Units of data only (the decomp's storage objects and tables): their symbols refer to the DS copy the image loader
+# reads from the ROM, byte for byte (tools/gapgen.py), with the pointers in them redirected. Several of these tables
+# continue into the next definition (the sine table is declared with its first 128 entries).
+src/data/

@@ -7,7 +7,7 @@
 
 void port_io_write(volatile void *reg, unsigned size, unsigned value) {
     uint32_t addr = (uint32_t) (uintptr_t) reg;
-    if (addr == 0x04000400) {
+    if (addr >= 0x04000400 && addr < 0x04000440) { // the FIFO and its mirrors
         gx3d_fifo_write(value);
         return;
     }

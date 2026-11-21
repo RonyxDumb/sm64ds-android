@@ -123,7 +123,7 @@ def main():
             defined.add(ln[len("PROVIDE("):].split("=")[0].strip().strip('"'))
     (out / "gen" / "defined.txt").write_text("\n".join(sorted(defined)) + "\n")
     subprocess.check_call([sys.executable, str(ROOT / "tools" / "gapgen.py"), str(decomp), str(out / "gen" / "gap"),
-                           "--defined", str(out / "gen" / "defined.txt")])
+                           "--defined", str(out / "gen" / "defined.txt"), "--exclude", str(PORT / "exclude.txt")])
     (out / "gen" / "symbols.ld").write_text((out / "gen" / "gap" / "symbols.ld").read_text())
     (out / "gen" / "sections.ld").write_text((out / "gen" / "mod" / "sections.ld").read_text())
     subprocess.check_call(["ninja", "-C", str(out)] + verbose)

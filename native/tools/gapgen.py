@@ -34,6 +34,13 @@ SYM_RE = re.compile(r"^(\S+)\s+kind:(\w+)(?:\(([^)]*)\))?\s+addr:(0x[0-9a-fA-F]+
 REL_RE = re.compile(r"from:(0x[0-9a-fA-F]+)\s+kind:(\w+)\s+to:(0x[0-9a-fA-F]+)(?:\s+add:(-?0x[0-9a-fA-F]+|-?\d+))?\s+module:(\S+)")
 
 
+EXCLUDED = []  # units the native build does not compile (port/exclude.txt): their ranges are gaps
+
+
+def excluded(unit):
+    return any(unit == e or (e.endswith("/") and unit.startswith(e)) for e in EXCLUDED)
+
+
 class Module:
     def __init__(self, name, cfg):
         self.name, self.cfg = name, cfg
@@ -57,7 +64,7 @@ class Module:
             a, b = int(m.group(2), 16), int(m.group(3), 16)
             if cur is None:
                 self.sections[m.group(1)] = (a, b, m.group(4) or "")
-            elif b > a:
+            elif b > a and not excluded(cur):
                 self.owned.append((a, b))
         self.owned.sort()
         for line in open(self.cfg / "symbols.txt"):
@@ -150,7 +157,13 @@ def main():
     ap.add_argument("decomp")
     ap.add_argument("out")
     ap.add_argument("--defined", help="file: the symbols the native objects define, one per line")
+    ap.add_argument("--exclude", help="port/exclude.txt: units the native build does not compile")
     args = ap.parse_args()
+    if args.exclude:
+        for line in open(args.exclude):
+            line = line.split("#", 1)[0].strip()
+            if line:
+                EXCLUDED.append(line)
     decomp, out = Path(args.decomp), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     mods = modules(decomp)

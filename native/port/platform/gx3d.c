@@ -405,7 +405,15 @@ static void vec_test(void) {
 }
 
 // ------------------------------------------------------------------------------------------------ commands
+int g_gx_log; // tests: log this many geometry commands
 static void execute(uint32_t cmd) {
+    if (g_gx_log > 0) {
+        g_gx_log--;
+        port_log("gx %02x %08x %08x %08x mode %d", cmd, G.params[0], G.params[1], G.params[2], G.mode);
+        if (cmd == 0x16) {
+            for (int i = 0; i < 16; i += 4) port_log("   %d %d %d %d", G.params[i], G.params[i + 1], G.params[i + 2], G.params[i + 3]);
+        }
+    }
     const uint32_t *p = G.params;
     Mtx n;
     switch (cmd) {

@@ -59,7 +59,9 @@ static void wav_header(FILE *f, uint32_t frames) {
 // One captured frame: scripted input for the next one, audio, image.
 static bool s_bglog;
 static int32_t s_wide_fx;
+extern int g_gx_log;
 static bool on_frame(const FrameSnapshot *f, uint64_t n) {
+    if (getenv("SM64DS_GXLOG") && n == (uint64_t) atoi(getenv("SM64DS_GXLOG"))) g_gx_log = 400;
     if (s_bglog && getenv("MKDS_OAM") && n == (uint64_t) atoi(getenv("MKDS_OAM"))) {
         const uint16_t *oam = (const uint16_t *) f->oam;
         for (int i = 0; i < 128; i++) {
