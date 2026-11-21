@@ -7,12 +7,12 @@ PORT = Path(__file__).resolve().parent.parent / "port"
 def game_flags(gen, rel, gcc=False):
     gen = Path(gen)
     common = [
-        "-O2", "-ffreestanding", "-fno-builtin-printf",
+        "-O2", "-g", "-fno-omit-frame-pointer", "-ffreestanding", "-fno-builtin-printf",
         "-fno-strict-aliasing",          # the game type-puns freely
         "-fwrapv",                       # and relies on wrapping arithmetic
         "-fshort-wchar",                 # wchar_t is 16 bits on the DS
         "-fsigned-char",                 # the decomp builds with mwcc -char signed
-        "-ffunction-sections", "-fdata-sections",
+        "-ffunction-sections", "-fdata-sections", "-fno-asynchronous-unwind-tables", "-fno-unwind-tables",
         "-I", str(gen / "include"), "-I", str(gen / "include" / "nitro"), "-I", str(PORT / "platform" / "include"),
         "-include", str(PORT / "compat" / "port_prefix.h"),
         "-w", "-Wno-error", "-Wno-narrowing", "-fno-pic", "-fno-pie",

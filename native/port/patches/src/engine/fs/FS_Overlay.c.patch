@@ -1,0 +1,39 @@
+--- a/src/engine/fs/FS_Overlay.c
++++ b/src/engine/fs/FS_Overlay.c
+@@ -61,6 +61,8 @@
+ extern u8 SDK_OVERLAY_DIGEST[];
+ extern u8 SDK_OVERLAY_DIGEST_END[];
+ extern MWiDestructorChain *__global_destructor_chain;
++void port_overlay_start(u32 id); /* PORT */
++void port_overlay_end(u32 id);   /* PORT */
+ 
+ void DGT_Hash2CalcHmac(u8 *out, u8 *msg, int msglen, u8 *key, int keylen);
+ void MIi_UncompressBackward(void *bottom);
+@@ -197,15 +199,9 @@
+         MIi_UncompressBackward(p_ovi->header.ram_address + rare_size);
+     }
+ 
+-    {
+-        FSOverlayInitFunc *p = p_ovi->header.sinit_init;
+-        FSOverlayInitFunc *q = p_ovi->header.sinit_init_end;
+-
+-        for (; p < q; ++p) {
+-            if (*p)
+-                (**p)();
+-        }
+-    }
++    /* PORT: the overlay's static initializers are native code: port_overlay_start redirects the pointers in the
++       data just loaded, resets the overlay's native data and runs its initializers (port/platform/image.c). */
++    port_overlay_start(p_ovi->header.id);
+ }
+ 
+ /* With interrupts disabled, unlink every __global_destructor_chain entry
+@@ -213,6 +209,8 @@
+  * bss, run the ones unlinked, and repeat until a pass finds none. Then take
+  * the overlay off the IS-NITRO debugger's list. */
+ void FS_EndOverlay(FSOverlayInfo *p_ovi) {
++    /* PORT: the overlay's static objects are native: port_overlay_end destroys those it registered. */
++    port_overlay_end(p_ovi->header.id);
+     for (;;) {
+         MWiDestructorChain *head = NULL, *tail = NULL;
+         const u32 region_top = (u32)FS_GetOverlayAddress(p_ovi);

@@ -48,6 +48,31 @@ BLOCK_EXTERN = re.compile(r"^(\s+)extern\s+(?!\"C)([^;(){}=,]*?)\b([A-Za-z_]\w*)
 BLOCK_EXTERN_FN = re.compile(r"^(\s+)extern\s+(?!\"C)([^;{}=]*?\(\s*(?:[\w:]+::)?\*\s*)([A-Za-z_]\w*)((?:\s*\[[^\]]*\])*\s*\)\s*\([^;{}]*\));(.*)$")
 
 
+# Declarations of 8-byte members: mwcc aligns them to 4 (see port/compat/port_prefix.h).
+WIDE_MEMBER = re.compile(r"^(\s+)(?:(unsigned\s+long\s+long)|(?:signed\s+)?long\s+long|(double))(\s+[A-Za-z_]\w*(?:\s*\[[^\]]*\])*\s*[;,])",
+                         re.M)
+
+
+def rewrite_wide_members(text):
+    def sub(m):
+        t = "port_ull4" if m.group(2) else "port_double4" if m.group(3) else "port_ll4"
+        return m.group(1) + t + m.group(4)
+    return WIDE_MEMBER.sub(sub, text)
+
+
+# ARM interworking hints (GCC syntax in the decomp, for the cartridge's Thumb/ARM calls): meaningless natively, and on
+# 32-bit ARM GCC they would make function types differ.
+INTERWORK = [(re.compile(r"^\s*#\s*pragma\s+(long_calls|long_calls_off|no_long_calls)\b.*$", re.M), "/* PORT: #pragma \\1 */"),
+             (re.compile(r"\b(long_call|short_call)\b(?=[^;{]*\)\))"), "unused"),
+             (re.compile(r'\btarget\s*\(\s*"(thumb|arm)"\s*\)'), "unused")]
+
+
+def rewrite_interworking(text):
+    for pattern, repl in INTERWORK:
+        text = pattern.sub(repl, text)
+    return text
+
+
 def rewrite_block_externs(text):
     lines = text.split("\n")
     out = list(lines)
@@ -141,7 +166,7 @@ def main():
         patch = patches / (rel + ".patch")
         if patch.exists():
             text = apply_patch(text, patch, rel)
-        text = rewrite_block_externs(rewrite_reg_writes(text))
+        text = rewrite_block_externs(rewrite_wide_members(rewrite_interworking(rewrite_reg_writes(text))))
         dst = out / "src" / rel
         write_if_changed(dst, f'#line 1 "{rel}"\n' + text)
         sources.append(dst.as_posix())
@@ -167,6 +192,7 @@ def main():
                     sys.exit(f"portify: types.h: typedef of {t} not found")
         if rel != "nitro/hw/registers.h":
             text = rewrite_reg_writes(text)
+        text = rewrite_wide_members(rewrite_interworking(text))
         if rel in shadowed:
             rel += ".decomp"
         write_if_changed(inc / rel, text)
@@ -176,6 +202,8 @@ def main():
         write_if_changed(inc / rel, text)
 
     write_if_changed(out / "sources.txt", "\n".join(sources) + "\n")
+    write_if_changed(out / "units.txt", "".join(f"{module_of[r]} {r}\n" for r in sorted(module_of)
+                                                if (out / "src" / r).exists()))
     write_if_changed(out / "overlay_units.txt",
                      "".join(f"{module_of[r]} {r}\n" for r in sorted(module_of)
                              if module_of[r].startswith("ov") and (out / "src" / r).exists()))

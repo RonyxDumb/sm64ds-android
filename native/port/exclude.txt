@@ -84,7 +84,6 @@ src/OS_InitContext.c
 src/OS_LoadContext.c
 src/OS_SaveContext.c
 src/OS_SpinWait.c
-src/OS_Init.cpp
 src/OS_InitVAlarm.cpp
 src/OS_Terminate.cpp
 src/OSi_SetTimerReserved.c
@@ -114,11 +113,7 @@ src/DMASyncWordTransfer.c
 src/PXI_Init.c
 src/engine/pxi/
 src/engine/card/
-src/CARD_GetBackupTotalSize.c
-src/CARD_GetCurrentBackupType.c
-src/CARD_IdentifyBackup.cpp
 src/CARDi_OnFifoRecv.c
-src/CARDi_EndTask.cpp
 src/CARDi_Request.cpp
 src/CARDi_TaskThread.cpp
 src/engine/ctrdg/

@@ -1,0 +1,30 @@
+--- a/src/engine/os/OS_Thread.cpp
++++ b/src/engine/os/OS_Thread.cpp
+@@ -60,6 +60,7 @@
+ extern void SDK_IRQ_STACKSIZE(void);
+ 
+ extern OSSwitchThreadCallback OSi_SystemCallbackInSwitchThread;
++void port_os_switch(OSThread *current, OSThread *next); /* PORT */
+ extern OSThread **OSi_CurrentThreadPtr;
+ extern BOOL OSi_IsThreadInitialized;
+ extern OSThread OSi_IdleThread;
+@@ -293,9 +294,7 @@
+     if (currentThread == nextThread || nextThread == 0) {
+         return;
+     }
+-    if (OS_SaveContext(&currentThread->context) != 0) {
+-        return;
+-    }
++    /* PORT: each thread runs on a host thread; port_os_switch hands the CPU over (port/platform/os.c). */
+     if (OSi_SystemCallbackInSwitchThread != 0) {
+         OSi_SystemCallbackInSwitchThread(currentThread, nextThread);
+     }
+@@ -303,7 +302,7 @@
+         info->switchCallback(currentThread, nextThread);
+     }
+     OSi_ThreadInfo.current = nextThread;
+-    OS_LoadContext(&nextThread->context);
++    port_os_switch(currentThread, nextThread);
+ }
+ 
+ void OS_SetThreadStackWarningOffset(OSThread *thread, u32 offset) {

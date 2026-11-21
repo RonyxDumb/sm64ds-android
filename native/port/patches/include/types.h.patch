@@ -12,3 +12,12 @@
  #else
      ~Vector3() {}
  
+@@ -150,7 +155,7 @@
+ /* Small enum: how an actor responds to being eaten by Yoshi. */
+ typedef int OnYoshiEatReturnVal;
+ 
+-#ifndef __cplusplus
++#if !defined(__cplusplus) && !defined(__bool_true_false_are_defined) /* PORT: the platform layer has stdbool */
+ typedef int bool;  /* a keyword in C++, an ordinary identifier in C */
+ #endif
+ 

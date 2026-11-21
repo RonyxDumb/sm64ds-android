@@ -1,0 +1,11 @@
+copysign game_copysign
+frexp game_frexp
+ldexp game_ldexp
+raise game_raise
+rand game_rand
+strchr game_strchr
+strcmp game_strcmp
+strcpy game_strcpy
+strlen game_strlen
+strncpy game_strncpy
+__cxa_atexit port_cxa_atexit

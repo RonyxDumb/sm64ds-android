@@ -23,7 +23,7 @@
 
 void hapi_log(const char *line) {
 #ifdef __ANDROID__
-    __android_log_write(ANDROID_LOG_INFO, "mkds", line);
+    __android_log_write(ANDROID_LOG_INFO, "sm64ds", line);
     extern void android_log_line(const char *line);
     android_log_line(line);
 #else
@@ -133,8 +133,8 @@ bool port_rom_open(const char *path) {
     }
     s_rom = p;
     s_rom_size = (uint32_t) st.st_size;
-    if (memcmp(s_rom + 0x0c, "AMCP", 4) != 0) {
-        port_log("rom: game code %.4s, expected AMCP (Mario Kart DS, Europe)", (const char *) s_rom + 0x0c);
+    if (memcmp(s_rom + 0x0c, "ASMP", 4) != 0) {
+        port_log("rom: game code %.4s, expected ASMP (Super Mario 64 DS, Europe)", (const char *) s_rom + 0x0c);
         return false;
     }
     return true;
@@ -254,7 +254,7 @@ static int udp_socket(uint16_t port, bool reuse) {
 static void online_load_config(void) {
     char line[256] = "";
     char path[600];
-    snprintf(path, sizeof(path), "%s.online", s_save_path[0] ? s_save_path : "mkds");
+    snprintf(path, sizeof(path), "%s.online", s_save_path[0] ? s_save_path : "sm64ds");
     FILE *f = fopen(path, "rb");
     if (f) {
         if (!fgets(line, sizeof(line), f)) line[0] = 0;
@@ -298,7 +298,7 @@ void hapi_net_mac(uint8_t *mac) {
     if (!s_have) {
         // Kept next to the save file, so that the address stays the same from one start to the next.
         char path[600];
-        snprintf(path, sizeof(path), "%s.mac", s_save_path[0] ? s_save_path : "mkds");
+        snprintf(path, sizeof(path), "%s.mac", s_save_path[0] ? s_save_path : "sm64ds");
         FILE *f = fopen(path, "rb");
         if (!f || fread(s_mac, 1, 6, f) != 6) {
             uint64_t r = hapi_now_ns() ^ ((uint64_t) getpid() << 32);

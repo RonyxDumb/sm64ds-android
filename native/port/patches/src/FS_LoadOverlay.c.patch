@@ -1,0 +1,12 @@
+--- a/src/FS_LoadOverlay.c
++++ b/src/FS_LoadOverlay.c
+@@ -12,7 +12,8 @@
+     if (!func_02018c00(&info, target, id) || !func_02018b64(&info))
+         return 0;
+     ram = (unsigned int)info.header.ram_address;
+-    if (!(ram >= (unsigned int)CapIconMgr_DispatchVs &&
++    /* PORT: the bound is the DS address of CapIconMgr_DispatchVs (the start of the overlay area), not its native one. */
++    if (!(ram >= 0x020aa420u &&
+           (sum = ram + info.header.ram_size, sum + info.header.bss_size <= 0x214eaa0u)))
+         OS_Terminate();
+     FS_StartOverlay(&info);
